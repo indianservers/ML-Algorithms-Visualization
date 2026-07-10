@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as mobilenet from '@tensorflow-models/mobilenet';
 import * as tf from '@tensorflow/tfjs';
 import { Camera, Circle, Download, FileImage, FolderOpen, Layers, Play, Plus, RotateCcw, Trash2, Video } from 'lucide-react';
-import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { PageHeader } from '../../../components/common/PageHeader';
 import { Card, InfoBox } from '../../../components/common/Card';
 import { MetricsPanel } from '../../../components/ml/MetricsPanel';
@@ -143,14 +143,6 @@ export default function ImageClassificationPage() {
   const rejectionRate = calibrationSamples.length
     ? calibrationSamples.filter(sample => sample.confidence < confidenceThreshold).length / calibrationSamples.length
     : bestPrediction ? (bestPrediction.probability >= confidenceThreshold ? 0 : 1) : 0;
-  const calibrationHistogram = useMemo(() => Array.from({ length: 10 }, (_, index) => {
-    const low = index / 10;
-    const high = (index + 1) / 10;
-    return {
-      bin: `${Math.round(low * 100)}-${Math.round(high * 100)}%`,
-      count: calibrationSamples.filter(sample => sample.confidence >= low && (index === 9 ? sample.confidence <= high : sample.confidence < high)).length,
-    };
-  }), [calibrationSamples]);
   const suggestedThreshold = useMemo(() => {
     if (!calibrationSamples.length) return confidenceThreshold;
     const sorted = [...calibrationSamples].map(sample => sample.confidence).sort((a, b) => a - b);
@@ -547,165 +539,119 @@ export default function ImageClassificationPage() {
   }, [classes, startLiveInference]);
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-4">
+    <div className="mx-auto max-w-[1600px] space-y-4 p-4">
       <PageHeader
         title="Image Classification"
-        subtitle="Teachable Machine-style webcam classifier using TensorFlow.js: collect examples by holding Record, train locally, and run live inference."
+        subtitle="Train and infer from the top workbench: live camera, compact classes, and TensorFlow.js controls stay in view."
         badge="Browser Trainable"
         category="Computer Vision"
         icon={<Camera size={22} />}
       />
 
-      <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
-        <div className="space-y-4">
-          <Card title="Camera" icon={<Video size={14} />}>
-            <div className="space-y-3">
-              <div className="overflow-hidden rounded-lg border border-gray-200 bg-gray-950 dark:border-gray-700">
-                <video ref={videoRef} muted playsInline className="aspect-video w-full object-cover" />
-                <canvas ref={canvasRef} className="hidden" />
+      <div className="grid gap-4 xl:grid-cols-[minmax(360px,0.95fr)_minmax(520px,1.3fr)_340px]">
+        <Card title="Live Camera and Inference" icon={<Video size={14} />}>
+          <div className="space-y-3">
+            <div className="relative overflow-hidden rounded-lg border border-gray-200 bg-gray-950 dark:border-gray-700">
+              <video ref={videoRef} muted playsInline className="aspect-video w-full object-cover" />
+              <canvas ref={canvasRef} className="hidden" />
+              <div className="absolute left-3 top-3 rounded bg-gray-950/75 px-2 py-1 text-xs font-bold text-white">
+                {cameraReady ? 'Live camera' : 'Camera off'}
               </div>
-              <button
-                onClick={startCamera}
-                disabled={cameraReady}
-                className="inline-flex w-full items-center justify-center gap-2 rounded bg-blue-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
-              >
-                <Camera size={15} /> {cameraReady ? 'Camera Running' : 'Start Camera'}
-              </button>
-              <button
-                onClick={() => stopCamera()}
-                disabled={!cameraReady}
-                className="inline-flex w-full items-center justify-center gap-2 rounded border border-gray-200 px-3 py-2 text-sm font-semibold disabled:opacity-50 dark:border-gray-700"
-              >
-                <Video size={15} /> Stop Camera
-              </button>
-            </div>
-          </Card>
-
-          <Card title="Training Controls" icon={<Play size={14} />}>
-            <div className="space-y-4 text-sm">
-              <label className="block text-gray-700 dark:text-gray-200">
-                Epochs: <b>{epochs}</b>
-                <input type="range" min={5} max={50} value={epochs} onChange={event => setEpochs(Number(event.target.value))} className="w-full accent-blue-600" />
-              </label>
-              <label className="block text-gray-700 dark:text-gray-200">
-                Batch size: <b>{batchSize}</b>
-                <input type="range" min={4} max={32} step={4} value={batchSize} onChange={event => setBatchSize(Number(event.target.value))} className="w-full accent-blue-600" />
-              </label>
-              <label className="block text-gray-700 dark:text-gray-200">
-                Learning rate: <b>{learningRate.toFixed(4)}</b>
-                <input type="range" min={0.0005} max={0.01} step={0.0005} value={learningRate} onChange={event => setLearningRate(Number(event.target.value))} className="w-full accent-blue-600" />
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                <button disabled={!readyToTrain} onClick={train} className="inline-flex items-center justify-center gap-2 rounded bg-emerald-600 px-3 py-2 font-semibold text-white disabled:opacity-50">
-                  <Play size={14} /> {training ? 'Training...' : 'Train'}
-                </button>
-                <button onClick={resetAll} className="inline-flex items-center justify-center gap-2 rounded border border-gray-200 px-3 py-2 font-semibold dark:border-gray-700">
-                  <RotateCcw size={14} /> Reset
-                </button>
-              </div>
-              <button
-                disabled={!modelReady}
-                onClick={exportModel}
-                className="inline-flex w-full items-center justify-center gap-2 rounded border border-gray-200 px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
-              >
-                <Download size={14} /> Export Model
-              </button>
-            </div>
-          </Card>
-
-          <MetricsPanel title="Dataset and Training" metrics={[
-            { label: 'Classes', value: classes.length, format: 'number', color: 'blue' },
-            { label: 'Images', value: totalSamples, format: 'number', color: 'green' },
-            { label: 'Accuracy', value: latest?.accuracy ?? 0, format: 'percent', color: 'green' },
-            { label: 'Top Confidence', value: bestPrediction?.probability ?? 0, format: 'percent', color: 'blue' },
-          ]} />
-
-          <Card title="Balance">
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center justify-between gap-3">
-                <label className="inline-flex items-center gap-2 font-bold">
-                  <input type="checkbox" checked={balanceMode} onChange={event => setBalanceMode(event.target.checked)} className="h-4 w-4 accent-blue-600" />
-                  Balance mode
-                </label>
-                <label className="text-xs font-bold text-gray-500">
-                  Target
-                  <input type="number" min={10} max={100} value={balanceTarget} onChange={event => setBalanceTarget(Number(event.target.value))} className="ml-2 w-16 rounded border border-gray-200 bg-white px-2 py-1 dark:border-gray-700 dark:bg-gray-900" />
-                </label>
-              </div>
-              <div className="space-y-2">
-                {classes.map(item => {
-                  const count = sampleCounts[item.id] ?? 0;
-                  const ratio = balanceTargetCount ? count / balanceTargetCount : 1;
-                  const color = ratio >= 0.8 ? 'bg-green-500' : ratio >= 0.5 ? 'bg-amber-500' : 'bg-red-500';
-                  return (
-                    <div key={item.id}>
-                      <div className="mb-1 flex items-center justify-between text-xs font-bold">
-                        <span>{item.name}</span>
-                        <span>{count} / {balanceTargetCount || balanceTarget}</span>
-                      </div>
-                      <div className="relative h-3 overflow-hidden rounded bg-gray-100 dark:bg-gray-900">
-                        <div className={`h-full ${color}`} style={{ width: `${Math.min(100, ratio * 100)}%` }} />
-                        <div className="absolute inset-y-0 right-0 border-l-2 border-dashed border-gray-500" />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              {classNeedingSamples && classNeedingSamples.needed > 0 ? (
-                <div className="rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-200">
-                  {classNeedingSamples.name} needs {classNeedingSamples.needed} more sample{classNeedingSamples.needed === 1 ? '' : 's'} to match the target.
-                  <button onClick={() => autoAugmentClass(classNeedingSamples.id)} disabled={(sampleCounts[classNeedingSamples.id] ?? 0) === 0} className="mt-2 w-full rounded bg-amber-600 px-2 py-1 font-bold text-white disabled:opacity-50">Auto-augment this class</button>
+              {modelReady && (
+                <div className="absolute inset-x-3 bottom-3 rounded border border-white/20 bg-gray-950/75 p-2 text-white">
+                  <p className="text-xs font-bold uppercase text-gray-300">Inference</p>
+                  <p className="truncate text-lg font-black">{predictedLabel}</p>
+                  <p className="text-xs text-gray-200">{((bestPrediction?.probability ?? 0) * 100).toFixed(1)}% confidence</p>
                 </div>
-              ) : (
-                <div className="rounded border border-green-200 bg-green-50 p-2 text-xs font-bold text-green-700 dark:border-green-900 dark:bg-green-950/20 dark:text-green-200">Dataset balanced. Ready to train.</div>
               )}
             </div>
-          </Card>
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={startCamera} disabled={cameraReady} className="inline-flex min-h-10 items-center justify-center gap-2 rounded bg-blue-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">
+                <Camera size={15} /> {cameraReady ? 'Running' : 'Start Camera'}
+              </button>
+              <button onClick={() => stopCamera()} disabled={!cameraReady} className="inline-flex min-h-10 items-center justify-center gap-2 rounded border border-gray-200 px-3 py-2 text-sm font-semibold disabled:opacity-50 dark:border-gray-700">
+                <Video size={15} /> Stop
+              </button>
+            </div>
+            <div className="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <p className="text-sm font-bold text-gray-800 dark:text-gray-100">{modelReady ? 'Live Predictions' : 'Live Predictions'}</p>
+                <span className="text-xs font-bold text-gray-500">{predictions.length ? `${predictions.length} classes` : 'train first'}</span>
+              </div>
+              {predictions.length > 0 ? (
+                <div className="space-y-2">
+                  {predictions.slice(0, 8).map(item => (
+                    <div key={item.classId}>
+                      <div className="mb-1 flex justify-between gap-2 text-xs font-semibold text-gray-600 dark:text-gray-300">
+                        <span className="truncate">{item.name}</span>
+                        <span>{(item.probability * 100).toFixed(1)}%</span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded bg-gray-100 dark:bg-gray-900">
+                        <div className="h-full transition-all" style={{ width: `${item.probability * 100}%`, backgroundColor: item.color }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400">Train once, then the webcam feed stays visible while predictions update here.</p>
+              )}
+            </div>
+          </div>
+        </Card>
 
-          <InfoBox type={readyToTrain ? 'success' : 'info'} title="Runtime Status">{status}</InfoBox>
-        </div>
-
-        <div className="space-y-4">
+        <div className="min-h-0">
           <Card
-            title="Classes"
+            title="Classes and Samples"
             icon={<Layers size={14} />}
             actions={(
-              <button onClick={addClass} className="inline-flex items-center gap-1 rounded border border-gray-200 px-2 py-1 text-xs font-semibold hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
+              <button onClick={addClass} className="inline-flex min-h-9 items-center gap-1 rounded border border-gray-200 px-2 py-1 text-xs font-semibold hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
                 <Plus size={13} /> Add Class
               </button>
             )}
           >
-            <div className="grid gap-3 lg:grid-cols-2">
+            <div className="mb-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+              {[
+                ['Classes', classes.length],
+                ['Images', totalSamples],
+                ['Ready', readyToTrain ? 'Yes' : 'No'],
+                ['Need', classNeedingSamples?.needed ?? 0],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded bg-gray-50 p-2 text-center dark:bg-gray-900">
+                  <p className="font-bold text-gray-500">{label}</p>
+                  <p className="text-lg font-black text-gray-900 dark:text-gray-100">{value}</p>
+                </div>
+              ))}
+            </div>
+            <div className="max-h-[58vh] space-y-2 overflow-y-auto pr-1">
               {classes.map(item => {
-                const previews = examples.filter(example => example.classId === item.id).slice(-6);
+                const previews = examples.filter(example => example.classId === item.id).slice(-3);
                 const recording = activeCapture === item.id;
                 const classFull = balanceMode && (sampleCounts[item.id] ?? 0) >= balanceTarget;
+                const count = sampleCounts[item.id] ?? 0;
+                const ratio = balanceTargetCount ? count / balanceTargetCount : 1;
                 return (
-                  <div key={item.id} className="rounded-lg border border-gray-200 p-3 dark:border-gray-700">
-                    <div className="flex items-center gap-2">
+                  <div key={item.id} className="rounded-lg border border-gray-200 p-2.5 dark:border-gray-700">
+                    <div className="grid gap-2 lg:grid-cols-[minmax(150px,1fr)_minmax(230px,1.25fr)_86px] lg:items-center">
+                      <div className="flex min-w-0 items-center gap-2">
                       <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
-                      <input value={item.name} onChange={event => renameClass(item.id, event.target.value)} className="min-w-0 flex-1 rounded border border-gray-200 bg-white px-2 py-1 text-sm font-semibold dark:border-gray-700 dark:bg-gray-900" />
-                      <button onClick={() => removeClass(item.id)} className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30" title="Remove class">
+                        <input value={item.name} onChange={event => renameClass(item.id, event.target.value)} className="min-w-0 flex-1 rounded border border-gray-200 bg-white px-2 py-1 text-sm font-semibold dark:border-gray-700 dark:bg-gray-900" />
+                        <button onClick={() => removeClass(item.id)} className="grid min-h-8 min-w-8 place-items-center rounded text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30" title="Remove class">
                         <Trash2 size={14} />
                       </button>
-                    </div>
-                    <div className="mt-3 flex items-center gap-2">
+                      </div>
+                      <div className="grid grid-cols-[1fr_auto_auto_auto] gap-1.5">
                       <button
                         onPointerDown={() => startCapture(item.id)}
                         onPointerUp={stopCapture}
                         onPointerCancel={stopCapture}
                         onPointerLeave={stopCapture}
                         disabled={!cameraReady || classFull}
-                        className={`inline-flex flex-1 items-center justify-center gap-2 rounded px-3 py-2 text-sm font-semibold text-white disabled:opacity-50 ${recording ? 'bg-red-600' : 'bg-blue-600'}`}
+                          className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded px-2 py-1.5 text-xs font-bold text-white disabled:opacity-50 ${recording ? 'bg-red-600' : 'bg-blue-600'}`}
                       >
                         <Circle size={13} className={recording ? 'fill-current' : ''} />
-                        {classFull ? 'Class full' : recording ? 'Recording 20+ fps target' : 'Hold to Record'}
+                          {classFull ? 'Full' : recording ? 'Recording' : 'Record'}
                       </button>
-                      <button onClick={() => clearClass(item.id)} className="rounded border border-gray-200 px-3 py-2 text-xs font-semibold dark:border-gray-700">Clear</button>
-                    </div>
-                    <div className="mt-2 grid grid-cols-2 gap-2">
-                      <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded border border-gray-200 px-3 py-2 text-xs font-semibold hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
-                        <FileImage size={13} /> Files
+                        <label className="grid min-h-9 min-w-9 cursor-pointer place-items-center rounded border border-gray-200 text-xs font-semibold hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800" title="Import image files">
                         <input
                           type="file"
                           accept="image/*"
@@ -716,9 +662,9 @@ export default function ImageClassificationPage() {
                             event.currentTarget.value = '';
                           }}
                         />
-                      </label>
-                      <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded border border-gray-200 px-3 py-2 text-xs font-semibold hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800">
-                        <FolderOpen size={13} /> Folder
+                          <FileImage size={14} />
+                        </label>
+                        <label className="grid min-h-9 min-w-9 cursor-pointer place-items-center rounded border border-gray-200 text-xs font-semibold hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800" title="Import image folder">
                         <input
                           ref={element => {
                             element?.setAttribute('webkitdirectory', '');
@@ -733,116 +679,153 @@ export default function ImageClassificationPage() {
                             event.currentTarget.value = '';
                           }}
                         />
+                          <FolderOpen size={14} />
                       </label>
+                        <button onClick={() => clearClass(item.id)} className="grid min-h-9 min-w-9 place-items-center rounded border border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-800" title="Clear class samples">
+                          <RotateCcw size={14} />
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-[1fr_54px] items-center gap-2">
+                        <div>
+                          <div className="mb-1 flex justify-between gap-2 text-[11px] font-bold text-gray-500">
+                            <span>{count} images</span>
+                            <span>{Math.round(Math.min(1, ratio) * 100)}%</span>
+                          </div>
+                          <div className="h-2 overflow-hidden rounded bg-gray-100 dark:bg-gray-900">
+                            <div className="h-full" style={{ width: `${Math.min(100, ratio * 100)}%`, backgroundColor: item.color }} />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-1">
+                          {previews.map(example => <img key={example.id} src={example.preview} alt="" className="aspect-square rounded object-cover" />)}
+                          {previews.length === 0 && <div className="col-span-3 rounded bg-gray-50 p-1 text-center text-[10px] text-gray-500 dark:bg-gray-900">empty</div>}
+                        </div>
+                      </div>
                     </div>
-                    <div className="mt-3 grid grid-cols-6 gap-1">
-                      {previews.map(example => <img key={example.id} src={example.preview} alt="" className="aspect-square rounded object-cover" />)}
-                      {previews.length === 0 && <div className="col-span-6 rounded bg-gray-50 p-3 text-center text-xs text-gray-500 dark:bg-gray-900">No images yet</div>}
-                    </div>
-                    <p className="mt-2 text-xs font-semibold text-gray-500">{sampleCounts[item.id] ?? 0} images</p>
                   </div>
                 );
               })}
             </div>
           </Card>
+        </div>
 
-          <div className="grid gap-4 lg:grid-cols-[1fr_360px]">
-            <Card title="Live Inference">
-              {predictions.length > 0 ? (
-                <div className="space-y-3">
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                    Prediction: <b>{predictedLabel}</b> at <b>{((bestPrediction?.probability ?? 0) * 100).toFixed(1)}%</b>
-                  </p>
-                  <label className="block text-sm font-semibold text-gray-600 dark:text-gray-300">
-                    Confidence threshold: {(confidenceThreshold * 100).toFixed(0)}%
-                    <input type="range" min={0.5} max={0.99} step={0.01} value={confidenceThreshold} onChange={event => setConfidenceThreshold(Number(event.target.value))} className="mt-2 w-full accent-purple-600" />
-                  </label>
-                  <div className="rounded-lg border border-purple-100 bg-purple-50 p-3 text-sm dark:border-purple-900/60 dark:bg-purple-950/20">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div>
-                        <p className="font-bold text-purple-900 dark:text-purple-100">Tune confidence gate</p>
-                        <p className="text-xs text-purple-700 dark:text-purple-200">
-                          Current rejection rate: <b>{(rejectionRate * 100).toFixed(0)}%</b> of frames
-                        </p>
-                      </div>
-                      <button
-                        onClick={calibrateThreshold}
-                        disabled={!modelReady || !cameraReady || calibrating}
-                        className="rounded bg-purple-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50"
-                      >
-                        {calibrating ? 'Calibrating...' : 'Calibrate 30 frames'}
-                      </button>
+        <div className="space-y-4">
+          <Card title="Train and Tune" icon={<Play size={14} />}>
+            <div className="space-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-2">
+                <button disabled={!readyToTrain} onClick={train} className="inline-flex min-h-11 items-center justify-center gap-2 rounded bg-emerald-600 px-3 py-2 font-bold text-white disabled:opacity-50">
+                  <Play size={14} /> {training ? 'Training...' : 'Train'}
+                </button>
+                <button onClick={resetAll} className="inline-flex min-h-11 items-center justify-center gap-2 rounded border border-gray-200 px-3 py-2 font-bold dark:border-gray-700">
+                  <RotateCcw size={14} /> Reset
+                </button>
+              </div>
+              <button disabled={!modelReady} onClick={exportModel} className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded border border-gray-200 px-3 py-2 font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800">
+                <Download size={14} /> Export Model
+              </button>
+              <label className="block text-gray-700 dark:text-gray-200">
+                Epochs: <b>{epochs}</b>
+                <input type="range" min={5} max={50} value={epochs} onChange={event => setEpochs(Number(event.target.value))} className="w-full accent-blue-600" />
+              </label>
+              <label className="block text-gray-700 dark:text-gray-200">
+                Batch: <b>{batchSize}</b>
+                <input type="range" min={4} max={32} step={4} value={batchSize} onChange={event => setBatchSize(Number(event.target.value))} className="w-full accent-blue-600" />
+              </label>
+              <label className="block text-gray-700 dark:text-gray-200">
+                Learning rate: <b>{learningRate.toFixed(4)}</b>
+                <input type="range" min={0.0005} max={0.01} step={0.0005} value={learningRate} onChange={event => setLearningRate(Number(event.target.value))} className="w-full accent-blue-600" />
+              </label>
+              <label className="block text-gray-700 dark:text-gray-200">
+                Confidence gate: <b>{(confidenceThreshold * 100).toFixed(0)}%</b>
+                <input type="range" min={0.5} max={0.99} step={0.01} value={confidenceThreshold} onChange={event => setConfidenceThreshold(Number(event.target.value))} className="w-full accent-purple-600" />
+              </label>
+              <button onClick={calibrateThreshold} disabled={!modelReady || !cameraReady || calibrating} className="inline-flex min-h-10 w-full items-center justify-center rounded bg-purple-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">
+                {calibrating ? 'Calibrating...' : 'Calibrate 30 Frames'}
+              </button>
+              {calibrationSamples.length > 0 && (
+                <button onClick={() => setConfidenceThreshold(Number(suggestedThreshold.toFixed(2)))} className="w-full rounded border border-purple-200 px-3 py-2 text-xs font-bold text-purple-700 dark:border-purple-800 dark:text-purple-200">
+                  Use suggested {Math.round(suggestedThreshold * 100)}%
+                </button>
+              )}
+              <div className="rounded bg-gray-50 p-2 text-xs text-gray-600 dark:bg-gray-900 dark:text-gray-300">
+                Rejection rate: <b>{(rejectionRate * 100).toFixed(0)}%</b>
+              </div>
+            </div>
+          </Card>
+
+          <InfoBox type={readyToTrain ? 'success' : 'info'} title="Runtime Status">{status}</InfoBox>
+        </div>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(360px,0.8fr)_minmax(520px,1.2fr)_340px]">
+        <Card title="Training History">
+          {history.length > 0 ? (
+            <ResponsiveContainer width="100%" height={190}>
+              <LineChart data={history}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="epoch" tick={{ fontSize: 11 }} />
+                <YAxis yAxisId="left" domain={[0, 1]} tickFormatter={value => `${Math.round(Number(value) * 100)}%`} tick={{ fontSize: 11 }} />
+                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} />
+                <Tooltip />
+                <Legend />
+                <Line yAxisId="left" type="monotone" dataKey="accuracy" stroke="#2563eb" strokeWidth={2.5} dot={false} />
+                <Line yAxisId="right" type="monotone" dataKey="loss" stroke="#dc2626" strokeWidth={2.5} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-sm text-gray-500 dark:text-gray-400">Training epochs will appear here after you collect at least 10 images per class.</p>
+          )}
+        </Card>
+
+        <Card title="Balance">
+          <div className="grid gap-3 text-sm md:grid-cols-[1fr_220px]">
+            <div className="grid gap-2 sm:grid-cols-2">
+              {classes.map(item => {
+                const count = sampleCounts[item.id] ?? 0;
+                const ratio = balanceTargetCount ? count / balanceTargetCount : 1;
+                const color = ratio >= 0.8 ? 'bg-green-500' : ratio >= 0.5 ? 'bg-amber-500' : 'bg-red-500';
+                return (
+                  <div key={item.id}>
+                    <div className="mb-1 flex items-center justify-between text-xs font-bold">
+                      <span className="truncate">{item.name}</span>
+                      <span>{count} / {balanceTargetCount || balanceTarget}</span>
                     </div>
-                    {calibrationSamples.length > 0 && (
-                      <div className="mt-3 grid gap-3 md:grid-cols-[1fr_130px]">
-                        <ResponsiveContainer width="100%" height={110}>
-                          <BarChart data={calibrationHistogram}>
-                            <XAxis dataKey="bin" hide />
-                            <YAxis allowDecimals={false} width={24} tick={{ fontSize: 10 }} />
-                            <Tooltip />
-                            <Bar dataKey="count" fill="#7c3aed" radius={[3, 3, 0, 0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                        <button
-                          onClick={() => setConfidenceThreshold(Number(suggestedThreshold.toFixed(2)))}
-                          className="rounded border border-purple-200 bg-white px-3 py-2 text-xs font-bold text-purple-700 dark:border-purple-800 dark:bg-gray-950 dark:text-purple-200"
-                        >
-                          Use suggested {Math.round(suggestedThreshold * 100)}%
-                        </button>
-                      </div>
-                    )}
+                    <div className="relative h-3 overflow-hidden rounded bg-gray-100 dark:bg-gray-900">
+                      <div className={`h-full ${color}`} style={{ width: `${Math.min(100, ratio * 100)}%` }} />
+                    </div>
                   </div>
-                  <ResponsiveContainer width="100%" height={260}>
-                    <BarChart data={predictions}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                      <YAxis domain={[0, 1]} tickFormatter={value => `${Math.round(Number(value) * 100)}%`} />
-                      <Tooltip formatter={(value: number) => `${(value * 100).toFixed(1)}%`} />
-                      <Bar dataKey="probability" radius={[4, 4, 0, 0]}>
-                        {predictions.map(item => <Cell key={item.classId} fill={item.color} />)}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                  <div className="space-y-2">
-                    {predictions.map(item => (
-                      <div key={item.classId}>
-                        <div className="mb-1 flex justify-between text-xs font-semibold text-gray-600 dark:text-gray-300">
-                          <span>{item.name}</span>
-                          <span>{(item.probability * 100).toFixed(1)}%</span>
-                        </div>
-                        <div className="h-2 overflow-hidden rounded bg-gray-100 dark:bg-gray-900">
-                          <div className="h-full transition-all" style={{ width: `${item.probability * 100}%`, backgroundColor: item.color }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                );
+              })}
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <label className="inline-flex items-center gap-2 font-bold">
+                  <input type="checkbox" checked={balanceMode} onChange={event => setBalanceMode(event.target.checked)} className="h-4 w-4 accent-blue-600" />
+                  Balance mode
+                </label>
+                <label className="text-xs font-bold text-gray-500">
+                  Target
+                  <input type="number" min={10} max={100} value={balanceTarget} onChange={event => setBalanceTarget(Number(event.target.value))} className="ml-2 w-16 rounded border border-gray-200 bg-white px-2 py-1 dark:border-gray-700 dark:bg-gray-900" />
+                </label>
+              </div>
+              {classNeedingSamples && classNeedingSamples.needed > 0 ? (
+                <div className="rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-200">
+                  {classNeedingSamples.name} needs {classNeedingSamples.needed} more.
+                  <button onClick={() => autoAugmentClass(classNeedingSamples.id)} disabled={(sampleCounts[classNeedingSamples.id] ?? 0) === 0} className="mt-2 w-full rounded bg-amber-600 px-2 py-1 font-bold text-white disabled:opacity-50">Auto-augment</button>
                 </div>
               ) : (
-                <div className="rounded-lg border border-dashed border-gray-200 p-8 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
-                  Train the model to start live webcam inference.
-                </div>
+                <div className="rounded border border-green-200 bg-green-50 p-2 text-xs font-bold text-green-700 dark:border-green-900 dark:bg-green-950/20 dark:text-green-200">Dataset balanced. Ready to train.</div>
               )}
-            </Card>
-
-            <Card title="Training History">
-              {history.length > 0 ? (
-                <ResponsiveContainer width="100%" height={260}>
-                  <LineChart data={history}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="epoch" tick={{ fontSize: 11 }} />
-                    <YAxis yAxisId="left" domain={[0, 1]} tickFormatter={value => `${Math.round(Number(value) * 100)}%`} tick={{ fontSize: 11 }} />
-                    <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} />
-                    <Tooltip />
-                    <Legend />
-                    <Line yAxisId="left" type="monotone" dataKey="accuracy" stroke="#2563eb" strokeWidth={2.5} dot={false} />
-                    <Line yAxisId="right" type="monotone" dataKey="loss" stroke="#dc2626" strokeWidth={2.5} dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400">Training epochs will appear here.</p>
-              )}
-            </Card>
+            </div>
           </div>
+        </Card>
+
+        <MetricsPanel title="Dataset and Training" metrics={[
+          { label: 'Classes', value: classes.length, format: 'number', color: 'blue' },
+          { label: 'Images', value: totalSamples, format: 'number', color: 'green' },
+          { label: 'Accuracy', value: latest?.accuracy ?? 0, format: 'percent', color: 'green' },
+          { label: 'Top Confidence', value: bestPrediction?.probability ?? 0, format: 'percent', color: 'blue' },
+        ]} />
+      </div>
 
           {confusionReport && (
             <Card title="Training Confusion Matrix" subtitle="All collected training images evaluated after the latest training run">
@@ -904,8 +887,6 @@ export default function ImageClassificationPage() {
           <InfoBox type="success" title="TensorFlow.js Browser Training">
             Frames are sampled locally from your webcam, converted into MobileNet feature vectors, trained with a TensorFlow.js classifier head, and then evaluated continuously in the browser. No backend or cloud API is used.
           </InfoBox>
-        </div>
-      </div>
     </div>
   );
 }
