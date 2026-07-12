@@ -71,6 +71,13 @@ export interface SavedDataset {
   data: Record<string, unknown>[];
   savedAt: number;
   tags?: string[];
+  description?: string;
+  target?: string;
+  algorithmRoute?: string;
+  algorithmLabel?: string;
+  taskType?: string;
+  preprocessingHistory?: string[];
+  updatedAt?: number;
 }
 
 export async function saveDataset(ds: SavedDataset): Promise<void> {

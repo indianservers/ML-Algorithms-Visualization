@@ -23,6 +23,8 @@ import { getSeoMetadata, routeToUrl, siteConfig } from '../data/seo';
 import { getLearnerNote, saveLearnerNote } from '../stores/learningStore';
 import { VisualizationSkeleton } from '../components/common/EmptyState';
 
+const ACTIVE_DATASETS_KEY = 'mlSuite.activeAlgorithmDatasets';
+
 const PageFallback = () => (
   <div className="mx-auto max-w-7xl space-y-4 p-4" aria-label="Loading algorithm page">
     <div className="h-24 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-800" />
@@ -207,6 +209,16 @@ const AlgorithmBreadcrumbs: React.FC<{ items: BreadcrumbItem[] }> = ({ items }) 
 
 const routeFamily = (route: string) => route.split('/').slice(0, 3).join('/');
 
+function hasActiveDatasetForRoute(route: string) {
+  if (typeof localStorage === 'undefined') return false;
+  try {
+    const current = JSON.parse(localStorage.getItem(ACTIVE_DATASETS_KEY) ?? '{}') as Record<string, unknown>;
+    return Boolean(current[route]);
+  } catch {
+    return false;
+  }
+}
+
 function getRelatedAlgorithms(currentItem: AlgorithmNavItem) {
   const allAlgorithms = getAllAlgorithms();
   const adjacent = getAdjacentAlgorithms(currentItem.route);
@@ -318,8 +330,12 @@ export const RootLayout: React.FC = () => {
   const [visitStats, setVisitStats] = React.useState(() => getAlgorithmVisitStats());
   const [favoriteTick, setFavoriteTick] = React.useState(0);
   const [tocItems, setTocItems] = React.useState<{ id: string; label: string }[]>([]);
+  const [hasRouteDataset, setHasRouteDataset] = React.useState(() => hasActiveDatasetForRoute(location.pathname));
   const seo = React.useMemo(() => getSeoMetadata(location.pathname), [location.pathname]);
   const currentItem = getAlgorithmByRoute(location.pathname);
+  const algorithmStatus = currentItem ? getImplementationStatus(currentItem.route) : undefined;
+  const isUtilityRoute = currentItem ? ['Lab', 'Preprocessing', 'Evaluation', 'Deployment'].includes(currentItem.category) : true;
+  const canShowGlobalTrain = Boolean(currentItem && algorithmStatus === 'Implemented' && hasRouteDataset && !isUtilityRoute);
   const categoryRoute = currentItem ? getAllAlgorithms().find(item => item.category === currentItem.category)?.route : undefined;
   const breadcrumbItems = currentItem
     ? [
@@ -399,6 +415,17 @@ export const RootLayout: React.FC = () => {
   }, [location.pathname]);
 
   React.useEffect(() => {
+    const refresh = () => setHasRouteDataset(hasActiveDatasetForRoute(location.pathname));
+    refresh();
+    window.addEventListener('ml:algorithm-dataset-loaded', refresh);
+    window.addEventListener('storage', refresh);
+    return () => {
+      window.removeEventListener('ml:algorithm-dataset-loaded', refresh);
+      window.removeEventListener('storage', refresh);
+    };
+  }, [location.pathname]);
+
+  React.useEffect(() => {
     const timer = window.setTimeout(() => {
       const headings = Array.from(document.querySelectorAll('main h2, main h3')) as HTMLElement[];
       const items = headings
@@ -453,25 +480,24 @@ export const RootLayout: React.FC = () => {
         setShortcutsOpen(true);
         return;
       }
-      if (event.key.toLowerCase() === 't') emitCommand('train');
+      if (event.key.toLowerCase() === 't' && canShowGlobalTrain) emitCommand('train');
       if (event.key.toLowerCase() === 'r') emitCommand('reset');
       if (event.key.toLowerCase() === 's') emitCommand('step');
       if (event.key.toLowerCase() === 'e') emitCommand('export');
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [canShowGlobalTrain]);
 
   const adjacent = getAdjacentAlgorithms(location.pathname);
   const isFavorite = currentItem ? isFavoriteRoute(currentItem.route) : false;
-  const algorithmStatus = currentItem ? getImplementationStatus(currentItem.route) : undefined;
   const statusTone = algorithmStatus === 'Implemented'
     ? 'border-gray-200 bg-white text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200'
     : algorithmStatus === 'Scaffold'
       ? 'border-red-200 bg-red-50 text-red-900 dark:border-red-800 dark:bg-red-950/40 dark:text-red-100'
       : 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100';
   const implementedCommandButtons = [
-    { label: 'Train', hint: 'T', event: 'train', icon: <Play size={14} /> },
+    ...(canShowGlobalTrain ? [{ label: 'Train', hint: 'T', event: 'train', icon: <Play size={14} /> }] : []),
     { label: 'Reset', hint: 'R', event: 'reset', icon: <RotateCcw size={14} /> },
     { label: 'Step', hint: 'S', event: 'step', icon: <StepForward size={14} /> },
     { label: 'Save', hint: 'Ctrl+S on page forms', event: 'save', icon: <Save size={14} /> },
@@ -529,7 +555,7 @@ export const RootLayout: React.FC = () => {
               Dataset Manager
               <Upload size={13} />
             </Link>
-            {location.pathname.startsWith('/ml/') && (
+            {canShowGlobalTrain && (
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent('ml:train'))}
                 className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700"
@@ -539,31 +565,35 @@ export const RootLayout: React.FC = () => {
                 Train
               </button>
             )}
-            <div className="inline-flex min-h-10 overflow-hidden rounded-lg border border-gray-200 bg-gray-50 p-1 text-xs font-bold dark:border-gray-700 dark:bg-gray-800" title="Choose whether pages train after data changes or wait for Train">
-              <button
-                onClick={() => setTrainingMode('manual')}
-                className={`rounded px-2.5 py-1.5 ${trainingMode === 'manual' ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-950 dark:text-white' : 'text-gray-500 dark:text-gray-300'}`}
-              >
-                Manual
-              </button>
-              <button
-                onClick={() => setTrainingMode('auto')}
-                className={`rounded px-2.5 py-1.5 ${trainingMode === 'auto' ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-950 dark:text-white' : 'text-gray-500 dark:text-gray-300'}`}
-              >
-                Auto
-              </button>
-            </div>
-            <div className="inline-flex min-h-10 overflow-hidden rounded-lg border border-gray-200 bg-gray-50 p-1 text-xs font-bold dark:border-gray-700 dark:bg-gray-800" title="Choose training animation speed">
-              {(['slow', 'normal', 'fast'] as const).map(speed => (
-                <button
-                  key={speed}
-                  onClick={() => setTrainingSpeed(speed)}
-                  className={`rounded px-2.5 py-1.5 capitalize ${trainingSpeed === speed ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-950 dark:text-white' : 'text-gray-500 dark:text-gray-300'}`}
-                >
-                  {speed}
-                </button>
-              ))}
-            </div>
+            {canShowGlobalTrain && (
+              <>
+                <div className="inline-flex min-h-10 overflow-hidden rounded-lg border border-gray-200 bg-gray-50 p-1 text-xs font-bold dark:border-gray-700 dark:bg-gray-800" title="Choose whether pages train after data changes or wait for Train">
+                  <button
+                    onClick={() => setTrainingMode('manual')}
+                    className={`rounded px-2.5 py-1.5 ${trainingMode === 'manual' ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-950 dark:text-white' : 'text-gray-500 dark:text-gray-300'}`}
+                  >
+                    Manual
+                  </button>
+                  <button
+                    onClick={() => setTrainingMode('auto')}
+                    className={`rounded px-2.5 py-1.5 ${trainingMode === 'auto' ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-950 dark:text-white' : 'text-gray-500 dark:text-gray-300'}`}
+                  >
+                    Auto
+                  </button>
+                </div>
+                <div className="inline-flex min-h-10 overflow-hidden rounded-lg border border-gray-200 bg-gray-50 p-1 text-xs font-bold dark:border-gray-700 dark:bg-gray-800" title="Choose training animation speed">
+                  {(['slow', 'normal', 'fast'] as const).map(speed => (
+                    <button
+                      key={speed}
+                      onClick={() => setTrainingSpeed(speed)}
+                      className={`rounded px-2.5 py-1.5 capitalize ${trainingSpeed === speed ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-950 dark:text-white' : 'text-gray-500 dark:text-gray-300'}`}
+                    >
+                      {speed}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
             <div className="inline-flex min-h-10 items-center gap-1 rounded-lg border border-orange-200 bg-orange-50 px-2.5 py-2 text-xs font-bold text-orange-700 dark:border-orange-900/70 dark:bg-orange-950/30 dark:text-orange-200" title={`Visited ${visitStats.visitedCount} algorithms`}>
               <Flame size={14} />
               {visitStats.streakDays}d
@@ -602,7 +632,7 @@ export const RootLayout: React.FC = () => {
             >
               <Database size={16} />
             </Link>
-            {location.pathname.startsWith('/ml/') && (
+            {canShowGlobalTrain && (
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent('ml:train'))}
                 className="grid min-h-10 min-w-10 place-items-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 sm:hidden"

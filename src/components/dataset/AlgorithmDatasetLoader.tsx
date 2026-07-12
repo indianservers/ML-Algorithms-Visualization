@@ -7,6 +7,7 @@ import {
 } from '../../data/algorithmDatasets';
 import type { LoadedAlgorithmDataset } from '../../data/algorithmDatasets';
 import { checkDatasetCompatibility } from '../../lib/preprocessing/datasetCompatibility';
+import { bestFitSummary, scoreDatasetForAlgorithms } from '../../lib/experimentWorkspace';
 import { loadDatasets, type SavedDataset } from '../../stores/experimentStore';
 import { Card } from '../common/Card';
 import { EditableDataGrid } from './EditableDataGrid';
@@ -89,6 +90,7 @@ export function AlgorithmDatasetLoader({ route, category }: { route: string; cat
     () => workingDataset ? checkDatasetCompatibility(workingDataset, route, category) : null,
     [category, route, workingDataset],
   );
+  const bestFits = useMemo(() => workingDataset ? scoreDatasetForAlgorithms(workingDataset, 3) : [], [workingDataset]);
   const [activeId, setActiveId] = useState<string | null>(activeDataset?.id ?? null);
   const [copied, setCopied] = useState(false);
   const filteredSavedDatasets = savedDatasets.filter(dataset => {
@@ -107,10 +109,17 @@ export function AlgorithmDatasetLoader({ route, category }: { route: string; cat
   }, []);
 
   useEffect(() => {
-    const active = loadActiveDataset(route);
-    setActiveDataset(active);
-    setActiveId(active?.id ?? null);
-    setEditableDataset(active ? cloneLoadedDataset(active) : (loaded ? cloneLoadedDataset(loaded) : null));
+    let mounted = true;
+    Promise.resolve().then(() => {
+      if (!mounted) return;
+      const active = loadActiveDataset(route);
+      setActiveDataset(active);
+      setActiveId(active?.id ?? null);
+      setEditableDataset(active ? cloneLoadedDataset(active) : (loaded ? cloneLoadedDataset(loaded) : null));
+    });
+    return () => {
+      mounted = false;
+    };
   }, [loaded, route]);
 
   if (!workingDataset) {
@@ -240,6 +249,17 @@ export function AlgorithmDatasetLoader({ route, category }: { route: string; cat
             </optgroup>
           </select>
           <p className="text-xs text-gray-500 dark:text-gray-400">{workingDataset.description}</p>
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-2 text-xs text-blue-800 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-200">
+            <p className="font-bold">Best fit</p>
+            <p className="mt-1">{bestFitSummary(workingDataset)}</p>
+            <div className="mt-2 flex flex-wrap gap-1">
+              {bestFits.map(item => (
+                <Link key={item.algorithm.route} to={item.algorithm.route} className="rounded bg-white/80 px-2 py-1 font-semibold text-blue-800 hover:bg-white dark:bg-gray-900/70 dark:text-blue-200">
+                  {item.algorithm.label} {Math.round(item.score)}
+                </Link>
+              ))}
+            </div>
+          </div>
           {compatibility && (
             <div className={`rounded-lg border p-3 text-xs ${
               compatibility.errors.length > 0

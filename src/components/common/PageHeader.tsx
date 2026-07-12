@@ -7,6 +7,7 @@ import { getAlgorithmByRoute, getAllAlgorithms } from '../../data/implementation
 import { getAlgorithmDatasetSuggestions } from '../../data/algorithmDatasets';
 import { LearningCompanion } from '../learning/LearningCompanion';
 import { AlgorithmDatasetLoader } from '../dataset/AlgorithmDatasetLoader';
+import { ExperimentWorkspacePanel } from '../ml/ExperimentWorkspacePanel';
 import { AlgorithmIntroduction } from '../learning/AlgorithmIntroduction';
 import { AlgorithmLearningConsole } from '../learning/AlgorithmLearningConsole';
 
@@ -105,6 +106,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
         <div className="mt-4 space-y-4">
           <LearningCompanion route={location.pathname} compact />
           <AlgorithmDatasetLoader route={location.pathname} category={category} />
+          <ExperimentWorkspacePanel route={location.pathname} category={category} compact />
           <AlgorithmLearningConsole route={location.pathname} title={title} category={category} />
         </div>
       )}

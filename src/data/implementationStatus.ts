@@ -141,6 +141,15 @@ const implementedRoutes = new Set([
   '/ml/lab/batch-inference',
   '/ml/lab/active-learning',
   '/ml/lab/performance-dashboard',
+  '/ml/lab/experiment-workspace',
+  '/ml/lab/model-zoo',
+  '/ml/lab/automl-assistant',
+  '/ml/lab/training-visualizations',
+  '/ml/lab/inference-playground',
+  '/ml/lab/model-comparison-dashboard',
+  '/ml/lab/explainability-center',
+  '/ml/lab/dataset-intelligence',
+  '/ml/lab/tuning-engine',
   '/ml/deep-learning/few-shot-learning',
 ]);
 

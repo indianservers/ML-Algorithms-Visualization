@@ -170,6 +170,15 @@ const ModelComparisonPage = lazy(() => import('../pages/algorithms/lab/ModelComp
 const BatchInferencePage = lazy(() => import('../pages/algorithms/lab/BatchInferencePage'));
 const ActiveLearningPage = lazy(() => import('../pages/algorithms/lab/ActiveLearningPage'));
 const PerformanceDashboardPage = lazy(() => import('../pages/algorithms/lab/PerformanceDashboardPage'));
+const ExperimentWorkspacePage = lazy(() => import('../pages/algorithms/lab/ExperimentWorkspacePage'));
+const ModelZooPage = lazy(() => import('../pages/algorithms/lab/ModelZooPage'));
+const AutoMLAssistantPage = lazy(() => import('../pages/algorithms/lab/AutoMLAssistantPage'));
+const InteractiveTrainingVisualizationsPage = lazy(() => import('../pages/algorithms/lab/InteractiveTrainingVisualizationsPage'));
+const InferencePlaygroundPage = lazy(() => import('../pages/algorithms/lab/InferencePlaygroundPage'));
+const ModelComparisonDashboardPage = lazy(() => import('../pages/algorithms/lab/ModelComparisonDashboardPage'));
+const ExplainabilityCenterPage = lazy(() => import('../pages/algorithms/lab/ExplainabilityCenterPage'));
+const DatasetIntelligencePage = lazy(() => import('../pages/algorithms/lab/DatasetIntelligencePage'));
+const HyperparameterTuningEnginePage = lazy(() => import('../pages/algorithms/lab/HyperparameterTuningEnginePage'));
 
 export const router = createBrowserRouter([
   {
@@ -326,6 +335,15 @@ export const router = createBrowserRouter([
       { path: 'ml/lab/batch-inference', element: <BatchInferencePage /> },
       { path: 'ml/lab/active-learning', element: <ActiveLearningPage /> },
       { path: 'ml/lab/performance-dashboard', element: <PerformanceDashboardPage /> },
+      { path: 'ml/lab/experiment-workspace', element: <ExperimentWorkspacePage /> },
+      { path: 'ml/lab/model-zoo', element: <ModelZooPage /> },
+      { path: 'ml/lab/automl-assistant', element: <AutoMLAssistantPage /> },
+      { path: 'ml/lab/training-visualizations', element: <InteractiveTrainingVisualizationsPage /> },
+      { path: 'ml/lab/inference-playground', element: <InferencePlaygroundPage /> },
+      { path: 'ml/lab/model-comparison-dashboard', element: <ModelComparisonDashboardPage /> },
+      { path: 'ml/lab/explainability-center', element: <ExplainabilityCenterPage /> },
+      { path: 'ml/lab/dataset-intelligence', element: <DatasetIntelligencePage /> },
+      { path: 'ml/lab/tuning-engine', element: <HyperparameterTuningEnginePage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },
