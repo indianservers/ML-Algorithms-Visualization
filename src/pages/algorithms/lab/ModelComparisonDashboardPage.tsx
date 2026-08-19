@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { GitCompare } from 'lucide-react';
+import { Download, GitCompare } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Radar, RadarChart, PolarAngleAxis, PolarGrid, PolarRadiusAxis, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { PageHeader } from '../../../components/common/PageHeader';
 import { Card, InfoBox } from '../../../components/common/Card';
@@ -48,12 +48,24 @@ export default function ModelComparisonDashboardPage() {
   const scoredRows = rows.map(row => ({ ...row, composite: Number((row.accuracy * 25 + row.f1 * 22 + row.fairness * 16 + row.calibration * 14 + row.robustness * 16 - row.rmse * 8 - row.latency / 500 - row.memory / 1200).toFixed(2)) }));
   const best = scoredRows.reduce((winner, row) => row.composite > winner.composite ? row : winner, scoredRows[0]);
   const radar = best ? ['accuracy', 'f1', 'fairness', 'calibration', 'robustness'].map(metric => ({ metric, value: Number(best[metric as keyof typeof best]) })) : [];
+  const exportComparison = () => {
+    const payload = { exportedAt: new Date().toISOString(), best, rows: scoredRows };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'model-comparison-dashboard.json';
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4">
       <PageHeader title="Model Comparison Dashboard" subtitle="Compare models by accuracy, F1, RMSE, latency, memory, fairness, calibration, and robustness." badge="Browser Inference" category="Lab" icon={<GitCompare size={22} />} showAlgorithmTools={false} />
       <AdvancedLabNavigator compact />
       <MLSuiteCommandPanel compact />
+      <div className="flex justify-end">
+        <button onClick={exportComparison} className="inline-flex min-h-10 items-center justify-center gap-2 rounded border border-gray-200 px-3 py-2 text-sm font-bold hover:border-blue-300 hover:bg-blue-50 dark:border-gray-700 dark:hover:bg-blue-950/30"><Download size={14} /> Export comparison</button>
+      </div>
       <div className="grid gap-4 md:grid-cols-4">
         {['accuracy', 'f1', 'fairness', 'robustness'].map(metric => <Card key={metric}><p className="text-xs font-bold uppercase text-gray-500">Best {metric}</p><p className="font-mono text-2xl font-black">{Math.max(...rows.map(row => Number(row[metric as keyof typeof row]))).toFixed(3)}</p></Card>)}
       </div>

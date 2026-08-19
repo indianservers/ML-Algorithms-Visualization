@@ -17,6 +17,7 @@ function scoreText(text: string, seed: number) {
 export default function InferencePlaygroundPage() {
   const [models, setModels] = useState<SavedModelMetadata[]>([]);
   const [selectedModelId, setSelectedModelId] = useState('');
+  const [uploadMessage, setUploadMessage] = useState('');
   const [input, setInput] = useState('age=42,income=72000,score=0.78\nage=28,income=51000,score=0.42');
   const [threshold, setThreshold] = useState(0.5);
   const [results, setResults] = useState<Array<{ row: string; label: string; confidence: number; probs: number[] }>>([]);
@@ -50,6 +51,27 @@ export default function InferencePlaygroundPage() {
     anchor.click();
     URL.revokeObjectURL(url);
   };
+  const uploadModelMetadata = async (file?: File) => {
+    if (!file) return;
+    try {
+      const parsed = JSON.parse(await file.text()) as Partial<SavedModelMetadata>;
+      const model: SavedModelMetadata = {
+        id: parsed.id ?? `uploaded_${Date.now()}`,
+        name: parsed.name ?? file.name.replace(/\.json$/i, ''),
+        algorithmId: parsed.algorithmId ?? 'uploaded-model',
+        algorithmName: parsed.algorithmName ?? 'Uploaded model',
+        savedAt: parsed.savedAt ?? Date.now(),
+        parameters: parsed.parameters ?? {},
+        metrics: parsed.metrics,
+        artifactType: parsed.artifactType ?? 'metadata',
+      };
+      setModels(current => [model, ...current.filter(item => item.id !== model.id)]);
+      setSelectedModelId(model.id);
+      setUploadMessage(`Loaded ${model.name} metadata for inference.`);
+    } catch {
+      setUploadMessage('Could not read that model metadata JSON.');
+    }
+  };
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4">
@@ -64,7 +86,8 @@ export default function InferencePlaygroundPage() {
                 <option value="">Simulated browser model</option>
                 {models.map(model => <option key={model.id} value={model.id}>{model.name} / {model.algorithmName}</option>)}
               </select>
-              <label className="flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded border border-dashed border-gray-300 px-3 py-2 font-bold dark:border-gray-700"><Upload size={14} /> Upload model metadata<input type="file" accept=".json,application/json" className="hidden" /></label>
+              <label className="flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded border border-dashed border-gray-300 px-3 py-2 font-bold dark:border-gray-700"><Upload size={14} /> Upload model metadata<input type="file" accept=".json,application/json" onChange={event => void uploadModelMetadata(event.target.files?.[0])} className="hidden" /></label>
+              {uploadMessage && <InfoBox type={uploadMessage.startsWith('Could') ? 'warning' : 'success'}>{uploadMessage}</InfoBox>}
               <InfoBox type="info">{selectedModel ? `Using ${selectedModel.algorithmName} metadata.` : 'No saved model selected; using deterministic local inference simulation.'}</InfoBox>
             </div>
           </Card>

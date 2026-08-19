@@ -1,4 +1,4 @@
-import { ShieldAlert } from 'lucide-react';
+import { Download, ShieldAlert } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { PageHeader } from '../../../components/common/PageHeader';
 import { Card, InfoBox } from '../../../components/common/Card';
@@ -26,12 +26,24 @@ export default function DatasetIntelligencePage() {
     'No likely ID column should be used as a model feature',
   ];
   const qualityScore = Math.max(0, Math.round(100 - (profile?.missing ?? 2) * 2 - (profile?.duplicates ?? 0) * 4 - leakage.length * 12 - drift.filter(item => item.psi > 0.2).length * 8));
+  const exportDatasetReport = () => {
+    const payload = { exportedAt: new Date().toISOString(), dataset: dataset?.name ?? 'demo dataset', qualityScore, profile, missingness, leakage, drift, contracts };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }));
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'dataset-intelligence-report.json';
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4">
       <PageHeader title="Dataset Intelligence Layer" subtitle="Data drift, leakage detection, imbalance checks, missingness patterns, outlier causes, and schema contracts." badge="Advanced" category="Lab" icon={<ShieldAlert size={22} />} showAlgorithmTools={false} />
       <AdvancedLabNavigator compact />
       <MLSuiteCommandPanel dataset={dataset} compact />
+      <div className="flex justify-end">
+        <button onClick={exportDatasetReport} className="inline-flex min-h-10 items-center justify-center gap-2 rounded border border-gray-200 px-3 py-2 text-sm font-bold hover:border-blue-300 hover:bg-blue-50 dark:border-gray-700 dark:hover:bg-blue-950/30"><Download size={14} /> Export intelligence report</button>
+      </div>
       <div className="grid gap-4 md:grid-cols-4">
         <Card><p className="text-xs font-bold uppercase text-gray-500">Rows</p><p className="font-mono text-2xl font-black">{profile?.rows ?? 50}</p></Card>
         <Card><p className="text-xs font-bold uppercase text-gray-500">Missing</p><p className="font-mono text-2xl font-black">{profile?.missing ?? 2}</p></Card>

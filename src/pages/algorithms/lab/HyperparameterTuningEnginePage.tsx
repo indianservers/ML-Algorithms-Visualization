@@ -29,18 +29,31 @@ export default function HyperparameterTuningEnginePage() {
     return { trial: i + 1, lr, depth, regularization, score: Math.max(0.1, Math.min(0.98, score)), stopped: earlyStopping && i > trials * 0.72 && score < 0.68 };
   }), [earlyStopping, mode, trials]);
   const best = history.reduce((winner, item) => item.score > winner.score ? item : winner, history[0]);
+  const explored = new Set(history.map(item => `${item.lr}-${item.depth}-${item.regularization}`)).size;
+  const budget = {
+    estimatedMinutes: Number((trials * (mode === 'bayesian' ? 0.42 : mode === 'random' ? 0.28 : 0.2)).toFixed(1)),
+    explored,
+    earlyStopped: history.filter(item => item.stopped).length,
+    efficiency: Number((best.score / Math.max(1, trials) * 100).toFixed(2)),
+  };
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4">
       <PageHeader title="Hyperparameter Tuning Engine" subtitle="Grid search, random search, Bayesian-style search, early stopping, and visual tuning history." badge="Advanced" category="Lab" icon={<SlidersHorizontal size={22} />} showAlgorithmTools={false} />
       <AdvancedLabNavigator compact />
       <MLSuiteCommandPanel compact />
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card><p className="text-xs font-bold uppercase text-gray-500">Budget</p><p className="font-mono text-2xl font-black">{budget.estimatedMinutes}m</p></Card>
+        <Card><p className="text-xs font-bold uppercase text-gray-500">Unique configs</p><p className="font-mono text-2xl font-black">{budget.explored}</p></Card>
+        <Card><p className="text-xs font-bold uppercase text-gray-500">Early stopped</p><p className="font-mono text-2xl font-black">{budget.earlyStopped}</p></Card>
+        <Card><p className="text-xs font-bold uppercase text-gray-500">Efficiency</p><p className="font-mono text-2xl font-black">{budget.efficiency}</p></Card>
+      </div>
       <Card title="Search Controls">
         <div className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
           <select value={mode} onChange={event => setMode(event.target.value as SearchMode)} className="min-h-10 rounded border border-gray-200 bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-900"><option value="grid">Grid search</option><option value="random">Random search</option><option value="bayesian">Bayesian-style search</option></select>
           <label className="text-sm font-bold">Trials: {trials}<input type="range" min={8} max={80} value={trials} onChange={event => setTrials(Number(event.target.value))} className="mt-2 w-full accent-blue-600" /></label>
           <label className="flex min-h-10 items-center gap-2 rounded border border-gray-200 px-3 py-2 text-sm font-bold dark:border-gray-700"><input type="checkbox" checked={earlyStopping} onChange={event => setEarlyStopping(event.target.checked)} /> Early stopping</label>
-          <button onClick={() => exportTuning({ mode, trials, earlyStopping, best, history })} className="min-h-10 rounded bg-blue-600 px-3 py-2 text-sm font-bold text-white">Export</button>
+          <button onClick={() => exportTuning({ mode, trials, earlyStopping, best, budget, history })} className="min-h-10 rounded bg-blue-600 px-3 py-2 text-sm font-bold text-white">Export</button>
         </div>
       </Card>
       <div className="grid gap-4 lg:grid-cols-2">

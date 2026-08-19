@@ -30,6 +30,10 @@ export default function InteractiveTrainingVisualizationsPage() {
     { cell: 'TN', value: Math.round(30 + progress * 22) },
   ];
   const roc = Array.from({ length: 12 }, (_, i) => ({ fpr: Number((i / 11).toFixed(2)), tpr: Number(Math.min(1, Math.pow(i / 11, 0.45 + complexity * 0.05) + progress * 0.08).toFixed(2)) }));
+  const pr = Array.from({ length: 12 }, (_, i) => {
+    const recall = Number((i / 11).toFixed(2));
+    return { recall, precision: Number(Math.max(0.35, 0.94 - recall * (0.28 + complexity * 0.025) + progress * 0.08).toFixed(2)) };
+  });
   const residuals = Array.from({ length: 40 }, (_, i) => ({ predicted: i, residual: Number((Math.sin(i / 3) * (1 - progress) + Math.cos(i / 5) * 0.2).toFixed(3)) }));
   const gradients = Array.from({ length: 18 }, (_, i) => ({ layer: `L${i + 1}`, grad: Number((Math.exp(-i / (4 + complexity)) * (1 - progress * 0.5)).toFixed(3)) }));
 
@@ -52,6 +56,7 @@ export default function InteractiveTrainingVisualizationsPage() {
         <Card title="Feature Importance"><ResponsiveContainer width="100%" height={240}><BarChart data={featureImportance}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="name" /><YAxis /><Tooltip /><Bar dataKey="value" fill="#7c3aed" /></BarChart></ResponsiveContainer></Card>
         <Card title="Confusion Matrix"><div className="grid grid-cols-2 gap-2">{confusion.map(item => <div key={item.cell} className="rounded bg-gray-50 p-6 text-center dark:bg-gray-900"><p className="text-xs font-bold text-gray-500">{item.cell}</p><p className="font-mono text-3xl font-black">{item.value}</p></div>)}</div></Card>
         <Card title="ROC Curve"><ResponsiveContainer width="100%" height={240}><LineChart data={roc}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="fpr" /><YAxis /><Tooltip /><Line dataKey="tpr" stroke="#059669" strokeWidth={2} /></LineChart></ResponsiveContainer></Card>
+        <Card title="Precision / Recall Curve"><ResponsiveContainer width="100%" height={240}><LineChart data={pr}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="recall" /><YAxis domain={[0, 1]} /><Tooltip /><Line dataKey="precision" stroke="#2563eb" strokeWidth={2} /></LineChart></ResponsiveContainer></Card>
         <Card title="Residual Plot"><ResponsiveContainer width="100%" height={240}><ScatterChart><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="predicted" /><YAxis dataKey="residual" /><Tooltip /><Scatter data={residuals} fill="#2563eb" /></ScatterChart></ResponsiveContainer></Card>
         <Card title="Gradient Flow"><ResponsiveContainer width="100%" height={220}><BarChart data={gradients}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="layer" tick={{ fontSize: 10 }} /><YAxis /><Tooltip /><Bar dataKey="grad" fill="#dc2626" /></BarChart></ResponsiveContainer></Card>
         <InfoBox type={curves.at(-1)!.valLoss > curves.at(-1)!.loss * 1.35 ? 'warning' : 'success'} title="Training Signal">Validation loss, residual spread, gradients, and boundary complexity update together so overfit/underfit patterns are visible.</InfoBox>
