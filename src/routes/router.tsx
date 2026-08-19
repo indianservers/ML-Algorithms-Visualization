@@ -8,6 +8,7 @@ const DocumentationPage = lazy(() => import('../pages/DocumentationPage'));
 const DatasetLibraryPage = lazy(() => import('../pages/DatasetLibraryPage'));
 const SitemapPage = lazy(() => import('../pages/SitemapPage'));
 const NotFoundPage = lazy(() => import('../pages/NotFoundPage'));
+const AlgorithmLessonPage = lazy(() => import('../pages/algorithms/shared/AlgorithmLessonPage'));
 
 // Supervised – Regression
 const SimpleLinearRegressionPage = lazy(() => import('../pages/algorithms/supervised/regression/SimpleLinearRegressionPage'));
@@ -190,6 +191,7 @@ export const router = createBrowserRouter([
       { path: 'dataset-library', element: <DatasetLibraryPage /> },
       { path: 'sitemap', element: <SitemapPage /> },
       { path: 'implementation-matrix', element: <ImplementationMatrixPage /> },
+      { path: 'ml/:group/:slug/lessons/:pageNumber', element: <AlgorithmLessonPage /> },
       // Supervised – Regression
       { path: 'ml/supervised/simple-linear-regression', element: <SimpleLinearRegressionPage /> },
       { path: 'ml/supervised/multiple-linear-regression', element: <MultipleLinearRegressionPage /> },

@@ -1,4 +1,5 @@
 import { getAlgorithmByRoute } from './implementationStatus';
+import { generatedAlgorithmLessons } from './generatedAlgorithmLessons';
 
 export interface QuizQuestion {
   question: string;
@@ -7,7 +8,25 @@ export interface QuizQuestion {
   explanation: string;
 }
 
+export interface LessonPage {
+  pageNumber: number;
+  title: string;
+  story: string;
+  simpleExplanation: string;
+  realtimeExample: string;
+  realtimeApplications: string[];
+  teacherTip: string;
+}
+
+export interface RouteLessonContent {
+  algorithmId: string;
+  sourceTitle: string;
+  lessons: LessonPage[];
+  quiz: QuizQuestion[];
+}
+
 export interface LearningContent {
+  lessons: LessonPage[];
   objectives: string[];
   intuition: string;
   pseudocode: string[];
@@ -104,11 +123,68 @@ function resolveHints(route: string) {
   };
 }
 
+function createFallbackLessons(label: string, category: string, formula: string, challenge: string): LessonPage[] {
+  return [
+    {
+      pageNumber: 1,
+      title: `${label}: The Big Idea`,
+      story: `Imagine you have examples from the real world and you want ${label} to turn them into a useful prediction, pattern, or decision.`,
+      simpleExplanation: `${label} is a ${category} technique. It studies data, looks for the signal that matters, and turns that signal into behavior you can inspect.`,
+      realtimeExample: `A team uses ${label} when they need a repeatable way to learn from data instead of guessing from memory.`,
+      realtimeApplications: ['teaching demos', 'model comparison', 'decision support', 'data exploration'],
+      teacherTip: 'Start by naming the input, the output, and what a bad mistake would cost.',
+    },
+    {
+      pageNumber: 2,
+      title: `${label} in Simple Words`,
+      story: `Think of the algorithm as a careful student: it observes examples, tries a rule, checks the result, and improves the rule.`,
+      simpleExplanation: `${label} becomes easier when you connect each control in the page to a visible change in the chart, metric, or prediction.`,
+      realtimeExample: `In a classroom or product lab, learners change one setting and watch how the output responds.`,
+      realtimeApplications: ['experiments', 'interactive learning', 'prototype modeling', 'quality checks'],
+      teacherTip: 'Change one thing at a time so the result has a clear cause.',
+    },
+    {
+      pageNumber: 3,
+      title: `How ${label} Thinks`,
+      story: `Now slow the process down and watch the algorithm step by step.`,
+      simpleExplanation: `Inspect the dataset, choose settings, compute the result, evaluate it, then compare against a baseline. The important learning comes from the comparison.`,
+      realtimeExample: `A production team logs data version, parameters, metrics, and notes so another person can reproduce the run.`,
+      realtimeApplications: ['experiment tracking', 'debugging', 'validation', 'reporting'],
+      teacherTip: 'Make every step explain the next step.',
+    },
+    {
+      pageNumber: 4,
+      title: `The Tiny Math of ${label}`,
+      story: `The math is the scoreboard. It tells you whether the algorithm is moving in a useful direction.`,
+      simpleExplanation: formula,
+      realtimeExample: `The formula or rule gives the computer a target to optimize, compare, group, transform, or explain.`,
+      realtimeApplications: ['loss functions', 'metrics', 'thresholds', 'model diagnostics'],
+      teacherTip: 'Point to each symbol or phrase and connect it to a real part of the data.',
+    },
+    {
+      pageNumber: 5,
+      title: `${label} in the Real World`,
+      story: `A useful model is not only accurate; it also has limits, assumptions, and situations where it should be questioned.`,
+      simpleExplanation: `${label} should be tested on fresh examples, compared with a baseline, and explained in plain language before anyone trusts it.`,
+      realtimeExample: `Before deployment, a team checks whether the model still behaves well on new data and edge cases.`,
+      realtimeApplications: ['model review', 'risk checks', 'deployment readiness', 'learner reflection'],
+      teacherTip: challenge,
+    },
+  ];
+}
+
 export function getLearningContent(route: string): LearningContent {
   const { item, formula, challenge } = resolveHints(route);
   const label = item?.label ?? 'this algorithm';
   const category = item?.category ?? 'Machine Learning';
+  const workbookContent = generatedAlgorithmLessons[route];
+  const lessons = workbookContent?.lessons?.length === 5
+    ? workbookContent.lessons
+    : createFallbackLessons(label, category, formula, challenge);
+  const workbookQuiz = workbookContent?.quiz?.length ? workbookContent.quiz : undefined;
+
   return {
+    lessons,
     objectives: [
       `Explain what ${label} is trying to optimize or reveal.`,
       `Identify the most important input data assumptions for ${category}.`,
@@ -131,7 +207,7 @@ export function getLearningContent(route: string): LearningContent {
       'Ignoring whether the dataset shape matches the algorithm assumptions.',
     ],
     challenge,
-    quiz: [
+    quiz: workbookQuiz ?? [
       {
         question: `What is the best first thing to inspect before trusting ${label}?`,
         options: ['Dataset shape and assumptions', 'Only the final metric', 'Only the prettiest chart'],

@@ -7,6 +7,7 @@ const navRoutes = [...navText.matchAll(/route:\s*'([^']+)'/g)].map(match => matc
 const routerRoutes = [...routerText.matchAll(/path:\s*'([^']+)'/g)]
   .map(match => match[1])
   .filter(route => route.startsWith('ml/'))
+  .filter(route => !route.includes(':'))
   .map(route => `/${route}`);
 
 const missingFromNav = routerRoutes.filter(route => !navRoutes.includes(route));

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { BookOpen, CheckCircle2, Code2, GraduationCap, Lightbulb, NotebookPen, Play, Trophy } from 'lucide-react';
 import { Card, InfoBox } from '../common/Card';
 import { Formula } from '../common/Formula';
@@ -55,6 +56,23 @@ function LearningCompanionBody({ route, compact = false }: LearningCompanionProp
     <div className="space-y-4">
       <div data-learning-explanation>
         <Card title="Learning Companion" subtitle="Objectives, intuition, quiz, notes, and challenge tracking for this route." icon={<GraduationCap size={15} />}>
+        <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50/70 p-3 dark:border-emerald-900/70 dark:bg-emerald-950/20">
+          <h4 className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-200">
+            <BookOpen size={13} /> Lesson Pages
+          </h4>
+          <div className="grid gap-2 sm:grid-cols-5">
+            {content.lessons.map(item => (
+              <Link
+                key={`${item.pageNumber}-${item.title}`}
+                to={`${route}/lessons/${item.pageNumber}`}
+                className="min-h-16 rounded border border-emerald-200 bg-white p-2 text-xs font-semibold text-emerald-800 hover:border-emerald-500 hover:shadow-sm dark:border-emerald-900 dark:bg-gray-950 dark:text-emerald-100"
+              >
+                <span className="block text-[11px] uppercase tracking-wide text-emerald-600 dark:text-emerald-300">Page {item.pageNumber}</span>
+                <span className="mt-1 block">{item.title}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="space-y-3">
             <div>

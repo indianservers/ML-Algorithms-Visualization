@@ -12,6 +12,10 @@ const algorithmRoutes = [...navigation.matchAll(/route:\s*'([^']+)'/g)]
   .map(match => match[1])
   .filter(route => route.startsWith('/ml/'));
 
+const lessonRoutes = algorithmRoutes.flatMap(route =>
+  [1, 2, 3, 4, 5].map(pageNumber => `${route}/lessons/${pageNumber}`)
+);
+
 const routes = [
   { path: '/', priority: '1.0', changefreq: 'weekly' },
   { path: '/documentation', priority: '0.9', changefreq: 'weekly' },
@@ -19,6 +23,7 @@ const routes = [
   { path: '/sitemap', priority: '0.7', changefreq: 'weekly' },
   { path: '/implementation-matrix', priority: '0.7', changefreq: 'weekly' },
   ...algorithmRoutes.map(path => ({ path, priority: '0.8', changefreq: 'monthly' })),
+  ...lessonRoutes.map(path => ({ path, priority: '0.6', changefreq: 'monthly' })),
 ];
 
 const escapeXml = value =>
