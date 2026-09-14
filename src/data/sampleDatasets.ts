@@ -1,3 +1,5 @@
+import { expandedSampleDatasets } from "./expandedSampleDatasets";
+
 export interface Dataset {
   id: string;
   name: string;
@@ -595,4 +597,5 @@ export const allSampleDatasets: Dataset[] = [
   medicalRiskDataset,
   fraudTransactionsDataset,
   energyDemandDataset,
+  ...expandedSampleDatasets,
 ];
