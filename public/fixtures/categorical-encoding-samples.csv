@@ -1,0 +1,13 @@
+customer_id,region,plan,channel,churn
+C001,North,Basic,Web,Yes
+C002,South,Pro,Store,No
+C003,East,Basic,Partner,No
+C004,West,Enterprise,Web,Yes
+C005,North,Pro,Store,No
+C006,South,Basic,Web,Yes
+C007,East,Enterprise,Partner,No
+C008,West,Pro,Web,Yes
+C009,North,Basic,Store,No
+C010,South,Enterprise,Partner,Yes
+C011,East,Pro,Web,No
+C012,West,Basic,Store,No

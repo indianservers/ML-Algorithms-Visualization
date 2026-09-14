@@ -13,7 +13,13 @@ type Learner = 'tree' | 'knn' | 'logistic';
 const learnerLabels: Record<Learner, string> = { tree: 'Decision Tree', knn: 'KNN', logistic: 'Logistic' };
 
 function splitRows(rows: Row[]) {
-  return { train: rows.slice(0, Math.floor(rows.length * 0.8)), test: rows.slice(Math.floor(rows.length * 0.8)) };
+  const trainEnd = Math.floor(rows.length * 0.6);
+  const validationEnd = Math.floor(rows.length * 0.8);
+  return {
+    train: rows.slice(0, trainEnd),
+    validation: rows.slice(trainEnd, validationEnd),
+    test: rows.slice(validationEnd),
+  };
 }
 
 function knnPredict(train: Row[], row: Row, k = 7) {
@@ -49,7 +55,7 @@ function confusion(actual: number[], predicted: number[]) {
 }
 
 function trainStack(rows: Row[], enabled: Record<Learner, boolean>, meta: 'weighted' | 'knn') {
-  const { train, test } = splitRows(rows);
+  const { train, validation, test } = splitRows(rows);
   const tree = buildDecisionTree(train.map(row => [row.x, row.y]), train.map(row => row.label), 4, 3, 'gini');
   const logistic = logisticTrain(train);
   const predictors: Record<Learner, (row: Row) => number> = {
@@ -59,17 +65,37 @@ function trainStack(rows: Row[], enabled: Record<Learner, boolean>, meta: 'weigh
   };
   const active = (Object.keys(enabled) as Learner[]).filter(key => enabled[key]);
   const actual = test.map(row => row.label);
+  const validationActual = validation.map(row => row.label);
   const base = active.map(key => {
     const predictions = test.map(row => predictors[key](row));
-    return { key, predictions, confusion: confusion(actual, predictions) };
+    const validationPredictions = validation.map(row => predictors[key](row));
+    return {
+      key,
+      predictions,
+      validationPredictions,
+      confusion: confusion(actual, predictions),
+      validationConfusion: confusion(validationActual, validationPredictions),
+    };
   });
-  const weights = Object.fromEntries(base.map(item => [item.key, item.confusion.accuracy])) as Record<Learner, number>;
+  const weights = Object.fromEntries(base.map(item => [item.key, Math.max(0, 2 * item.validationConfusion.accuracy - 1)])) as Record<Learner, number>;
+  const majority = train.filter(row => row.label === 1).length >= train.length / 2 ? 1 : 0;
+  const metaRows = validation.map((row, index) => ({
+    features: base.map(item => item.validationPredictions[index]),
+    label: row.label,
+  }));
   const stackPredictions = test.map((row, rowIndex) => {
-    if (meta === 'knn') return knnPredict(train, row, 9);
+    if (!base.length) return majority;
+    if (meta === 'knn') {
+      const features = base.map(item => item.predictions[rowIndex]);
+      const neighbors = [...metaRows]
+        .sort((a, b) => a.features.reduce((sum, value, i) => sum + (value - features[i]) ** 2, 0) - b.features.reduce((sum, value, i) => sum + (value - features[i]) ** 2, 0))
+        .slice(0, Math.min(9, metaRows.length));
+      return neighbors.filter(item => item.label === 1).length >= neighbors.length / 2 ? 1 : 0;
+    }
     const score = base.reduce((sum, item) => sum + weights[item.key] * (item.predictions[rowIndex] ? 1 : -1), 0);
-    return score >= 0 ? 1 : 0;
+    return score === 0 ? majority : score > 0 ? 1 : 0;
   });
-  return { train, test, actual, base, stackPredictions, stackConfusion: confusion(actual, stackPredictions), weights };
+  return { train, validation, test, actual, base, stackPredictions, stackConfusion: confusion(actual, stackPredictions), weights };
 }
 
 export default function StackingPage() {
@@ -101,7 +127,7 @@ export default function StackingPage() {
               </label>
               <label className="block font-semibold">Meta-learner
                 <select value={meta} onChange={event => setMeta(event.target.value as 'weighted' | 'knn')} className="mt-1 w-full rounded border border-gray-200 bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-900">
-                  <option value="weighted">Weighted logistic-style vote</option>
+                  <option value="weighted">Validation-weighted vote</option>
                   <option value="knn">KNN meta-learner</option>
                 </select>
               </label>
@@ -111,6 +137,7 @@ export default function StackingPage() {
           <MetricsPanel title="Stack Metrics" metrics={[
             { label: 'Stack Accuracy', value: result.stackConfusion.accuracy, format: 'percent', color: result.stackConfusion.accuracy >= 0.8 ? 'green' : result.stackConfusion.accuracy >= 0.6 ? 'blue' : 'red' },
             { label: 'Train Rows', value: result.train.length, format: 'number' },
+            { label: 'Validation Rows', value: result.validation.length, format: 'number' },
             { label: 'Test Rows', value: result.test.length, format: 'number' },
             { label: 'Base Learners', value: result.base.length, format: 'number' },
           ]} />

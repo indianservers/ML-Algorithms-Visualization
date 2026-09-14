@@ -82,14 +82,21 @@ export default function SavedExperimentsPage() {
 
   const refresh = React.useCallback(async () => {
     const experiments = await loadExperiments();
-    setItems(experiments.sort((a, b) => b.createdAt - a.createdAt));
+    const sorted = experiments.sort((a, b) => b.createdAt - a.createdAt);
+    setItems(sorted);
+    setLeftId(current => current && sorted.some(item => item.id === current) ? current : sorted[1]?.id ?? sorted[0]?.id ?? '');
+    setRightId(current => current && sorted.some(item => item.id === current) ? current : sorted[0]?.id ?? '');
   }, []);
 
   React.useEffect(() => {
     let active = true;
     loadExperiments()
       .then(experiments => {
-        if (active) setItems(experiments.sort((a, b) => b.createdAt - a.createdAt));
+        if (!active) return;
+        const sorted = experiments.sort((a, b) => b.createdAt - a.createdAt);
+        setItems(sorted);
+        setLeftId(sorted[1]?.id ?? sorted[0]?.id ?? '');
+        setRightId(sorted[0]?.id ?? '');
       })
       .catch(() => {
         if (active) setItems([]);
@@ -102,12 +109,6 @@ export default function SavedExperimentsPage() {
   const visible = items.filter(item =>
     `${item.name} ${item.algorithmName}`.toLowerCase().includes(query.toLowerCase())
   );
-
-  React.useEffect(() => {
-    if (!items.length) return;
-    setLeftId(current => current && items.some(item => item.id === current) ? current : items[1]?.id ?? items[0].id);
-    setRightId(current => current && items.some(item => item.id === current) ? current : items[0].id);
-  }, [items]);
 
   const leftExperiment = React.useMemo(() => items.find(item => item.id === leftId), [items, leftId]);
   const rightExperiment = React.useMemo(() => items.find(item => item.id === rightId), [items, rightId]);

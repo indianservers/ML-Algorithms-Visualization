@@ -38,8 +38,9 @@ function trainMF(k: number, learningRate: number, lambda: number, epochs: number
         Q[entry.item][factor] += learningRate * (error * oldP[factor] - lambda * Q[entry.item][factor]);
       }
     });
-    const reconstruction = P.map(row => Q.map(itemFactors => Math.max(1, Math.min(5, dot(row, itemFactors)))));
-    const mse = known.reduce((sum, entry) => sum + (entry.rating - reconstruction[entry.user][entry.item]) ** 2, 0) / known.length;
+    const rawReconstruction = P.map(row => Q.map(itemFactors => dot(row, itemFactors)));
+    const reconstruction = rawReconstruction.map(row => row.map(value => Math.max(1, Math.min(5, value))));
+    const mse = known.reduce((sum, entry) => sum + (entry.rating - rawReconstruction[entry.user][entry.item]) ** 2, 0) / known.length;
     snapshots.push({ epoch, rmse: Math.sqrt(mse), P: P.map(row => [...row]), Q: Q.map(row => [...row]), reconstruction });
   }
   return snapshots;

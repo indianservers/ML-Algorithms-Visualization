@@ -21,6 +21,12 @@ export function knnPredict(
   k: number,
   metric: DistanceMetric = 'euclidean'
 ): KNNPrediction {
+  if (!trainX.length || !trainX[0]?.length) throw new Error('KNN requires a non-empty training matrix');
+  if (trainX.length !== trainY.length) throw new Error('KNN requires one label per training sample');
+  const width = trainX[0].length;
+  if (!trainX.every(row => row.length === width && row.every(Number.isFinite)) || queryPoint.length !== width || !queryPoint.every(Number.isFinite)) throw new Error(`KNN requires rectangular finite inputs with ${width} features`);
+  if (!trainY.every(Number.isInteger)) throw new Error('KNN requires integer class labels');
+  if (!Number.isInteger(k) || k < 1 || k > trainX.length) throw new Error(`k must be an integer between 1 and ${trainX.length}`);
   const distances = trainX.map((x, i) => ({
     index: i,
     distance: getDistance(x, queryPoint, metric),

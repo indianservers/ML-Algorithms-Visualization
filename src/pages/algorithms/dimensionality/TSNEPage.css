@@ -1,0 +1,556 @@
+.ts-page {
+  min-height: 941px;
+  overflow: hidden;
+  background: radial-gradient(circle at 58% 0, #0c172c, #040b18 62%);
+  color: #f3f6fb;
+  font:
+    12px Inter,
+    system-ui,
+    sans-serif;
+}
+.ts-page * {
+  box-sizing: border-box;
+}
+.ts-page button,
+.ts-page input,
+.ts-page select {
+  font: inherit;
+}
+.ts-page button {
+  cursor: pointer;
+}
+.ts-side {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 216px;
+  padding: 17px 12px;
+  background: #071326;
+  border-right: 1px solid #1f3048;
+}
+.ts-side > a {
+  display: flex;
+  gap: 10px;
+  margin: 0 7px 28px;
+  color: white;
+  text-decoration: none;
+  font-size: 28px;
+}
+.ts-side > a b {
+  font-size: 18px;
+}
+.ts-side small {
+  display: block;
+  color: #94a1b3;
+  font-size: 9px;
+}
+.ts-side h4 {
+  margin: 20px 8px 8px;
+  color: #8794a7;
+  font-size: 10px;
+}
+.ts-side > button {
+  display: block;
+  width: 100%;
+  height: 38px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #b4bfce;
+  text-align: left;
+  font-size: 13px;
+}
+.ts-side > button.active {
+  background: linear-gradient(90deg, #33206c, #23205c);
+  color: white;
+}
+.ts-side footer {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 18px;
+  padding: 12px;
+  border: 1px solid #263850;
+  border-radius: 6px;
+}
+.ts-side em {
+  float: right;
+  border-radius: 5px;
+  background: #322184;
+  color: #7f8fff;
+}
+.ts-head {
+  position: absolute;
+  left: 246px;
+  right: 20px;
+  top: 0;
+  height: 71px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border-bottom: 1px solid #17283e;
+}
+.ts-head h1 {
+  flex-shrink: 0;
+  font-size: 32px;
+}
+.ts-head p {
+  font-size: 14px;
+}
+.ts-head a {
+  color: #4c8fff;
+}
+.ts-head > div {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+.ts-page button {
+  border: 1px solid #2a3b53;
+  border-radius: 5px;
+  background: #071326;
+  color: #e9eef6;
+}
+.ts-head button {
+  height: 35px;
+  padding: 0 13px;
+}
+.ts-head svg {
+  width: 15px;
+  vertical-align: middle;
+}
+.ts-page > main {
+  position: absolute;
+  left: 237px;
+  right: 406px;
+  top: 71px;
+}
+.ts-page > main > nav {
+  height: 44px;
+  display: flex;
+}
+.ts-page > main > nav button {
+  width: 90px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #abb6c6;
+}
+.ts-page > main > nav button.active {
+  border-color: #4e82f8;
+  color: #f4f7fb;
+}
+.ts-work {
+  height: 568px;
+  border: 1px solid #263850;
+  border-radius: 8px;
+  background: #071427;
+}
+.ts-work > header {
+  height: 50px;
+  padding: 12px 17px;
+}
+.ts-work > header h2 {
+  display: inline;
+  margin: 0;
+  font-size: 15px;
+}
+.ts-work > header button {
+  float: right;
+  height: 32px;
+  margin-left: 9px;
+  padding: 0 12px;
+}
+.ts-work .primary {
+  border-color: #3b6fe7;
+}
+.ts-flow {
+  height: 392px;
+  display: grid;
+  grid-template-columns: 1fr 120px 1.05fr;
+  align-items: center;
+  padding: 0 17px;
+}
+.ts-flow > article {
+  position: relative;
+  height: 367px;
+  border: 1px solid #20334b;
+  border-radius: 10px;
+}
+.ts-flow h3 {
+  margin: 14px 12px 4px;
+}
+.ts-flow h3 > i {
+  display: inline-grid;
+  width: 23px;
+  height: 23px;
+  margin-right: 8px;
+  place-items: center;
+  border-radius: 50%;
+  background: #135967;
+  color: #35dae0;
+  font-style: normal;
+}
+.ts-flow p {
+  margin: 0 42px;
+  color: #aeb9c7;
+}
+.ts-cube,
+.ts-map {
+  position: absolute;
+  inset: 65px 18px 45px;
+}
+.ts-cube {
+  border: 1px solid #354762;
+  transform: perspective(500px) rotateY(-8deg);
+  background-image:
+    linear-gradient(#17283d 1px, transparent 1px),
+    linear-gradient(90deg, #17283d 1px, transparent 1px);
+  background-size: 25% 25%;
+}
+.ts-cube i,
+.ts-map i {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+}
+.ts-flow article > small {
+  position: absolute;
+  left: 18px;
+  bottom: 12px;
+  color: #b5bfcc;
+}
+.ts-flow small b {
+  color: #19d2c5;
+}
+.ts-machine {
+  height: 55px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #1a7a83;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: bold;
+}
+.ts-map {
+  inset: 60px 10px 10px;
+}
+.ts-work > footer {
+  height: 112px;
+  margin: 0 28px;
+  border: 1px solid #263a55;
+  border-radius: 8px;
+}
+.ts-work > footer > div {
+  height: 44px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+.ts-work > footer > div b {
+  padding: 14px 28px;
+  background: #12264c;
+}
+.ts-work > footer > p {
+  position: relative;
+  margin: 0 16px;
+  height: 54px;
+  padding-top: 12px;
+  color: #acb8c8;
+}
+.ts-work > footer > p:after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 40px;
+  bottom: 8px;
+  height: 5px;
+  background: #13243a;
+}
+.ts-work > footer p i {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  bottom: 8px;
+  height: 5px;
+  background: linear-gradient(90deg, #3568f1, #20d7d0);
+}
+.ts-work > footer strong {
+  float: right;
+}
+.ts-bottom {
+  height: 216px;
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: 1fr 1.03fr 0.68fr 1.55fr;
+  gap: 9px;
+}
+.ts-bottom > article {
+  padding: 12px 15px;
+  border: 1px solid #263850;
+  border-radius: 7px;
+  background: #071427;
+}
+.ts-bottom h3 {
+  margin: 0 0 13px;
+}
+.ts-bottom select {
+  width: 100%;
+  height: 33px;
+  background: #071426;
+  color: white;
+  border: 1px solid #263a55;
+}
+.ts-bottom p {
+  color: #aeb9c7;
+}
+.ts-bottom p b {
+  float: right;
+  display: block;
+  font-size: 18px;
+}
+.ts-bottom button {
+  width: 100%;
+  height: 36px;
+}
+.ts-bottom input {
+  display: none;
+}
+.ts-bottom small {
+  display: block;
+  text-align: center;
+  color: #7f8da0;
+}
+.ts-bottom article:nth-child(3) span {
+  display: inline-block;
+  width: 50%;
+  margin: 7px 0;
+}
+.ts-bottom span i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.ts-controls {
+  position: fixed;
+  right: 20px;
+  top: 115px;
+  width: 367px;
+  height: 806px;
+  border: 1px solid #263850;
+  border-radius: 8px;
+  background: #071427;
+}
+.ts-controls > h2 {
+  height: 50px;
+  margin: 0;
+  padding: 15px 18px;
+  border-bottom: 1px solid #1c2f47;
+  font-size: 14px;
+}
+.ts-controls h2 button {
+  float: right;
+  border: 0;
+  background: transparent;
+}
+.ts-controls > label {
+  display: block;
+  height: 70px;
+  padding: 14px 18px;
+  color: #b7c1ce;
+}
+.ts-controls label > input[type="number"] {
+  float: right;
+  width: 54px;
+  height: 29px;
+  border: 1px solid #263a55;
+  background: #091528;
+  color: white;
+  text-align: center;
+}
+.ts-controls label > input[type="range"] {
+  width: 100%;
+  margin-top: 14px;
+  accent-color: #4175ed;
+}
+.ts-controls label select {
+  float: right;
+  width: 180px;
+  height: 31px;
+  border: 1px solid #263a55;
+  background: #091528;
+  color: white;
+}
+.ts-controls .advanced {
+  width: calc(100% - 36px);
+  height: 38px;
+  margin: 0 18px;
+  text-align: left;
+  padding: 0 14px;
+}
+.ts-controls > section {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 270px;
+  padding: 16px;
+  border-top: 1px solid #263850;
+}
+.ts-controls section h3 b {
+  float: right;
+  font-size: 16px;
+}
+.ts-controls section svg {
+  width: 100%;
+  height: 190px;
+  border-left: 1px solid #637086;
+  border-bottom: 1px solid #637086;
+}
+.ts-controls polyline {
+  fill: none;
+  stroke: #22d2ce;
+  stroke-width: 2;
+}
+.ts-controls section p {
+  text-align: center;
+  color: #98a5b6;
+}
+.ts-toast {
+  position: fixed;
+  z-index: 9;
+  right: 25px;
+  bottom: 25px;
+  padding: 10px 16px;
+  background: #183764 !important;
+}
+@media (max-width: 1100px) {
+  .ts-page {
+    overflow: auto;
+  }
+  .ts-side {
+    width: 185px;
+  }
+  .ts-head {
+    left: 205px;
+  }
+  .ts-page > main {
+    position: relative;
+    left: 200px;
+    right: auto;
+    width: calc(100% - 212px);
+  }
+  .ts-controls {
+    position: relative;
+    left: 200px;
+    right: auto;
+    top: auto;
+    width: calc(100% - 212px);
+    margin: 12px 0 25px;
+  }
+  .ts-flow {
+    grid-template-columns: 1fr 80px 1fr;
+  }
+  .ts-bottom {
+    grid-template-columns: 1fr 1fr;
+    height: auto;
+  }
+  .ts-bottom article {
+    min-height: 190px;
+  }
+}
+@media (max-width: 600px) {
+  .ts-side {
+    position: relative;
+    width: 100%;
+    height: 70px;
+  }
+  .ts-side > a {
+    margin: 0;
+  }
+  .ts-side > button,
+  .ts-side h4,
+  .ts-side footer {
+    display: none;
+  }
+  .ts-head {
+    position: relative;
+    left: 0;
+    height: 145px;
+    padding: 10px;
+    display: block;
+  }
+  .ts-head h1 {
+    margin: 5px 0;
+  }
+  .ts-head p {
+    line-height: 20px;
+  }
+  .ts-head > div {
+    position: absolute;
+    left: 10px;
+    bottom: 8px;
+  }
+  .ts-page > main,
+  .ts-controls {
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0 8px;
+  }
+  .ts-page > main > nav {
+    height: auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .ts-page > main > nav button {
+    width: auto;
+    height: 36px;
+  }
+  .ts-work {
+    height: auto;
+  }
+  .ts-work > header {
+    height: 90px;
+  }
+  .ts-work > header button {
+    margin-top: 12px;
+  }
+  .ts-flow {
+    height: auto;
+    display: block;
+  }
+  .ts-flow > article {
+    height: 370px;
+    margin: 8px 0;
+  }
+  .ts-machine {
+    width: 90px;
+    margin: auto;
+  }
+  .ts-work > footer {
+    height: 145px;
+    margin: 10px;
+  }
+  .ts-work > footer > div {
+    height: 75px;
+    flex-wrap: wrap;
+  }
+  .ts-work > footer > div b {
+    padding: 7px;
+  }
+  .ts-bottom {
+    display: block;
+  }
+  .ts-bottom article {
+    margin: 8px 0;
+  }
+  .ts-controls {
+    height: 806px;
+  }
+  .ts-toast {
+    bottom: 10px;
+  }
+}

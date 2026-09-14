@@ -1,0 +1,29 @@
+@media (min-width: 1201px) {
+  .fs-page {
+    grid-template-columns: 206px 405px 533px minmax(0, 1fr);
+    grid-template-rows: 72px 49px 83px 578px 196px;
+  }
+
+  .fs-main {
+    grid-template-columns: 390px minmax(0, 1fr);
+    padding-right: 10px;
+  }
+
+  .fs-controls {
+    height: 774px;
+    padding-left: 0;
+  }
+}
+
+.ranking > label {
+  position: relative;
+}
+
+.ranking > label input {
+  position: absolute;
+}
+
+.ranking > label u {
+  grid-column: 5;
+  grid-row: 1;
+}

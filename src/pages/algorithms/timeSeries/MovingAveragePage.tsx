@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Activity } from 'lucide-react';
 import { Line, LineChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { PageHeader } from '../../../components/common/PageHeader';
 import { Card, InfoBox } from '../../../components/common/Card';
 import { timeSeriesSalesDataset } from '../../../data/sampleDatasets';
+import MovingAverageApprovedPage from './MovingAverageApprovedPage';
 
-export default function MovingAveragePage() {
+function OriginalMovingAveragePage() {
   const [windowSize, setWindowSize] = useState(3);
   const rows = timeSeriesSalesDataset.data as { month: string; sales: number }[];
   const chart = useMemo(() => rows.map((row, i) => {
@@ -36,4 +38,11 @@ export default function MovingAveragePage() {
       </div>
     </div>
   );
+}
+
+export default function MovingAveragePage() {
+  const location = useLocation();
+  return new URLSearchParams(location.search).get('advanced') === '1'
+    ? <OriginalMovingAveragePage />
+    : <MovingAverageApprovedPage />;
 }

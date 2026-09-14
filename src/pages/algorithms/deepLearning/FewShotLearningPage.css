@@ -1,0 +1,474 @@
+.few-page {
+  width: 100%;
+  height: 100vh;
+  overflow: auto;
+  background: #061124;
+  color: #eaf1ff;
+  font:
+    11px Inter,
+    system-ui;
+  padding: 111px 317px 52px 228px;
+}
+.few-page * {
+  box-sizing: border-box;
+}
+.few-page button,
+.few-page input,
+.few-page select {
+  color: inherit;
+  background: #0b192f;
+  border: 1px solid #283b59;
+  border-radius: 5px;
+}
+.few-page button {
+  cursor: pointer;
+}
+.few-page h3,
+.few-page h4,
+.few-page p {
+  margin: 0 0 7px;
+}
+.few-page .panel {
+  background: linear-gradient(145deg, #08162b, #091526);
+  border: 1px solid #263a58;
+  border-radius: 7px;
+}
+.few-side {
+  position: fixed;
+  z-index: 5;
+  inset: 0 auto 0 0;
+  width: 210px;
+  background: #071529;
+  border-right: 1px solid #213553;
+  padding: 16px 13px;
+  display: flex;
+  flex-direction: column;
+}
+.few-side a {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  color: white;
+  text-decoration: none;
+  font-size: 17px;
+}
+.few-side a small {
+  grid-column: 2;
+  font-size: 10px;
+  color: #92a0b8;
+}
+.few-side h4 {
+  font-size: 8px;
+  color: #71809a;
+  margin-top: 17px;
+}
+.few-side button {
+  height: 31px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+.few-side button.active {
+  background: #132b5d;
+  color: #5591ff;
+}
+.few-side > p {
+  margin-top: auto;
+  border: 1px solid #273a58;
+  padding: 10px;
+}
+.few-side > p small {
+  display: block;
+  color: #62d391;
+}
+.few-head {
+  position: fixed;
+  z-index: 4;
+  left: 210px;
+  right: 0;
+  top: 0;
+  height: 111px;
+  background: #050f20;
+  border-bottom: 1px solid #243752;
+  padding: 17px;
+}
+.few-head h3 {
+  font-size: 13px;
+}
+.few-head nav {
+  position: absolute;
+  bottom: 0;
+  left: 18px;
+  display: flex;
+}
+.few-head nav button {
+  width: 83px;
+  height: 42px;
+  border: 0;
+  background: transparent;
+}
+.few-head nav button.active {
+  color: #478cff;
+  border-bottom: 2px solid #4382ff;
+}
+.few-head > div {
+  position: absolute;
+  right: 17px;
+  top: 16px;
+  display: flex;
+  gap: 9px;
+}
+.few-head > div button {
+  height: 33px;
+  padding: 0 11px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.few-head > div svg {
+  width: 14px;
+}
+.few-head > div b {
+  border-radius: 50%;
+  background: #6b3bd3;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+}
+.few-page main {
+  min-width: 960px;
+  display: grid;
+  grid-template-columns: 1fr 275px;
+  gap: 12px;
+}
+.few-title {
+  grid-column: 1/-1;
+  height: 84px;
+  padding: 14px 15px;
+}
+.few-title h1 {
+  font-size: 24px;
+  margin: 0;
+}
+.few-title p {
+  color: #aeb9cb;
+}
+.few-title label {
+  position: absolute;
+  right: 450px;
+  top: 128px;
+}
+.few-title select {
+  height: 36px;
+  width: 220px;
+  margin-left: 10px;
+}
+.few-title > button {
+  position: absolute;
+  right: 335px;
+  top: 147px;
+  height: 37px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.few-title svg {
+  width: 14px;
+}
+.few-plot {
+  grid-column: 1/-1;
+  height: 450px;
+  padding: 14px;
+  position: relative;
+}
+.few-plot header {
+  display: flex;
+  justify-content: space-between;
+}
+.few-plot header span {
+  margin-right: 250px;
+}
+.few-plot header i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  background: #29c8d8;
+  border-radius: 50%;
+}
+.few-plot svg {
+  width: calc(100% - 180px);
+  height: 395px;
+}
+.few-plot circle {
+  opacity: 0.85;
+}
+.few-plot .query {
+  fill: #07152b;
+  stroke: #dfe8ff;
+  stroke-width: 2;
+}
+.few-plot .boundary {
+  stroke: #8c9aae;
+  stroke-dasharray: 5 5;
+  opacity: 0.7;
+}
+.few-plot .distance {
+  stroke-dasharray: 6 5;
+  stroke-width: 2;
+}
+.few-plot > aside {
+  position: absolute;
+  right: 15px;
+  top: 47px;
+  width: 170px;
+  border: 1px solid #263a58;
+  padding: 13px;
+}
+.few-plot > aside p {
+  line-height: 1.7;
+}
+.plot-tools {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+}
+.plot-tools button {
+  width: 39px;
+  height: 35px;
+}
+.few-results {
+  height: 203px;
+  padding: 14px;
+}
+.few-results > div {
+  display: grid;
+  grid-template-columns: 0.7fr 1.1fr 1.1fr 1.7fr 1.3fr;
+  gap: 12px;
+}
+.few-results article {
+  height: 145px;
+  border: 1px solid #263a58;
+  border-radius: 6px;
+  padding: 11px;
+  display: grid;
+}
+.few-results article small {
+  color: #a0aec3;
+}
+.few-results article > b,
+.few-results article > strong {
+  font-size: 16px;
+}
+.few-results .photo {
+  font-size: 50px;
+  background: #162238;
+  border-radius: 5px;
+  text-align: center;
+}
+.few-results article p {
+  display: flex;
+  justify-content: space-between;
+}
+.few-results article p meter {
+  width: 80px;
+}
+.few-prototypes {
+  height: 203px;
+  padding: 14px;
+}
+.few-prototypes > div {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 9px;
+}
+.few-prototypes article {
+  height: 145px;
+  border: 1px solid;
+  border-radius: 6px;
+  padding: 8px;
+  display: grid;
+  text-align: center;
+}
+.few-prototypes article span {
+  font-size: 48px;
+  background: #152239;
+}
+.few-controls {
+  position: fixed;
+  right: 14px;
+  top: 111px;
+  bottom: 52px;
+  width: 290px;
+}
+.few-controls section {
+  height: 100%;
+  padding: 14px;
+}
+.few-controls header {
+  display: flex;
+  justify-content: space-between;
+}
+.few-controls header button {
+  border: 0;
+  color: #508cff;
+}
+.few-controls section > label {
+  display: grid;
+  grid-template-columns: 1fr 35px;
+  margin: 14px 0;
+}
+.few-controls section > label input[type="range"] {
+  grid-column: 1/-1;
+  width: 100%;
+}
+.few-controls section > div {
+  display: flex;
+}
+.few-controls section > div button {
+  width: 50%;
+  height: 35px;
+}
+.few-controls .active {
+  background: #2268dc;
+}
+.few-controls select {
+  grid-column: 1/-1;
+  height: 34px;
+  margin-top: 8px;
+}
+.few-controls .toggle {
+  display: flex;
+  justify-content: space-between;
+}
+.few-controls .toggle input {
+  accent-color: #347dff;
+}
+.few-controls .episode {
+  width: 100%;
+  height: 35px;
+}
+.few-controls .tip {
+  border: 1px solid #375889;
+  padding: 12px;
+  margin-top: 13px;
+  line-height: 1.5;
+}
+.few-page > footer {
+  position: fixed;
+  z-index: 4;
+  left: 210px;
+  right: 0;
+  bottom: 0;
+  height: 47px;
+  background: #071426;
+  border-top: 1px solid #243752;
+  padding: 11px 18px;
+}
+.few-page > footer label,
+.few-page > footer button {
+  float: right;
+  margin-left: 15px;
+}
+.few-page > footer button {
+  height: 33px;
+  margin-top: -5px;
+  background: #246ee2;
+}
+.few-page > footer em {
+  display: none;
+}
+.few-advanced {
+  background: #071326;
+  min-height: 100vh;
+}
+.few-advanced > button {
+  position: fixed;
+  z-index: 30;
+  right: 18px;
+  top: 8px;
+  padding: 8px 14px;
+}
+.few-advanced > div {
+  padding-top: 50px;
+}
+.few-page select option {
+  background: #081426;
+}
+@media (max-width: 1200px) {
+  .few-page {
+    padding-right: 18px;
+  }
+  .few-controls {
+    position: static;
+    width: auto;
+    margin-top: 10px;
+  }
+  .few-page main {
+    min-width: 0;
+  }
+  .few-title label,
+  .few-title > button {
+    position: static;
+    float: right;
+    margin-top: -34px;
+  }
+  .few-plot header span {
+    margin-right: 0;
+  }
+  .few-prototypes {
+    height: auto;
+  }
+  .few-page > footer {
+    left: 210px;
+  }
+}
+@media (max-width: 700px) {
+  .few-page {
+    padding: 111px 10px 55px;
+  }
+  .few-side {
+    display: none;
+  }
+  .few-head {
+    left: 0;
+  }
+  .few-head > div {
+    display: none;
+  }
+  .few-page main {
+    display: block;
+  }
+  .few-page main > section {
+    margin-bottom: 10px;
+  }
+  .few-title {
+    height: auto;
+  }
+  .few-title label,
+  .few-title > button {
+    float: none;
+    display: block;
+    margin: 7px 0;
+  }
+  .few-plot {
+    overflow: auto;
+  }
+  .few-plot svg {
+    min-width: 700px;
+  }
+  .few-results,
+  .few-prototypes {
+    height: auto;
+  }
+  .few-results > div,
+  .few-prototypes > div {
+    grid-template-columns: 1fr;
+  }
+  .few-page > footer {
+    left: 0;
+  }
+  .few-page > footer span {
+    display: none;
+  }
+}

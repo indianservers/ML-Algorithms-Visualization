@@ -1,610 +1,1327 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Cell, LineChart, Line, Legend, ReferenceLine,
-} from 'recharts';
-import { GitBranch } from 'lucide-react';
-import { PageHeader } from '../../../components/common/PageHeader';
-import { Card } from '../../../components/common/Card';
-import { Tabs } from '../../../components/common/Tabs';
-import { MetricsPanel } from '../../../components/ml/MetricsPanel';
-import { HyperparameterPanel, HyperparamDef } from '../../../components/ml/HyperparameterPanel';
-import { LearningPanel } from '../../../components/ml/LearningPanel';
+  BarChart3,
+  BookOpen,
+  BrainCircuit,
+  ChevronDown,
+  ChevronRight,
+  CircleHelp,
+  Database,
+  FileText,
+  GitBranch,
+  Lightbulb,
+  Moon,
+  Network,
+  Play,
+  Plus,
+  RefreshCw,
+  Sparkles,
+  Sun,
+  Upload,
+} from "lucide-react";
+import { irisDataset } from "../../../../data/sampleDatasets";
 import {
-  buildDecisionTree, predictTree, treeDepth, TreeNode, SplitCriterion,
-} from '../../../../lib/algorithms/classification/decisionTree';
-import { irisDataset } from '../../../../data/sampleDatasets';
+  buildDecisionTree,
+  predictTree,
+  treeDepth,
+  type SplitCriterion,
+  type TreeNode,
+} from "../../../../lib/algorithms/classification/decisionTree";
+import "./DecisionTreeClassificationPage.css";
 
-const CLASS_COLORS = ['#3b82f6', '#ef4444', '#10b981'];
-const CLASS_NAMES = ['setosa', 'versicolor', 'virginica'];
-const FEATURE_NAMES = ['sepal_length', 'sepal_width', 'petal_length', 'petal_width'];
-const FEATURE_LABELS = ['Sepal Len', 'Sepal Wid', 'Petal Len', 'Petal Wid'];
-
-// ─── Tree SVG renderer ───────────────────────────────────────────────────────
-
-interface NodeRenderInfo {
-  node: PrunedTreeNode;
-  x: number;
-  y: number;
-  width: number;
-  depth: number;
-  path: boolean; // is this node on the prediction path?
+type Row = { features: number[]; label: number };
+type DatasetId = "iris" | "wine" | "seeds" | "synthetic" | "imported";
+type TabId =
+  | "learn"
+  | "visualize"
+  | "dataset"
+  | "train"
+  | "metrics"
+  | "compare"
+  | "explain";
+type DisplayNode = TreeNode & { pruned?: boolean };
+const COLORS = ["#85dd54", "#32ced1", "#a85ce4"];
+const FILLS = ["#315d27", "#17636c", "#50336f"];
+const NAMES = ["setosa", "versicolor", "virginica"];
+const FEATURES = [
+  "sepal length (cm)",
+  "sepal width (cm)",
+  "petal length (cm)",
+  "petal width (cm)",
+];
+const SHORT = ["sepal length", "sepal width", "petal length", "petal width"];
+const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
+  { id: "learn", label: "Learn", icon: <BookOpen /> },
+  { id: "visualize", label: "Visualize", icon: <Sparkles /> },
+  { id: "dataset", label: "Dataset", icon: <Database /> },
+  { id: "train", label: "Train", icon: <Play /> },
+  { id: "metrics", label: "Metrics", icon: <BarChart3 /> },
+  { id: "compare", label: "Compare", icon: <Network /> },
+  { id: "explain", label: "Explain", icon: <FileText /> },
+];
+const seedRows = () =>
+  (irisDataset.data as Record<string, unknown>[]).map((item) => ({
+    features: [
+      "sepal_length",
+      "sepal_width",
+      "petal_length",
+      "petal_width",
+    ].map((key) => Number(item[key])),
+    label:
+      item.species === "setosa" ? 0 : item.species === "versicolor" ? 1 : 2,
+  }));
+function balancedIris(): Row[] {
+  const seeds = seedRows();
+  return [0, 1, 2].flatMap((label) => {
+    const group = seeds.filter((row) => row.label === label);
+    return Array.from({ length: 50 }, (_, index) => ({
+      features: group[index % group.length].features.map(
+        (value, feature) =>
+          value +
+          Math.sin((index + 2) * (feature + 1) * 1.31) *
+            [0.35, 0.25, 0.32, 0.22][feature] +
+          (index % 5 === 0 && label === 1
+            ? [0, 0, 0.72, 0.32][feature]
+            : index % 5 === 0 && label === 2
+              ? [0, 0, -0.72, -0.32][feature]
+              : 0),
+      ),
+      label,
+    }));
+  });
 }
-
-type PrunedTreeNode = TreeNode & { pruned?: boolean };
-
-function collectNodes(
-  node: PrunedTreeNode,
-  x: number,
-  y: number,
-  width: number,
-  depth: number,
-  pathNodes: Set<TreeNode>,
-  result: NodeRenderInfo[],
-): void {
-  result.push({ node, x, y, width, depth, path: pathNodes.has(node) });
-  if (node.left) collectNodes(node.left, x - width / 4, y + 80, width / 2, depth + 1, pathNodes, result);
-  if (node.right) collectNodes(node.right, x + width / 4, y + 80, width / 2, depth + 1, pathNodes, result);
+const BASE = balancedIris();
+function transform(source: Row[], kind: DatasetId): Row[] {
+  return source.map((row, index) => {
+    if (kind === "wine")
+      return {
+        features: [
+          row.features[0] * 2 + 1,
+          row.features[1] * 0.6,
+          row.features[2] * 0.45,
+          row.features[3] * 30 + 10,
+        ],
+        label: row.label,
+      };
+    if (kind === "seeds")
+      return {
+        features: [
+          row.features[0] * 2.4,
+          row.features[1] * 4,
+          row.features[2] * 0.95 + 3,
+          row.features[3] * 2.7,
+        ],
+        label: row.label,
+      };
+    if (kind === "synthetic") {
+      const shift = row.label * 1.25;
+      return {
+        features: row.features.map(
+          (value, feature) =>
+            value +
+            shift * (feature % 2 ? 0.45 : 1) +
+            Math.cos(index * (feature + 1)) * 0.08,
+        ),
+        label: row.label,
+      };
+    }
+    return { features: [...row.features], label: row.label };
+  });
 }
-
-function collectEdges(
-  node: PrunedTreeNode,
-  x: number,
-  y: number,
-  width: number,
-  pathNodes: Set<TreeNode>,
-  result: { x1: number; y1: number; x2: number; y2: number; onPath: boolean }[],
-): void {
-  if (node.left) {
-    const cx = x - width / 4, cy = y + 80;
-    result.push({ x1: x, y1: y + 28, x2: cx, y2: cy - 28, onPath: pathNodes.has(node.left) && pathNodes.has(node) });
-    collectEdges(node.left, cx, cy, width / 2, pathNodes, result);
-  }
-  if (node.right) {
-    const cx = x + width / 4, cy = y + 80;
-    result.push({ x1: x, y1: y + 28, x2: cx, y2: cy - 28, onPath: pathNodes.has(node.right) && pathNodes.has(node) });
-    collectEdges(node.right, cx, cy, width / 2, pathNodes, result);
-  }
-}
-
-function TreeDiagram({ root, pathNodes }: { root: PrunedTreeNode; pathNodes: Set<TreeNode> }) {
-  const nodes: NodeRenderInfo[] = [];
-  const edges: { x1: number; y1: number; x2: number; y2: number; onPath: boolean }[] = [];
-  const depth = treeDepth(root);
-  const svgWidth = Math.min(900, Math.max(400, 100 * Math.pow(2, depth)));
-  const svgHeight = (depth + 1) * 90 + 40;
-
-  collectNodes(root, svgWidth / 2, 50, svgWidth, 0, pathNodes, nodes);
-  collectEdges(root, svgWidth / 2, 50, svgWidth, pathNodes, edges);
-
-  return (
-    <div className="overflow-x-auto">
-      <svg width={svgWidth} height={svgHeight} className="text-xs">
-        {/* Edges */}
-        {edges.map((e, i) => (
-          <line
-            key={i} x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2}
-            stroke={e.onPath ? '#f59e0b' : '#9ca3af'}
-            strokeWidth={e.onPath ? 2.5 : 1.5}
-            strokeDasharray={e.onPath ? undefined : '4 2'}
-          />
-        ))}
-        {/* Nodes */}
-        {nodes.map((n, i) => {
-          const isLeaf = n.node.classLabel !== undefined;
-          const boxW = 90, boxH = isLeaf ? 44 : 58;
-          const classLabel = n.node.classLabel ?? -1;
-          const featureIdx = n.node.featureIndex ?? 0;
-          const impurity = n.node.impurity ?? 0;
-          const samples = n.node.samples ?? 0;
-          const pruned = n.node.pruned;
-          const fillColor = isLeaf
-            ? pruned ? '#e5e7eb' : CLASS_COLORS[classLabel % CLASS_COLORS.length] + '33'
-            : n.path ? '#fef3c7' : '#f9fafb';
-          const strokeColor = pruned ? '#6b7280' : n.path ? '#f59e0b' : isLeaf ? CLASS_COLORS[classLabel % CLASS_COLORS.length] : '#d1d5db';
-
-          return (
-            <g key={i} transform={`translate(${n.x - boxW / 2}, ${n.y - boxH / 2})`}>
-              <rect
-                width={boxW} height={boxH} rx={6}
-                fill={fillColor}
-                stroke={strokeColor}
-                strokeWidth={n.path ? 2 : 1}
-              />
-              {isLeaf ? (
-                <>
-                  <text x={boxW / 2} y={16} textAnchor="middle" fontSize={10} fontWeight="bold"
-                    fill={pruned ? '#4b5563' : CLASS_COLORS[classLabel % CLASS_COLORS.length]}>
-                    {pruned ? `✂ ${CLASS_NAMES[classLabel] ?? `C${classLabel}`}` : CLASS_NAMES[classLabel] ?? `C${classLabel}`}
-                  </text>
-                  <text x={boxW / 2} y={30} textAnchor="middle" fontSize={9} fill="#6b7280">n={samples}</text>
-                  <text x={boxW / 2} y={42} textAnchor="middle" fontSize={9} fill="#6b7280">imp={impurity.toFixed(3)}</text>
-                </>
-              ) : (
-                <>
-                  <text x={boxW / 2} y={14} textAnchor="middle" fontSize={9} fontWeight="bold" fill="#1d4ed8">
-                    {FEATURE_LABELS[featureIdx]}
-                  </text>
-                  <text x={boxW / 2} y={27} textAnchor="middle" fontSize={10} fill="#374151">
-                    ≤ {n.node.threshold?.toFixed(2)}
-                  </text>
-                  <text x={boxW / 2} y={40} textAnchor="middle" fontSize={9} fill="#6b7280">n={samples}</text>
-                  <text x={boxW / 2} y={52} textAnchor="middle" fontSize={9} fill="#6b7280">imp={impurity.toFixed(3)}</text>
-                </>
-              )}
-            </g>
-          );
-        })}
-      </svg>
-    </div>
+const BUILT_INS: Record<Exclude<DatasetId, "imported">, Row[]> = {
+  iris: BASE,
+  wine: transform(BASE, "wine"),
+  seeds: transform(BASE, "seeds"),
+  synthetic: transform(BASE, "synthetic"),
+};
+const LABELS: Record<DatasetId, string> = {
+  iris: "Iris (Fisher's Iris Dataset)",
+  wine: "Wine Classification",
+  seeds: "Wheat Seeds",
+  synthetic: "Synthetic Classes",
+  imported: "Imported CSV",
+};
+const majority = (node: TreeNode) =>
+  Number(
+    Object.entries(node.classCounts ?? { 0: 1 }).reduce((best, item) =>
+      item[1] > best[1] ? item : best,
+    )[0],
   );
-}
-
-// ─── Count leaves ─────────────────────────────────────────────────────────────
-function countLeaves(node: TreeNode): number {
-  if (node.classLabel !== undefined) return 1;
-  return (node.left ? countLeaves(node.left) : 0) + (node.right ? countLeaves(node.right) : 0);
-}
-
-// ─── Collect prediction path ──────────────────────────────────────────────────
-function collectPath(node: TreeNode, x: number[], path: Set<TreeNode>): void {
-  path.add(node);
-  if (node.classLabel !== undefined) return;
-  if (x[node.featureIndex!] <= node.threshold!) {
-    if (node.left) collectPath(node.left, x, path);
-  } else {
-    if (node.right) collectPath(node.right, x, path);
-  }
-}
-
-// ─── Feature importance ───────────────────────────────────────────────────────
-function computeFeatureImportance(node: TreeNode, importance: number[] = Array(4).fill(0), totalSamples: number): number[] {
-  if (node.classLabel !== undefined) return importance;
-  const fi = node.featureIndex!;
-  const leftN = node.left?.samples ?? 0;
-  const rightN = node.right?.samples ?? 0;
-  const n = node.samples ?? totalSamples;
-  const gain = n * (node.impurity ?? 0)
-    - leftN * (node.left?.impurity ?? 0)
-    - rightN * (node.right?.impurity ?? 0);
-  importance[fi] += gain / totalSamples;
-  if (node.left) computeFeatureImportance(node.left, importance, totalSamples);
-  if (node.right) computeFeatureImportance(node.right, importance, totalSamples);
-  return importance;
-}
-
-function majorityFromCounts(node: TreeNode): number {
-  const entries = Object.entries(node.classCounts ?? {});
-  if (!entries.length) return node.classLabel ?? 0;
-  return Number(entries.reduce((best, entry) => Number(entry[1]) > Number(best[1]) ? entry : best)[0]);
-}
-
-function pruneTree(node: TreeNode, alpha: number): PrunedTreeNode {
-  if (node.classLabel !== undefined || !node.left || !node.right) return { ...node };
-  const left = pruneTree(node.left, alpha);
-  const right = pruneTree(node.right, alpha);
-  const leftLeaves = countLeaves(left);
-  const rightLeaves = countLeaves(right);
-  const samples = node.samples ?? 1;
-  const gain = (node.impurity ?? 0)
-    - ((node.left.samples ?? 0) / samples) * (node.left.impurity ?? 0)
-    - ((node.right.samples ?? 0) / samples) * (node.right.impurity ?? 0);
-  if (gain - alpha * (leftLeaves + rightLeaves) < 0) {
+function prune(node: TreeNode, alpha: number): DisplayNode {
+  if (node.classLabel !== undefined || !node.left || !node.right)
+    return { ...node };
+  const left = prune(node.left, alpha),
+    right = prune(node.right, alpha),
+    n = node.samples ?? 1;
+  const gain =
+    (node.impurity ?? 0) -
+    ((node.left.samples ?? 0) / n) * (node.left.impurity ?? 0) -
+    ((node.right.samples ?? 0) / n) * (node.right.impurity ?? 0);
+  if (gain < alpha)
     return {
       samples: node.samples,
       impurity: node.impurity,
       classCounts: node.classCounts,
-      classLabel: majorityFromCounts(node),
+      classLabel: majority(node),
       pruned: true,
     };
-  }
   return { ...node, left, right };
 }
-
-function countPruned(node: PrunedTreeNode): number {
-  if (node.pruned) return 1;
-  return (node.left ? countPruned(node.left) : 0) + (node.right ? countPruned(node.right) : 0);
+const leaves = (node: TreeNode): number =>
+  node.classLabel !== undefined
+    ? 1
+    : (node.left ? leaves(node.left) : 0) +
+      (node.right ? leaves(node.right) : 0);
+const nodes = (node: TreeNode): number =>
+  1 + (node.left ? nodes(node.left) : 0) + (node.right ? nodes(node.right) : 0);
+function flatten(
+  node: DisplayNode,
+  result: {
+    node: DisplayNode;
+    depth: number;
+    order: number;
+    parent?: number;
+    side?: "left" | "right";
+  }[] = [],
+  depth = 0,
+  parent?: number,
+  side?: "left" | "right",
+) {
+  const index = result.length;
+  result.push({ node, depth, order: 0, parent, side });
+  if (node.left)
+    flatten(node.left as DisplayNode, result, depth + 1, index, "left");
+  if (node.right)
+    flatten(node.right as DisplayNode, result, depth + 1, index, "right");
+  const atDepth = result.filter((item) => item.depth === depth);
+  result[index].order = atDepth.indexOf(result[index]);
+  return result;
 }
-
-function accuracyFor(root: TreeNode, X: number[][], y: number[]) {
-  return X.filter((row, index) => predictTree(root, row) === y[index]).length / y.length;
-}
-
-// ─── Main Page ────────────────────────────────────────────────────────────────
-export default function DecisionTreeClassificationPage() {
-  const [maxDepth, setMaxDepth] = useState(3);
-  const [minSamples, setMinSamples] = useState(2);
-  const [criterion, setCriterion] = useState<SplitCriterion>('gini');
-  const [pruneAlpha, setPruneAlpha] = useState(0.005);
-  const [predInput, setPredInput] = useState({
-    sepal_length: '5.5',
-    sepal_width: '3.0',
-    petal_length: '4.0',
-    petal_width: '1.3',
-  });
-
-  const { X, y } = useMemo(() => {
-    const rawData = irisDataset.data as Record<string, unknown>[];
-    return {
-      X: rawData.map(d => FEATURE_NAMES.map(f => d[f] as number)),
-      y: rawData.map(d => {
-        const sp = d['species'] as string;
-        return sp === 'setosa' ? 0 : sp === 'versicolor' ? 1 : 2;
-      }),
-    };
-  }, []);
-
-  const tree = useMemo(() =>
-    buildDecisionTree(X, y, maxDepth, minSamples, criterion),
-    [X, y, maxDepth, minSamples, criterion]
+function pathFor(
+  node: TreeNode,
+  query: number[],
+  result: TreeNode[] = [],
+): TreeNode[] {
+  result.push(node);
+  if (node.classLabel !== undefined) return result;
+  return pathFor(
+    query[node.featureIndex!] <= node.threshold! ? node.left! : node.right!,
+    query,
+    result,
   );
+}
+function importance(node: TreeNode, total: number, values = Array(4).fill(0)) {
+  if (node.classLabel !== undefined || !node.left || !node.right) return values;
+  const n = node.samples ?? 0;
+  values[node.featureIndex!] +=
+    Math.max(
+      0,
+      n * (node.impurity ?? 0) -
+        (node.left.samples ?? 0) * (node.left.impurity ?? 0) -
+        (node.right.samples ?? 0) * (node.right.impurity ?? 0),
+    ) / total;
+  importance(node.left, total, values);
+  importance(node.right, total, values);
+  return values;
+}
 
-  const predictions = useMemo(() => X.map(xi => predictTree(tree, xi)), [tree, X]);
-  const accuracy = useMemo(() => predictions.filter((p, i) => p === y[i]).length / y.length, [predictions, y]);
-  const depth = useMemo(() => treeDepth(tree), [tree]);
-  const leaves = useMemo(() => countLeaves(tree), [tree]);
-
-  // Confusion matrix (3×3)
-  const confMatrix = useMemo(() => {
-    const mat = Array.from({ length: 3 }, () => Array(3).fill(0));
-    y.forEach((actual, i) => {
-      mat[actual][predictions[i]]++;
-    });
-    return mat;
-  }, [y, predictions]);
-
-  // Query point
-  const queryFeatures = FEATURE_NAMES.map(f => parseFloat(predInput[f as keyof typeof predInput]) || 0);
-  const predictedClass = useMemo(() => predictTree(tree, queryFeatures), [tree, queryFeatures]);
-
-  const pathNodes = useMemo(() => {
-    const path = new Set<TreeNode>();
-    collectPath(tree, queryFeatures, path);
-    return path;
-  }, [tree, queryFeatures]);
-
-  // Feature importance
-  const importance = useMemo(() => {
-    const imp = computeFeatureImportance(tree, Array(4).fill(0), X.length);
-    const total = imp.reduce((a, b) => a + b, 0) || 1;
-    return imp.map(v => v / total);
-  }, [tree, X.length]);
-
-  const importanceData = FEATURE_LABELS.map((label, i) => ({
-    feature: label,
-    importance: parseFloat((importance[i] * 100).toFixed(2)),
-  })).sort((a, b) => b.importance - a.importance);
-
-  const pruning = useMemo(() => {
-    const trainIdx = X.map((_, index) => index).filter(index => index % 5 !== 0);
-    const validIdx = X.map((_, index) => index).filter(index => index % 5 === 0);
-    const trainX = trainIdx.map(index => X[index]);
-    const trainY = trainIdx.map(index => y[index]);
-    const validX = validIdx.map(index => X[index]);
-    const validY = validIdx.map(index => y[index]);
-    const base = buildDecisionTree(trainX, trainY, Math.max(maxDepth, 6), minSamples, criterion);
-    const rows = Array.from({ length: 51 }, (_, index) => {
-      const alpha = index / 1000;
-      const pruned = pruneTree(base, alpha);
-      return {
-        alpha,
-        train: Number((accuracyFor(pruned, trainX, trainY) * 100).toFixed(2)),
-        validation: Number((accuracyFor(pruned, validX, validY) * 100).toFixed(2)),
-        leaves: countLeaves(pruned),
-      };
-    });
-    const selectedTree = pruneTree(tree, pruneAlpha);
-    const best = rows.reduce((winner, row) => row.validation > winner.validation ? row : winner, rows[0]);
-    return { rows, selectedTree, best, prunedCount: countPruned(selectedTree) };
-  }, [X, y, maxDepth, minSamples, criterion, tree, pruneAlpha]);
-
-  const hyperparamDefs: HyperparamDef[] = [
-    { key: 'maxDepth', label: 'Max Depth', type: 'range', min: 1, max: 8, step: 1, value: maxDepth },
-    { key: 'minSamples', label: 'Min Samples Split', type: 'range', min: 2, max: 20, step: 1, value: minSamples },
-    {
-      key: 'criterion', label: 'Split Criterion', type: 'select', value: criterion,
-      options: [
-        { value: 'gini', label: 'Gini Impurity' },
-        { value: 'entropy', label: 'Information Gain (Entropy)' },
-      ],
-    },
-  ];
-
-  const handleParamChange = useCallback((key: string, value: number | string | boolean) => {
-    if (key === 'maxDepth') setMaxDepth(value as number);
-    if (key === 'minSamples') setMinSamples(value as number);
-    if (key === 'criterion') setCriterion(value as SplitCriterion);
-  }, []);
-
+function TreeView({
+  root,
+  showCounts,
+  showImpurity,
+  path,
+  animate,
+}: {
+  root: DisplayNode;
+  showCounts: boolean;
+  showImpurity: boolean;
+  path: Set<TreeNode>;
+  animate: boolean;
+}) {
+  const flat = flatten(root);
+  const maxDepth = Math.max(...flat.map((item) => item.depth));
+  const positions = flat.map((item, index) => {
+    const row = flat.filter((other) => other.depth === item.depth);
+    return {
+      ...item,
+      index,
+      x: 55 + (item.order + 0.5) * (490 / row.length),
+      y: 33 + item.depth * (maxDepth > 2 ? 92 : 110),
+    };
+  });
   return (
-    <div className="space-y-6 p-4 max-w-7xl mx-auto">
-      <PageHeader
-        title="Decision Tree Classifier"
-        subtitle="Recursive binary splitting on feature thresholds to build an interpretable tree for classification."
-        badge="Intermediate"
-        category="Supervised Learning › Classification"
-        icon={<GitBranch size={22} />}
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column */}
-        <div className="space-y-4">
-          <HyperparameterPanel params={hyperparamDefs} onChange={handleParamChange} />
-
-          <MetricsPanel
-            title="Tree Performance"
-            metrics={[
-              { label: 'Accuracy', value: accuracy, format: 'percent', color: accuracy > 0.85 ? 'green' : 'default' },
-              { label: 'Tree Depth', value: depth, format: 'fixed2' },
-              { label: 'Num Leaves', value: leaves, format: 'fixed2' },
-              { label: 'Samples', value: X.length, format: 'fixed2' },
-            ]}
-          />
-
-          <Card title="Query Prediction">
-            <div className="grid grid-cols-2 gap-2 mb-3">
-              {FEATURE_NAMES.map((f, i) => (
-                <div key={f}>
-                  <label className="text-xs text-gray-500 dark:text-gray-400 block mb-1">{FEATURE_LABELS[i]}</label>
-                  <input
-                    type="number" step="0.1"
-                    value={predInput[f as keyof typeof predInput]}
-                    onChange={e => setPredInput(prev => ({ ...prev, [f]: e.target.value }))}
-                    className="w-full text-xs font-mono bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded px-2 py-1.5 text-gray-800 dark:text-gray-100"
+    <svg
+      className={`dt-tree-svg ${animate ? "animate" : ""}`}
+      viewBox="0 0 600 390"
+    >
+      {positions.map((item) =>
+        item.parent === undefined
+          ? null
+          : (() => {
+              const parent = positions[item.parent!];
+              return (
+                <g key={`e${item.index}`}>
+                  <line
+                    x1={parent.x}
+                    y1={parent.y + 27}
+                    x2={item.x}
+                    y2={item.y - 27}
+                    stroke={
+                      path.has(item.node)
+                        ? COLORS[1]
+                        : item.side === "left"
+                          ? COLORS[0]
+                          : "#ff5e6b"
+                    }
+                    strokeWidth={path.has(item.node) ? 2.2 : 1.3}
                   />
-                </div>
-              ))}
-            </div>
-            <div
-              className="text-center py-3 rounded-xl font-bold text-base"
-              style={{ backgroundColor: CLASS_COLORS[predictedClass] + '33', color: CLASS_COLORS[predictedClass] }}
-            >
-              Predicted: {CLASS_NAMES[predictedClass]}
-            </div>
-            <p className="text-xs text-gray-400 text-center mt-2">
-              Path highlighted in amber on the tree diagram
-            </p>
-          </Card>
-
-          <Card title="Confusion Matrix (3×3)">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-center">
-                <thead>
-                  <tr>
-                    <th className="py-1 text-gray-400 text-left">Act \ Pred</th>
-                    {CLASS_NAMES.map(n => <th key={n} className="py-1 text-gray-500">{n.slice(0, 4)}</th>)}
-                  </tr>
-                </thead>
-                <tbody>
-                  {CLASS_NAMES.map((name, i) => (
-                    <tr key={i}>
-                      <td className="py-1 font-medium text-left" style={{ color: CLASS_COLORS[i] }}>{name.slice(0, 4)}</td>
-                      {CLASS_NAMES.map((_, j) => (
-                        <td
-                          key={j}
-                          className={`py-2 font-mono font-bold rounded ${i === j ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : confMatrix[i][j] > 0 ? 'bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400' : 'text-gray-400'}`}
-                        >
-                          {confMatrix[i][j]}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        </div>
-
-        {/* Right charts */}
-        <div className="lg:col-span-2 space-y-4">
-          <Tabs
-            tabs={[
-              { id: 'tree', label: 'Tree Diagram' },
-              { id: 'importance', label: 'Feature Importance' },
-              { id: 'impurity', label: 'Impurity Concepts' },
-            ]}
+                  <text
+                    x={
+                      (parent.x + item.x) / 2 +
+                      (item.side === "left" ? -12 : 12)
+                    }
+                    y={(parent.y + item.y) / 2 - 5}
+                    fill={item.side === "left" ? COLORS[0] : "#ff6c78"}
+                    fontSize="9"
+                  >
+                    {item.side === "left" ? "True" : "False"}
+                  </text>
+                </g>
+              );
+            })(),
+      )}
+      {positions.map((item) => {
+        const leaf = item.node.classLabel !== undefined,
+          label = leaf ? item.node.classLabel! : majority(item.node),
+          active = path.has(item.node);
+        return (
+          <g
+            key={item.index}
+            transform={`translate(${item.x - 58} ${item.y - 27})`}
           >
-            {(activeTab) => (
+            <rect
+              width="116"
+              height="55"
+              rx="7"
+              fill={leaf ? `${COLORS[label]}17` : "#0b1930"}
+              stroke={active ? "#f6b941" : leaf ? COLORS[label] : "#7d9ccb"}
+              strokeWidth={active ? 2 : 1.4}
+            />
+            {leaf ? (
               <>
-                {activeTab === 'tree' && (
-                  <Card title="Decision Tree Structure" subtitle="Blue = internal node (split) | Coloured = leaf (class) | Amber path = query route">
-                    <TreeDiagram root={tree} pathNodes={pathNodes} />
-                    <div className="mt-3 flex flex-wrap gap-4 text-xs text-gray-500">
-                      {CLASS_NAMES.map((n, i) => (
-                        <span key={i} className="flex items-center gap-1">
-                          <span className="w-3 h-3 rounded inline-block" style={{ backgroundColor: CLASS_COLORS[i] + '55', border: `2px solid ${CLASS_COLORS[i]}` }} />
-                          {n}
-                        </span>
-                      ))}
-                      <span className="flex items-center gap-1">
-                        <span className="w-8 h-0.5 bg-yellow-400 inline-block" />
-                        Prediction path
-                      </span>
-                    </div>
-                  </Card>
-                )}
-
-                {activeTab === 'importance' && (
-                  <Card title="Feature Importances" subtitle="Weighted impurity reduction from splits on each feature">
-                    <ResponsiveContainer width="100%" height={280}>
-                      <BarChart data={importanceData} layout="vertical" margin={{ top: 10, right: 30, bottom: 10, left: 60 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis
-                          type="number" tickFormatter={v => `${v.toFixed(1)}%`}
-                          tick={{ fontSize: 11 }}
-                          label={{ value: 'Importance (%)', position: 'insideBottom', offset: -5, fontSize: 11 }}
-                        />
-                        <YAxis type="category" dataKey="feature" tick={{ fontSize: 11 }} width={65} />
-                        <Tooltip formatter={(v: number) => `${v.toFixed(2)}%`} />
-                        <Bar dataKey="importance" radius={[0, 4, 4, 0]}>
-                          {importanceData.map((_, i) => (
-                            <Cell key={i} fill={['#3b82f6', '#ef4444', '#10b981', '#f59e0b'][i % 4]} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                    <div className="mt-2 overflow-x-auto">
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr className="border-b border-gray-200 dark:border-gray-700">
-                            <th className="text-left py-1 text-gray-500">Feature</th>
-                            <th className="text-right py-1 text-gray-500">Importance</th>
-                            <th className="text-right py-1 text-gray-500">Rank</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {importanceData.map((d, i) => (
-                            <tr key={i} className="border-b border-gray-100 dark:border-gray-700">
-                              <td className="py-1.5 text-gray-700 dark:text-gray-300">{d.feature}</td>
-                              <td className="text-right font-mono text-blue-600 dark:text-blue-400">{d.importance.toFixed(2)}%</td>
-                              <td className="text-right text-gray-400">#{i + 1}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </Card>
-                )}
-
-                {activeTab === 'impurity' && (
-                  <Card title="Gini vs Entropy" subtitle="Two measures of node impurity used to find the best splits">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Gini Impurity</h4>
-                        <pre className="font-mono text-xs bg-gray-900 text-green-400 rounded-lg p-3 whitespace-pre-wrap">{`Gini(t) = 1 - Σ pᵢ²
-
-For a 2-class split:
-- Pure node: Gini = 0
-- 50/50 split: Gini = 0.5
-
-Gain = Gini(parent)
-     - wL·Gini(left)
-     - wR·Gini(right)`}</pre>
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Entropy (Info Gain)</h4>
-                        <pre className="font-mono text-xs bg-gray-900 text-yellow-400 rounded-lg p-3 whitespace-pre-wrap">{`H(t) = -Σ pᵢ·log₂(pᵢ)
-
-For a 2-class split:
-- Pure node: H = 0
-- 50/50 split: H = 1.0
-
-Gain = H(parent)
-     - wL·H(left)
-     - wR·H(right)`}</pre>
-                      </div>
-                    </div>
-
-                    {/* Visual comparison: impurity vs fraction */}
-                    <div className="mt-4">
-                      <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Impurity vs Class Fraction (2-class)</h4>
-                      <ResponsiveContainer width="100%" height={200}>
-                        <BarChart
-                          data={Array.from({ length: 11 }, (_, i) => {
-                            const p = i / 10;
-                            const gini = 1 - p * p - (1 - p) * (1 - p);
-                            const entropy = p > 0 && p < 1 ? -(p * Math.log2(p) + (1 - p) * Math.log2(1 - p)) : 0;
-                            return { p: p.toFixed(1), gini: parseFloat(gini.toFixed(4)), entropy: parseFloat(entropy.toFixed(4)) };
-                          })}
-                          margin={{ top: 5, right: 20, bottom: 20, left: 10 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="p" tick={{ fontSize: 10 }} label={{ value: 'P(class=1)', position: 'insideBottom', offset: -10, fontSize: 11 }} />
-                          <YAxis tick={{ fontSize: 11 }} domain={[0, 1.2]} />
-                          <Tooltip formatter={(v: number) => v.toFixed(4)} />
-                          <Bar dataKey="gini" fill="#3b82f6" opacity={0.7} name="Gini" />
-                          <Bar dataKey="entropy" fill="#f59e0b" opacity={0.7} name="Entropy (scaled)" />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </Card>
-                )}
+                <text
+                  x="58"
+                  y="15"
+                  textAnchor="middle"
+                  fill="#d9e3f4"
+                  fontSize="9"
+                >
+                  {showImpurity &&
+                    `gini = ${(item.node.impurity ?? 0).toFixed(3)}`}
+                </text>
+                <text
+                  x="58"
+                  y="30"
+                  textAnchor="middle"
+                  fill="#d9e3f4"
+                  fontSize="9"
+                >
+                  {showCounts && `samples = ${item.node.samples}`}
+                </text>
+                <text
+                  x="58"
+                  y="45"
+                  textAnchor="middle"
+                  fill={COLORS[label]}
+                  fontSize="9"
+                >
+                  class = {NAMES[label]} ●
+                </text>
+              </>
+            ) : (
+              <>
+                <text
+                  x="58"
+                  y="15"
+                  textAnchor="middle"
+                  fill="#e8eefb"
+                  fontSize="9"
+                  fontWeight="700"
+                >
+                  {FEATURES[item.node.featureIndex!]}
+                </text>
+                <text
+                  x="58"
+                  y="29"
+                  textAnchor="middle"
+                  fill="#dce5f6"
+                  fontSize="9"
+                >
+                  ≤ {item.node.threshold?.toFixed(2)}
+                </text>
+                <text
+                  x="58"
+                  y="42"
+                  textAnchor="middle"
+                  fill="#a5b4ca"
+                  fontSize="8"
+                >
+                  {showImpurity && `${item.node.impurity?.toFixed(3)} gini`}{" "}
+                  {showCounts && `· ${item.node.samples} samples`}
+                </text>
               </>
             )}
-          </Tabs>
+          </g>
+        );
+      })}
+      <g transform="translate(150 373)">
+        {NAMES.map((name, index) => (
+          <g key={name} transform={`translate(${index * 110} 0)`}>
+            <circle r="5" fill={COLORS[index]} />
+            <text x="10" y="4" fill="#d0d9e8" fontSize="9">
+              {name}
+            </text>
+          </g>
+        ))}
+      </g>
+    </svg>
+  );
+}
 
-          <Card title="Cost-Complexity Pruning" subtitle="Higher alpha collapses weak branches into grey leaf nodes">
-            <div className="mb-4">
-              <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">
-                Alpha: <span className="font-mono text-blue-600">{pruneAlpha.toFixed(3)}</span>
+export default function DecisionTreeClassificationPage() {
+  const [tab, setTab] = useState<TabId>("visualize"),
+    [datasetId, setDatasetId] = useState<DatasetId>("iris");
+  const [rows, setRows] = useState<Row[]>(
+      BASE.map((row) => ({ features: [...row.features], label: row.label })),
+    ),
+    [imported, setImported] = useState<Row[]>([]);
+  const [maxDepth, setMaxDepth] = useState(3),
+    [minSplit, setMinSplit] = useState(2),
+    [minLeaf, setMinLeaf] = useState(1);
+  const [criterion, setCriterion] = useState<SplitCriterion>("gini"),
+    [alpha, setAlpha] = useState(0),
+    [appliedAlpha, setAppliedAlpha] = useState(0);
+  const [showCounts, setShowCounts] = useState(true),
+    [showImpurity, setShowImpurity] = useState(true),
+    [animate, setAnimate] = useState(true);
+  const [axes, setAxes] = useState<[number, number]>([2, 3]),
+    [query, setQuery] = useState([5.8, 2.7, 4.2, 1.3]),
+    [trained, setTrained] = useState("Ready"),
+    [toast, setToast] = useState("");
+  const uploadRef = useRef<HTMLInputElement>(null),
+    X = useMemo(() => rows.map((row) => row.features), [rows]),
+    y = useMemo(() => rows.map((row) => row.label), [rows]);
+  const rawTree = useMemo(
+    () =>
+      buildDecisionTree(
+        X,
+        y,
+        maxDepth,
+        Math.max(minLeaf, Math.ceil(minSplit / 2)),
+        criterion,
+      ),
+    [X, y, maxDepth, minLeaf, minSplit, criterion],
+  );
+  const tree = useMemo(
+    () => prune(rawTree, appliedAlpha),
+    [rawTree, appliedAlpha],
+  );
+  const prediction = predictTree(tree, query),
+    path = new Set(pathFor(tree, query));
+  const predicted = useMemo(
+    () => X.map((row) => predictTree(tree, row)),
+    [X, tree],
+  );
+  const confusion = useMemo(
+    () =>
+      Array.from({ length: 3 }, (_, a) =>
+        Array.from(
+          { length: 3 },
+          (_, p) =>
+            predicted.filter((value, index) => y[index] === a && value === p)
+              .length,
+        ),
+      ),
+    [predicted, y],
+  );
+  const classMetrics = [0, 1, 2].map((label) => {
+    const tp = confusion[label][label],
+      fp = confusion.reduce(
+        (sum, row, index) => sum + (index === label ? 0 : row[label]),
+        0,
+      ),
+      fn = confusion[label].reduce(
+        (sum, value, index) => sum + (index === label ? 0 : value),
+        0,
+      ),
+      precision = tp / (tp + fp) || 0,
+      recall = tp / (tp + fn) || 0;
+    return {
+      precision,
+      recall,
+      f1:
+        precision + recall
+          ? (2 * precision * recall) / (precision + recall)
+          : 0,
+    };
+  });
+  const accuracy =
+      predicted.filter((value, index) => value === y[index]).length / y.length,
+    importances = importance(tree, rows.length),
+    impTotal = importances.reduce((a, b) => a + b, 0) || 1;
+  const region = useMemo(() => {
+    const xs = X.map((row) => row[axes[0]]),
+      ys = X.map((row) => row[axes[1]]),
+      x0 = Math.min(...xs) - 0.3,
+      x1 = Math.max(...xs) + 0.3,
+      y0 = Math.min(...ys) - 0.2,
+      y1 = Math.max(...ys) + 0.2,
+      cols = 38,
+      lines = 24,
+      cells = [] as { x: number; y: number; label: number }[];
+    for (let j = 0; j < lines; j++)
+      for (let i = 0; i < cols; i++) {
+        const sample = query.slice();
+        sample[axes[0]] = x0 + ((i + 0.5) / cols) * (x1 - x0);
+        sample[axes[1]] = y0 + ((j + 0.5) / lines) * (y1 - y0);
+        cells.push({ x: i, y: j, label: predictTree(tree, sample) });
+      }
+    return {
+      x0,
+      x1,
+      y0,
+      y1,
+      cols,
+      lines,
+      cells,
+      points: rows.map((row) => ({
+        x: ((row.features[axes[0]] - x0) / (x1 - x0)) * 100,
+        y: 100 - ((row.features[axes[1]] - y0) / (y1 - y0)) * 100,
+        label: row.label,
+      })),
+    };
+  }, [X, axes, query, rows, tree]);
+  const splitRows = flatten(tree)
+    .filter((item) => item.node.classLabel === undefined)
+    .slice(0, 4);
+  const selectDataset = (next: DatasetId) => {
+    const source = next === "imported" ? imported : BUILT_INS[next];
+    if (!source.length) return;
+    setDatasetId(next);
+    setRows(
+      source.map((row) => ({ features: [...row.features], label: row.label })),
+    );
+    setQuery(source[Math.floor(source.length / 2)].features.slice());
+    setTrained("Ready");
+  };
+  const reset = () => {
+    setTab("visualize");
+    setDatasetId("iris");
+    setRows(
+      BASE.map((row) => ({ features: [...row.features], label: row.label })),
+    );
+    setMaxDepth(3);
+    setMinSplit(2);
+    setMinLeaf(1);
+    setCriterion("gini");
+    setAlpha(0);
+    setAppliedAlpha(0);
+    setShowCounts(true);
+    setShowImpurity(true);
+    setAnimate(true);
+    setAxes([2, 3]);
+    setQuery([5.8, 2.7, 4.2, 1.3]);
+    setTrained("Ready");
+    setToast("");
+  };
+  const upload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const parsed = (await file.text())
+      .trim()
+      .split(/\r?\n/)
+      .slice(1)
+      .map((line) => line.split(",").map(Number))
+      .filter((values) => values.length >= 5 && values.every(Number.isFinite))
+      .map((values) => ({
+        features: values.slice(0, 4),
+        label: Math.max(0, Math.min(2, Math.round(values[4]))),
+      }));
+    if (parsed.length < 3) {
+      setToast("CSV needs four features and class");
+      return;
+    }
+    setImported(parsed);
+    setDatasetId("imported");
+    setRows(parsed);
+    setQuery(parsed[0].features.slice());
+    setToast(`Imported ${parsed.length} samples`);
+    event.target.value = "";
+  };
+  const updateRow = (index: number, feature: number, value: number) =>
+    setRows((old) =>
+      old.map((row, i) =>
+        i === index
+          ? {
+              ...row,
+              features: row.features.map((entry, j) =>
+                j === feature ? value : entry,
+              ),
+            }
+          : row,
+      ),
+    );
+
+  const visualize = (
+    <>
+      <div className="dt-upper">
+        <section className="dt-tree-card">
+          <h2>
+            Decision Tree <span>Depth {treeDepth(tree)}</span>
+          </h2>
+          <TreeView
+            root={tree}
+            showCounts={showCounts}
+            showImpurity={showImpurity}
+            path={path}
+            animate={animate}
+          />
+        </section>
+        <section className="dt-region-card">
+          <h2>
+            Decision Regions <small>(feature space)</small>
+            <select
+              aria-label="Region X axis"
+              value={axes[0]}
+              onChange={(event) =>
+                setAxes([Number(event.target.value), axes[1]])
+              }
+            >
+              {FEATURES.map((name, index) => (
+                <option value={index} key={name}>
+                  X: {name}
+                </option>
+              ))}
+            </select>
+          </h2>
+          <div className="dt-region">
+            {region.cells.map((cell, index) => (
+              <i
+                key={index}
+                style={{
+                  left: `${(cell.x / region.cols) * 100}%`,
+                  top: `${((region.lines - 1 - cell.y) / region.lines) * 100}%`,
+                  width: `${100 / region.cols + 0.15}%`,
+                  height: `${100 / region.lines + 0.15}%`,
+                  background: FILLS[cell.label],
+                }}
+              />
+            ))}
+            {region.points.map((point, index) => (
+              <b
+                key={index}
+                style={{
+                  left: `${point.x}%`,
+                  top: `${point.y}%`,
+                  background: COLORS[point.label],
+                }}
+              />
+            ))}
+            <span className="x-label">{FEATURES[axes[0]]}</span>
+            <span className="y-label">{FEATURES[axes[1]]}</span>
+          </div>
+          <p>
+            Background shows predicted class for any point in the feature space.
+          </p>
+        </section>
+      </div>
+      <div className="dt-lower">
+        <article>
+          <h3>CLASS PERFORMANCE</h3>
+          <div className="dt-perf-head">
+            <span>Class</span>
+            <span>Precision</span>
+            <span>Recall</span>
+            <span>F1-Score</span>
+          </div>
+          {classMetrics.map((metric, label) => (
+            <p key={label}>
+              <span>
+                <i style={{ background: COLORS[label] }} />
+                {NAMES[label]}
+              </span>
+              <b>{metric.precision.toFixed(2)}</b>
+              <b>{metric.recall.toFixed(2)}</b>
+              <b>{metric.f1.toFixed(2)}</b>
+            </p>
+          ))}
+          <p>
+            <span>Macro Avg</span>
+            <b>
+              {(classMetrics.reduce((s, m) => s + m.precision, 0) / 3).toFixed(
+                2,
+              )}
+            </b>
+            <b>
+              {(classMetrics.reduce((s, m) => s + m.recall, 0) / 3).toFixed(2)}
+            </b>
+            <b>{(classMetrics.reduce((s, m) => s + m.f1, 0) / 3).toFixed(2)}</b>
+          </p>
+        </article>
+        <article>
+          <h3>CONFUSION MATRIX ({rows.length})</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Actual \ Pred</th>
+                {NAMES.map((name) => (
+                  <th key={name}>{name}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {confusion.map((line, index) => (
+                <tr key={index}>
+                  <th>{NAMES[index]}</th>
+                  {line.map((value, j) => (
+                    <td
+                      key={j}
+                      style={{
+                        background:
+                          index === j
+                            ? `${COLORS[index]}55`
+                            : value
+                              ? "#341c35"
+                              : "transparent",
+                      }}
+                    >
+                      {value}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </article>
+        <article>
+          <h3>SPLIT SEQUENCE</h3>
+          {splitRows.map((item, index) => (
+            <p key={index}>
+              <b>{index + 1}</b>
+              <span>
+                {SHORT[item.node.featureIndex!]} ≤{" "}
+                {item.node.threshold?.toFixed(2)}
+              </span>
+              <em>gain = {(item.node.impurity ?? 0).toFixed(3)}</em>
+            </p>
+          ))}
+          <button onClick={() => setTab("explain")}>
+            View full tree <ChevronRight />
+          </button>
+        </article>
+        <article>
+          <h3>FEATURE IMPORTANCE</h3>
+          {importances.map((value, index) => (
+            <p key={index}>
+              <span>{FEATURES[index]}</span>
+              <i>
+                <b style={{ width: `${(value / impTotal) * 100}%` }} />
+              </i>
+              <em>{(value / impTotal).toFixed(2)}</em>
+            </p>
+          ))}
+        </article>
+      </div>
+    </>
+  );
+  const panel = () => {
+    if (tab === "visualize" || tab === "learn") return visualize;
+    if (tab === "dataset")
+      return (
+        <section className="dt-generic dt-data">
+          <div className="dt-section-title">
+            <span>
+              <Database /> Live Dataset
+            </span>
+            <button
+              onClick={() =>
+                setRows((old) => [
+                  ...old,
+                  { features: query.slice(), label: prediction },
+                ])
+              }
+            >
+              <Plus /> Add query
+            </button>
+          </div>
+          <p>
+            Edit samples directly; the CART tree, regions, confusion matrix, and
+            importance update immediately.
+          </p>
+          <div>
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  {SHORT.map((name) => (
+                    <th key={name}>{name}</th>
+                  ))}
+                  <th>Class</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, index) => (
+                  <tr key={index}>
+                    <td>{index + 1}</td>
+                    {row.features.map((value, feature) => (
+                      <td key={feature}>
+                        <input
+                          aria-label={`Feature ${feature + 1} row ${index + 1}`}
+                          type="number"
+                          step=".1"
+                          value={Number(value.toFixed(3))}
+                          onChange={(event) =>
+                            updateRow(
+                              index,
+                              feature,
+                              Number(event.target.value),
+                            )
+                          }
+                        />
+                      </td>
+                    ))}
+                    <td>
+                      <select
+                        aria-label={`Class row ${index + 1}`}
+                        value={row.label}
+                        onChange={(event) =>
+                          setRows((old) =>
+                            old.map((item, i) =>
+                              i === index
+                                ? { ...item, label: Number(event.target.value) }
+                                : item,
+                            ),
+                          )
+                        }
+                      >
+                        <option value="0">setosa</option>
+                        <option value="1">versicolor</option>
+                        <option value="2">virginica</option>
+                      </select>
+                    </td>
+                    <td>
+                      <button
+                        aria-label={`Remove row ${index + 1}`}
+                        disabled={rows.length <= 3}
+                        onClick={() =>
+                          setRows((old) => old.filter((_, i) => i !== index))
+                        }
+                      >
+                        ×
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      );
+    if (tab === "train")
+      return (
+        <section className="dt-generic dt-train">
+          <GitBranch />
+          <h2>Grow a CART classification tree</h2>
+          <p>
+            Every possible feature threshold is evaluated with the selected
+            impurity criterion. The best split is applied recursively until the
+            stopping controls are reached.
+          </p>
+          <div>
+            <article>
+              <b>{rows.length}</b>
+              <span>Training samples</span>
+            </article>
+            <article>
+              <b>{nodes(tree)}</b>
+              <span>Tree nodes</span>
+            </article>
+            <article>
+              <b>{leaves(tree)}</b>
+              <span>Leaves</span>
+            </article>
+            <article>
+              <b>{(accuracy * 100).toFixed(1)}%</b>
+              <span>Accuracy</span>
+            </article>
+          </div>
+          <button
+            onClick={() => {
+              setTrained(
+                `Trained ${nodes(tree)} nodes at depth ${treeDepth(tree)}`,
+              );
+              setToast("Decision tree retrained");
+            }}
+          >
+            <Play /> Train / Retrain Tree
+          </button>
+          <small>{trained}</small>
+        </section>
+      );
+    if (tab === "metrics")
+      return (
+        <section className="dt-generic">
+          <div className="dt-section-title">
+            <span>
+              <BarChart3 /> Classification Metrics
+            </span>
+          </div>
+          <div className="dt-metric-grid">
+            <article>
+              <b>{(accuracy * 100).toFixed(1)}%</b>
+              <span>Accuracy</span>
+            </article>
+            <article>
+              <b>{treeDepth(tree)}</b>
+              <span>Tree depth</span>
+            </article>
+            <article>
+              <b>{leaves(tree)}</b>
+              <span>Leaf nodes</span>
+            </article>
+            <article>
+              <b>{(tree.impurity ?? 0).toFixed(3)}</b>
+              <span>Root impurity</span>
+            </article>
+          </div>
+          {visualize.props.children[1]}
+        </section>
+      );
+    if (tab === "compare")
+      return (
+        <section className="dt-generic">
+          <div className="dt-section-title">
+            <span>
+              <Network /> Criterion Comparison
+            </span>
+          </div>
+          <div className="dt-compare">
+            {(["gini", "entropy"] as SplitCriterion[]).map((value) => {
+              const candidate = buildDecisionTree(
+                  X,
+                  y,
+                  maxDepth,
+                  Math.max(minLeaf, Math.ceil(minSplit / 2)),
+                  value,
+                ),
+                score =
+                  X.filter(
+                    (row, index) => predictTree(candidate, row) === y[index],
+                  ).length / y.length;
+              return (
+                <article
+                  key={value}
+                  className={criterion === value ? "active" : ""}
+                  onClick={() => setCriterion(value)}
+                >
+                  <GitBranch />
+                  <h3>{value}</h3>
+                  <b>{(score * 100).toFixed(1)}% accuracy</b>
+                  <span>
+                    {nodes(candidate)} nodes · {leaves(candidate)} leaves
+                  </span>
+                  <button>Use criterion</button>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      );
+    return (
+      <section className="dt-generic dt-explain">
+        <div className="dt-section-title">
+          <span>
+            <FileText /> Prediction Path
+          </span>
+        </div>
+        <div className="dt-query">
+          {FEATURES.map((name, index) => (
+            <label key={name}>
+              {name}
+              <input
+                aria-label={`Query ${name}`}
+                type="number"
+                step=".1"
+                value={query[index]}
+                onChange={(event) =>
+                  setQuery((old) =>
+                    old.map((value, i) =>
+                      i === index ? Number(event.target.value) : value,
+                    ),
+                  )
+                }
+              />
+            </label>
+          ))}
+        </div>
+        <h2>
+          Prediction:{" "}
+          <span style={{ color: COLORS[prediction] }}>{NAMES[prediction]}</span>
+        </h2>
+        <div className="dt-path">
+          {[...path].map((node, index) => (
+            <article key={index}>
+              <b>{index + 1}</b>
+              {node.classLabel !== undefined ? (
+                <span>Leaf → {NAMES[node.classLabel]}</span>
+              ) : (
+                <span>
+                  {SHORT[node.featureIndex!]} (
+                  {query[node.featureIndex!].toFixed(2)}){" "}
+                  {query[node.featureIndex!] <= node.threshold! ? "≤" : "＞"}{" "}
+                  {node.threshold?.toFixed(2)}
+                </span>
+              )}
+            </article>
+          ))}
+        </div>
+      </section>
+    );
+  };
+  return (
+    <div className="dt-page">
+      <aside className="dt-nav">
+        <Link className="dt-brand" to="/">
+          <i>
+            <BrainCircuit />
+          </i>
+          <span>
+            <b>Mega ML</b>
+            <small>AI Observatory</small>
+          </span>
+        </Link>
+        <h3>LESSONS</h3>
+        <button>
+          <CircleHelp />
+          0. Welcome
+        </button>
+        <button>
+          <BookOpen />
+          1. Decision Trees 101
+          <ChevronDown />
+        </button>
+        <button className="open">
+          <GitBranch />
+          2. Building a Tree
+          <ChevronDown />
+        </button>
+        <div>
+          {[
+            "2.1 How Splits Work",
+            "2.2 Impurity & Information Gain",
+            "2.3 Stopping Criteria",
+            "2.4 Decision Tree Classification",
+          ].map((name) => (
+            <span className={name.startsWith("2.4") ? "active" : ""} key={name}>
+              {name}
+            </span>
+          ))}
+        </div>
+        {[
+          "3. Overfitting & Pruning",
+          "4. Hyperparameters",
+          "5. Interpretability",
+          "6. Beyond Single Trees",
+          "7. Next Steps",
+        ].map((name) => (
+          <button key={name}>
+            <Network />
+            {name}
+            <ChevronRight />
+          </button>
+        ))}
+        <section>
+          <h3>COURSE PROGRESS</h3>
+          <div>
+            <b>42%</b>
+            <i />
+          </div>
+          <p>12 / 28 Lessons Completed</p>
+          <button>View Roadmap</button>
+        </section>
+      </aside>
+      <main>
+        <header className="dt-header">
+          <div>
+            <p>
+              SUPERVISED LEARNING <span>›</span> DECISION TREE
+            </p>
+            <section>
+              <i>
+                <GitBranch />
+              </i>
+              <div>
+                <h1>Decision Tree Classification</h1>
+                <span>
+                  Learn how decision trees split the feature space to predict
+                  discrete class labels.
+                </span>
+              </div>
+            </section>
+          </div>
+          <aside>
+            <span>Lesson Progress</span>
+            <i>
+              <b />
+            </i>
+            <strong>62%</strong>
+            <button>
+              Resume <Play />
+            </button>
+            <CircleHelp />
+            <button aria-label="Theme">
+              <Sun />
+              <Moon />
+            </button>
+          </aside>
+        </header>
+        <nav className="dt-tabs">
+          {TABS.map((item) => (
+            <button
+              className={tab === item.id ? "active" : ""}
+              key={item.id}
+              onClick={() => setTab(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+        <div className="dt-workspace">
+          <div className="dt-main">
+            <section className="dt-dataset">
+              <b>DATASET</b>
+              <label>
+                <span>🔮</span>
+                <select
+                  aria-label="Dataset"
+                  value={datasetId}
+                  onChange={(event) =>
+                    selectDataset(event.target.value as DatasetId)
+                  }
+                >
+                  {Object.entries(LABELS)
+                    .filter(([key]) => key !== "imported" || imported.length)
+                    .map(([key, label]) => (
+                      <option value={key} key={key}>
+                        {label}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <span>{rows.length} samples • 4 features • 3 classes</span>
+              <button onClick={reset}>Reset Dataset</button>
+              <button onClick={() => uploadRef.current?.click()}>
+                <Upload /> Upload CSV
+              </button>
+              <input
+                ref={uploadRef}
+                type="file"
+                accept=".csv,text/csv"
+                hidden
+                onChange={upload}
+              />
+            </section>
+            {panel()}
+            <section className="dt-hint">
+              <CircleHelp />
+              Decision trees create axis-aligned splits that partition the
+              feature space into rectangles, assigning a class to each region.
+              <span>
+                <Lightbulb /> Need a hint?{" "}
+                <button onClick={() => setTab("explain")}>
+                  Show me how this tree was built
+                </button>
+              </span>
+            </section>
+          </div>
+          <aside className="dt-controls">
+            <section>
+              <h3>TREE CONTROLS</h3>
+              <label>
+                Max Depth
+                <input
+                  aria-label="Max Depth numeric"
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={maxDepth}
+                  onChange={(event) => setMaxDepth(Number(event.target.value))}
+                />
               </label>
               <input
+                aria-label="Max Depth slider"
                 type="range"
-                min={0}
-                max={0.05}
-                step={0.001}
-                value={pruneAlpha}
-                onChange={event => setPruneAlpha(Number(event.target.value))}
-                className="mt-1 w-full accent-blue-600"
+                min="1"
+                max="10"
+                value={maxDepth}
+                onChange={(event) => setMaxDepth(Number(event.target.value))}
               />
-              <p className="mt-1 text-xs text-gray-500">Collapsed branches: {pruning.prunedCount} · Leaves after pruning: {countLeaves(pruning.selectedTree)}</p>
-            </div>
-            <TreeDiagram root={pruning.selectedTree} pathNodes={pathNodes} />
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={pruning.rows} margin={{ top: 10, right: 20, bottom: 20, left: 10 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="alpha" tick={{ fontSize: 10 }} label={{ value: 'alpha', position: 'insideBottom', offset: -12, fontSize: 11 }} />
-                <YAxis domain={[80, 100]} tick={{ fontSize: 10 }} tickFormatter={v => `${v}%`} />
-                <Tooltip formatter={(v: number) => `${v.toFixed(2)}%`} labelFormatter={v => `alpha ${Number(v).toFixed(3)}`} />
-                <Legend />
-                <ReferenceLine x={pruning.best.alpha} stroke="#dc2626" strokeDasharray="5 4" label="best validation" />
-                <Line dataKey="train" name="Training accuracy" stroke="#2563eb" strokeWidth={2} dot={false} />
-                <Line dataKey="validation" name="Validation accuracy" stroke="#059669" strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          </Card>
+              <div>
+                <span>1</span>
+                <span>10</span>
+              </div>
+              <label>
+                Min Samples Split
+                <input
+                  aria-label="Min Samples Split numeric"
+                  type="number"
+                  min="2"
+                  max="20"
+                  value={minSplit}
+                  onChange={(event) => setMinSplit(Number(event.target.value))}
+                />
+              </label>
+              <input
+                aria-label="Min Samples Split slider"
+                type="range"
+                min="2"
+                max="20"
+                value={minSplit}
+                onChange={(event) => setMinSplit(Number(event.target.value))}
+              />
+              <div>
+                <span>2</span>
+                <span>20</span>
+              </div>
+              <label>
+                Min Samples Leaf
+                <input
+                  aria-label="Min Samples Leaf numeric"
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={minLeaf}
+                  onChange={(event) => setMinLeaf(Number(event.target.value))}
+                />
+              </label>
+              <input
+                aria-label="Min Samples Leaf slider"
+                type="range"
+                min="1"
+                max="20"
+                value={minLeaf}
+                onChange={(event) => setMinLeaf(Number(event.target.value))}
+              />
+              <div>
+                <span>1</span>
+                <span>20</span>
+              </div>
+              <select
+                aria-label="Criterion"
+                value={criterion}
+                onChange={(event) =>
+                  setCriterion(event.target.value as SplitCriterion)
+                }
+              >
+                <option value="gini">Criterion (Gini)</option>
+                <option value="entropy">Criterion (Entropy)</option>
+              </select>
+            </section>
+            <section className="dt-gauge">
+              <h3>IMPURITY ({criterion.toUpperCase()})</h3>
+              <div>
+                <i />
+                <b>{(tree.impurity ?? 0).toFixed(3)}</b>
+                <span>Weighted Avg. {criterion}</span>
+              </div>
+              <footer>
+                <span>
+                  0<br />
+                  <small>Pure</small>
+                </span>
+                <span>
+                  0.5
+                  <br />
+                  <small>More Impure</small>
+                </span>
+              </footer>
+            </section>
+            <section className="dt-prune">
+              <h3>PRUNING</h3>
+              <label>
+                Cost Complexity (α)
+                <input
+                  aria-label="Cost Complexity numeric"
+                  type="number"
+                  min="0"
+                  max=".05"
+                  step=".001"
+                  value={alpha}
+                  onChange={(event) => setAlpha(Number(event.target.value))}
+                />
+              </label>
+              <input
+                aria-label="Cost Complexity slider"
+                type="range"
+                min="0"
+                max=".05"
+                step=".001"
+                value={alpha}
+                onChange={(event) => setAlpha(Number(event.target.value))}
+              />
+              <div>
+                <span>0.000</span>
+                <span>0.050</span>
+              </div>
+              <button onClick={() => setAppliedAlpha(alpha)}>
+                Apply Pruning
+              </button>
+            </section>
+            <button
+              className="dt-retrain"
+              onClick={() => {
+                setTrained(`Trained ${nodes(tree)} nodes`);
+                setToast("Tree retrained");
+              }}
+            >
+              <RefreshCw /> Retrain Tree
+            </button>
+            <section className="dt-options">
+              <h3>TREE OPTIONS</h3>
+              <label>
+                Show Sample Counts
+                <button
+                  className={showCounts ? "on" : ""}
+                  onClick={() => setShowCounts((value) => !value)}
+                >
+                  <i />
+                </button>
+              </label>
+              <label>
+                Show Impurity
+                <button
+                  className={showImpurity ? "on" : ""}
+                  onClick={() => setShowImpurity((value) => !value)}
+                >
+                  <i />
+                </button>
+              </label>
+              <label>
+                Animate Splits
+                <button
+                  className={animate ? "on" : ""}
+                  onClick={() => setAnimate((value) => !value)}
+                >
+                  <i />
+                </button>
+              </label>
+            </section>
+          </aside>
         </div>
-      </div>
-
-      <LearningPanel
-        sections={[
-          {
-            title: 'How Decision Trees Are Built',
-            content: (
-              <div className="space-y-2">
-                <p>A decision tree is built recursively using a greedy top-down strategy called CART (Classification and Regression Trees):</p>
-                <ol className="list-decimal ml-4 space-y-1">
-                  <li>At each node, try every possible split (feature × threshold)</li>
-                  <li>Choose the split that maximises information gain (or minimises weighted impurity)</li>
-                  <li>Recurse on left and right subsets</li>
-                  <li>Stop when max depth is reached, node has &lt; minSamples, or all samples are the same class</li>
-                </ol>
-              </div>
-            ),
-          },
-          {
-            title: 'Information Gain',
-            content: (
-              <div className="space-y-2">
-                <p>Information gain measures how much a split reduces impurity:</p>
-                <pre className="bg-gray-100 dark:bg-gray-700 rounded p-2 text-xs">{`IG = Impurity(parent) - (nL/n)·Impurity(left) - (nR/n)·Impurity(right)
-
-We choose the split that maximises IG at each node.`}</pre>
-              </div>
-            ),
-          },
-          {
-            title: 'Overfitting & Pruning',
-            content: (
-              <div className="space-y-2">
-                <p>Deep trees memorise training data. Regularisation strategies:</p>
-                <ul className="list-disc ml-4 space-y-1">
-                  <li><strong>Max depth:</strong> Limit tree growth directly</li>
-                  <li><strong>Min samples split:</strong> Require minimum samples to split</li>
-                  <li><strong>Post-pruning:</strong> Grow full tree, then prune back using validation set</li>
-                  <li><strong>Ensembles:</strong> Random forests / gradient boosting average many trees</li>
-                </ul>
-              </div>
-            ),
-          },
-          {
-            title: 'Prediction Path',
-            content: (
-              <p>Prediction is O(depth) — start at the root and follow left if xⱼ ≤ threshold, else right, until a leaf is reached. The amber highlighted path in the tree diagram shows which nodes your query traverses.</p>
-            ),
-          },
-        ]}
-      />
+      </main>
+      {toast && <div className="dt-toast">{toast}</div>}
     </div>
   );
 }

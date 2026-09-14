@@ -1,0 +1,734 @@
+.ms-page {
+  min-height: 941px;
+  overflow: hidden;
+  background: radial-gradient(circle at 55% 0, #111b32, #030b19 58%);
+  color: #f5f7fb;
+  font:
+    12px Inter,
+    system-ui,
+    sans-serif;
+}
+.ms-page * {
+  box-sizing: border-box;
+}
+.ms-page button,
+.ms-page input,
+.ms-page select {
+  font: inherit;
+}
+.ms-page button {
+  cursor: pointer;
+}
+.ms-side {
+  position: fixed;
+  z-index: 5;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 242px;
+  padding: 0 17px;
+  border-right: 1px solid #293951;
+  background: #071225;
+}
+.ms-side > a:first-child {
+  height: 74px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: white;
+  text-decoration: none;
+}
+.ms-side > a:first-child i {
+  width: 37px;
+  height: 37px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: #18aef5;
+  font-size: 23px;
+}
+.ms-side > a:first-child b {
+  font-size: 17px;
+}
+.ms-side > a:first-child small {
+  display: block;
+  color: #919eb2;
+  font-size: 10px;
+}
+.ms-side h3 {
+  margin: 20px 3px 16px;
+  color: #a3afc0;
+  font-size: 11px;
+}
+.ms-side > b {
+  display: block;
+  margin: 17px 3px 8px;
+  color: #8896aa;
+  font-size: 10px;
+}
+.ms-side > button {
+  width: 100%;
+  height: 35px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: #9fadc1;
+  text-align: left;
+}
+.ms-side > button.active {
+  border-left: 1px solid #3886ff;
+  border-radius: 4px;
+  background: #142a59;
+  color: white;
+  font-weight: bold;
+}
+.ms-side > button.done {
+  color: #aebacd;
+}
+.ms-side > button.done::first-letter {
+  color: #30dba9;
+}
+.ms-side > button:not(.active) {
+  display: flex;
+  justify-content: space-between;
+}
+.ms-side > article {
+  position: absolute;
+  left: 17px;
+  right: 17px;
+  bottom: 156px;
+  height: 124px;
+  padding: 14px;
+  border: 1px solid #2659bb;
+  border-radius: 6px;
+  background: #0a1830;
+}
+.ms-side > article svg {
+  color: #528cff;
+}
+.ms-side > article > b {
+  margin-left: 10px;
+  color: #61a0ff;
+}
+.ms-side > article p {
+  line-height: 1.6;
+  color: #aab6c7;
+}
+.ms-side > article button {
+  width: 100%;
+  height: 33px;
+  border: 1px solid #3274e5;
+  border-radius: 4px;
+  background: transparent;
+  color: #60a1ff;
+}
+.ms-side > .path {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 37px;
+  height: 41px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #2d3c55;
+  border-radius: 4px;
+  color: white;
+  text-decoration: none;
+}
+.ms-top {
+  position: fixed;
+  z-index: 4;
+  left: 242px;
+  right: 0;
+  top: 0;
+  height: 74px;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  border-bottom: 1px solid #29384f;
+  background: #071225;
+}
+.ms-top > div {
+  flex: 1;
+}
+.ms-top h1 {
+  margin: 0 0 6px;
+  font-size: 24px;
+}
+.ms-top h1 em {
+  margin-left: 10px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: #1c2440;
+  color: #c7cfdd;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 400;
+}
+.ms-top p {
+  margin: 0;
+  color: #a5b1c2;
+}
+.ms-top > section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-right: 12px;
+}
+.ms-top > section i {
+  width: 112px;
+  height: 8px;
+  border-radius: 5px;
+  background: #28374d;
+}
+.ms-top > section i b {
+  display: block;
+  width: 65%;
+  height: 100%;
+  border-radius: inherit;
+  background: #3d79f4;
+}
+.ms-top > button {
+  height: 35px;
+  margin-left: 7px;
+  padding: 0 11px;
+  border: 1px solid #293b54;
+  border-radius: 5px;
+  background: #0a172a;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.ms-top > button:last-child {
+  width: 35px;
+}
+.ms-top svg {
+  width: 15px;
+}
+.ms-page > main {
+  position: absolute;
+  left: 262px;
+  right: 369px;
+  top: 74px;
+}
+.ms-page > main > nav {
+  height: 48px;
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid #27374e;
+}
+.ms-page > main > nav button {
+  min-width: 113px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: #aeb9ca;
+}
+.ms-page > main > nav button.active {
+  border-color: #12c9ef;
+  background: #111d34;
+  color: white;
+}
+.ms-page > main > nav > span {
+  position: fixed;
+  left: 1145px;
+  right: 17px;
+  top: 74px;
+  width: auto;
+  height: 48px;
+  padding: 10px 20px;
+  color: #95a4b9;
+}
+.ms-page > main > nav > span svg {
+  float: left;
+  width: 28px;
+  height: 28px;
+  margin-right: 10px;
+  color: #1cd7f0;
+}
+.ms-page > main > nav > span b {
+  display: block;
+  color: #aab7ca;
+}
+.ms-data {
+  height: 58px;
+  padding: 16px 0;
+  display: flex;
+  gap: 8px;
+}
+.ms-data > b {
+  padding: 9px 14px;
+  border: 1px solid #2b3c55;
+  border-radius: 5px 0 0 5px;
+}
+.ms-data select {
+  width: 194px;
+  margin-left: -9px;
+  padding: 0 13px;
+  border: 1px solid #2b3d57;
+  border-radius: 0 5px 5px 0;
+  background: #0a1729;
+  color: white;
+}
+.ms-data button {
+  padding: 0 13px;
+  border: 1px solid #2a3d58;
+  border-radius: 5px;
+  background: #0b172a;
+  color: #aeb9ca;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.ms-data svg {
+  width: 15px;
+}
+.ms-data input {
+  display: none;
+}
+.ms-plot {
+  height: 394px;
+  position: relative;
+  border: 1px solid #283b56;
+  border-radius: 6px;
+  background: #071427;
+}
+.ms-plot > header {
+  height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 0 10px 0 185px;
+}
+.ms-plot > header > div {
+  flex: 1;
+  display: flex;
+}
+.ms-plot > header i {
+  width: 9%;
+  height: 2px;
+  background: #536077;
+}
+.ms-plot > header i.done {
+  background: #19d1ad;
+}
+.ms-plot > header button {
+  height: 30px;
+  min-width: 88px;
+  border: 1px solid #2b405e;
+  border-radius: 4px;
+  background: #0a1729;
+  color: #a7b3c5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.ms-plot .canvas {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 42px;
+  bottom: 8px;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 45%, #10213b, #071427 65%);
+}
+.ms-plot.heat .canvas {
+  background:
+    radial-gradient(circle at 28% 55%, #63e37055, transparent 18%),
+    radial-gradient(circle at 52% 22%, #ffed3a55, transparent 19%),
+    radial-gradient(circle at 75% 62%, #00cfff55, transparent 20%), #071427;
+}
+.canvas > .datum {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #67768c;
+  opacity: 0.7;
+}
+.canvas > svg {
+  position: absolute;
+  overflow: visible;
+}
+.canvas > svg line {
+  stroke: #27d4df;
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+.canvas > .moving {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 2px solid;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+.canvas > b {
+  position: absolute;
+  z-index: 2;
+  transform: translate(-50%, -50%);
+  font-size: 15px;
+}
+.canvas > b > i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.14;
+}
+.ms-plot > aside {
+  position: absolute;
+  left: 9px;
+  bottom: 10px;
+  width: 146px;
+  padding: 11px;
+  border: 1px solid #2b405c;
+  border-radius: 5px;
+  background: #0a172a;
+}
+.ms-plot > aside span {
+  display: block;
+  margin: 7px;
+}
+.ms-timeline {
+  height: 74px;
+  margin-top: 7px;
+  padding: 7px;
+  display: flex;
+  gap: 8px;
+  background: #091529;
+}
+.ms-timeline button {
+  flex: 1;
+  border: 1px solid #293c57;
+  border-radius: 5px;
+  background: #0b182b;
+  color: #a4b1c4;
+}
+.ms-timeline button:first-child {
+  max-width: 74px;
+  border-radius: 50%;
+  font-size: 25px;
+  color: #4b84ff;
+}
+.ms-timeline button.active {
+  border-color: #3f81ff;
+  background: #11203b;
+  color: white;
+}
+.ms-cards {
+  height: 217px;
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: 1.02fr 1.57fr 1.32fr;
+  gap: 9px;
+}
+.ms-cards > article {
+  padding: 13px;
+  border: 1px solid #293b55;
+  border-radius: 6px;
+  background: #0a1729;
+}
+.ms-cards h3 {
+  margin: 0 0 10px;
+  color: #aab5c7;
+  font-size: 11px;
+}
+.ms-cards article:first-child svg {
+  width: 100%;
+  height: 150px;
+}
+.ms-cards article:first-child polyline {
+  fill: none;
+  stroke: #25d8e0;
+  stroke-width: 2;
+}
+.ms-cards article:nth-child(2) > div {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 7px;
+}
+.ms-cards article:nth-child(2) span {
+  height: 111px;
+  padding: 9px;
+  border: 1px solid;
+  border-radius: 5px;
+  background: #101c2e;
+}
+.ms-cards article:nth-child(2) span b,
+.ms-cards article:nth-child(2) span strong,
+.ms-cards article:nth-child(2) span small {
+  display: block;
+  margin-bottom: 7px;
+}
+.ms-cards article:nth-child(2) footer {
+  height: 40px;
+  margin-top: 8px;
+  padding: 13px;
+  background: #0c192d;
+  text-align: center;
+}
+.ms-cards article:last-child > div {
+  position: relative;
+  height: 142px;
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      ellipse at 45% 50%,
+      #ffe327 0,
+      #17cba0 12%,
+      #064f8b 26%,
+      transparent 45%
+    ),
+    radial-gradient(
+      ellipse at 75% 50%,
+      #ffec2c,
+      #13b98a 12%,
+      #063a73 27%,
+      transparent 44%
+    ),
+    #071427;
+}
+.ms-cards article:last-child > div i {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  filter: blur(2px);
+}
+.ms-cards article:last-child p {
+  margin: 2px;
+}
+.ms-tip {
+  height: 34px;
+  padding: 10px 3px;
+  color: #4e9cff;
+}
+.ms-controls {
+  position: fixed;
+  right: 17px;
+  top: 144px;
+  width: 332px;
+  height: 550px;
+  padding: 17px;
+  border: 1px solid #293c57;
+  border-radius: 7px;
+  background: #0b172a;
+}
+.ms-controls h2 {
+  margin: 0 0 21px;
+  color: #aab6c8;
+  font-size: 12px;
+  letter-spacing: 0.7px;
+}
+.ms-controls > label:not(.toggle) {
+  display: block;
+  margin: 17px 0 8px;
+  font-weight: bold;
+}
+.ms-controls label input[type="number"] {
+  float: right;
+  width: 58px;
+  height: 30px;
+  margin-top: -8px;
+  border: 1px solid #2a3c56;
+  border-radius: 4px;
+  background: #091526;
+  color: white;
+  text-align: center;
+}
+.ms-controls > input[type="range"] {
+  width: 100%;
+  accent-color: #7084ff;
+}
+.ms-controls > p {
+  margin: 2px 0;
+}
+.ms-controls > p span {
+  float: right;
+}
+.ms-controls > small {
+  display: block;
+  margin: 15px 0;
+  color: #9aa8bd;
+  line-height: 1.6;
+}
+.ms-controls > select {
+  width: 100%;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid #2c3e59;
+  border-radius: 4px;
+  background: #091629;
+  color: white;
+}
+.ms-controls .toggle {
+  height: 25px;
+  display: flex;
+  align-items: center;
+}
+.ms-controls .toggle input {
+  margin-left: auto;
+  opacity: 0;
+}
+.ms-controls .toggle i {
+  width: 33px;
+  height: 18px;
+  border-radius: 10px;
+  background: #263750;
+}
+.ms-controls .toggle input:checked + i {
+  background: #635aff;
+}
+.ms-controls > footer {
+  display: flex;
+  gap: 8px;
+  margin-top: 9px;
+}
+.ms-controls > footer button {
+  height: 36px;
+  flex: 1;
+  border: 1px solid #394d68;
+  border-radius: 4px;
+  background: #101d32;
+  color: white;
+}
+.ms-controls > footer button:first-child {
+  background: #3b62ed;
+}
+.ms-toast {
+  position: fixed;
+  z-index: 10;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  padding: 10px 18px;
+  border: 1px solid #3c72bd;
+  border-radius: 5px;
+  background: #123461;
+  color: white;
+}
+@media (max-width: 1100px) {
+  .ms-page {
+    overflow: auto;
+  }
+  .ms-side {
+    width: 210px;
+  }
+  .ms-top {
+    left: 210px;
+  }
+  .ms-page > main {
+    position: relative;
+    left: 210px;
+    right: auto;
+    width: calc(100% - 210px);
+    padding: 0 12px;
+  }
+  .ms-page > main > nav > span {
+    display: none;
+  }
+  .ms-controls {
+    position: relative;
+    left: 210px;
+    right: auto;
+    top: auto;
+    width: calc(100% - 234px);
+    height: auto;
+    margin: 12px;
+  }
+  .ms-plot {
+    min-width: 760px;
+  }
+  .ms-cards {
+    height: auto;
+    grid-template-columns: 1fr;
+  }
+  .ms-cards > article {
+    min-height: 217px;
+  }
+}
+@media (max-width: 600px) {
+  .ms-page {
+    min-height: 100vh;
+  }
+  .ms-side {
+    position: relative;
+    width: 100%;
+    height: 190px;
+  }
+  .ms-side > button:not(.active),
+  .ms-side > b,
+  .ms-side > article,
+  .ms-side > .path {
+    display: none;
+  }
+  .ms-top {
+    position: relative;
+    left: 0;
+    height: auto;
+    min-height: 90px;
+    padding: 10px;
+  }
+  .ms-top > section,
+  .ms-top > button {
+    display: none;
+  }
+  .ms-page > main,
+  .ms-controls {
+    left: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0 8px;
+  }
+  .ms-page > main > nav {
+    overflow: auto;
+  }
+  .ms-page > main > nav button {
+    min-width: 95px;
+  }
+  .ms-data {
+    height: auto;
+    flex-wrap: wrap;
+  }
+  .ms-plot {
+    min-width: 0;
+    height: 720px;
+  }
+  .ms-plot > header {
+    padding-left: 8px;
+  }
+  .ms-plot .canvas {
+    top: 110px;
+  }
+  .ms-plot > aside {
+    top: 44px;
+    bottom: auto;
+  }
+  .ms-timeline {
+    overflow: auto;
+  }
+  .ms-timeline button {
+    min-width: 75px;
+  }
+  .ms-cards {
+    display: block;
+  }
+  .ms-cards > article {
+    margin: 8px 0;
+  }
+  .ms-cards article:nth-child(2) > div {
+    grid-template-columns: 1fr 1fr;
+  }
+  .ms-controls {
+    padding: 15px;
+  }
+  .ms-tip {
+    height: auto;
+  }
+}

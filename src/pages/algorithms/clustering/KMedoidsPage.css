@@ -1,0 +1,801 @@
+.kmed-page {
+  --bg: #060e1e;
+  --panel: #0b1629;
+  --line: #283750;
+  --muted: #a4afc2;
+  min-height: 1024px;
+  width: 100%;
+  overflow: hidden;
+  background: radial-gradient(circle at 55% 0, #14223b, #060e1e 48%);
+  color: #f5f7fb;
+  font:
+    13px Inter,
+    system-ui,
+    sans-serif;
+}
+.kmed-page * {
+  box-sizing: border-box;
+}
+.kmed-page button,
+.kmed-page input,
+.kmed-page select {
+  font: inherit;
+}
+.kmed-page button,
+.kmed-page input,
+.kmed-page select {
+  cursor: pointer;
+}
+.kmed-page svg {
+  width: 16px;
+  height: 16px;
+}
+.kmed-top {
+  position: fixed;
+  z-index: 9;
+  inset: 0 0 auto;
+  height: 65px;
+  display: grid;
+  grid-template-columns: 303px 380px 1fr 51px 51px 51px;
+  align-items: center;
+  border-bottom: 1px solid #283750;
+  background: #071020;
+}
+.kmed-top > a {
+  height: 100%;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-right: 1px solid #283750;
+  color: white;
+  text-decoration: none;
+}
+.kmed-top > a > svg {
+  width: 36px;
+  height: 36px;
+  padding: 8px;
+  border-radius: 50%;
+  background: #2655cb;
+}
+.kmed-top > a b {
+  font-size: 17px;
+}
+.kmed-top > a small {
+  display: block;
+  color: #8997aa;
+  letter-spacing: 0.1em;
+}
+.kmed-top > section {
+  padding: 0 17px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+.kmed-top > section i {
+  width: 190px;
+  height: 8px;
+  background: #1c2940;
+  border-radius: 5px;
+}
+.kmed-top > section i b {
+  display: block;
+  width: 50%;
+  height: 100%;
+  background: #2778ed;
+  border-radius: inherit;
+}
+.kmed-top > section strong {
+  color: #5794ff;
+}
+.kmed-top > p {
+  height: 100%;
+  margin: 0;
+  padding: 13px 18px;
+  border-left: 1px solid #25344a;
+}
+.kmed-top > p b {
+  display: block;
+  color: #aab5c6;
+  font-weight: normal;
+}
+.kmed-top > button {
+  height: 36px;
+  margin-right: 9px;
+  border: 1px solid #2e3d55;
+  border-radius: 6px;
+  background: #081426;
+  color: white;
+  display: grid;
+  place-items: center;
+}
+.kmed-nav {
+  position: fixed;
+  z-index: 7;
+  left: 0;
+  top: 65px;
+  bottom: 0;
+  width: 303px;
+  padding: 15px;
+  border-right: 1px solid #283750;
+  background: linear-gradient(#091527, #071021);
+}
+.kmed-nav h3 {
+  margin: 7px 10px;
+  color: #9eabbd;
+  font-size: 10px;
+}
+.kmed-nav > button {
+  width: 100%;
+  height: 41px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: #b3becd;
+  text-align: left;
+}
+.kmed-nav > .open {
+  color: #d5dce5;
+}
+.kmed-nav > section {
+  margin-left: 15px;
+  padding-left: 16px;
+  border-left: 1px solid #33455e;
+}
+.kmed-nav > section button {
+  width: 100%;
+  height: 32px;
+  border: 0;
+  background: transparent;
+  color: #aab5c5;
+  text-align: left;
+}
+.kmed-nav > section button.active {
+  color: #4a8fff;
+}
+.kmed-nav .download {
+  margin: 8px;
+  border: 1px solid #3a4a61;
+  width: calc(100% - 16px);
+  justify-content: center;
+}
+.kmed-nav article {
+  border: 1px solid #263750;
+  border-radius: 6px;
+  background: #0e1a2e;
+  padding: 10px;
+  margin-top: 8px;
+}
+.kmed-nav article small {
+  color: #8492a7;
+}
+.kmed-nav article > b {
+  display: block;
+  margin: 7px 0;
+}
+.kmed-nav article > b i {
+  float: right;
+  color: #44d887;
+  font-style: normal;
+  font-size: 10px;
+}
+.kmed-nav article > div {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.kmed-nav article span {
+  color: #a9b4c5;
+}
+.kmed-nav article span b {
+  display: block;
+  color: #f0f3f7;
+}
+.kmed-nav article p {
+  color: #9caabc;
+  line-height: 20px;
+}
+.kmed-nav article select {
+  width: 100%;
+  height: 35px;
+  padding: 0 9px;
+  border: 1px solid #30415a;
+  background: #0b1628;
+  color: white;
+}
+.kmed-nav .upload {
+  height: 169px;
+}
+.kmed-nav .upload > svg {
+  display: block;
+  width: 38px;
+  height: 38px;
+  margin: 26px auto 5px;
+  color: #91a0ba;
+}
+.kmed-nav .upload p {
+  text-align: center;
+}
+.kmed-nav .upload p b {
+  color: #5394ff;
+}
+.kmed-nav .upload input {
+  display: none;
+}
+.kmed-page > main {
+  position: absolute;
+  left: 320px;
+  right: 19px;
+  top: 65px;
+  min-height: 959px;
+  padding-right: 0;
+}
+.kmed-page > main > header {
+  height: 105px;
+  padding-top: 14px;
+}
+.kmed-page > main h1 {
+  margin: 0 0 9px;
+  font-size: 25px;
+}
+.kmed-page > main h1 em {
+  font-style: normal;
+  font-size: 11px;
+  margin-left: 10px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  background: #27bed3;
+  color: #04101c;
+}
+.kmed-page > main > header p {
+  margin: 0;
+  color: #abb7c7;
+  line-height: 21px;
+}
+.kmed-page > main > nav {
+  height: 35px;
+  width: 874px;
+  border-bottom: 1px solid #293950;
+}
+.kmed-page > main > nav button {
+  height: 35px;
+  padding: 0 18px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: #aeb8c8;
+}
+.kmed-page > main > nav button.active {
+  border-color: #3c84f4;
+  color: white;
+}
+.kmed-plot {
+  position: relative;
+  width: 874px;
+  height: 540px;
+  margin-top: 11px;
+  border: 1px solid #2c3c54;
+  border-radius: 7px;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 76px, #243650 77px),
+    repeating-linear-gradient(90deg, transparent 0 116px, #243650 117px);
+}
+.kmed-plot > .point,
+.kmed-plot > .outlier {
+  position: absolute;
+  z-index: 3;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+.kmed-plot > .outlier {
+  width: auto;
+  height: auto;
+  color: #ff5656;
+  font-size: 18px;
+  font-weight: bold;
+}
+.kmed-plot > .medoid {
+  width: 24px;
+  height: 24px;
+  border: 4px solid white;
+  background: transparent !important;
+  box-shadow: 0 0 0 3px currentColor;
+  display: grid;
+  place-items: center;
+}
+.kmed-plot > i {
+  position: absolute;
+  z-index: 1;
+  height: 1px;
+  opacity: 0.35;
+  transform-origin: left;
+}
+.kmed-plot > .k-label {
+  position: absolute;
+  z-index: 5;
+  left: 18px;
+  top: 15px;
+  padding: 8px 12px;
+  border: 1px solid #2c3e58;
+  border-radius: 6px;
+  background: #0a1627;
+}
+.kmed-plot > article {
+  position: absolute;
+  z-index: 6;
+  right: 26px;
+  top: 54px;
+  width: 177px;
+  height: 244px;
+  padding: 15px;
+  border: 1px solid #273951;
+  border-radius: 7px;
+  background: #091426ee;
+}
+.kmed-plot > article > b {
+  color: #4b93ff;
+}
+.kmed-plot > article h3 {
+  color: #26d6bd;
+}
+.kmed-plot > article p {
+  line-height: 20px;
+  color: #b3becc;
+}
+.kmed-plot > article div {
+  display: flex;
+  gap: 8px;
+}
+.kmed-plot > article button {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 1px solid #31445f;
+  border-radius: 4px;
+  background: #0b1729;
+  color: white;
+}
+.kmed-plot > article div button:last-child {
+  background: #195cd8;
+}
+.kmed-plot > article > button {
+  margin-top: 10px;
+}
+.kmed-plot > footer {
+  position: absolute;
+  left: 14px;
+  bottom: 13px;
+  display: flex;
+  align-items: end;
+  gap: 26px;
+}
+.kmed-plot > footer label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.kmed-plot > footer select {
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid #30415a;
+  background: #091426;
+  color: white;
+}
+.kmed-cards {
+  height: 194px;
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: 384px 337px 1fr;
+  gap: 10px;
+}
+.kmed-cards > article {
+  position: relative;
+  padding: 14px;
+  border: 1px solid #293950;
+  border-radius: 6px;
+  background: #0b1629;
+}
+.kmed-cards h3 {
+  margin: 0 0 15px;
+}
+.kmed-cards h3 small {
+  color: #8f9db0;
+  font-weight: normal;
+}
+.kmed-cards > article:first-child > div {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+.kmed-cards > article:first-child span {
+  padding-right: 12px;
+  border-right: 1px solid #283950;
+  color: #9facbd;
+}
+.kmed-cards > article:first-child span b {
+  display: block;
+  margin-top: 12px;
+  color: #4c93ff;
+  font-size: 17px;
+}
+.kmed-cards svg {
+  width: 100%;
+  height: 53px;
+  margin-top: 10px;
+}
+.kmed-cards svg polyline {
+  fill: none;
+  stroke: #438cf4;
+  stroke-width: 2;
+}
+.swap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.swap > b {
+  width: 43px;
+  height: 43px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #60c63d;
+}
+.swap > b:nth-child(2) {
+  background: #ff9700;
+}
+.swap span {
+  margin-left: auto;
+  color: #9ba9bb;
+}
+.swap span strong {
+  display: block;
+  color: #35db9b;
+  font-size: 15px;
+}
+.kmed-cards > article:nth-child(2) > button {
+  position: absolute;
+  left: 15px;
+  right: 138px;
+  bottom: 12px;
+  height: 34px;
+  border: 0;
+  background: #1a54bd;
+  color: white;
+}
+.kmed-cards > article:last-child {
+  display: grid;
+  grid-template-columns: 155px 105px 1fr;
+  grid-template-rows: 25px 1fr;
+  column-gap: 8px;
+}
+.kmed-cards > article:last-child h3 {
+  grid-column: 1 / 4;
+}
+.donut {
+  grid-column: 2;
+  grid-row: 2;
+  width: 102px;
+  height: 102px;
+  margin: 0 18px;
+  border: 16px solid #1e3149;
+  border-top-color: #2972e5;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+}
+.donut small {
+  font-size: 10px;
+}
+.kmed-cards > article:last-child > p {
+  grid-column: 1;
+  grid-row: 2;
+  color: #9eabbd;
+  line-height: 18px;
+}
+.kmed-cards > article:last-child > b {
+  grid-column: 3;
+  grid-row: 2;
+  color: #9ba9bb;
+}
+.kmed-cards > article:last-child strong {
+  display: block;
+  color: white;
+  margin: 7px 0;
+}
+.kmed-cards > article:last-child em {
+  display: block;
+  color: #ff5757;
+}
+.kmed-tip {
+  height: 46px;
+  margin-top: 10px;
+  padding: 12px 17px;
+  border: 1px solid #293950;
+  border-radius: 6px;
+  color: #4f91ff;
+}
+.kmed-tip button {
+  float: right;
+  height: 28px;
+  margin: -4px 0 -4px 12px;
+  padding: 0 17px;
+  border: 1px solid #2d3d55;
+  background: #0b1729;
+  color: #b6c0ce;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.kmed-controls {
+  position: fixed;
+  z-index: 8;
+  right: 19px;
+  top: 78px;
+  width: 303px;
+  height: 676px;
+  padding: 0 16px;
+  border: 1px solid #2b3b52;
+  border-radius: 7px;
+  background: #0b1629;
+}
+.kmed-controls > h3 {
+  height: 42px;
+  margin: 0 -16px 14px;
+  padding: 13px 16px;
+  border-bottom: 1px solid #28384f;
+  color: #aab4c4;
+}
+.kmed-controls > h3 button {
+  float: right;
+  border: 0;
+  background: transparent;
+  color: #aab4c4;
+  display: flex;
+  gap: 5px;
+}
+.kmed-controls label {
+  display: block;
+  margin: 12px 0 7px;
+  color: #aeb9c9;
+}
+.kmed-controls label > input {
+  float: right;
+  width: 55px;
+  height: 28px;
+  margin-top: -6px;
+  padding: 4px;
+  color: white;
+  border: 1px solid #30415a;
+  border-radius: 3px;
+  background: #0b1728;
+  text-align: right;
+}
+.kmed-controls select {
+  width: 100%;
+  height: 32px;
+  padding: 0 11px;
+  border: 1px solid #30415a;
+  border-radius: 4px;
+  background: #091426;
+  color: white;
+}
+.kmed-controls > input {
+  width: 85%;
+  accent-color: #347ef0;
+}
+.kmed-controls .stepper {
+  height: 35px;
+  display: grid;
+  grid-template-columns: 38px 1fr 38px;
+  border: 1px solid #2f4058;
+}
+.stepper button,
+.stepper b {
+  border: 0;
+  background: #0b1728;
+  color: white;
+  display: grid;
+  place-items: center;
+}
+.stepper b {
+  border-inline: 1px solid #2f4058;
+}
+.switch {
+  height: 48px;
+  margin: 9px -16px 0;
+  padding: 12px 16px;
+  border-top: 1px solid #26374e;
+}
+.switch > button {
+  width: 35px;
+  height: 20px;
+  margin-right: 7px;
+  border: 0;
+  border-radius: 12px;
+  background: #233248;
+  padding: 2px;
+}
+.switch > button i {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+}
+.switch > button.on {
+  background: #347ff0;
+}
+.switch > button.on i {
+  margin-left: 15px;
+}
+.kmed-controls h4 {
+  margin: 15px 0 6px;
+  color: #8997aa;
+  font-size: 10px;
+}
+.kmed-controls .phase {
+  width: 100%;
+  height: 29px;
+  padding: 0 10px;
+  border: 1px solid #1f3047;
+  background: #0d192c;
+  color: #9caabd;
+  text-align: left;
+}
+.kmed-controls .phase b {
+  margin-right: 12px;
+  color: #3bcc8e;
+}
+.kmed-controls .phase svg {
+  float: right;
+  color: #32d596;
+}
+.kmed-controls .phase.active {
+  border-color: #347ff0;
+  color: #5796ff;
+}
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.actions button {
+  height: 30px;
+  border: 1px solid #354760;
+  background: #0b1728;
+  color: white;
+}
+.actions button:first-child {
+  background: #1c5dcc;
+}
+.kmed-toast {
+  position: fixed;
+  z-index: 20;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 18px;
+  border: 1px solid #3d73b8;
+  border-radius: 5px;
+  background: #12325e;
+  color: white;
+}
+@media (max-width: 1100px) {
+  .kmed-page {
+    overflow: auto;
+  }
+  .kmed-top {
+    grid-template-columns: 220px 1fr 160px;
+  }
+  .kmed-top > p,
+  .kmed-top > button {
+    display: none;
+  }
+  .kmed-nav {
+    width: 220px;
+  }
+  .kmed-page > main {
+    position: relative;
+    left: 220px;
+    right: auto;
+    width: calc(100% - 220px);
+    padding: 0 12px;
+  }
+  .kmed-plot,
+  .kmed-page > main > nav {
+    width: 100%;
+  }
+  .kmed-controls {
+    position: relative;
+    left: 220px;
+    right: auto;
+    top: auto;
+    width: calc(100% - 244px);
+    height: auto;
+    margin: 12px;
+  }
+  .kmed-cards {
+    height: auto;
+    grid-template-columns: 1fr;
+  }
+  .kmed-cards > article {
+    min-height: 190px;
+  }
+}
+@media (max-width: 600px) {
+  .kmed-page {
+    min-height: 100vh;
+  }
+  .kmed-top {
+    position: relative;
+    grid-template-columns: 160px 1fr;
+  }
+  .kmed-top > section {
+    padding: 5px;
+  }
+  .kmed-top > section i {
+    display: none;
+  }
+  .kmed-nav {
+    position: relative;
+    top: 0;
+    width: 100%;
+    height: auto;
+  }
+  .kmed-nav section,
+  .kmed-nav article,
+  .kmed-nav .download {
+    display: none;
+  }
+  .kmed-page > main,
+  .kmed-controls {
+    left: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0 8px;
+  }
+  .kmed-page > main > header {
+    height: auto;
+    padding: 14px 5px;
+  }
+  .kmed-page > main > nav {
+    overflow-x: auto;
+    display: flex;
+  }
+  .kmed-page > main > nav button {
+    min-width: 90px;
+  }
+  .kmed-plot {
+    height: 500px;
+  }
+  .kmed-plot > article {
+    right: 8px;
+    top: 8px;
+  }
+  .kmed-plot > footer {
+    overflow: auto;
+    right: 0;
+  }
+  .kmed-cards {
+    display: block;
+  }
+  .kmed-cards > article {
+    margin: 8px 0;
+  }
+  .kmed-tip {
+    height: auto;
+  }
+  .kmed-controls {
+    padding: 10px 16px;
+    border-radius: 0;
+  }
+}

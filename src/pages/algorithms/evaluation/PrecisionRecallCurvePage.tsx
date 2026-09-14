@@ -1,15 +1,17 @@
 import { useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Line, LineChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, ReferenceLine } from 'recharts';
 import { BarChart2 } from 'lucide-react';
 import { PageHeader } from '../../../components/common/PageHeader';
 import { Card, InfoBox } from '../../../components/common/Card';
 import { MetricsPanel } from '../../../components/ml/MetricsPanel';
 import { precisionRecallCurve, binaryMetrics } from '../../../lib/math/metrics';
+import PrecisionRecallApprovedPage from './PrecisionRecallApprovedPage';
 
 const actual = [1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0];
 const scores = [0.97,0.91,0.84,0.73,0.62,0.66,0.54,0.49,0.41,0.35,0.31,0.23,0.17,0.11,0.05,0.58,0.44,0.38,0.27,0.19];
 
-export default function PrecisionRecallCurvePage() {
+export function PrecisionRecallAdvancedLab() {
   const [threshold, setThreshold] = useState(0.5);
   const curve = useMemo(() => precisionRecallCurve(actual, scores), []);
   const chart = curve.precision.map((precision, i) => ({ recall: Number(curve.recall[i].toFixed(3)), precision: Number(precision.toFixed(3)), threshold: curve.thresholds[i] }));
@@ -42,4 +44,11 @@ export default function PrecisionRecallCurvePage() {
       </div>
     </div>
   );
+}
+
+export default function PrecisionRecallCurvePage() {
+  const { search } = useLocation();
+  return new URLSearchParams(search).has('advanced')
+    ? <PrecisionRecallAdvancedLab />
+    : <PrecisionRecallApprovedPage />;
 }

@@ -1,15 +1,16 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { Badge } from './Badge';
 import type { BadgeType } from '../../data/navigation';
 import { ChevronRight, Clock, Home } from 'lucide-react';
 import { getAlgorithmByRoute, getAllAlgorithms } from '../../data/implementationStatus';
 import { getAlgorithmDatasetSuggestions } from '../../data/algorithmDatasets';
-import { LearningCompanion } from '../learning/LearningCompanion';
-import { AlgorithmDatasetLoader } from '../dataset/AlgorithmDatasetLoader';
-import { ExperimentWorkspacePanel } from '../ml/ExperimentWorkspacePanel';
-import { AlgorithmIntroduction } from '../learning/AlgorithmIntroduction';
-import { AlgorithmLearningConsole } from '../learning/AlgorithmLearningConsole';
+
+const LearningCompanion = lazy(() => import('../learning/LearningCompanion').then(module => ({ default: module.LearningCompanion })));
+const AlgorithmDatasetLoader = lazy(() => import('../dataset/AlgorithmDatasetLoader').then(module => ({ default: module.AlgorithmDatasetLoader })));
+const ExperimentWorkspacePanel = lazy(() => import('../ml/ExperimentWorkspacePanel').then(module => ({ default: module.ExperimentWorkspacePanel })));
+const AlgorithmIntroduction = lazy(() => import('../learning/AlgorithmIntroduction').then(module => ({ default: module.AlgorithmIntroduction })));
+const AlgorithmLearningConsole = lazy(() => import('../learning/AlgorithmLearningConsole').then(module => ({ default: module.AlgorithmLearningConsole })));
 
 interface PageHeaderProps {
   title: string;
@@ -79,7 +80,11 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
           </div>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{category}</p>
           <p className="text-sm text-gray-600 dark:text-gray-300">{subtitle}</p>
-          {showAlgorithmIntro && currentAlgorithm && <AlgorithmIntroduction algorithm={currentAlgorithm} />}
+          {showAlgorithmIntro && currentAlgorithm && (
+            <Suspense fallback={null}>
+              <AlgorithmIntroduction algorithm={currentAlgorithm} />
+            </Suspense>
+          )}
           {related.length > 0 && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <span className="text-[11px] font-bold uppercase tracking-wide text-gray-400">Related</span>
@@ -103,12 +108,14 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
         </div>
       </div>
       {showAlgorithmTools && isAlgorithmRoute && (
-        <div className="mt-4 space-y-4">
-          <LearningCompanion route={location.pathname} compact />
-          <AlgorithmDatasetLoader route={location.pathname} category={category} />
-          <ExperimentWorkspacePanel route={location.pathname} category={category} compact />
-          <AlgorithmLearningConsole route={location.pathname} title={title} category={category} />
-        </div>
+        <Suspense fallback={<div className="mt-4 h-20 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" aria-label="Loading algorithm tools" />}>
+          <div className="mt-4 space-y-4">
+            <LearningCompanion route={location.pathname} compact />
+            <AlgorithmDatasetLoader route={location.pathname} category={category} />
+            <ExperimentWorkspacePanel route={location.pathname} category={category} compact />
+            <AlgorithmLearningConsole route={location.pathname} title={title} category={category} />
+          </div>
+        </Suspense>
       )}
     </div>
   );

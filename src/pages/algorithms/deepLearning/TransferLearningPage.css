@@ -1,0 +1,712 @@
+.transfer-page {
+  --bg: #071426;
+  --panel: #0b1b31;
+  --line: #1d3352;
+  --muted: #8fa5c4;
+  min-height: 100vh;
+  background: var(--bg);
+  color: #eaf2ff;
+  font-family: Inter, system-ui, sans-serif;
+  font-size: 12px;
+  padding: 132px 366px 42px 242px;
+}
+.transfer-page * {
+  box-sizing: border-box;
+}
+.transfer-page button,
+.transfer-page select,
+.transfer-page input {
+  font: inherit;
+  color: inherit;
+}
+.transfer-page button {
+  cursor: pointer;
+}
+.transfer-page .panel {
+  background: linear-gradient(145deg, #0c1d34, #09172a);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.transfer-side {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 230px;
+  border-right: 1px solid #18304d;
+  background: #08172a;
+  display: flex;
+  flex-direction: column;
+  padding: 16px 10px;
+  z-index: 4;
+}
+.transfer-side a {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  color: white;
+  text-decoration: none;
+  font-size: 17px;
+  padding: 0 10px 15px;
+  border-bottom: 1px solid var(--line);
+}
+.transfer-side a small {
+  grid-column: 2;
+  font-size: 12px;
+  color: #adc1dd;
+}
+.transfer-side button {
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+.transfer-side button:hover,
+.transfer-side button.active {
+  background: #102b50;
+  color: #56a0ff;
+}
+.transfer-side h4 {
+  font-size: 10px;
+  color: #7288a8;
+  margin: 15px 10px 5px;
+}
+.transfer-side section {
+  margin: auto 18px 8px;
+  padding: 14px;
+  border: 1px solid #285289;
+  border-radius: 8px;
+  color: #a9c8fa;
+}
+.transfer-side section span {
+  display: inline-block;
+  margin-top: 12px;
+  border-radius: 10px;
+  background: #0b486f;
+  padding: 2px 8px;
+}
+.transfer-side footer {
+  border-top: 1px solid var(--line);
+  padding: 15px;
+  text-align: center;
+  word-spacing: 21px;
+}
+.transfer-head {
+  position: fixed;
+  z-index: 3;
+  left: 230px;
+  right: 0;
+  top: 0;
+  height: 120px;
+  border-bottom: 1px solid var(--line);
+  background: #071426;
+  padding: 17px 16px 0 74px;
+}
+.transfer-head .title-icon {
+  position: absolute;
+  left: 16px;
+  top: 18px;
+  width: 48px;
+  height: 48px;
+  border-radius: 7px;
+  background: #102b50;
+  color: #68a5ff;
+  display: grid;
+  place-items: center;
+  font-size: 27px;
+}
+.transfer-head h1 {
+  font-size: 25px;
+  margin: 0 0 3px;
+}
+.transfer-head p {
+  margin: 0;
+  color: var(--muted);
+}
+.head-actions {
+  position: absolute;
+  right: 20px;
+  top: 17px;
+  display: flex;
+  gap: 10px;
+}
+.head-actions button,
+.head-actions select {
+  height: 37px;
+  background: #0b1b31;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 0 14px;
+}
+.head-actions svg {
+  width: 14px;
+  vertical-align: middle;
+}
+.transfer-head nav {
+  position: absolute;
+  bottom: 0;
+  left: 16px;
+  display: flex;
+  gap: 8px;
+}
+.transfer-head nav button {
+  height: 42px;
+  padding: 0 25px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: #aebbd0;
+}
+.transfer-head nav button.active {
+  border-color: #3285ff;
+  color: #68a5ff;
+}
+.transfer-page > main {
+  display: grid;
+  grid-template-columns: 292px minmax(300px, 1fr) 316px;
+  grid-template-rows: 102px 320px 172px 120px;
+  gap: 12px;
+}
+.transfer-objective {
+  display: flex;
+  padding: 14px;
+  gap: 12px;
+}
+.transfer-objective i,
+.transfer-time i {
+  background: #0d294c;
+  color: #3f96ff;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  font-style: normal;
+}
+.transfer-objective small,
+.transfer-progress > small,
+.transfer-time small {
+  color: #9db0cc;
+}
+.transfer-objective p {
+  font-size: 11px;
+  margin: 5px 0;
+}
+.transfer-objective button {
+  border: 0;
+  background: none;
+  color: #4593ff;
+  padding: 0;
+}
+.transfer-progress {
+  grid-column: 2 / 4;
+  padding: 13px;
+}
+.transfer-progress div {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-top: 8px;
+}
+.transfer-progress b {
+  height: 52px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 17px 12px;
+  font-size: 11px;
+}
+.transfer-progress b.active {
+  background: #132c50;
+  border-color: #285895;
+}
+.transfer-progress b.done {
+  color: #41d392;
+}
+.architecture {
+  grid-column: 1 / 3;
+  grid-row: 2;
+  width: auto;
+  min-width: 0;
+  padding: 0 16px;
+}
+.architecture h3,
+.training h3,
+.comparison h3,
+.insights h3,
+.flow h3,
+.quick h3 {
+  font-size: 13px;
+  margin: 0 -16px 10px;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--line);
+}
+.architecture > label {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  position: relative;
+}
+.architecture > label select {
+  position: absolute;
+  opacity: 0;
+  width: 100%;
+  height: 54px;
+}
+.backbone {
+  margin-top: 7px;
+  width: 274px;
+  height: 55px;
+  background: #101f37;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 9px 10px 5px 42px;
+  position: relative;
+}
+.backbone i {
+  position: absolute;
+  left: 10px;
+  font-style: normal;
+}
+.backbone b {
+  display: block;
+}
+.backbone span {
+  position: absolute;
+  right: 8px;
+  top: 12px;
+  color: #4993ff;
+}
+.backbone small {
+  color: var(--muted);
+}
+.architecture-flow {
+  display: flex;
+  align-items: center;
+  margin-top: 12px;
+  gap: 7px;
+}
+.architecture-flow > div {
+  border: 1px solid #245082;
+  border-radius: 6px;
+  padding: 9px;
+  width: 63%;
+}
+.architecture-flow .trainable {
+  width: 37%;
+  border-color: #168665;
+}
+.architecture-flow b {
+  display: block;
+  color: #63a2f7;
+  font-size: 10px;
+  margin-bottom: 12px;
+}
+.architecture-flow .trainable b {
+  color: #4ce3a8;
+}
+.architecture-flow section {
+  display: flex;
+  gap: 8px;
+}
+.architecture-flow i {
+  min-width: 52px;
+  height: 62px;
+  display: grid;
+  place-items: center;
+  background: #17345f;
+  border-radius: 5px;
+  font-style: normal;
+  text-align: center;
+}
+.architecture-flow .trainable i {
+  background: #10543f;
+  min-width: 52px;
+}
+.architecture-flow em {
+  font-style: normal;
+}
+.architecture footer {
+  display: flex;
+  gap: 32px;
+  margin-top: 10px;
+  padding: 8px;
+  background: #09172a;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.architecture footer span:first-child {
+  color: #4a8cff;
+}
+.architecture footer span:nth-child(2) {
+  color: #39cc8b;
+}
+.architecture footer small {
+  color: var(--muted);
+}
+.training {
+  grid-column: 3;
+  grid-row: 2;
+  padding: 0 14px;
+}
+.training label {
+  display: block;
+  color: var(--muted);
+  margin: 9px 0;
+}
+.training select,
+.training input[type="number"] {
+  display: block;
+  width: 100%;
+  height: 34px;
+  margin-top: 4px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #09172a;
+  padding: 0 10px;
+}
+.training input[type="range"] {
+  width: 78%;
+  vertical-align: middle;
+  accent-color: #448af7;
+}
+.training label > span {
+  float: right;
+  color: #cbd9ec;
+}
+.training > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.training > div:nth-of-type(2) label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.training > div:nth-of-type(2) input[type="checkbox"] {
+  accent-color: #4a91ff;
+}
+.training button {
+  width: 100%;
+  height: 36px;
+  margin-top: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #09172a;
+}
+.training .train-button {
+  border: 0;
+  background: linear-gradient(90deg, #2784ff, #6b35f4);
+  font-weight: 700;
+}
+.training svg {
+  width: 14px;
+  vertical-align: middle;
+}
+.comparison {
+  grid-column: 1/3;
+  grid-row: 3;
+  display: grid;
+  grid-template-columns: 220px 220px 1fr;
+  padding: 0 16px 12px;
+}
+.comparison h3 {
+  grid-column: 1/4;
+}
+.comparison .metric {
+  border-right: 1px solid #132944;
+  padding: 0 10px;
+}
+.comparison .metric > small,
+.loss > small {
+  color: #c3d2e8;
+}
+.comparison .metric p {
+  display: inline-grid;
+  margin: 15px 28px 0 0;
+  font-size: 9px;
+  color: var(--muted);
+}
+.comparison .metric p b {
+  font-size: 20px;
+  color: white;
+}
+.comparison .metric p:nth-of-type(2) b,
+.comparison .metric strong {
+  color: #41df9b;
+}
+.comparison .metric strong {
+  display: block;
+  margin-left: 110px;
+}
+.comparison .loss {
+  padding-left: 18px;
+}
+.loss svg {
+  width: 100%;
+  height: 100px;
+}
+.loss path {
+  fill: none;
+  stroke: #5a91ed;
+  stroke-width: 2;
+}
+.loss path.after {
+  stroke: #37df9c;
+}
+.insights {
+  grid-column: 1/4;
+  grid-row: 4;
+  padding: 0 16px;
+}
+.insights > div {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.insights p {
+  margin: 0;
+  background: #0d1d33;
+  border: 1px solid #182d49;
+  border-radius: 6px;
+  padding: 12px;
+  height: 61px;
+  color: #aebed5;
+}
+.transfer-right {
+  position: fixed;
+  right: 20px;
+  top: 132px;
+  bottom: 52px;
+  width: 346px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.transfer-time {
+  position: fixed;
+  right: 20px;
+  top: 132px;
+  width: 346px;
+  height: 102px;
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  gap: 12px;
+}
+.transfer-time b {
+  display: block;
+  font-size: 16px;
+  margin-top: 4px;
+}
+.transfer-time p {
+  color: var(--muted);
+  font-size: 10px;
+}
+.transfer-right {
+  top: 247px;
+}
+.flow {
+  padding: 0 16px;
+  flex: 1;
+  text-align: center;
+}
+.flow article {
+  border: 1px solid #285da0;
+  border-radius: 7px;
+  background: #102848;
+  padding: 10px;
+  text-align: left;
+}
+.flow article small {
+  display: block;
+  color: #67a5ff;
+  margin-left: 42px;
+}
+.flow article b {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+.flow article svg {
+  width: 28px;
+  color: #328aff;
+}
+.flow article p {
+  margin: 2px 0 0 42px;
+  color: var(--muted);
+}
+.flow article.target {
+  background: #0c453a;
+  border-color: #13775e;
+}
+.flow article.target small {
+  color: #54e1b0;
+}
+.flow > i {
+  display: block;
+  font-style: normal;
+  color: #6f95c6;
+  margin: 4px;
+}
+.flow > strong {
+  display: block;
+  margin: 8px;
+}
+.split {
+  height: 108px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px;
+  text-align: left;
+}
+.split figure {
+  float: left;
+  width: 65px;
+  height: 65px;
+  border-radius: 50%;
+  background: conic-gradient(#31c4ed 0 80%, #4dd6a4 80% 90%, #7260df 90%);
+  margin: 8px 16px 0 8px;
+  position: relative;
+}
+.split figure:after {
+  content: "";
+  position: absolute;
+  inset: 13px;
+  background: #09172a;
+  border-radius: 50%;
+}
+.split p {
+  line-height: 21px;
+  font-size: 10px;
+}
+.flow > button,
+.quick button {
+  width: 100%;
+  height: 32px;
+  margin-top: 9px;
+  border: 1px solid #285080;
+  border-radius: 5px;
+  background: #10294d;
+}
+.quick {
+  height: 120px;
+  padding: 0 12px;
+}
+.quick h3 {
+  margin-left: -12px;
+  margin-right: -12px;
+}
+.quick button {
+  height: 23px;
+  margin-top: 3px;
+}
+.transfer-status {
+  position: fixed;
+  left: 230px;
+  right: 0;
+  bottom: 0;
+  height: 42px;
+  border-top: 1px solid var(--line);
+  background: #071426;
+  padding: 12px 18px;
+  color: var(--muted);
+}
+.transfer-status b {
+  color: #7baaff;
+}
+.transfer-status span {
+  background: #063e36;
+  color: #35df9d;
+  border-radius: 10px;
+  padding: 3px 8px;
+  margin: 0 22px 0 8px;
+  font-size: 9px;
+}
+.transfer-status em {
+  float: right;
+  color: #7baaff;
+  font-style: normal;
+}
+@media (max-width: 1100px) {
+  .transfer-page {
+    padding: 132px 20px 50px 242px;
+  }
+  .transfer-page > main {
+    grid-template-columns: 1fr;
+  }
+  .transfer-objective,
+  .transfer-progress,
+  .architecture,
+  .training,
+  .comparison,
+  .insights {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .transfer-right,
+  .transfer-time {
+    position: static;
+    width: auto;
+  }
+  .transfer-right {
+    margin-top: 12px;
+  }
+  .transfer-time {
+    display: flex;
+  }
+  .transfer-page {
+    padding-right: 20px;
+  }
+  .transfer-status {
+    left: 230px;
+  }
+  .architecture-flow {
+    overflow: auto;
+  }
+  .head-actions {
+    display: none;
+  }
+  .transfer-head nav button {
+    padding: 0 12px;
+  }
+}
+@media (max-width: 700px) {
+  .transfer-page {
+    padding: 110px 12px 55px;
+  }
+  .transfer-side {
+    display: none;
+  }
+  .transfer-head {
+    left: 0;
+    height: 100px;
+    padding-left: 70px;
+  }
+  .transfer-head nav {
+    overflow: auto;
+    right: 0;
+  }
+  .transfer-head nav button {
+    padding: 0 10px;
+  }
+  .transfer-page > main {
+    grid-template-rows: auto;
+  }
+  .transfer-progress div,
+  .insights > div {
+    grid-template-columns: 1fr 1fr;
+  }
+  .comparison {
+    grid-template-columns: 1fr;
+  }
+  .comparison h3,
+  .comparison .metric,
+  .comparison .loss {
+    grid-column: 1;
+  }
+  .transfer-status {
+    left: 0;
+    white-space: nowrap;
+    overflow: auto;
+  }
+}

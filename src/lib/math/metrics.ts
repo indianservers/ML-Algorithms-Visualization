@@ -1,6 +1,18 @@
 import { mean } from './statistics';
 
+function validatePairs(actual: number[], predicted: number[], name: string) {
+  if (actual.length === 0) throw new Error(`${name} requires at least one sample`);
+  if (actual.length !== predicted.length) throw new Error(`${name} requires arrays of equal length`);
+  if (![...actual, ...predicted].every(Number.isFinite)) throw new Error(`${name} requires finite values`);
+}
+
+function validateBinaryPairs(actual: number[], predicted: number[], name: string) {
+  validatePairs(actual, predicted, name);
+  if (!actual.every(value => value === 0 || value === 1)) throw new Error(`${name} requires binary actual labels`);
+}
+
 export function mse(actual: number[], predicted: number[]): number {
+  validatePairs(actual, predicted, 'MSE');
   return mean(actual.map((a, i) => (a - predicted[i]) ** 2));
 }
 
@@ -9,30 +21,36 @@ export function rmse(actual: number[], predicted: number[]): number {
 }
 
 export function mae(actual: number[], predicted: number[]): number {
+  validatePairs(actual, predicted, 'MAE');
   return mean(actual.map((a, i) => Math.abs(a - predicted[i])));
 }
 
 export function mape(actual: number[], predicted: number[]): number {
+  validatePairs(actual, predicted, 'MAPE');
   const valid = actual.map((a, i) => ({ a, p: predicted[i] })).filter(x => x.a !== 0);
   if (valid.length === 0) return 0;
   return mean(valid.map(({ a, p }) => Math.abs((a - p) / a))) * 100;
 }
 
 export function rSquared(actual: number[], predicted: number[]): number {
+  validatePairs(actual, predicted, 'R-squared');
   const m = mean(actual);
   const ssTot = actual.reduce((s, a) => s + (a - m) ** 2, 0);
   const ssRes = actual.reduce((s, a, i) => s + (a - predicted[i]) ** 2, 0);
-  if (ssTot === 0) return 1;
+  if (ssTot === 0) return ssRes === 0 ? 1 : 0;
   return 1 - ssRes / ssTot;
 }
 
 export function adjustedRSquared(actual: number[], predicted: number[], numFeatures: number): number {
   const n = actual.length;
+  if (!Number.isInteger(numFeatures) || numFeatures < 0) throw new Error('Adjusted R-squared requires a non-negative integer feature count');
+  if (n <= numFeatures + 1) throw new Error('Adjusted R-squared requires more samples than features plus one');
   const r2 = rSquared(actual, predicted);
   return 1 - (1 - r2) * (n - 1) / (n - numFeatures - 1);
 }
 
 export function confusionMatrix(actual: number[], predicted: number[]): number[][] {
+  validatePairs(actual, predicted, 'Confusion matrix');
   const classes = [...new Set([...actual, ...predicted])].sort((a, b) => a - b);
   const n = classes.length;
   const matrix = Array.from({ length: n }, () => Array(n).fill(0));
@@ -49,6 +67,8 @@ export function binaryMetrics(actual: number[], predicted: number[]): {
   tp: number; tn: number; fp: number; fn: number;
   accuracy: number; precision: number; recall: number; specificity: number; f1: number;
 } {
+  validateBinaryPairs(actual, predicted, 'Binary metrics');
+  if (!predicted.every(value => value === 0 || value === 1)) throw new Error('Binary metrics requires binary predicted labels');
   let tp = 0, tn = 0, fp = 0, fn = 0;
   actual.forEach((a, i) => {
     const p = predicted[i];
@@ -66,6 +86,7 @@ export function binaryMetrics(actual: number[], predicted: number[]): {
 }
 
 export function rocCurve(actual: number[], scores: number[]): { fpr: number[]; tpr: number[]; thresholds: number[]; auc: number } {
+  validateBinaryPairs(actual, scores, 'ROC curve');
   const sorted = scores.map((s, i) => ({ s, a: actual[i] })).sort((a, b) => b.s - a.s);
   const totalPos = actual.filter(a => a === 1).length;
   const totalNeg = actual.length - totalPos;
@@ -90,6 +111,7 @@ export function rocCurve(actual: number[], scores: number[]): { fpr: number[]; t
 }
 
 export function precisionRecallCurve(actual: number[], scores: number[]): { precision: number[]; recall: number[]; thresholds: number[] } {
+  validateBinaryPairs(actual, scores, 'Precision-recall curve');
   const sorted = scores.map((s, i) => ({ s, a: actual[i] })).sort((a, b) => b.s - a.s);
   const totalPos = actual.filter(a => a === 1).length;
   let tp = 0, fp = 0;
@@ -108,6 +130,8 @@ export function precisionRecallCurve(actual: number[], scores: number[]): { prec
 }
 
 export function logLoss(actual: number[], probs: number[]): number {
+  validateBinaryPairs(actual, probs, 'Log loss');
+  if (!probs.every(value => value >= 0 && value <= 1)) throw new Error('Log loss probabilities must be between 0 and 1');
   const eps = 1e-15;
   return -mean(actual.map((a, i) => {
     const p = Math.min(Math.max(probs[i], eps), 1 - eps);

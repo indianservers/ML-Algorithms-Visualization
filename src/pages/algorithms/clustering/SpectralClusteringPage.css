@@ -1,0 +1,599 @@
+.sp-page {
+  min-height: 941px;
+  overflow: hidden;
+  background: radial-gradient(circle at 55% 0, #111c33, #050c1b 58%);
+  color: #f5f7fb;
+  font:
+    12px Inter,
+    system-ui,
+    sans-serif;
+}
+.sp-page * {
+  box-sizing: border-box;
+}
+.sp-page button,
+.sp-page input,
+.sp-page select {
+  font: inherit;
+}
+.sp-page button {
+  cursor: pointer;
+}
+.sp-top {
+  position: fixed;
+  z-index: 6;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 62px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  border-bottom: 1px solid #293b54;
+  background: #071326;
+}
+.sp-top > a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 365px;
+  color: white;
+  text-decoration: none;
+  font-size: 26px;
+}
+.sp-top > a b {
+  font-size: 16px;
+}
+.sp-top > a small {
+  display: block;
+  color: #8e9caf;
+  font-size: 10px;
+}
+.sp-top > nav {
+  height: 100%;
+  flex: 1;
+  display: flex;
+}
+.sp-top > nav button {
+  min-width: 125px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: #aeb9ca;
+  font-size: 15px;
+}
+.sp-top > nav button.active {
+  border-color: #3e83f6;
+  color: #5796ff;
+}
+.sp-top > button {
+  width: 42px;
+  border: 0;
+  background: transparent;
+  color: #b3bdcb;
+}
+.sp-top > i {
+  width: 35px;
+  height: 35px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #4e7eee;
+  font-style: normal;
+}
+.sp-side {
+  position: fixed;
+  z-index: 5;
+  left: 0;
+  top: 62px;
+  bottom: 31px;
+  width: 235px;
+  padding: 16px 20px;
+  border-right: 1px solid #273950;
+  background: #071426;
+}
+.sp-side h3 {
+  margin: 12px 0;
+  color: #8f9db1;
+  font-size: 10px;
+}
+.sp-side > button {
+  width: 100%;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #abb6c7;
+  text-align: left;
+}
+.sp-side > button.active {
+  border: 1px solid #23509d;
+  background: #12284e;
+  color: #5597ff;
+}
+.sp-side > button i {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+.sp-side > button svg {
+  width: 17px;
+}
+.sp-side > button small {
+  display: block;
+}
+.sp-side hr {
+  border-color: #26384f;
+}
+.sp-side > input {
+  display: none;
+}
+.sp-page > main {
+  position: absolute;
+  left: 267px;
+  right: 342px;
+  top: 62px;
+}
+.sp-page > main > header {
+  position: relative;
+  height: 89px;
+  padding-top: 18px;
+  border-bottom: 1px solid #283950;
+}
+.sp-page > main > header h1 {
+  margin: 0 0 8px;
+  font-size: 25px;
+}
+.sp-page > main > header h1 em {
+  margin-left: 9px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  background: #432072;
+  color: #cb7bff;
+  font-size: 11px;
+  font-style: normal;
+}
+.sp-page > main > header p {
+  margin: 0;
+  color: #a6b2c3;
+}
+.sp-page > main > header button {
+  position: absolute;
+  top: 31px;
+  right: 0;
+  height: 34px;
+  margin: 0;
+  padding: 0 12px;
+  border: 1px solid #2a3d57;
+  border-radius: 5px;
+  background: #0b182b;
+  color: white;
+}
+.sp-page > main > header button:first-of-type {
+  right: 116px;
+}
+.sp-page > main > h3 {
+  margin: 14px 5px 5px;
+}
+.sp-page > main > p {
+  margin: 0 5px 10px;
+  color: #9eabbd;
+}
+.sp-panels {
+  height: 413px;
+  display: grid;
+  grid-template-columns: 1.05fr 1.07fr 1.03fr;
+  gap: 10px;
+}
+.sp-panels > article {
+  position: relative;
+  border: 1px solid #2a3c56;
+  border-radius: 6px;
+  background: #0a172a;
+}
+.sp-panels article > header {
+  height: 44px;
+  padding: 12px;
+}
+.sp-panels article > header select {
+  float: right;
+  margin-top: -7px;
+  height: 31px;
+  border: 1px solid #2c3f59;
+  background: #0a1729;
+  color: white;
+}
+.graph,
+.embed {
+  position: absolute;
+  left: 9px;
+  right: 9px;
+  top: 45px;
+  bottom: 49px;
+}
+.graph > i,
+.embed > i {
+  position: absolute;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+.graph > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.graph > svg line {
+  stroke: #9fb0c5;
+}
+.sp-panels article > footer {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 0;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  color: #aeb9c8;
+}
+.sp-panels article > footer span i {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 3px;
+  border-radius: 50%;
+}
+.sp-panels article > footer label {
+  margin-left: auto;
+}
+.matrix {
+  height: 274px;
+  margin: 5px 22px;
+  display: grid;
+  grid-template-columns: repeat(30, 1fr);
+}
+.matrix i {
+  display: block;
+}
+.sp-panels article:nth-child(2) > footer b {
+  color: #57d88d;
+}
+.embed {
+  background:
+    repeating-linear-gradient(0deg, transparent 0 67px, #263750 68px),
+    repeating-linear-gradient(90deg, transparent 0 67px, #263750 68px);
+}
+.sp-results {
+  position: relative;
+  height: 240px;
+  margin-top: 17px;
+  padding-top: 43px;
+  display: grid;
+  grid-template-columns: 0.8fr 1fr 1.45fr 0.9fr;
+  border: 1px solid #293b54;
+  border-radius: 6px;
+  background: #091629;
+}
+.sp-results > h2 {
+  position: absolute;
+  left: 15px;
+  top: 0;
+  font-size: 14px;
+}
+.sp-results > h2 em {
+  margin-left: 10px;
+  padding: 4px 9px;
+  border-radius: 12px;
+  background: #11442e;
+  color: #55db90;
+  font-size: 10px;
+  font-style: normal;
+}
+.sp-results > article {
+  margin: 0 7px 10px;
+  padding: 10px;
+  border: 1px solid #273a53;
+  border-radius: 5px;
+  background: #0b192c;
+}
+.sp-results h3 {
+  margin: 0 0 12px;
+}
+.sp-results article p {
+  margin: 13px 0;
+  color: #9fadc0;
+}
+.sp-results article p i {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 12px;
+  border-radius: 50%;
+}
+.sp-results article p b {
+  float: right;
+  color: #65dc83;
+}
+.sp-results article svg {
+  width: 100%;
+  height: 125px;
+}
+.sp-results article svg polyline {
+  fill: none;
+  stroke: #6892ff;
+  stroke-width: 2;
+}
+.sp-results article:last-child > div {
+  width: 90px;
+  height: 90px;
+  margin: auto;
+  display: grid;
+  place-items: center;
+  border: 16px solid #3ed5df;
+  border-radius: 50%;
+  font-size: 20px;
+}
+.sp-results article:last-child label {
+  display: block;
+  margin: 8px;
+}
+.sp-results article:last-child button {
+  width: 100%;
+  height: 31px;
+  border: 1px solid #2d4567;
+  background: #0a1729;
+  color: white;
+}
+.sp-controls {
+  position: fixed;
+  right: 14px;
+  top: 62px;
+  width: 304px;
+  bottom: 31px;
+  padding: 8px 0;
+  background: #091629;
+}
+.sp-controls > header {
+  height: 41px;
+  padding: 8px 13px;
+}
+.sp-controls > header select {
+  float: right;
+  height: 29px;
+  background: #0a1729;
+  color: white;
+}
+.sp-controls > header button {
+  float: right;
+  height: 29px;
+  margin-left: 7px;
+  background: #0a1729;
+  color: #4d91ff;
+  border: 1px solid #2b3e59;
+}
+.sp-controls article {
+  margin: 0 0 8px;
+  padding: 12px;
+  border: 1px solid #293c56;
+  border-radius: 6px;
+  background: #0c192c;
+}
+.sp-controls article:first-of-type {
+  height: 253px;
+}
+.sp-controls article:nth-of-type(2) {
+  height: 246px;
+}
+.sp-controls article:last-child {
+  height: 252px;
+}
+.sp-controls h2 {
+  margin: 0 0 15px;
+  font-size: 14px;
+}
+.sp-controls label,
+.sp-cluster-control {
+  clear: both;
+  display: block;
+  height: 39px;
+  padding-top: 7px;
+  color: #aeb9c9;
+}
+.sp-controls label > input[type="number"] {
+  float: right;
+  width: 45px;
+  height: 29px;
+  margin-top: -7px;
+  border: 1px solid #2d405b;
+  background: #0a1729;
+  color: white;
+  text-align: center;
+}
+.sp-controls > article > input[type="range"] {
+  float: right;
+  width: 105px;
+  margin-right: 55px;
+  margin-top: -32px;
+  accent-color: #477fff;
+}
+.sp-controls select {
+  float: right;
+  width: 164px;
+  height: 30px;
+  margin-top: -7px;
+  background: #0a1729;
+  color: white;
+  border: 1px solid #2c3f5a;
+}
+.sp-controls label button,
+.sp-cluster-control button {
+  float: right;
+  width: 32px;
+  height: 28px;
+  background: #16233a;
+  color: white;
+  border: 1px solid #2c3f5b;
+}
+.sp-controls label b,
+.sp-cluster-control b {
+  float: right;
+  width: 48px;
+  text-align: center;
+}
+.sp-controls article:last-child > button {
+  width: 100%;
+  height: 38px;
+  border: 0;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #2569ed, #703df0);
+  color: white;
+  font-weight: bold;
+}
+.sp-footer {
+  position: fixed;
+  z-index: 7;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 31px;
+  padding: 8px 20px;
+  border-top: 1px solid #293b54;
+  background: #0b1729;
+  color: #92a0b4;
+}
+.sp-footer b {
+  margin-left: 15px;
+  color: white;
+}
+.sp-footer button {
+  margin-left: 15px;
+  border: 1px solid #2b3e58;
+  background: #0a1729;
+  color: #9eabbd;
+}
+.sp-footer span {
+  float: right;
+}
+.sp-toast {
+  position: fixed;
+  z-index: 10;
+  left: 50%;
+  bottom: 38px;
+  transform: translateX(-50%);
+  padding: 10px 18px;
+  border: 1px solid #3b72bd;
+  border-radius: 5px;
+  background: #123460;
+  color: white;
+}
+@media (max-width: 1100px) {
+  .sp-page {
+    overflow: auto;
+  }
+  .sp-top > a {
+    width: 170px;
+  }
+  .sp-top > nav {
+    overflow: hidden;
+  }
+  .sp-top > nav button {
+    min-width: 70px;
+  }
+  .sp-side {
+    width: 205px;
+  }
+  .sp-page > main {
+    position: relative;
+    left: 205px;
+    right: auto;
+    width: calc(100% - 205px);
+    padding: 0 12px;
+  }
+  .sp-controls {
+    position: relative;
+    left: 205px;
+    right: auto;
+    top: auto;
+    width: calc(100% - 229px);
+    bottom: auto;
+    margin: 12px;
+  }
+  .sp-panels {
+    min-width: 0;
+  }
+  .sp-results {
+    height: auto;
+    min-width: 760px;
+    grid-template-columns: 1fr 1fr;
+  }
+  .sp-results article {
+    min-height: 200px;
+  }
+  .sp-footer {
+    display: none;
+  }
+}
+@media (max-width: 600px) {
+  .sp-top {
+    position: relative;
+    height: 70px;
+  }
+  .sp-top > a {
+    width: auto;
+    flex: 1;
+  }
+  .sp-top > nav,
+  .sp-top > button {
+    display: none;
+  }
+  .sp-side {
+    position: relative;
+    top: 0;
+    width: 100%;
+    height: 200px;
+  }
+  .sp-side > button:not(.active),
+  .sp-side hr {
+    display: none;
+  }
+  .sp-page > main,
+  .sp-controls {
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0 8px;
+  }
+  .sp-page > main > header {
+    height: 142px;
+  }
+  .sp-page > main > header button {
+    top: 94px;
+  }
+  .sp-panels {
+    min-width: 0;
+    height: auto;
+    display: block;
+  }
+  .sp-panels > article {
+    height: 400px;
+    margin: 8px 0;
+  }
+  .sp-results {
+    min-width: 0;
+    display: block;
+  }
+  .sp-results article {
+    margin: 8px;
+  }
+  .sp-controls {
+    padding: 8px;
+  }
+  .matrix {
+    height: 275px;
+  }
+}

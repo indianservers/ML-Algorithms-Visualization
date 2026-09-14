@@ -1,39 +1,31 @@
 import { useEffect, useRef, useState } from 'react';
 import '@tensorflow/tfjs-backend-webgl';
 import * as tf from '@tensorflow/tfjs';
+import type { BodySegmenter } from '@tensorflow-models/body-segmentation';
 import { Camera, Layers, Play, Square } from 'lucide-react';
 import { PageHeader } from '../../../components/common/PageHeader';
 import { Card, InfoBox } from '../../../components/common/Card';
 import { MetricsPanel } from '../../../components/ml/MetricsPanel';
 import { stopMediaElementStream, stopMediaStream } from '../../../lib/media/streams';
+import { loadExternalScript } from '../../../lib/media/externalScript';
 
 const W = 640;
 const H = 360;
 
-function loadScript(src: string) {
-  return new Promise<void>((resolve, reject) => {
-    if (document.querySelector(`script[src="${src}"]`)) {
-      resolve();
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = src;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error(`Could not load ${src}`));
-    document.head.appendChild(script);
-  });
-}
+type BodySegmentationRuntime = Pick<typeof import('@tensorflow-models/body-segmentation'), 'createSegmenter' | 'SupportedModels' | 'drawBokehEffect' | 'toBinaryMask' | 'drawMask'>;
 
-async function loadBodySegmentation() {
-  (window as any).tf = tf;
-  await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/body-segmentation');
-  return (window as any).bodySegmentation;
+async function loadBodySegmentation(): Promise<BodySegmentationRuntime> {
+  const runtimeWindow = window as typeof window & { tf?: typeof tf; bodySegmentation?: BodySegmentationRuntime };
+  runtimeWindow.tf = tf;
+  await loadExternalScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/body-segmentation@1.0.2');
+  if (!runtimeWindow.bodySegmentation) throw new Error('Body segmenter did not initialize');
+  return runtimeWindow.bodySegmentation;
 }
 
 export default function PersonSegmentationPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const segmenterRef = useRef<any>(null);
+  const segmenterRef = useRef<BodySegmenter | null>(null);
   const loopRef = useRef<number | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [running, setRunning] = useState(false);
@@ -53,8 +45,9 @@ export default function PersonSegmentationPage() {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     const segmenter = segmenterRef.current;
-    const bodySegmentation = (window as any).bodySegmentation;
-    if (!video || !canvas || !segmenter || video.readyState < 2) {
+    const runtimeWindow = window as typeof window & { bodySegmentation?: BodySegmentationRuntime };
+    const bodySegmentation = runtimeWindow.bodySegmentation;
+    if (!video || !canvas || !segmenter || !bodySegmentation || video.readyState < 2) {
       loopRef.current = requestAnimationFrame(tick);
       return;
     }

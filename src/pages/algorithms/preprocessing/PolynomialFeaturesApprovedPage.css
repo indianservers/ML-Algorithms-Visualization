@@ -1,0 +1,813 @@
+.pf-page {
+  --bg: #050d1e;
+  --panel: #09162b;
+  --line: #23334e;
+  background: radial-gradient(circle at 65% 0, #0b1932, var(--bg) 48%);
+  color: #eef3fb;
+  display: grid;
+  font:
+    12px/1.42 Inter,
+    system-ui,
+    sans-serif;
+  grid-template-columns: 238px 245px 359px 510px minmax(0, 1fr);
+  grid-template-rows: 155px 335px 288px 162px;
+  height: 100vh;
+  min-height: 940px;
+  overflow: hidden;
+}
+.pf-page * {
+  box-sizing: border-box;
+}
+.pf-page button,
+.pf-page select,
+.pf-page input {
+  color: inherit;
+  font: inherit;
+}
+.pf-page button {
+  cursor: pointer;
+}
+.panel,
+.pf-settings > section,
+.pf-settings > footer,
+.pf-insights {
+  background: linear-gradient(145deg, #0a172c, #081428);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+.pf-side {
+  border-right: 1px solid #24344e;
+  display: flex;
+  flex-direction: column;
+  grid-row: 1/5;
+  padding: 15px;
+}
+.pf-side .logo {
+  align-items: center;
+  border-bottom: 1px solid #27354c;
+  color: #fff;
+  display: flex;
+  font-size: 17px;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 8px 10px 19px;
+  text-decoration: none;
+}
+.pf-side .logo i {
+  align-items: center;
+  background: #1975db;
+  border-radius: 4px;
+  display: flex;
+  font-size: 21px;
+  height: 33px;
+  justify-content: center;
+  width: 32px;
+}
+.pf-side .logo small {
+  color: #8a98ad;
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+}
+.pf-side > button,
+.pf-side footer button {
+  background: transparent;
+  border: 0;
+  color: #8e9aae;
+  height: 40px;
+  text-align: left;
+}
+.pf-side > button.active {
+  background: #10234b;
+  border-radius: 6px;
+  color: #6e9fff;
+}
+.pf-side hr {
+  border: 0;
+  border-top: 1px solid #24344e;
+  width: 100%;
+}
+.pf-side > small {
+  color: #7e8aa0;
+  font-size: 10px;
+  margin: 8px;
+}
+.pf-side > button.recent {
+  height: 35px;
+  padding-left: 22px;
+}
+.pf-side > button.recent.active {
+  border-left: 2px solid #2877ff;
+  color: #d7e4ff;
+}
+.pf-side footer {
+  border-top: 1px solid #23334d;
+  margin-top: auto;
+  padding-top: 9px;
+}
+.pf-side footer button {
+  display: block;
+  width: 100%;
+}
+.pf-side footer button:last-child {
+  border-top: 1px solid #23334d;
+  margin-top: 4px;
+}
+.pf-side footer b {
+  background: #1475e9;
+  border-radius: 3px;
+  padding: 2px 5px;
+}
+.pf-head {
+  grid-column: 2/6;
+  padding: 20px 22px;
+  position: relative;
+}
+.pf-head h1 {
+  font-size: 27px;
+  margin: 0;
+}
+.pf-head > p {
+  color: #c0c7d2;
+  font-size: 13px;
+  margin: 3px 0;
+}
+.pf-head > label {
+  position: absolute;
+  right: 192px;
+  top: 15px;
+}
+.pf-head > label small {
+  color: #8190a6;
+  display: block;
+  font-size: 9px;
+}
+.pf-head > label select {
+  background: #081429;
+  border: 1px solid #2b3a56;
+  border-radius: 5px;
+  height: 33px;
+  padding: 0 12px;
+  width: 218px;
+}
+.pf-head > button {
+  background: #081429;
+  border: 1px solid #334765;
+  border-radius: 5px;
+  height: 33px;
+  position: absolute;
+  right: 63px;
+  top: 20px;
+}
+.pf-head > button:last-of-type {
+  font-size: 20px;
+  right: 22px;
+  width: 33px;
+}
+.pf-head nav {
+  bottom: 7px;
+  border-bottom: 1px solid #21334d;
+  display: flex;
+  gap: 19px;
+  left: 22px;
+  position: absolute;
+  width: 820px;
+}
+.pf-head nav button {
+  background: transparent;
+  border: 0;
+  height: 38px;
+  padding: 0 12px;
+}
+.pf-head nav button.active {
+  border-bottom: 2px solid #3981ff;
+  color: #54a0ff;
+}
+.pf-head > section {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr 143px;
+  position: absolute;
+  right: 22px;
+  top: 63px;
+  width: 531px;
+}
+.pf-head article {
+  background: #09162b;
+  border: 1px solid #24344e;
+  border-radius: 5px;
+  height: 69px;
+  padding: 10px 16px;
+}
+.pf-head article small {
+  color: #55a6ff;
+  font-size: 9px;
+}
+.pf-head article p {
+  margin: 6px 0;
+}
+.pf-head article:last-child {
+  text-align: center;
+}
+.pf-head article:last-child b {
+  align-items: center;
+  border: 4px solid #24b1a5;
+  border-left-color: #283b57;
+  border-radius: 50%;
+  display: flex;
+  font-size: 16px;
+  height: 50px;
+  justify-content: center;
+  margin: -3px auto;
+  width: 50px;
+}
+.pf-main {
+  display: grid;
+  gap: 13px 16px;
+  grid-column: 2/5;
+  grid-row: 2/4;
+  grid-template-columns: 207px 344px 498px;
+  grid-template-rows: 335px 275px;
+  padding: 0 0 0 22px;
+  position: relative;
+}
+.panel {
+  padding: 13px;
+}
+.panel h2,
+.pf-settings h2,
+.pf-insights h2 {
+  font-size: 12px;
+  margin: 0;
+}
+.panel > p,
+.pf-settings p {
+  color: #9da8b9;
+  font-size: 10px;
+  margin: 5px 0 15px;
+}
+.pf-input label {
+  align-items: center;
+  border: 1px solid #263650;
+  border-radius: 5px;
+  display: flex;
+  height: 48px;
+  margin: 8px 0;
+  padding: 9px;
+}
+.pf-input label.on {
+  background: #082a2c;
+  border-color: #16877d;
+}
+.pf-input label input {
+  accent-color: #2fc5b7;
+  margin-right: 13px;
+}
+.pf-input label b {
+  font-size: 10px;
+}
+.pf-input label small {
+  color: #a7b2c0;
+  display: block;
+  font-size: 8px;
+}
+.pf-input > button {
+  background: #0d192d;
+  border: 1px solid #35445c;
+  border-radius: 4px;
+  height: 30px;
+}
+.arrow {
+  align-items: center;
+  background: #233149;
+  border-radius: 50%;
+  display: flex;
+  font-size: 18px;
+  height: 28px;
+  justify-content: center;
+  position: absolute;
+  width: 28px;
+  z-index: 2;
+}
+.a1 {
+  left: 214px;
+  top: 156px;
+}
+.a2 {
+  left: 575px;
+  top: 156px;
+}
+.pf-expanded .degree {
+  align-items: center;
+  display: flex;
+  gap: 0;
+  margin: 10px 0;
+}
+.degree > button,
+.pf-settings .result button {
+  background: #0a172b;
+  border: 1px solid #34445f;
+  height: 27px;
+  width: 40px;
+}
+.degree > button.active,
+.pf-settings .result button.active {
+  background: #1975e3;
+}
+.degree label {
+  margin-left: auto;
+}
+.degree label input {
+  accent-color: #24b8aa;
+}
+.degree label u {
+  text-decoration: none;
+}
+.pf-expanded > article {
+  border: 1px solid #1b4f51;
+  border-radius: 4px;
+  margin-top: 6px;
+  padding: 7px;
+}
+.pf-expanded > article.g1 {
+  border-color: #1b3e73;
+}
+.pf-expanded > article.g2 {
+  border-color: #583168;
+}
+.pf-expanded article small {
+  color: #36c2ac;
+}
+.pf-expanded .g1 small {
+  color: #5798ff;
+}
+.pf-expanded .g2 small {
+  color: #d168e7;
+}
+.pf-expanded article div {
+  display: flex;
+  gap: 7px;
+  margin-top: 4px;
+}
+.pf-expanded article span,
+.equation span,
+.pf-settings .result i {
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  color: #34b7a4;
+  font-style: normal;
+  padding: 4px 10px;
+}
+.pf-expanded .g1 span {
+  color: #4a8ee9;
+}
+.pf-expanded .g2 span {
+  color: #bd63d5;
+}
+.pf-matrix .table {
+  height: 205px;
+  overflow: hidden;
+}
+.pf-matrix table {
+  border-collapse: collapse;
+  font-size: 9px;
+  width: 100%;
+}
+.pf-matrix th,
+.pf-matrix td {
+  border-bottom: 1px solid #1d2c44;
+  border-right: 1px solid #1d2c44;
+  height: 34px;
+  padding: 6px;
+  text-align: center;
+}
+.pf-matrix th {
+  color: #87afff;
+}
+.pf-matrix footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+.pf-matrix footer span:last-child {
+  color: #8fb0e5;
+}
+.pf-compare {
+  height: 275px;
+  left: 22px;
+  position: absolute;
+  top: 348px;
+  width: 843px;
+}
+.pf-compare > label {
+  font-size: 10px;
+}
+.pf-compare select,
+.pf-example select,
+.pf-settings select {
+  background: #09152a;
+  border: 1px solid #33435e;
+  height: 30px;
+}
+.pf-compare .plots {
+  display: flex;
+  gap: 20px;
+  width: 455px;
+}
+.pf-compare .plots article {
+  position: relative;
+  text-align: center;
+  width: 210px;
+}
+.pf-compare .plots b {
+  color: #37c9b4;
+  font-size: 10px;
+}
+.pf-compare .plots strong {
+  color: #39c9b5;
+  display: block;
+  left: 4px;
+  position: absolute;
+  top: 20px;
+}
+.pf-compare svg {
+  height: 150px;
+  margin-top: 8px;
+  width: 100%;
+}
+.pf-compare svg line {
+  stroke: #c4cfdd;
+  stroke-dasharray: 4;
+}
+.pf-compare svg circle {
+  fill: #18ab9d;
+  opacity: 0.7;
+}
+.pf-compare .plots article:last-child b,
+.pf-compare .plots article:last-child strong {
+  color: #3389ff;
+}
+.pf-compare .plots article:last-child circle {
+  fill: #247bf1;
+}
+.pf-compare > table {
+  border-collapse: collapse;
+  font-size: 9px;
+  position: absolute;
+  right: 32px;
+  top: 55px;
+  width: 340px;
+}
+.pf-compare > table td,
+.pf-compare > table th {
+  border-bottom: 1px solid #1e2d44;
+  height: 24px;
+  text-align: center;
+}
+.pf-compare > table tr.active {
+  background: #17243a;
+}
+.pf-compare > aside {
+  background: #0d2043;
+  border: 1px solid #275da8;
+  border-radius: 4px;
+  bottom: 12px;
+  color: #66a5ff;
+  position: absolute;
+  right: 32px;
+  padding: 10px;
+  width: 340px;
+}
+.pf-compare > aside small {
+  color: #b6c0d0;
+  display: block;
+  margin-left: 30px;
+}
+.pf-example {
+  height: 275px;
+  left: 877px;
+  position: absolute;
+  top: 348px;
+  width: 225px;
+}
+.pf-example label {
+  display: block;
+  font-size: 9px;
+}
+.pf-example select {
+  display: block;
+  margin-top: 5px;
+  width: 100%;
+}
+.pf-settings {
+  display: grid;
+  gap: 12px;
+  grid-column: 5;
+  grid-row: 2/4;
+  grid-template-rows: 208px 158px 84px 137px;
+  padding: 0 22px 0 0;
+}
+.pf-settings > section {
+  padding: 13px;
+}
+.pf-settings label {
+  display: block;
+  font-size: 10px;
+  margin: 12px 0;
+}
+.pf-settings label > button,
+.pf-settings .result span > button {
+  background: #0b3b3d;
+  border: 0;
+  border-radius: 10px;
+  color: #45cabd;
+  float: right;
+  padding: 1px 7px;
+}
+.pf-settings .result span > button {
+  float: none;
+}
+.pf-settings label input[type="range"] {
+  accent-color: #45a0ff;
+  width: 78%;
+}
+.pf-settings label > b {
+  border: 1px solid #34435b;
+  float: right;
+  padding: 8px 19px;
+}
+.pf-settings label select {
+  display: block;
+  margin-top: 7px;
+  padding: 0 9px;
+  width: 100%;
+}
+.equation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.equation span {
+  font-size: 10px;
+}
+.pf-settings > section:nth-child(3) select {
+  margin-top: 14px;
+  width: 100%;
+}
+.pf-settings .result span {
+  display: inline-block;
+  margin-right: 25px;
+}
+.pf-settings .result h3 {
+  font-size: 9px;
+}
+.pf-settings .result h3 button {
+  background: transparent;
+  border: 0;
+  color: #5594ff;
+  float: right;
+}
+.pf-settings .result div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pf-settings .result i {
+  color: #4297ef;
+  font-size: 9px;
+}
+.pf-settings > footer {
+  display: none;
+}
+.pf-settings > footer button {
+  background: #0b1930;
+  border: 1px solid #3363a1;
+  height: 28px;
+  width: 49%;
+}
+.pf-settings > footer button:nth-child(2) {
+  background: #216df0;
+}
+.pf-settings > footer a {
+  color: #638fff;
+  display: block;
+  font-size: 8px;
+  text-align: center;
+}
+.pf-insights {
+  display: grid;
+  grid-column: 2/6;
+  grid-row: 4;
+  grid-template-columns: 625px 270px 300px 180px;
+  margin: 14px 22px 21px;
+  padding: 14px 18px;
+}
+.pf-insights article {
+  border-right: 1px solid #23334b;
+}
+.pf-insights article:first-child > div {
+  display: flex;
+}
+.pf-insights article:first-child p {
+  width: 33%;
+}
+.pf-insights p {
+  color: #b8c1cf;
+  font-size: 10px;
+}
+.pf-insights article:nth-child(2),
+.pf-insights article:nth-child(3) {
+  padding: 0 18px;
+}
+.pf-insights article:nth-child(2) p {
+  color: #c6d0de;
+}
+.pf-insights article:nth-child(2) p::first-letter {
+  color: #2ed1bd;
+}
+.pf-insights svg {
+  height: 100px;
+  width: 170px;
+}
+.pf-insights svg path {
+  fill: none;
+  stroke: #268adf;
+}
+.pf-status {
+  bottom: 2px;
+  color: #697991;
+  font-size: 8px;
+  position: fixed;
+  right: 4px;
+}
+.pf-page.collapsed {
+  grid-template-columns: 58px 245px 359px 510px minmax(0, 1fr);
+}
+.pf-page.collapsed .pf-side > *:not(footer):not(.logo),
+.pf-page.collapsed .pf-side .logo b,
+.pf-page.collapsed .pf-side footer button:not(:last-child) {
+  display: none;
+}
+@media (max-width: 1200px) {
+  .pf-page {
+    grid-template-columns: 150px minmax(0, 1fr);
+    grid-template-rows: 190px auto auto auto;
+    height: 100vh;
+    min-height: 0;
+    overflow: auto;
+  }
+  .pf-side {
+    grid-row: 1/5;
+  }
+  .pf-head {
+    grid-column: 2;
+    height: 190px;
+  }
+  .pf-head > section {
+    display: none;
+  }
+  .pf-head nav {
+    width: calc(100% - 44px);
+    overflow: auto;
+  }
+  .pf-main {
+    grid-column: 2;
+    grid-row: 2;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    padding: 10px;
+  }
+  .pf-input,
+  .pf-expanded,
+  .pf-matrix,
+  .pf-compare,
+  .pf-example {
+    grid-column: auto;
+    grid-row: auto;
+  }
+  .pf-compare,
+  .pf-example {
+    height: auto;
+    left: auto;
+    position: relative;
+    top: auto;
+    width: auto;
+  }
+  .pf-matrix {
+    grid-column: 1/3;
+  }
+  .pf-compare {
+    grid-column: 1/3;
+    min-height: 290px;
+  }
+  .arrow {
+    display: none;
+  }
+  .pf-settings {
+    grid-column: 2;
+    grid-row: 3;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+    padding: 10px;
+  }
+  .pf-settings > footer {
+    align-self: start;
+  }
+  .pf-insights {
+    grid-column: 2;
+    grid-row: 4;
+    margin: 10px;
+  }
+  .pf-insights {
+    grid-template-columns: 1fr 1fr;
+  }
+  .pf-insights article {
+    padding: 8px;
+  }
+}
+@media (max-width: 700px) {
+  .pf-page {
+    display: block;
+  }
+  .pf-side {
+    height: 90px;
+  }
+  .pf-side > *:not(.logo) {
+    display: none;
+  }
+  .pf-head {
+    height: 220px;
+    padding: 10px;
+  }
+  .pf-head > label {
+    left: 10px;
+    right: auto;
+    top: 88px;
+  }
+  .pf-head > button {
+    left: 10px;
+    right: auto;
+    top: 140px;
+  }
+  .pf-head > button:last-of-type {
+    left: 145px;
+    right: auto;
+    top: 140px;
+  }
+  .pf-head nav {
+    bottom: 0;
+    left: 0;
+    width: 100%;
+  }
+  .pf-head nav button {
+    flex: 0 0 88px;
+  }
+  .pf-main {
+    display: block;
+    padding: 8px;
+  }
+  .pf-main > section {
+    margin-bottom: 8px;
+  }
+  .pf-compare {
+    min-height: 560px;
+  }
+  .pf-compare .plots {
+    width: 100%;
+  }
+  .pf-compare > table {
+    bottom: 75px;
+    left: 12px;
+    right: auto;
+    top: auto;
+    width: calc(100% - 24px);
+  }
+  .pf-compare > aside {
+    bottom: 8px;
+    left: 12px;
+    right: auto;
+    width: calc(100% - 24px);
+  }
+  .pf-settings {
+    display: block;
+    padding: 8px;
+  }
+  .pf-settings > section,
+  .pf-settings > footer {
+    margin-bottom: 8px;
+  }
+  .pf-insights {
+    display: block;
+    margin: 8px;
+  }
+  .pf-insights article {
+    border-bottom: 1px solid #23334b;
+    border-right: 0;
+  }
+  .pf-insights article:first-child > div {
+    display: block;
+  }
+  .pf-insights article:first-child p {
+    width: 100%;
+  }
+}

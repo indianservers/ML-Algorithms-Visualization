@@ -31,7 +31,7 @@ function powerIteration(A: number[][], numComponents: number, maxIter = 500): { 
   const deflated = A.map(row => [...row]);
 
   for (let k = 0; k < numComponents; k++) {
-    let v = Array.from({ length: p }, () => Math.random() - 0.5);
+    let v = Array.from({ length: p }, (_, index) => Math.sin((k + 1) * (index + 1) * 1.61803398875));
     // normalize
     let norm = Math.sqrt(v.reduce((s, x) => s + x * x, 0));
     v = v.map(x => x / (norm || 1));
@@ -44,6 +44,8 @@ function powerIteration(A: number[][], numComponents: number, maxIter = 500): { 
       if (v.reduce((s, x, j) => s + Math.abs(x - vNew[j]), 0) < 1e-8) { v = vNew; break; }
       v = vNew;
     }
+    const pivot = v.reduce((best, value, index) => Math.abs(value) > Math.abs(v[best]) ? index : best, 0);
+    if (v[pivot] < 0) v = v.map(value => -value);
     const eigenvalue = deflated.map((row, i) => row.reduce((s, x, j) => s + x * v[j], 0) * v[i]).reduce((a, b) => a + b, 0);
     vectors.push(v);
     values.push(Math.max(eigenvalue, 0));
@@ -56,6 +58,11 @@ function powerIteration(A: number[][], numComponents: number, maxIter = 500): { 
 }
 
 export function pca(X: number[][], numComponents = 2): PCAResult {
+  if (X.length < 2) throw new Error('PCA requires at least two samples');
+  if (!X[0]?.length) throw new Error('PCA requires at least one feature');
+  const width = X[0].length;
+  if (!X.every(row => row.length === width && row.every(Number.isFinite))) throw new Error('PCA requires a rectangular matrix of finite values');
+  if (!Number.isInteger(numComponents) || numComponents < 1) throw new Error('PCA component count must be a positive integer');
   const p = X[0].length;
   const colMeans = Array.from({ length: p }, (_, j) => mean(X.map(row => row[j])));
   const Xc = X.map(row => row.map((v, j) => v - colMeans[j]));

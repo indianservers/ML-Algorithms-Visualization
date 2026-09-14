@@ -1,0 +1,514 @@
+.um-page {
+  min-height: 941px;
+  overflow: hidden;
+  background: radial-gradient(circle at 58% 0, #0c172b, #030a17 65%);
+  color: #eef3fa;
+  font:
+    12px Inter,
+    system-ui,
+    sans-serif;
+}
+.um-page * {
+  box-sizing: border-box;
+}
+.um-page button,
+.um-page input,
+.um-page select {
+  font: inherit;
+}
+.um-page button {
+  cursor: pointer;
+  border: 1px solid #273950;
+  border-radius: 5px;
+  background: #081527;
+  color: #dce5ef;
+}
+.um-side {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 216px;
+  padding: 17px 10px;
+  border-right: 1px solid #283850;
+  background: #071325;
+}
+.um-side > a {
+  display: flex;
+  gap: 10px;
+  margin: 0 12px 25px;
+  color: white;
+  text-decoration: none;
+  font-size: 30px;
+}
+.um-side > a b {
+  font-size: 16px;
+}
+.um-side small {
+  display: block;
+  color: #97a3b3;
+  font-size: 9px;
+}
+.um-side > button {
+  display: block;
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: #aeb9c8;
+}
+.um-side > button.active {
+  background: #0b1c35;
+  color: #6595ff;
+}
+.um-side > section {
+  position: absolute;
+  left: 9px;
+  right: 9px;
+  top: 398px;
+  bottom: 80px;
+  padding: 10px;
+  border: 1px solid #263950;
+  border-radius: 6px;
+}
+.um-side section p {
+  color: #9ba8b8;
+}
+.um-side section > button {
+  display: block;
+  width: 100%;
+  height: 29px;
+  border: 0;
+  background: transparent;
+  color: #b2bdca;
+  text-align: left;
+}
+.um-side section > button:first-of-type {
+  height: 34px;
+  margin: 9px 0;
+  border: 1px solid #3474f1;
+  text-align: center;
+}
+.um-side section > button.active {
+  background: #10264b;
+  color: #5792ff;
+}
+.um-side section input {
+  display: none;
+}
+.um-side footer {
+  position: absolute;
+  bottom: 24px;
+}
+.um-head {
+  position: absolute;
+  left: 236px;
+  right: 18px;
+  top: 0;
+  height: 132px;
+  padding-top: 12px;
+  border-bottom: 1px solid #283950;
+}
+.um-head > p {
+  margin: 0 0 12px;
+  color: #9eabba;
+}
+.um-head h1 {
+  margin: 0;
+  font-size: 31px;
+}
+.um-head h1 em {
+  padding: 4px 9px;
+  border: 1px solid #126c64;
+  border-radius: 4px;
+  color: #27c99e;
+  font-size: 10px;
+  font-style: normal;
+}
+.um-head h3 {
+  margin: 4px 0;
+}
+.um-head span {
+  color: #9faaba;
+}
+.um-head > div {
+  position: absolute;
+  right: 0;
+  top: 16px;
+}
+.um-head > div button {
+  height: 35px;
+  margin-left: 8px;
+  padding: 0 14px;
+}
+.um-page .primary {
+  border-color: #3472ef;
+  background: linear-gradient(90deg, #2864ef, #5643f1);
+  color: white;
+}
+.um-page > main {
+  position: absolute;
+  left: 230px;
+  right: 313px;
+  top: 132px;
+}
+.um-page > main > nav {
+  height: 36px;
+  display: flex;
+}
+.um-page > main > nav button {
+  width: 80px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #adb8c7;
+}
+.um-page > main > nav button.active {
+  border-color: #4c81f6;
+  background: #102044;
+  color: #5490ff;
+}
+.um-panels {
+  height: 360px;
+  margin-top: 13px;
+  display: grid;
+  grid-template-columns: 1fr 38px 1.15fr;
+}
+.um-panels > article,
+.um-results,
+.um-page > main > footer {
+  position: relative;
+  border: 1px solid #263950;
+  border-radius: 7px;
+  background: #081527;
+}
+.um-panels > strong {
+  display: grid;
+  place-items: center;
+  color: #19d2c3;
+  text-align: center;
+}
+.um-panels h3,
+.um-results h3 {
+  margin: 14px;
+}
+.um-panels h3 i {
+  display: inline-grid;
+  width: 21px;
+  height: 21px;
+  place-items: center;
+  border: 1px solid #3778ef;
+  border-radius: 50%;
+  color: #6a9bff;
+  font-style: normal;
+}
+.um-panels h3 span {
+  color: #929fb0;
+  font-weight: normal;
+}
+.um-graph,
+.um-embed {
+  position: absolute;
+  inset: 50px 20px 43px;
+  overflow: hidden;
+}
+.um-graph svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.um-graph line {
+  stroke: #8ba0b9;
+}
+.um-graph > i,
+.um-embed > i {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #a9b2bf;
+  transform: translate(-50%, -50%);
+}
+.um-panels article > footer {
+  position: absolute;
+  bottom: 11px;
+  left: 18px;
+  color: #9ca9b8;
+}
+.um-panels article > footer span {
+  color: #28c9bc;
+}
+.um-embed i {
+  width: 4px;
+  height: 4px;
+}
+.um-panels article > aside {
+  position: absolute;
+  right: 10px;
+  top: 35px;
+}
+.um-panels aside span {
+  display: block;
+}
+.um-panels aside i {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+.um-results {
+  height: 283px;
+  margin-top: 17px;
+  display: grid;
+  grid-template-columns: 1.25fr 0.75fr 0.8fr;
+}
+.um-results > article {
+  padding: 0 15px;
+  border-right: 1px solid #20334b;
+}
+.um-results article:first-child > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 13px;
+}
+.um-results article:first-child b {
+  height: 75px;
+  padding: 15px;
+  border: 1px solid #263950;
+  border-radius: 6px;
+  color: #a8b4c3;
+}
+.um-results strong {
+  display: block;
+  color: #4cd7ac;
+  font-size: 22px;
+}
+.um-corr {
+  position: relative;
+  height: 190px;
+  border-left: 1px solid #67758a;
+  border-bottom: 1px solid #67758a;
+}
+.um-corr i {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: #2877e8;
+}
+.um-results article:nth-child(2) > p {
+  position: absolute;
+  top: 35px;
+}
+.um-results article:last-child p {
+  height: 22px;
+  margin: 2px;
+}
+.um-results article:last-child p i {
+  display: inline-block;
+  height: 16px;
+  margin: 0 5px;
+}
+.um-page > main > footer {
+  height: 53px;
+  margin-top: 26px;
+  padding: 16px;
+  color: #9eabba;
+}
+.um-page > main > footer span {
+  float: right;
+}
+.um-controls {
+  position: fixed;
+  right: 18px;
+  top: 115px;
+  width: 283px;
+  height: 728px;
+  border: 1px solid #263950;
+  border-radius: 7px;
+  background: #081527;
+}
+.um-controls > h2 {
+  height: 41px;
+  margin: 0;
+  padding: 12px 15px;
+  border-bottom: 1px solid #263950;
+  font-size: 13px;
+}
+.um-controls h2 button {
+  float: right;
+  border: 0;
+  background: transparent;
+}
+.um-controls > label {
+  display: block;
+  min-height: 64px;
+  padding: 12px 14px;
+  color: #aeb9c7;
+}
+.um-controls label > input[type="number"],
+.um-controls label > select {
+  float: right;
+  width: 62px;
+  height: 28px;
+  border: 1px solid #273b55;
+  background: #091528;
+  color: white;
+}
+.um-controls label > select {
+  width: 155px;
+}
+.um-controls label > input[type="range"] {
+  width: 100%;
+  margin-top: 13px;
+  accent-color: #3974ec;
+}
+.um-controls input[type="checkbox"] {
+  float: left;
+  margin-right: 9px;
+}
+.um-controls > h3 {
+  margin: 8px 14px;
+}
+.um-controls > .primary {
+  width: calc(100% - 28px);
+  height: 38px;
+  margin: 3px 14px;
+}
+.um-controls > section {
+  margin-top: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid #263950;
+}
+.um-controls > section p {
+  margin: 7px;
+  color: #9eaabb;
+}
+.um-controls > section b {
+  float: right;
+  color: white;
+}
+.um-controls > footer {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 9px;
+  display: flex;
+  gap: 7px;
+}
+.um-controls > footer button {
+  flex: 1;
+  height: 31px;
+}
+.um-toast {
+  position: fixed;
+  z-index: 9;
+  right: 20px;
+  bottom: 20px;
+  padding: 10px 15px !important;
+  background: #17345e !important;
+}
+@media (max-width: 1100px) {
+  .um-page {
+    overflow: auto;
+  }
+  .um-side {
+    width: 185px;
+  }
+  .um-head {
+    left: 205px;
+  }
+  .um-page > main {
+    position: relative;
+    left: 200px;
+    right: auto;
+    width: calc(100% - 212px);
+  }
+  .um-controls {
+    position: relative;
+    left: 200px;
+    right: auto;
+    top: auto;
+    width: calc(100% - 212px);
+    margin: 12px 0 25px;
+  }
+  .um-panels {
+    grid-template-columns: 1fr 30px 1fr;
+  }
+  .um-results {
+    grid-template-columns: 1fr 1fr;
+    height: auto;
+  }
+  .um-results > article {
+    min-height: 240px;
+  }
+}
+@media (max-width: 600px) {
+  .um-side {
+    position: relative;
+    width: 100%;
+    height: 70px;
+  }
+  .um-side > a {
+    margin: 0;
+  }
+  .um-side > button,
+  .um-side > section,
+  .um-side > footer {
+    display: none;
+  }
+  .um-head {
+    position: relative;
+    left: 0;
+    height: 230px;
+    padding: 12px;
+  }
+  .um-head > div {
+    top: 170px;
+    left: 8px;
+  }
+  .um-page > main,
+  .um-controls {
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 0 8px;
+  }
+  .um-page > main > nav {
+    height: auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .um-page > main > nav button {
+    width: auto;
+    height: 36px;
+  }
+  .um-panels {
+    height: auto;
+    display: block;
+  }
+  .um-panels > article {
+    height: 360px;
+    margin: 8px 0;
+  }
+  .um-panels > strong {
+    height: 35px;
+  }
+  .um-results {
+    display: block;
+  }
+  .um-results > article {
+    min-height: 250px;
+  }
+  .um-controls {
+    height: 728px;
+  }
+  .um-page > main > footer {
+    height: auto;
+  }
+  .um-page > main > footer span {
+    float: none;
+    display: block;
+    margin-top: 8px;
+  }
+}

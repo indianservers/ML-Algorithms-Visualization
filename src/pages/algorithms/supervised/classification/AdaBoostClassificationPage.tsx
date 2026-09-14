@@ -1,2 +1,5 @@
-import SupervisedClassificationWorkbench from '../SupervisedClassificationWorkbench';
-export default function AdaBoostClassificationPage() { return <SupervisedClassificationWorkbench mode="adaboost" />; }
+import AdaBoostClassificationLesson from "./AdaBoostClassificationLesson";
+
+export default function AdaBoostClassificationPage() {
+  return <AdaBoostClassificationLesson />;
+}

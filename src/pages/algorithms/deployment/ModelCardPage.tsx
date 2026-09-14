@@ -36,20 +36,31 @@ export default function ModelCardPage() {
   useEffect(() => {
     void loadModelMetadata().then(items => {
       setModels(items);
-      if (items[0]) setSelectedId(items[0].id);
+      if (items[0]) {
+        setSelectedId(items[0].id);
+        setForm(current => ({
+          ...current,
+          name: items[0].name,
+          data: String(items[0].parameters?.dataset ?? current.data),
+          validation: items[0].metrics?.accuracy ? `${(items[0].metrics.accuracy * 100).toFixed(1)}% validation accuracy` : current.validation,
+        }));
+      }
     });
   }, []);
 
   const selected = models.find(model => model.id === selectedId);
-  useEffect(() => {
-    if (!selected) return;
+
+  const selectModel = (id: string) => {
+    setSelectedId(id);
+    const model = models.find(item => item.id === id);
+    if (!model) return;
     setForm(current => ({
       ...current,
-      name: selected.name,
-      data: String(selected.parameters?.dataset ?? current.data),
-      validation: selected.metrics?.accuracy ? `${(selected.metrics.accuracy * 100).toFixed(1)}% validation accuracy` : current.validation,
+      name: model.name,
+      data: String(model.parameters?.dataset ?? current.data),
+      validation: model.metrics?.accuracy ? `${(model.metrics.accuracy * 100).toFixed(1)}% validation accuracy` : current.validation,
     }));
-  }, [selected]);
+  };
 
   const labels = useMemo(() => {
     const raw = selected?.parameters?.labels ?? selected?.parameters?.classLabels ?? ['Class 1', 'Class 2'];
@@ -65,7 +76,7 @@ export default function ModelCardPage() {
         <div className="space-y-4">
           <Card title="Model Details">
             <div className="space-y-3 text-sm">
-              <select value={selectedId} onChange={event => setSelectedId(event.target.value)} className="w-full rounded border border-gray-200 bg-white p-2 dark:border-gray-700 dark:bg-gray-900"><option value="">Manual card</option>{models.map(model => <option key={model.id} value={model.id}>{model.name}</option>)}</select>
+              <select value={selectedId} onChange={event => selectModel(event.target.value)} className="w-full rounded border border-gray-200 bg-white p-2 dark:border-gray-700 dark:bg-gray-900"><option value="">Manual card</option>{models.map(model => <option key={model.id} value={model.id}>{model.name}</option>)}</select>
               {(['name', 'version', 'use', 'outOfScope', 'users', 'data', 'validation', 'failureModes', 'environments', 'bias', 'privacy', 'limitations'] as const).map(key => (
                 <label key={key} className="block font-bold capitalize">{key.replace(/([A-Z])/g, ' $1')}<textarea value={form[key]} onChange={event => setForm(current => ({ ...current, [key]: event.target.value }))} rows={key === 'name' || key === 'version' ? 1 : 2} className="mt-1 w-full rounded border border-gray-200 bg-white p-2 text-xs dark:border-gray-700 dark:bg-gray-900" /></label>
               ))}

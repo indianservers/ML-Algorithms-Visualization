@@ -1,94 +1,588 @@
-import ConceptAlgorithmPage from '../shared/ConceptAlgorithmPage';
-
-const config = {
-  "chartKind": "line",
-  "icon": "dimensionality",
-  "title": "Autoencoder Dimensionality",
-  "subtitle": "Interactive browser-only Autoencoder Dimensionality module with local datasets, controls, visualizations, metrics, and exports.",
-  "category": "Dimensionality Reduction",
-  "badge": "Intermediate",
-  "explanation": "Autoencoder Dimensionality runs as an interactive browser workbench. It provides algorithm-specific controls, browser-local dataset input, computed visualizations, live metrics, prediction or inspection output, limitations, and export actions without Python, a backend, or cloud ML APIs.",
-  "hyperparameters": [
-    [
-      "Primary control",
-      "Editable",
-      "Main algorithm parameter for experimentation."
-    ],
-    [
-      "Iterations",
-      "50",
-      "Step count for visualization or training."
-    ],
-    [
-      "Validation split",
-      "80/20",
-      "Train/test split used where applicable."
-    ]
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { Share2, Sparkles, Upload } from "lucide-react";
+import {
+  trainAutoencoder,
+  type AutoencoderArchitecture,
+  type AutoencoderResult,
+} from "../../../lib/algorithms/dimensionality/autoencoder";
+import "./AutoencoderDimensionalityPage.css";
+type Sample = { pixels: number[]; label: number };
+type Dataset = "digits" | "fashion" | "symbols" | "imported";
+const COLORS = [
+    "#ffc52f",
+    "#8d52e8",
+    "#bbc33b",
+    "#35b46c",
+    "#ef4065",
+    "#50d1e2",
+    "#d18a55",
+    "#e75a97",
+    "#8f69d9",
+    "#3778e7",
   ],
-  "workflow": [
-    "Prepare data for Autoencoder Dimensionality",
-    "Set algorithm-specific hyperparameters",
-    "Run the browser-side computation",
-    "Inspect visualization, intermediate values, and metrics",
-    "Export results or save the experiment locally"
-  ],
-  "metrics": [
-    [
-      "Score",
-      "0.86"
-    ],
-    [
-      "Runtime",
-      "18 ms"
-    ],
-    [
-      "Samples",
-      "40"
-    ],
-    [
-      "Features",
-      "4"
-    ]
-  ],
-  "predictionDetails": [
-    "Use the controls to inspect Autoencoder Dimensionality outputs on new examples.",
-    "Outputs are computed locally in the browser session."
-  ],
-  "chartTitle": "Autoencoder Dimensionality Visualization",
-  "chartLabels": [
-    "Input",
-    "Step",
-    "Model",
-    "Metric",
-    "Output",
-    "Export"
-  ],
-  "modelOutput": [
-    "Autoencoder Dimensionality parameters shown here",
-    "intermediate values update per run",
-    "predictions and reports are exportable"
-  ],
-  "warnings": [
-    "Autoencoder Dimensionality is educational and browser-sized by default.",
-    "Large datasets may need sampling for smooth visualization.",
-    "Check assumptions before interpreting metrics."
-  ],
-  "exports": [
-    "Copy metrics",
-    "Download predictions",
-    "Export experiment JSON",
-    "Export Markdown report"
-  ],
-  "learning": {
-    "does": "Runs and visualizes Autoencoder Dimensionality in the browser.",
-    "when": "Use it when Autoencoder Dimensionality matches the learning or experimentation goal.",
-    "math": "The page highlights the core formula, matrix, loss, distance, probability, or update rule used by Autoencoder Dimensionality.",
-    "strengths": "Fast local experimentation, transparent intermediate values, and exportable results.",
-    "weaknesses": "Educational implementation and browser resources are not a substitute for production-scale training.",
-    "useCases": "Teaching, demos, model intuition, lightweight analysis, and report building."
-  }
-} as const;
-
+  SEGMENTS: Record<number, string[]> = {
+    0: ["t", "ul", "ur", "ll", "lr", "b"],
+    1: ["ur", "lr"],
+    2: ["t", "ur", "m", "ll", "b"],
+    3: ["t", "ur", "m", "lr", "b"],
+    4: ["ul", "ur", "m", "lr"],
+    5: ["t", "ul", "m", "lr", "b"],
+    6: ["t", "ul", "m", "ll", "lr", "b"],
+    7: ["t", "ur", "lr"],
+    8: ["t", "ul", "ur", "m", "ll", "lr", "b"],
+    9: ["t", "ul", "ur", "m", "lr", "b"],
+  },
+  rand = (i: number, s: number) => {
+    const v = Math.sin((i + 19) * 12.9898 + s * 78.233) * 43758.5453;
+    return v - Math.floor(v);
+  };
+function digit(label: number, variant: number, style = 0) {
+  const active = SEGMENTS[label],
+    pixels: number[] = [];
+  for (let y = 0; y < 10; y++)
+    for (let x = 0; x < 10; x++) {
+      const segment =
+        (active.includes("t") && y <= 1 && x > 1 && x < 8) ||
+        (active.includes("m") && y >= 4 && y <= 5 && x > 1 && x < 8) ||
+        (active.includes("b") && y >= 8 && x > 1 && x < 8) ||
+        (active.includes("ul") && x <= 2 && y > 1 && y < 5) ||
+        (active.includes("ur") && x >= 7 && y > 1 && y < 5) ||
+        (active.includes("ll") && x <= 2 && y > 4 && y < 8) ||
+        (active.includes("lr") && x >= 7 && y > 4 && y < 8);
+      const base = segment ? 0.9 : 0;
+      pixels.push(
+        Math.max(
+          0,
+          Math.min(
+            1,
+            base + (rand(variant * 100 + y * 10 + x, style + 1) - 0.5) * 0.18,
+          ),
+        ),
+      );
+    }
+  return pixels;
+}
+function makeData(style: number, n = 200): Sample[] {
+  return Array.from({ length: n }, (_, i) => ({
+    label: i % 10,
+    pixels: digit(i % 10, i, style),
+  }));
+}
+const BUILT = {
+    digits: makeData(0),
+    fashion: makeData(4),
+    symbols: makeData(8),
+  },
+  NAMES: Record<Dataset, string> = {
+    digits: "Digit Glyphs",
+    fashion: "Fashion-like Glyphs",
+    symbols: "Symbol Grid",
+    imported: "Imported Data",
+  };
+function PixelImage({
+  pixels,
+  className = "",
+}: {
+  pixels: number[];
+  className?: string;
+}) {
+  const side = Math.round(Math.sqrt(pixels.length));
+  return (
+    <div
+      className={`ae-pixels ${className}`}
+      style={{ gridTemplateColumns: `repeat(${side},1fr)` }}
+    >
+      {pixels.map((value, i) => (
+        <i
+          key={i}
+          style={{
+            background: `rgb(${Math.round(value * 255)} ${Math.round(value * 255)} ${Math.round(value * 255)})`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
 export default function AutoencoderDimensionalityPage() {
-  return <ConceptAlgorithmPage config={config} />;
+  const [tab, setTab] = useState("Visualize"),
+    [dataset, setDataset] = useState<Dataset>("digits"),
+    [samples, setSamples] = useState<Sample[]>(BUILT.digits),
+    [imported, setImported] = useState<Sample[]>([]),
+    [latentDimension, setLatentDimension] = useState(2),
+    [noise, setNoise] = useState(0),
+    [architecture, setArchitecture] =
+      useState<AutoencoderArchitecture>("dense"),
+    [learningRate, setLearningRate] = useState(0.001),
+    [batchSize, setBatchSize] = useState(32),
+    [epochs, setEpochs] = useState(12),
+    [result, setResult] = useState<AutoencoderResult | null>(null),
+    [training, setTraining] = useState(false),
+    [progress, setProgress] = useState(0),
+    [toast, setToast] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null),
+    runId = useRef(0);
+  const runTraining = useCallback(async () => {
+    const id = ++runId.current;
+    setTraining(true);
+    setProgress(0);
+    try {
+      const trained = await trainAutoencoder(
+        samples.map((s) => s.pixels),
+        latentDimension,
+        noise,
+        architecture,
+        learningRate,
+        batchSize,
+        epochs,
+        (epoch) => {
+          if (id === runId.current) setProgress(epoch / epochs);
+        },
+      );
+      if (id === runId.current) {
+        setResult(trained);
+        setToast("Autoencoder training complete");
+      }
+    } catch (error) {
+      if (id === runId.current)
+        setToast(error instanceof Error ? error.message : "Training failed");
+    } finally {
+      if (id === runId.current) setTraining(false);
+    }
+  }, [
+    samples,
+    latentDimension,
+    noise,
+    architecture,
+    learningRate,
+    batchSize,
+    epochs,
+  ]);
+  const initialTraining = useRef(runTraining);
+  useEffect(() => {
+    const timer = window.setTimeout(() => void initialTraining.current(), 120);
+    return () => window.clearTimeout(timer);
+  }, []);
+  const choose = (kind: Dataset) => {
+      const next = kind === "imported" ? imported : BUILT[kind];
+      if (!next.length) return;
+      runId.current++;
+      setDataset(kind);
+      setSamples(next);
+      setResult(null);
+      setProgress(0);
+      setToast(`${NAMES[kind]} loaded — train to update`);
+    },
+    upload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const f = e.target.files?.[0];
+      if (!f) return;
+      const rows = (await f.text())
+        .trim()
+        .split(/\r?\n/)
+        .slice(1)
+        .map((r) => r.split(",").map(Number))
+        .filter((r) => r.length >= 5 && r.every(Number.isFinite));
+      if (rows.length < 2)
+        return setToast("CSV needs pixel columns plus a label");
+      const dimension = rows[0].length - 1,
+        side = Math.sqrt(dimension);
+      if (!Number.isInteger(side))
+        return setToast("Pixel column count must form a square image");
+      const next = rows.map((r) => ({
+        pixels: r.slice(0, -1).map((v) => Math.max(0, Math.min(1, v))),
+        label: r.at(-1) || 0,
+      }));
+      setImported(next);
+      setDataset("imported");
+      setSamples(next);
+      setResult(null);
+      setLatentDimension(Math.min(2, next.length));
+      setToast(`Imported ${next.length} samples`);
+      e.target.value = "";
+    };
+  const reconstructions =
+      result?.reconstructions || samples.map((s) => s.pixels),
+    latent =
+      result?.latent ||
+      samples.map((s, i) => [
+        Math.cos((s.label / 10) * Math.PI * 2) * 2 + (rand(i, 2) - 0.5),
+        Math.sin((s.label / 10) * Math.PI * 2) * 2 + (rand(i, 3) - 0.5),
+      ]),
+    coords = latent.flat().map(Math.abs),
+    scale = Math.max(...coords, 1),
+    mse = result?.mse ?? 0,
+    psnr = mse > 0 ? 10 * Math.log10(1 / mse) : 0,
+    imageSide = Math.round(Math.sqrt(samples[0].pixels.length)),
+    sparsity =
+      latent.flat().filter((v) => Math.abs(v) < 0.05).length /
+      Math.max(1, latent.flat().length);
+  return (
+    <div className="ae-page">
+      <aside className="ae-side">
+        <Link to="/">
+          ⌾{" "}
+          <b>
+            MEGA ML<small>AI OBSERVATORY</small>
+          </b>
+        </Link>
+        {[
+          "⌂ Home",
+          "◉ Explore",
+          "◇ Models",
+          "▤ Datasets",
+          "♧ Learn",
+          "□ Projects",
+          "▥ Benchmarks",
+          "⌘ Playground",
+        ].map((n) => (
+          <button
+            className={n.includes("Learn") ? "active" : ""}
+            onClick={() => setToast(n)}
+            key={n}
+          >
+            {n}
+          </button>
+        ))}
+        <footer>
+          <p>● All Systems Operational</p>
+          <b>
+            ◉ Observer<small>Pro Plan</small>
+          </b>
+        </footer>
+      </aside>
+      <header className="ae-head">
+        <h1>Autoencoder □</h1>
+        <p>
+          Learn compact representations by reconstructing inputs through a
+          bottleneck.
+        </p>
+        <button onClick={() => setToast("Explanation opened")}>
+          ⓘ How Autoencoders Work
+        </button>
+        <div>
+          <button onClick={() => setToast("Share link copied")}>
+            <Share2 /> Share
+          </button>
+          <button>☼</button>
+          <select>
+            <option>Starter</option>
+            <option>Denoising</option>
+          </select>
+        </div>
+      </header>
+      <main>
+        <nav>
+          {[
+            "Learn",
+            "Visualize",
+            "Dataset",
+            "Build / Train",
+            "Metrics",
+            "Compare",
+            "Explain",
+          ].map((n) => (
+            <button
+              className={tab === n ? "active" : ""}
+              onClick={() => setTab(n)}
+              key={n}
+            >
+              {n}
+            </button>
+          ))}
+        </nav>
+        <section className="ae-pipeline">
+          <h4>MODEL PIPELINE</h4>
+          <article>
+            <b>Input</b>
+            <small>
+              {imageSide}×{imageSide}
+            </small>
+            <PixelImage pixels={samples[3].pixels} />
+          </article>
+          <strong>→</strong>
+          <article className="encoder">
+            <b>Encoder</b>
+            <span>
+              Dense ({architecture === "dense" ? 64 : 32})<br />
+              ReLU
+            </span>
+          </article>
+          <strong>→</strong>
+          <article className="latent">
+            <b>Latent Space</b>
+            <small>
+              z ∈ R<sup>{latentDimension}</sup>
+            </small>
+            <i />
+            <i />
+          </article>
+          <strong>→</strong>
+          <article className="decoder">
+            <b>Decoder</b>
+            <span>
+              Dense ({architecture === "dense" ? 64 : 32})<br />
+              ReLU
+            </span>
+          </article>
+          <strong>→</strong>
+          <article>
+            <b>Reconstruction</b>
+            <small>
+              {imageSide}×{imageSide}
+            </small>
+            <PixelImage pixels={reconstructions[3]} />
+          </article>
+        </section>
+        <section className="ae-visuals">
+          <article>
+            <h3>INPUT VS RECONSTRUCTION ⓘ</h3>
+            <div className="ae-pairs">
+              <b>Input</b>
+              <b>Reconstruction</b>
+              {samples.slice(0, 6).map((s, i) => (
+                <div key={i}>
+                  <PixelImage pixels={s.pixels} />
+                  <PixelImage pixels={reconstructions[i]} />
+                </div>
+              ))}
+            </div>
+            <footer>
+              MSE (avg) <b>{result ? mse.toFixed(4) : "Train model"}</b>
+            </footer>
+          </article>
+          <article>
+            <h3>LATENT SPACE (z) ⓘ</h3>
+            <div className="ae-scatter">
+              {latent.map((p, i) => (
+                <i
+                  key={i}
+                  style={{
+                    left: `${50 + ((p[0] || 0) / scale) * 42}%`,
+                    top: `${50 - ((p[1] || 0) / scale) * 42}%`,
+                    background: COLORS[samples[i].label % COLORS.length],
+                  }}
+                />
+              ))}
+            </div>
+            <footer>Latent Dim: {latentDimension}</footer>
+          </article>
+          <article>
+            <h3>LATENT TRAVERSAL ⓘ</h3>
+            <select>
+              <option>z₁ (horizontal)</option>
+            </select>
+            <div className="ae-traversal">
+              {Array.from({ length: 4 }, (_, row) =>
+                (
+                  result?.traversal || samples.slice(0, 7).map((s) => s.pixels)
+                ).map((pixels, i) => (
+                  <PixelImage pixels={pixels} key={`${row}:${i}`} />
+                )),
+              )}
+            </div>
+            <footer>
+              Vary one latent dimension while holding others fixed.
+            </footer>
+          </article>
+        </section>
+        <section className="ae-results">
+          <article>
+            <h3>RECONSTRUCTION QUALITY ⓘ</h3>
+            {[
+              ["MSE (avg)", mse.toFixed(4)],
+              ["PSNR (dB)", psnr.toFixed(2)],
+              ["Loss epochs", String(result?.losses.length || 0)],
+              ["Sparsity (z)", sparsity.toFixed(2)],
+            ].map(([n, v]) => (
+              <div key={n}>
+                <span>{n}</span>
+                <b>{result ? v : "—"}</b>
+              </div>
+            ))}
+          </article>
+          <article>
+            <h3>COMPRESSION ⓘ</h3>
+            <p>
+              Original Dim <b>{samples[0].pixels.length}</b> → Latent Dim{" "}
+              <b>{latentDimension}</b> Compression{" "}
+              <strong>
+                {(samples[0].pixels.length / latentDimension).toFixed(1)}x
+              </strong>
+            </p>
+          </article>
+        </section>
+        <footer>
+          💡 TIP Try increasing latent dimensions to see richer representations,
+          or add noise for denoising autoencoders.
+        </footer>
+      </main>
+      <aside className="ae-controls">
+        <section>
+          <h3>DATASET ⓘ</h3>
+          <select
+            value={dataset}
+            onChange={(e) => choose(e.target.value as Dataset)}
+          >
+            {Object.entries(NAMES)
+              .filter(([k]) => k !== "imported" || imported.length)
+              .map(([k, n]) => (
+                <option value={k} key={k}>
+                  {n}
+                </option>
+              ))}
+          </select>
+          <p>
+            {samples.length} images · {imageSide}×{imageSide} ·{" "}
+            {new Set(samples.map((s) => s.label)).size} classes
+          </p>
+          <button onClick={() => fileRef.current?.click()}>
+            <Upload /> Upload Your Dataset
+          </button>
+          <input ref={fileRef} type="file" accept=".csv" onChange={upload} />
+        </section>
+        <section>
+          <h3>MODEL CONTROLS ⓘ</h3>
+          <label>
+            Latent Dimension (dim(z)){" "}
+            <input
+              type="number"
+              min="1"
+              max="16"
+              value={latentDimension}
+              onChange={(e) => setLatentDimension(Number(e.target.value))}
+            />
+            <input
+              aria-label="Latent dimension"
+              type="range"
+              min="1"
+              max="16"
+              value={latentDimension}
+              onChange={(e) => setLatentDimension(Number(e.target.value))}
+            />
+          </label>
+          <label>
+            Noise Std Dev (σ){" "}
+            <input
+              type="number"
+              min="0"
+              max=".5"
+              step=".01"
+              value={noise}
+              onChange={(e) => setNoise(Number(e.target.value))}
+            />
+            <input
+              aria-label="Noise"
+              type="range"
+              min="0"
+              max=".5"
+              step=".01"
+              value={noise}
+              onChange={(e) => setNoise(Number(e.target.value))}
+            />
+          </label>
+          <label>
+            Architecture
+            <select
+              value={architecture}
+              onChange={(e) =>
+                setArchitecture(e.target.value as AutoencoderArchitecture)
+              }
+            >
+              <option value="dense">Dense (MLP)</option>
+              <option value="shallow">Shallow MLP</option>
+            </select>
+          </label>
+        </section>
+        <section>
+          <h3>TRAINING CONTROLS ⓘ</h3>
+          <label>
+            Optimizer
+            <select>
+              <option>Adam</option>
+            </select>
+          </label>
+          <label>
+            Learning Rate
+            <input
+              type="number"
+              min=".0001"
+              max=".01"
+              step=".0001"
+              value={learningRate}
+              onChange={(e) => setLearningRate(Number(e.target.value))}
+            />
+          </label>
+          <label>
+            Batch Size
+            <select
+              value={batchSize}
+              onChange={(e) => setBatchSize(Number(e.target.value))}
+            >
+              <option>16</option>
+              <option>32</option>
+              <option>64</option>
+            </select>
+          </label>
+          <label>
+            Epochs
+            <select
+              value={epochs}
+              onChange={(e) => setEpochs(Number(e.target.value))}
+            >
+              <option>4</option>
+              <option>8</option>
+              <option>12</option>
+              <option>20</option>
+            </select>
+          </label>
+          <button
+            className="primary"
+            disabled={training}
+            onClick={() => void runTraining()}
+          >
+            <Sparkles /> {training ? "Training..." : "Train Model"}
+          </button>
+          <button
+            disabled={!training}
+            onClick={() => {
+              runId.current++;
+              setTraining(false);
+              setToast("Training stopped");
+            }}
+          >
+            ⊗ Stop
+          </button>
+          <p>
+            Training Progress <b>{Math.round(progress * 100)}%</b>
+            <i>
+              <span style={{ width: `${progress * 100}%` }} />
+            </i>
+            {Math.round(progress * epochs)} / {epochs} epochs
+          </p>
+        </section>
+        <section>
+          <h3>MODEL STATUS ⓘ</h3>
+          <p>
+            Parameters <b>{result?.parameterCount.toLocaleString() || "—"}</b>
+          </p>
+          <p>
+            Model Size{" "}
+            <b>
+              {result
+                ? `${((result.parameterCount * 4) / 1024 / 1024).toFixed(2)} MB`
+                : "—"}
+            </b>
+          </p>
+          <p>
+            Last Trained <b>{result ? "Just now ✓" : "Not trained"}</b>
+          </p>
+        </section>
+      </aside>
+      {toast && (
+        <button className="ae-toast" onClick={() => setToast("")}>
+          {toast}
+        </button>
+      )}
+    </div>
+  );
 }

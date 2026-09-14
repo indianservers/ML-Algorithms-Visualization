@@ -1,5 +1,5 @@
-import SVMRealPage from './SVMRealPage';
+import SVMClassificationLesson from "./SVMClassificationLesson";
 
 export default function SVMClassificationPage() {
-  return <SVMRealPage />;
+  return <SVMClassificationLesson />;
 }

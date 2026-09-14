@@ -1,0 +1,743 @@
+.lf-page {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  grid-template-columns: 214px minmax(0, 1fr) 330px;
+  grid-template-rows: 87px 102px 42px minmax(0, 1fr) 20px;
+  background: radial-gradient(circle at 55% 10%, #0c1730, #030b1c 52%);
+  color: #eef3ff;
+  font:
+    12px/1.4 Inter,
+    Segoe UI,
+    sans-serif;
+  overflow: hidden;
+}
+.lf-page * {
+  box-sizing: border-box;
+}
+.lf-page button,
+.lf-page select,
+.lf-page input {
+  font: inherit;
+  color: inherit;
+}
+.lf-page button {
+  cursor: pointer;
+}
+.card {
+  border: 1px solid #22334e;
+  background: linear-gradient(145deg, #09152a, #081326);
+  border-radius: 7px;
+}
+.lf-side {
+  grid-row: 1/6;
+  background: #071225;
+  border-right: 1px solid #1c2a43;
+  padding: 12px 12px;
+  display: flex;
+  flex-direction: column;
+}
+.lf-brand {
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  text-decoration: none;
+  padding: 0 8px;
+}
+.lf-brand i {
+  font-style: normal;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #153f8a;
+  display: grid;
+  place-items: center;
+}
+.lf-brand span {
+  display: flex;
+  flex-direction: column;
+}
+.lf-brand b {
+  font-size: 16px;
+}
+.lf-brand small {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
+.lf-side button {
+  border: 0;
+  background: transparent;
+  color: #aebbd0;
+  height: 38px;
+  text-align: left;
+  padding: 0 12px;
+}
+.lf-side button.active {
+  color: #4c8cff;
+  background: #10203e;
+  border-radius: 6px;
+  font-weight: 700;
+}
+.lf-side section p {
+  font-size: 9px;
+  color: #8191aa;
+  margin: 13px 12px 4px;
+}
+.lf-side section button {
+  display: block;
+  width: 100%;
+}
+.lf-side .lf-fold {
+  margin-top: auto;
+  text-align: right;
+}
+.lf-head {
+  grid-column: 2/4;
+  display: flex;
+  align-items: center;
+  padding: 0 28px;
+  border-bottom: 1px solid #1c2a42;
+  gap: 12px;
+}
+.lf-head > div {
+  margin-right: auto;
+}
+.lf-head h1 {
+  font-size: 23px;
+  margin: 0 0 5px;
+}
+.lf-head h1 small {
+  font-size: 10px;
+  color: #c98dff;
+  background: #281852;
+  padding: 6px 12px;
+  border-radius: 14px;
+  margin-left: 12px;
+}
+.lf-head p {
+  margin: 0;
+  color: #b7c2d4;
+}
+.lf-head button {
+  height: 34px;
+  border: 1px solid #273a59;
+  border-radius: 6px;
+  background: #0b172c;
+  padding: 0 14px;
+}
+.lf-head button:last-child {
+  border-radius: 50%;
+  width: 34px;
+  padding: 0;
+  border-color: #00a5c6;
+}
+.lf-progress {
+  grid-column: 2;
+  margin: 0 0 10px 32px;
+  display: grid;
+  grid-template-columns: 33% 67%;
+  padding: 16px;
+}
+.lf-progress article:first-child {
+  padding-right: 20px;
+  border-right: 1px solid #1d2e49;
+}
+.lf-progress b,
+.lf-data > b,
+.lf-controls h3 {
+  font-size: 10px;
+  color: #9fb0c9;
+  letter-spacing: 0.04em;
+}
+.lf-progress p {
+  margin: 8px 0 0;
+  color: #c7d0df;
+}
+.lf-progress article:nth-child(2) {
+  padding-left: 20px;
+}
+.lf-progress article > div {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  margin-top: 12px;
+}
+.lf-progress article > div:before {
+  content: "";
+  height: 3px;
+  background: #273753;
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  top: 9px;
+}
+.lf-progress span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  z-index: 1;
+  color: #aeb9cb;
+}
+.lf-progress span i {
+  font-style: normal;
+  background: #41516d;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+}
+.lf-progress span.done i {
+  background: #1ba66e;
+  box-shadow: 20px 0 0 -6px #315fe4;
+}
+.lf-progress span.done {
+  color: #fff;
+}
+.lf-data {
+  grid-column: 3;
+  grid-row: 2;
+  margin: 0 28px 10px 12px;
+  padding: 16px;
+}
+.lf-data > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 9px;
+  color: #3a83f5;
+  font-size: 23px;
+}
+.lf-data span {
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+  font-size: 12px;
+}
+.lf-data small {
+  color: #a5b2c7;
+  margin-top: 3px;
+}
+.lf-data button {
+  margin-left: auto;
+  border: 0;
+  background: transparent;
+  color: #4a83ff;
+}
+.lf-tabs {
+  grid-column: 2;
+  grid-row: 3;
+  margin-left: 32px;
+  width: 706px;
+  border: 1px solid #22334c;
+  border-radius: 7px;
+  display: flex;
+  overflow: hidden;
+}
+.lf-tabs button {
+  flex: 1;
+  border: 0;
+  background: #0b172b;
+}
+.lf-tabs button.active {
+  background: #142d68;
+  color: #58a0ff;
+  border-bottom: 2px solid #3f72ff;
+}
+.lf-main {
+  grid-column: 2;
+  grid-row: 4;
+  margin: 0 10px 10px 32px;
+  display: grid;
+  grid-template-rows: 380px 165px 130px;
+  gap: 10px;
+  overflow: hidden;
+}
+.lf-work {
+  border-radius: 0 7px 7px 7px;
+  padding: 12px 10px;
+}
+.lf-work > header {
+  display: flex;
+  align-items: center;
+}
+.lf-work > header b {
+  margin-right: auto;
+}
+.lf-work select,
+.lf-controls select {
+  background: #0a162a;
+  border: 1px solid #253853;
+  border-radius: 5px;
+  height: 30px;
+  padding: 0 10px;
+}
+.lf-work > header select {
+  width: 340px;
+}
+.lf-flow {
+  height: 284px;
+  display: grid;
+  grid-template-columns: 1fr 32px 1.2fr 32px 1.35fr;
+  align-items: center;
+}
+.lf-flow > strong {
+  font-size: 25px;
+  color: #8656ee;
+  text-align: center;
+}
+.lf-flow h3 {
+  font-size: 13px;
+  color: #3d86ef;
+}
+.lf-flow h3 i {
+  font-style: normal;
+  border-radius: 50%;
+  background: #102450;
+  padding: 5px 8px;
+}
+.lf-flow svg {
+  width: 100%;
+  height: 170px;
+}
+.lf-flow svg path {
+  fill: none;
+  stroke: #2875ed;
+  stroke-width: 1.4;
+}
+.lf-flow svg rect {
+  fill: #53617a22;
+  stroke: #64728d;
+  stroke-dasharray: 3 2;
+}
+.lf-flow p {
+  text-align: center;
+  color: #c4cede;
+}
+.lf-flow .forecast {
+  stroke: #13e5de;
+  stroke-width: 2;
+}
+.lf-flow .band {
+  fill: #0ba0a944;
+  stroke: none;
+}
+.lf-cell > div {
+  border: 1px solid #873dbe;
+  border-radius: 14px;
+  height: 195px;
+  padding: 25px 10px;
+  color: #e3e8f2;
+}
+.lf-cell > div > span {
+  display: block;
+  margin: 4px 0;
+}
+.lf-cell footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 38px;
+}
+.lf-cell footer b {
+  border: 1px solid #4479d8;
+  border-radius: 5px;
+  padding: 8px;
+  color: #49a9ff;
+  text-align: center;
+}
+.lf-cell footer b:nth-child(2) {
+  color: #40dd82;
+  border-color: #36a95d;
+}
+.lf-cell footer b:nth-child(3) {
+  color: #cf86ef;
+  border-color: #8f4ab4;
+}
+.lf-cell footer b:nth-child(4) {
+  color: #ff9d0c;
+  border-color: #be7200;
+}
+.lf-cell footer small {
+  display: block;
+  color: #b9c3d4;
+  font-size: 8px;
+  margin-top: 9px;
+}
+.lf-work > footer {
+  text-align: center;
+  border: 1px solid #253650;
+  border-radius: 5px;
+  padding: 7px;
+  color: #bbc5d5;
+}
+.lf-states {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr 1fr;
+  gap: 10px;
+}
+.lf-states > article {
+  padding: 13px 16px;
+}
+.lf-states h3,
+.lf-insights h3 {
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.lf-states h3 small {
+  font-weight: 400;
+}
+.lf-rings {
+  display: flex;
+  justify-content: space-between;
+}
+.lf-rings > span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.lf-rings i {
+  font-style: normal;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: conic-gradient(#48aaff var(--p), #19263c 0);
+  position: relative;
+}
+.lf-rings i:after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: #09162a;
+}
+.lf-rings b {
+  position: absolute;
+  z-index: 1;
+  font-size: 10px;
+}
+.lf-rings small {
+  margin-top: 5px;
+  color: #c5cede;
+}
+.lf-memory {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: 25px 0 18px;
+  color: #9caac0;
+}
+.lf-memory i {
+  height: 22px;
+  flex: 1;
+  background: linear-gradient(90deg, #08acd0, #5be679);
+  border: 1px solid #0d2038;
+}
+.lf-states svg {
+  height: 90px;
+  width: 100%;
+}
+.lf-states svg path {
+  fill: none;
+  stroke: #9e59e8;
+}
+.lf-states p {
+  font-size: 9px;
+  color: #9aa8bd;
+}
+.lf-insights {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  border-top: 1px solid #1c2d48;
+  padding-top: 12px;
+}
+.lf-insights h3 {
+  grid-column: 1/5;
+}
+.lf-insights article {
+  padding: 12px;
+}
+.lf-insights article > i {
+  font-style: normal;
+  font-size: 20px;
+  color: #2e96ff;
+  margin-right: 10px;
+}
+.lf-insights article:nth-of-type(2) > i,
+.lf-insights article:nth-of-type(2) > b {
+  color: #28dc7d;
+}
+.lf-insights article:nth-of-type(3) > i,
+.lf-insights article:nth-of-type(3) > b {
+  color: #ff9b00;
+}
+.lf-insights article:nth-of-type(4) > i,
+.lf-insights article:nth-of-type(4) > b {
+  color: #bd68ed;
+}
+.lf-insights p {
+  font-size: 9px;
+  color: #aab6c9;
+  margin: 6px 0 0 32px;
+}
+.lf-controls {
+  grid-column: 3;
+  grid-row: 3/5;
+  margin: 0 28px 10px 2px;
+  padding: 16px;
+  overflow: auto;
+}
+.lf-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: #aebbd0;
+  margin: 6px 0;
+}
+.lf-controls label > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lf-controls input[type="range"] {
+  accent-color: #3976ef;
+  flex: 1;
+}
+.lf-controls label b {
+  background: #0a1629;
+  border: 1px solid #263852;
+  padding: 5px 9px;
+  border-radius: 4px;
+  color: #fff;
+}
+.lf-controls select {
+  width: 100%;
+}
+.lf-controls hr {
+  border: 0;
+  border-top: 1px solid #1d2e48;
+  margin: 10px 0;
+}
+.lf-switch {
+  flex-direction: row !important;
+  justify-content: space-between;
+}
+.lf-switch input {
+  appearance: none;
+  width: 30px;
+  height: 17px;
+  background: #253550;
+  border-radius: 10px;
+  position: relative;
+}
+.lf-switch input:checked {
+  background: #3269ec;
+}
+.lf-switch input:after {
+  content: "";
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  background: white;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+}
+.lf-switch input:checked:after {
+  left: 15px;
+}
+.lf-controls > p {
+  display: flex;
+  flex-direction: column;
+}
+.lf-controls > p small {
+  color: #9fadc2;
+}
+.lf-links {
+  display: flex;
+  gap: 12px;
+}
+.lf-links button {
+  border: 0;
+  background: transparent;
+  color: #4985ff;
+}
+.lf-links input {
+  display: none;
+}
+.lf-controls .primary {
+  width: 100%;
+  height: 38px;
+  border: 0;
+  border-radius: 5px;
+  background: linear-gradient(90deg, #3b70ee, #244cf0);
+  margin-top: 10px;
+  font-weight: 700;
+}
+.lf-controls > a {
+  display: block;
+  text-align: center;
+  color: #6195ff;
+  font-size: 9px;
+  margin-top: 9px;
+}
+.lf-status {
+  grid-column: 2/4;
+  padding: 3px 18px;
+  color: #7588a7;
+  border-top: 1px solid #17263c;
+  font-size: 9px;
+}
+.lf-collapsed {
+  grid-template-columns: 58px minmax(0, 1fr) 330px;
+}
+.lf-collapsed .lf-side span,
+.lf-collapsed .lf-side p {
+  display: none;
+}
+@media (max-width: 1100px) {
+  .lf-page {
+    display: block;
+    overflow-y: auto;
+  }
+  .lf-side {
+    height: 58px;
+    display: flex;
+    flex-direction: row;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  .lf-brand {
+    width: 150px;
+  }
+  .lf-side > section,
+  .lf-fold {
+    display: none;
+  }
+  .lf-side > button {
+    margin-left: auto;
+  }
+  .lf-head {
+    height: 88px;
+  }
+  .lf-progress,
+  .lf-data,
+  .lf-tabs,
+  .lf-main,
+  .lf-controls {
+    margin: 10px;
+  }
+  .lf-progress {
+    height: 150px;
+  }
+  .lf-data {
+    height: 100px;
+  }
+  .lf-tabs {
+    width: auto;
+  }
+  .lf-main {
+    height: 1300px;
+    grid-template-rows: 550px 480px 250px;
+  }
+  .lf-flow {
+    grid-template-columns: 1fr;
+    height: 470px;
+    overflow: auto;
+  }
+  .lf-flow > strong {
+    display: none;
+  }
+  .lf-states {
+    grid-template-columns: 1fr;
+  }
+  .lf-insights {
+    grid-template-columns: 1fr 1fr;
+  }
+  .lf-insights h3 {
+    grid-column: 1/3;
+  }
+  .lf-controls {
+    height: 780px;
+  }
+  .lf-status {
+    height: 24px;
+  }
+  .lf-collapsed {
+    display: block;
+  }
+}
+@media (max-width: 600px) {
+  .lf-head {
+    height: 150px;
+    padding: 12px;
+    flex-wrap: wrap;
+  }
+  .lf-head h1 {
+    font-size: 20px;
+  }
+  .lf-head h1 small {
+    display: block;
+    width: max-content;
+    margin: 5px 0;
+  }
+  .lf-head p {
+    font-size: 10px;
+  }
+  .lf-progress {
+    height: 300px;
+    grid-template-columns: 1fr;
+  }
+  .lf-progress article:first-child {
+    border: 0;
+    border-bottom: 1px solid #20304b;
+  }
+  .lf-progress article:nth-child(2) {
+    padding: 14px 0;
+  }
+  .lf-tabs {
+    overflow-x: auto;
+  }
+  .lf-tabs button {
+    min-width: 82px;
+  }
+  .lf-main {
+    height: 1850px;
+    grid-template-rows: 800px 720px 310px;
+  }
+  .lf-work > header select {
+    width: 170px;
+  }
+  .lf-flow {
+    height: 690px;
+  }
+  .lf-flow article {
+    min-height: 200px;
+  }
+  .lf-states {
+    display: flex;
+    flex-direction: column;
+  }
+  .lf-states article {
+    height: 225px;
+  }
+  .lf-insights {
+    grid-template-columns: 1fr;
+  }
+  .lf-insights h3 {
+    grid-column: 1;
+  }
+  .lf-controls {
+    height: 850px;
+  }
+  .lf-page {
+    min-width: 0;
+  }
+}

@@ -1,0 +1,532 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  ArrowRight,
+  BarChart3,
+  BrainCircuit,
+  Check,
+  CircleHelp,
+  Database,
+  FileText,
+  FlaskConical,
+  HelpCircle,
+  Moon,
+  Network,
+  Notebook,
+  Pause,
+  Play,
+  Plus,
+  RefreshCw,
+  RotateCcw,
+  Sparkles,
+  Sun,
+  Trash2,
+} from "lucide-react";
+import { kmeans } from "../../../lib/algorithms/clustering/kmeans";
+import "./KMeansReferenceLesson.css";
+
+type Shape = "blobs" | "rings" | "mixed";
+type Tool = "select" | "add" | "remove";
+type Props = { onAdvanced: () => void };
+const COLORS = [
+  "#24c6e8",
+  "#d527a9",
+  "#ffb30d",
+  "#8067ed",
+  "#2bde8c",
+  "#ff6b6b",
+];
+const rand = (i: number, k: number) =>
+  Math.sin((i + 3) * 73.17 * k) * 0.5 + 0.5;
+function makePoints(shape: Shape) {
+  return Array.from({ length: 150 }, (_, i) => {
+    const group = i % 3,
+      n = Math.floor(i / 3),
+      angle = (n / 50) * Math.PI * 2;
+    if (shape === "rings") {
+      const radius = 1.7 + group * 2.2 + (rand(i, 2.2) - 0.5) * 0.5;
+      return [Math.cos(angle) * radius, Math.sin(angle) * radius];
+    }
+    if (shape === "mixed" && group === 2)
+      return [
+        Math.cos(angle) * (2 + rand(i, 1.7) * 2),
+        Math.sin(angle) * (2 + rand(i, 2.1) * 2) - 1,
+      ];
+    const centers = [
+      [-3, 3.4],
+      [4.2, 4],
+      [1, -1.7],
+    ];
+    return [
+      centers[group][0] + (rand(i, 1.4) - 0.5) * 3.2,
+      centers[group][1] + (rand(i, 2.4) - 0.5) * 3.2,
+    ];
+  });
+}
+const distance = (a: number[], b: number[]) =>
+  Math.hypot(a[0] - b[0], a[1] - b[1]);
+export default function KMeansReferenceLesson({ onAdvanced }: Props) {
+  const [points, setPoints] = useState(() => makePoints("blobs")),
+    [shape, setShape] = useState<Shape>("blobs"),
+    [k, setK] = useState(3),
+    [init, setInit] = useState<"random" | "kmeans++">("kmeans++"),
+    [seed, setSeed] = useState(42),
+    [step, setStep] = useState(3),
+    [speed, setSpeed] = useState(1),
+    [playing, setPlaying] = useState(false),
+    [tool, setTool] = useState<Tool>("select"),
+    [manual, setManual] = useState<number[][] | null>(null),
+    [dragging, setDragging] = useState<number | null>(null),
+    [toast, setToast] = useState(""),
+    [light, setLight] = useState(false);
+  const plotRef = useRef<HTMLDivElement>(null);
+  const result = useMemo(
+    () => kmeans(points, k, 12, init, seed),
+    [points, k, init, seed],
+  );
+  const maxStep = 12,
+    active =
+      result.steps[Math.min(Math.floor(step / 2), result.steps.length - 1)] ??
+      result.steps[0],
+    centroids = manual ?? active.centroids;
+  const assignments = useMemo(
+    () =>
+      points.map((point) =>
+        centroids.reduce(
+          (best, c, index) =>
+            distance(point, c) < distance(point, centroids[best])
+              ? index
+              : best,
+          0,
+        ),
+      ),
+    [points, centroids],
+  );
+  const inertia = points.reduce(
+      (sum, p, i) => sum + distance(p, centroids[assignments[i]]) ** 2,
+      0,
+    ),
+    initial = result.steps[0]?.inertia || inertia,
+    delta = initial ? ((inertia - initial) / initial) * 100 : 0;
+  useEffect(() => {
+    if (!playing) return;
+    const timer = window.setInterval(
+      () => setStep((current) => (current >= maxStep - 1 ? 0 : current + 1)),
+      Math.max(140, 800 / speed),
+    );
+    return () => window.clearInterval(timer);
+  }, [playing, speed, maxStep]);
+  const setDataset = (next: Shape) => {
+    setShape(next);
+    setPoints(makePoints(next));
+    setStep(0);
+    setManual(null);
+  };
+  const coords = (event: React.PointerEvent | React.MouseEvent) => {
+    const rect = plotRef.current!.getBoundingClientRect();
+    return [
+      ((event.clientX - rect.left) / rect.width) * 16 - 8,
+      8 - ((event.clientY - rect.top) / rect.height) * 12,
+    ];
+  };
+  const interact = (event: React.PointerEvent | React.MouseEvent) => {
+    const value = coords(event);
+    if (dragging !== null) {
+      setManual(centroids.map((c, i) => (i === dragging ? value : c)));
+      return;
+    }
+    if (tool === "add") setPoints([...points, value]);
+    if (tool === "remove") {
+      const nearest = points.reduce(
+        (best, p, i) =>
+          distance(p, value) < distance(points[best], value) ? i : best,
+        0,
+      );
+      setPoints(points.filter((_, i) => i !== nearest));
+    }
+  };
+  const counts = Array.from(
+    { length: k },
+    (_, cluster) => assignments.filter((value) => value === cluster).length,
+  );
+  return (
+    <div className={`km-page ${light ? "light" : ""}`}>
+      <header className="km-top">
+        <Link to="/">
+          <BrainCircuit />
+          <b>AI Observatory</b>
+        </Link>
+        <span>
+          ← Unsupervised Learning › <b>Clustering Lab</b>
+        </span>
+        <button onClick={() => setToast("Documentation opened")}>
+          <FileText /> Docs
+        </button>
+        <button onClick={() => setToast("Help opened")}>
+          <HelpCircle /> Help
+        </button>
+        <button onClick={() => setLight(!light)}>
+          {light ? <Moon /> : <Sun />}
+        </button>
+        <i>AI</i>
+      </header>
+      <aside className="km-nav">
+        <h3>LEARNING PATH</h3>
+        <button>
+          <BarChart3 /> Overview
+        </button>
+        <button>
+          <Network /> Supervised Learning ›
+        </button>
+        <button className="open">
+          <Network /> Unsupervised Learning⌄
+        </button>
+        <section>
+          <b>│ Clustering ⌃</b>
+          <button className="active">● K-Means Clustering</button>
+          <button>DBSCAN</button>
+          <button>Hierarchical Clustering</button>
+        </section>
+        <button>
+          <Sparkles /> Dimensionality Reduction ›
+        </button>
+        <button>
+          <Network /> Anomaly Detection ›
+        </button>
+        <hr />
+        <h3>LAB TOOLS</h3>
+        <button onClick={() => setToast("Datasets opened")}>
+          <Database /> Datasets
+        </button>
+        <button onClick={() => setToast("Visualizations opened")}>
+          <BarChart3 /> Visualizations
+        </button>
+        <button onClick={() => setToast("Experiments opened")}>
+          <FlaskConical /> Experiments
+        </button>
+        <button onClick={() => setToast("Notes opened")}>
+          <Notebook /> Notes
+        </button>
+        <footer>
+          <div>
+            Progress <b>78%</b>
+            <i>
+              <em />
+            </i>
+          </div>
+          <p>Next up</p>
+          <b>DBSCAN Lab</b>
+          <button onClick={() => setToast("Cheat sheet opened")}>
+            <FileText /> Cheat Sheet
+          </button>
+          <button onClick={onAdvanced}>
+            <BrainCircuit /> Image Embeddings
+          </button>
+        </footer>
+      </aside>
+      <main>
+        <section className="km-title">
+          <div>
+            <h1>
+              K-Means Clustering <CircleHelp />
+            </h1>
+            <p>
+              Group similar points together by minimizing within-cluster
+              variance.
+            </p>
+          </div>
+          {[
+            ["Iteration", `${step + 1} / 12`],
+            ["Inertia (SSE)", inertia.toFixed(2)],
+            ["Δ Inertia", `${delta.toFixed(1)}%`],
+          ].map((v, i) => (
+            <article key={v[0]}>
+              <small>{v[0]}</small>
+              <b className={i === 2 ? "green" : ""}>
+                {v[1]} {i === 1 && "↓"}
+              </b>
+            </article>
+          ))}
+        </section>
+        <section
+          className="km-plot"
+          ref={plotRef}
+          onPointerMove={(event) => dragging !== null && interact(event)}
+          onPointerUp={() => setDragging(null)}
+          onPointerLeave={() => setDragging(null)}
+          onClick={(event) => dragging === null && interact(event)}
+        >
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+            <defs>
+              {COLORS.slice(0, k).map((color, i) => (
+                <radialGradient id={`g${i}`} key={color}>
+                  <stop stopColor={color} stopOpacity=".22" />
+                  <stop offset="1" stopColor={color} stopOpacity=".03" />
+                </radialGradient>
+              ))}
+            </defs>
+            {centroids.map((c, i) => (
+              <circle
+                key={i}
+                cx={((c[0] + 8) / 16) * 100}
+                cy={((8 - c[1]) / 12) * 100}
+                r="39"
+                fill={`url(#g${i})`}
+              />
+            ))}
+          </svg>
+          {points.map((p, i) => (
+            <i
+              className="point"
+              key={i}
+              style={{
+                left: `${((p[0] + 8) / 16) * 100}%`,
+                top: `${((8 - p[1]) / 12) * 100}%`,
+                background: COLORS[assignments[i]],
+                boxShadow: `0 0 8px ${COLORS[assignments[i]]}`,
+              }}
+            />
+          ))}
+          {points.map((p, i) => (
+            <span
+              className="link"
+              key={i}
+              style={{
+                left: `${((p[0] + 8) / 16) * 100}%`,
+                top: `${((8 - p[1]) / 12) * 100}%`,
+                width: `${(distance(p, centroids[assignments[i]]) / 16) * 100}%`,
+                transform: `rotate(${(Math.atan2(-(centroids[assignments[i]][1] - p[1]), centroids[assignments[i]][0] - p[0]) * 180) / Math.PI}deg)`,
+                background: COLORS[assignments[i]],
+              }}
+            />
+          ))}
+          {centroids.map((c, i) => (
+            <button
+              aria-label={`centroid ${i + 1}`}
+              className="centroid"
+              key={i}
+              onPointerDown={(e) => {
+                e.stopPropagation();
+                setDragging(i);
+              }}
+              style={{
+                left: `${((c[0] + 8) / 16) * 100}%`,
+                top: `${((8 - c[1]) / 12) * 100}%`,
+                background: COLORS[i],
+              }}
+            >
+              ◇
+            </button>
+          ))}
+          <div className="drag-tip">
+            ☝ Drag centroids
+            <br />
+            to move them
+          </div>
+          <div className="plot-tools">
+            {(["select", "add", "remove"] as Tool[]).map((name) => (
+              <button
+                key={name}
+                className={tool === name ? "active" : ""}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTool(name);
+                }}
+              >
+                {name === "add" ? (
+                  <Plus />
+                ) : name === "remove" ? (
+                  <Trash2 />
+                ) : (
+                  "↖"
+                )}{" "}
+                {name[0].toUpperCase() + name.slice(1)} Point
+              </button>
+            ))}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setManual(null);
+              }}
+            >
+              <RefreshCw /> Reset View
+            </button>
+          </div>
+          <div className="legend">
+            {counts.map((count, i) => (
+              <p key={i}>
+                <i style={{ background: COLORS[i] }} /> Cluster {i + 1}
+                <b>{count}</b>
+              </p>
+            ))}
+          </div>
+        </section>
+        <section className="km-bottom">
+          <article className="loop">
+            <h3>K-MEANS LOOP</h3>
+            <aside>
+              <b>
+                <i className="cyan" />
+                Assign
+              </b>
+              <p>Assign points to nearest centroid</p>
+              <b>
+                <i />
+                Update
+              </b>
+              <p>Recompute centroids as mean of points</p>
+            </aside>
+            <div className="steps">
+              {Array.from({ length: 12 }, (_, i) => (
+                <button
+                  key={i}
+                  className={i === step ? "active" : i < step ? "done" : ""}
+                  onClick={() => {
+                    setStep(Math.min(i, maxStep - 1));
+                    setManual(null);
+                  }}
+                >
+                  {i + 1}
+                  <small>{i % 2 ? "Update" : "Assign"}</small>
+                </button>
+              ))}
+              <hr />
+              <p>
+                <b>
+                  Iteration {step + 1} – {step % 2 ? "Update" : "Assign"}
+                </b>
+                <br />
+                {step % 2
+                  ? "Centroids move to the mean position of their assigned points."
+                  : "Every point is assigned to its nearest centroid."}
+              </p>
+            </div>
+          </article>
+          <article className="curve">
+            <h3>Inertia (SSE) over iterations</h3>
+            <svg viewBox="0 0 260 130">
+              <path d="M10 10V115H250" />
+              <polyline
+                points={Array.from({ length: 12 }, (_, i) => {
+                  const stage =
+                    result.steps[
+                      Math.min(Math.floor(i / 2), result.steps.length - 1)
+                    ] ?? result.steps.at(-1)!;
+                  return `${12 + (i / 11) * 230},${12 + ((initial - stage.inertia) / (initial || 1)) * 95}`;
+                }).join(" ")}
+              />
+            </svg>
+          </article>
+          <article className="summary">
+            <h3>Convergence</h3>
+            <p className="converged">
+              <Check /> {result.converged ? "Converged" : "Iterating"}
+              <small>Centroids stabilized.</small>
+            </p>
+            <h3>Cluster sizes</h3>
+            {counts.map((count, i) => (
+              <p key={i}>
+                <i style={{ background: COLORS[i] }} /> Cluster {i + 1}
+                <b>
+                  {count} · {((count / points.length) * 100).toFixed(1)}%
+                </b>
+              </p>
+            ))}
+          </article>
+        </section>
+        <footer className="km-tip">
+          ⭐ Tips: Try different initializations or K values, drag centroids,
+          add points, and observe how the algorithm adapts.
+        </footer>
+      </main>
+      <aside className="km-controls">
+        <h3>LAB CONTROLS</h3>
+        <label>Number of clusters (K)</label>
+        <div className="stepper">
+          <button onClick={() => setK(Math.max(2, k - 1))}>−</button>
+          <b>{k}</b>
+          <button onClick={() => setK(Math.min(6, k + 1))}>＋</button>
+        </div>
+        <label>Initialization ⓘ</label>
+        <select
+          value={init}
+          onChange={(e) => setInit(e.target.value as typeof init)}
+        >
+          <option value="kmeans++">K-Means++</option>
+          <option value="random">Random</option>
+        </select>
+        <button
+          onClick={() =>
+            setToast(
+              `K-Means++ inertia ${kmeans(points, k, 12, "kmeans++", seed).inertia.toFixed(1)} vs random ${kmeans(points, k, 12, "random", seed).inertia.toFixed(1)}`,
+            )
+          }
+        >
+          <RotateCcw /> Compare initializations
+        </button>
+        <label>Dataset shape ⓘ</label>
+        <div className="shapes">
+          {(["blobs", "rings", "mixed"] as Shape[]).map((item) => (
+            <button
+              aria-label={`${item} dataset`}
+              className={shape === item ? "active" : ""}
+              onClick={() => setDataset(item)}
+              key={item}
+            >
+              {item === "blobs" ? "⠿" : item === "rings" ? "◎" : "◌◌"}
+            </button>
+          ))}
+        </div>
+        <label>Speed ⓘ</label>
+        <input
+          aria-label="Speed"
+          type="range"
+          min=".5"
+          max="3"
+          step=".5"
+          value={speed}
+          onChange={(e) => setSpeed(Number(e.target.value))}
+        />
+        <p>
+          Slow <span>Normal</span> Fast
+        </p>
+        <label>Random seed ⓘ</label>
+        <div className="seed">
+          <input
+            aria-label="Random seed"
+            type="number"
+            value={seed}
+            onChange={(e) => setSeed(Number(e.target.value))}
+          />
+          <button onClick={() => setSeed(seed + 1)}>
+            <RefreshCw />
+          </button>
+        </div>
+        <button
+          className="run"
+          onClick={() => {
+            setStep((current) => Math.min(maxStep - 1, current + 1));
+            setManual(null);
+          }}
+        >
+          Run iteration <ArrowRight />
+        </button>
+        <div className="play">
+          <button onClick={() => setPlaying(!playing)}>
+            {playing ? <Pause /> : <Play />} {playing ? "Pause" : "Auto-play"}
+          </button>
+          <button onClick={() => setStep(maxStep - 1)}>▶ To end</button>
+        </div>
+        <article>
+          💡 Watch how points are assigned to the nearest centroid, then
+          centroids update to the mean of their assigned points.
+        </article>
+      </aside>
+      {toast && (
+        <button className="km-toast" onClick={() => setToast("")}>
+          {toast}
+        </button>
+      )}
+    </div>
+  );
+}

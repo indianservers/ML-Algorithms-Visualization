@@ -1,404 +1,801 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import { useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, ReferenceLine,
-} from 'recharts';
-import { GitBranch, Play, RotateCcw } from 'lucide-react';
-import { PageHeader } from '../../../components/common/PageHeader';
-import { Card, InfoBox } from '../../../components/common/Card';
-import { Tabs } from '../../../components/common/Tabs';
-import { MetricsPanel } from '../../../components/ml/MetricsPanel';
-import { HyperparameterPanel, HyperparamDef } from '../../../components/ml/HyperparameterPanel';
-import { LearningPanel } from '../../../components/ml/LearningPanel';
-import { TrainingLossChart } from '../../../components/ml/TrainingLossChart';
-import { logisticRegression } from '../../../../lib/algorithms/classification/logisticRegression';
-import { binaryMetrics, rocCurve } from '../../../../lib/math/metrics';
-import { sigmoid, linspace, mean, std } from '../../../../lib/math/statistics';
-import { loanDataset } from '../../../../data/sampleDatasets';
+  BookOpen,
+  Calculator,
+  Check,
+  ChevronDown,
+  CircleHelp,
+  Info,
+  Moon,
+  Play,
+  RefreshCw,
+  Settings,
+  Sun,
+  Upload,
+} from "lucide-react";
+import { logisticRegression } from "../../../../lib/algorithms/classification/logisticRegression";
+import { binaryMetrics } from "../../../../lib/math/metrics";
+import "./LogisticRegressionPage.css";
 
-// Standardise a feature array
-function standardise(arr: number[]): number[] {
-  const m = mean(arr), s = std(arr) || 1;
-  return arr.map(v => (v - m) / s);
+type Point = { x: number; y: number };
+type DatasetKey = "admissions" | "loans" | "churn" | "synthetic" | "imported";
+const tabs = [
+  "Learn",
+  "Visualize",
+  "Dataset",
+  "Train",
+  "Metrics",
+  "Compare",
+  "Explain",
+] as const;
+type Tab = (typeof tabs)[number];
+const admissions = Array.from({ length: 120 }, (_, i) => {
+  const x = 8 + ((i * 37) % 93),
+    noise = ((i * 17) % 23) - 11;
+  return { x, y: x + noise > 61 ? 1 : 0 };
+});
+const datasets = {
+  admissions: {
+    name: "University Admissions",
+    feature: "Exam Score",
+    source: "Recommended",
+    rows: admissions,
+  },
+  loans: {
+    name: "Loan Approval",
+    feature: "Credit Score",
+    source: "Finance",
+    rows: Array.from({ length: 90 }, (_, i) => {
+      const x = 300 + ((i * 53) % 551);
+      return { x, y: x + ((i * 19) % 101) - 50 > 625 ? 1 : 0 };
+    }),
+  },
+  churn: {
+    name: "Customer Churn",
+    feature: "Satisfaction",
+    source: "Business",
+    rows: Array.from({ length: 140 }, (_, i) => {
+      const x = (i * 7) % 101;
+      return { x, y: x + ((i * 11) % 31) - 15 < 48 ? 1 : 0 };
+    }),
+  },
+  synthetic: {
+    name: "Synthetic Binary",
+    feature: "Feature x",
+    source: "Generated",
+    rows: Array.from({ length: 160 }, (_, i) => {
+      const x = (i * 29) % 101;
+      return { x, y: x + ((i * 13) % 25) - 12 > 55 ? 1 : 0 };
+    }),
+  },
+};
+const nav = [
+  "Linear Regression",
+  "Logistic Regression",
+  "Decision Tree",
+  "Random Forest",
+  "SVM",
+  "KNN",
+  "Naive Bayes",
+];
+function parseCsv(text: string) {
+  const lines = text.trim().split(/\r?\n/).filter(Boolean);
+  if (lines.length < 3) throw Error("CSV requires a header and two rows.");
+  return lines.slice(1).map((line) => {
+    const v = line.split(",").map(Number);
+    if (!Number.isFinite(v[0]) || ![0, 1].includes(v.at(-1)!))
+      throw Error("CSV needs a numeric feature and binary target.");
+    return { x: v[0], y: v.at(-1)! };
+  });
+}
+function train(rows: Point[], l2: number) {
+  const mean = rows.reduce((s, v) => s + v.x, 0) / rows.length,
+    scale =
+      Math.sqrt(
+        rows.reduce((s, v) => s + (v.x - mean) ** 2, 0) / rows.length,
+      ) || 1;
+  const model = logisticRegression(
+    rows.map((v) => [(v.x - mean) / scale]),
+    rows.map((v) => v.y),
+    0.12,
+    650,
+    undefined,
+    l2 * 0.03,
+  );
+  return {
+    ...model,
+    mean,
+    scale,
+    proba: (x: number) => model.predictProba([(x - mean) / scale]),
+  };
+}
+
+function ProbabilityChart({
+  rows,
+  proba,
+  threshold,
+  view,
+}: {
+  rows: Point[];
+  proba: (x: number) => number;
+  threshold: number;
+  view: "probability" | "logodds" | "both";
+}) {
+  const W = 870,
+    H = 420,
+    l = 58,
+    r = 90,
+    t = 55,
+    b = 48,
+    xmin = Math.min(...rows.map((v) => v.x)),
+    xmax = Math.max(...rows.map((v) => v.x));
+  const sx = (x: number) => l + ((x - xmin) / (xmax - xmin || 1)) * (W - l - r),
+    sy = (p: number) => H - b - p * (H - t - b);
+  const curve = Array.from({ length: 100 }, (_, i) => {
+    const x = xmin + (i / 99) * (xmax - xmin),
+      p = proba(x);
+    return { x, p, z: Math.log(Math.max(1e-6, p) / Math.max(1e-6, 1 - p)) };
+  });
+  const path = curve
+    .map(
+      (v, i) => `${i ? "L" : "M"}${sx(v.x).toFixed(1)},${sy(v.p).toFixed(1)}`,
+    )
+    .join(" ");
+  const tx = Math.max(xmin, Math.min(xmax, threshold));
+  return (
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      aria-label="Logistic probability and log odds chart"
+    >
+      {[0, 0.25, 0.5, 0.75, 1].map((v) => (
+        <g key={v}>
+          <line x1={l} x2={W - r} y1={sy(v)} y2={sy(v)} className="grid" />
+          <text x={l - 24} y={sy(v) + 4}>
+            {v.toFixed(1)}
+          </text>
+        </g>
+      ))}
+      <line x1={l} x2={W - r} y1={H - b} y2={H - b} className="axis" />
+      <line x1={l} x2={l} y1={t} y2={H - b} className="axis" />
+      <line
+        x1={l}
+        x2={W - r}
+        y1={sy(0.5)}
+        y2={sy(0.5)}
+        className="threshold-line"
+      />
+      <line
+        x1={sx(tx)}
+        x2={sx(tx)}
+        y1={t - 10}
+        y2={H - b}
+        className="threshold-line"
+      />
+      {(view === "probability" || view === "both") && (
+        <path d={path} className="sigmoid" />
+      )}
+      {rows.map((v, i) => (
+        <circle
+          key={i}
+          cx={sx(v.x)}
+          cy={sy(v.y)}
+          r={i === 4 || i === 70 ? 7 : 4}
+          className={v.y ? "positive" : "negative"}
+        />
+      ))}
+      <rect
+        x={sx(tx) - 45}
+        y={10}
+        width="90"
+        height="28"
+        rx="5"
+        className="threshold-box"
+      />
+      <text x={sx(tx)} y={29} className="threshold-text">
+        Threshold: {Math.round(threshold)}
+      </text>
+      <text x={(l + W - r) / 2} y={H - 10}>
+        {view === "logodds" ? "Log-Odds (z)" : "Exam Score"}
+      </text>
+      <text transform={`translate(15 ${H / 2}) rotate(-90)`}>P(Admit)</text>
+      <text x={W - r + 15} y={t + 8} className="formula">
+        Sigmoid Function
+      </text>
+    </svg>
+  );
+}
+function DataTable({
+  rows,
+  setRows,
+}: {
+  rows: Point[];
+  setRows: React.Dispatch<React.SetStateAction<Point[]>>;
+}) {
+  return (
+    <article className="lr-data">
+      <header>
+        <h2>Editable Classification Data</h2>
+        <span aria-label="Active row count">{rows.length} rows</span>
+        <button onClick={() => setRows((v) => [...v, { x: 60, y: 1 }])}>
+          Add Row
+        </button>
+        <button onClick={() => setRows((v) => v.slice(0, -1))}>
+          Remove Row
+        </button>
+      </header>
+      <table>
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>Class</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.slice(0, 18).map((v, i) => (
+            <tr key={i}>
+              <td>
+                <input
+                  aria-label={`Row ${i + 1} feature`}
+                  type="number"
+                  value={v.x}
+                  onChange={(e) =>
+                    setRows((a) =>
+                      a.map((p, j) =>
+                        j === i ? { ...p, x: Number(e.target.value) } : p,
+                      ),
+                    )
+                  }
+                />
+              </td>
+              <td>
+                <select
+                  aria-label={`Row ${i + 1} class`}
+                  value={v.y}
+                  onChange={(e) =>
+                    setRows((a) =>
+                      a.map((p, j) =>
+                        j === i ? { ...p, y: Number(e.target.value) } : p,
+                      ),
+                    )
+                  }
+                >
+                  <option value="0">Negative</option>
+                  <option value="1">Positive</option>
+                </select>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </article>
+  );
+}
+function Generic({
+  tab,
+  loss,
+  probability,
+}: {
+  tab: Tab;
+  loss: number[];
+  probability: number;
+}) {
+  return (
+    <article className="lr-generic">
+      <h2>{tab}</h2>
+      <p>
+        {tab === "Train"
+          ? `Gradient descent completed ${loss.length} iterations. Final cross-entropy: ${loss.at(-1)?.toFixed(4)}.`
+          : tab === "Metrics"
+            ? "Explore threshold-sensitive accuracy, precision, recall, F1, and confusion outcomes."
+            : tab === "Compare"
+              ? "Compare probability estimates and class decisions across regularization strengths."
+              : tab === "Explain"
+                ? `Live example probability: ${(probability * 100).toFixed(1)}%.`
+                : "Logistic regression maps a linear score through the sigmoid function to a calibrated class probability."}
+      </p>
+    </article>
+  );
 }
 
 export default function LogisticRegressionPage() {
-  const [threshold, setThreshold] = useState<number>(0.5);
-  const [trained, setTrained] = useState(false);
-  const [isTraining, setIsTraining] = useState(false);
-  const [model, setModel] = useState<ReturnType<typeof logisticRegression> | null>(null);
-
-  // Hyperparams
-  const [params, setParams] = useState<Record<string, number | string | boolean>>({
-    lr: 0.1,
-    maxIter: 500,
-  });
-
-  const handleParamChange = useCallback((key: string, value: number | string | boolean) => {
-    setParams(prev => ({ ...prev, [key]: value }));
-  }, []);
-
-  const hyperparamDefs: HyperparamDef[] = [
-    { key: 'lr', label: 'Learning Rate', type: 'select', value: params.lr, tooltip: 'Step size for each gradient descent update. Too high can overshoot; too low converges slowly.',
-      options: [
-        { value: 0.001, label: '0.001' }, { value: 0.01, label: '0.01' },
-        { value: 0.05, label: '0.05' }, { value: 0.1, label: '0.1' },
-        { value: 0.5, label: '0.5' },
-      ],
-    },
-    { key: 'maxIter', label: 'Max Iterations', type: 'range', min: 50, max: 1000, step: 50, value: params.maxIter, tooltip: 'Maximum number of gradient descent passes over the training data.' },
-  ];
-
-  // Prepare data
-  const rawData = loanDataset.data as { income: number; credit_score: number; debt_ratio: number; employment_years: number; approved: number }[];
-
-  const featureNames = ['income', 'credit_score', 'debt_ratio', 'employment_years'];
-  const incomeArr = rawData.map(d => d.income);
-  const creditArr = rawData.map(d => d.credit_score);
-  const debtArr = rawData.map(d => d.debt_ratio);
-  const empArr = rawData.map(d => d.employment_years);
-
-  const incomeStd = standardise(incomeArr);
-  const creditStd = standardise(creditArr);
-  const debtStd = standardise(debtArr);
-  const empStd = standardise(empArr);
-
-  const X = rawData.map((_, i) => [incomeStd[i], creditStd[i], debtStd[i], empStd[i]]);
-  const y = rawData.map(d => d.approved);
-
-  const handleTrain = useCallback(() => {
-    setIsTraining(true);
-    setTimeout(() => {
-      const result = logisticRegression(X, y, params.lr as number, params.maxIter as number);
-      setModel(result);
-      setTrained(true);
-      setIsTraining(false);
-    }, 0);
-  }, [X, y, params]);
-
-  const handleReset = useCallback(() => {
-    setModel(null);
+  const [tab, setTab] = useState<Tab>("Visualize"),
+    [dataset, setDataset] = useState<DatasetKey>("admissions"),
+    [rows, setRows] = useState<Point[]>(admissions),
+    [imported, setImported] = useState<Point[] | null>(null),
+    [threshold, setThreshold] = useState(60),
+    [view, setView] = useState<"probability" | "logodds" | "both">(
+      "probability",
+    ),
+    [l2, setL2] = useState(1),
+    [trained, setTrained] = useState(true),
+    [dataLoaded, setDataLoaded] = useState(false),
+    [status, setStatus] = useState("Last trained: just now"),
+    [dark, setDark] = useState(true),
+    [predX, setPredX] = useState(72);
+  const fileRef = useRef<HTMLInputElement>(null),
+    model = useMemo(() => train(rows, l2), [rows, l2]);
+  const probabilityThreshold = model.proba(threshold),
+    predictions = rows.map((v) =>
+      model.proba(v.x) >= probabilityThreshold ? 1 : 0,
+    ),
+    metrics = binaryMetrics(
+      rows.map((v) => v.y),
+      predictions,
+    ),
+    probs = rows.map((v) => model.proba(v.x)),
+    positive = rows.filter((v) => v.y).length / rows.length;
+  const current =
+    dataset === "imported"
+      ? { name: "Imported CSV", feature: "Feature", source: "Local", rows }
+      : datasets[dataset];
+  const choose = (key: DatasetKey) => {
+    if (key === "imported" && !imported) return;
+    setDataset(key);
+    setRows(key === "imported" ? imported! : datasets[key].rows);
     setTrained(false);
-  }, []);
-
-  // Predictions
-  const probabilities = useMemo(() => model ? X.map(xi => model.predictProba(xi)) : [], [model, X]);
-  const predictions = useMemo(() => probabilities.map(p => p >= threshold ? 1 : 0), [probabilities, threshold]);
-
-  // Binary metrics
-  const metrics = useMemo(() => trained && model ? binaryMetrics(y, predictions) : null, [trained, model, y, predictions]);
-
-  // Log-loss
-  const eps = 1e-15;
-  const logLossVal = useMemo(() => {
-    if (!model || probabilities.length === 0) return 0;
-    return -mean(y.map((yi, i) => {
-      const p = Math.min(Math.max(probabilities[i], eps), 1 - eps);
-      return yi * Math.log(p) + (1 - yi) * Math.log(1 - p);
-    }));
-  }, [model, y, probabilities]);
-
-  // ROC curve
-  const roc = useMemo(() => trained && probabilities.length > 0 ? rocCurve(y, probabilities) : null, [trained, probabilities, y]);
-
-  // Sigmoid curve data
-  const sigmoidData = useMemo(() => linspace(-6, 6, 100).map(x => ({ x: parseFloat(x.toFixed(2)), y: parseFloat(sigmoid(x).toFixed(4)) })), []);
-
-  // Loss history chart
-  const lossChartData = useMemo(() => {
-    if (!model) return [];
-    const step = Math.max(1, Math.floor(model.lossHistory.length / 100));
-    return model.lossHistory
-      .filter((_, i) => i % step === 0)
-      .map((loss, i) => ({ iter: i * step, loss: parseFloat(loss.toFixed(6)) }));
-  }, [model]);
-
-  // Prediction input state
-  const [predInput, setPredInput] = useState({ income: '60000', credit_score: '700', debt_ratio: '0.3', employment_years: '5' });
-
-  const predProba = useMemo(() => {
-    if (!model) return null;
-    const raw = [parseFloat(predInput.income), parseFloat(predInput.credit_score), parseFloat(predInput.debt_ratio), parseFloat(predInput.employment_years)];
-    const featureArrays = [incomeArr, creditArr, debtArr, empArr];
-    const stdVals = raw.map((v, i) => {
-      const m = mean(featureArrays[i]), s = std(featureArrays[i]) || 1;
-      return (v - m) / s;
-    });
-    return model.predictProba(stdVals);
-  }, [model, predInput, incomeArr, creditArr, debtArr, empArr]);
-
+  };
+  const reset = () => {
+    setDataset("admissions");
+    setRows(admissions);
+    setThreshold(60);
+    setView("probability");
+    setL2(1);
+    setPredX(72);
+    setTrained(true);
+    setStatus("Last trained: just now");
+  };
+  const retrain = () => {
+    setTrained(false);
+    setStatus("Optimizing cross-entropy…");
+    setTimeout(() => {
+      setTrained(true);
+      setStatus(`Trained on ${rows.length} samples`);
+    }, 400);
+  };
+  const cardMetrics = [
+    ["Accuracy", metrics.accuracy],
+    ["Precision (PPV)", metrics.precision],
+    ["Recall (Sensitivity)", metrics.recall],
+    ["F1 Score", metrics.f1],
+  ] as const;
   return (
-    <div className="space-y-6 p-4 max-w-7xl mx-auto">
-      <PageHeader
-        title="Logistic Regression"
-        subtitle="Binary classification using the sigmoid function and gradient descent to estimate probabilities."
-        badge="Beginner"
-        category="Supervised Learning › Classification"
-        icon={<GitBranch size={22} />}
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column */}
-        <div className="space-y-4">
-          <HyperparameterPanel
-            params={hyperparamDefs}
-            onChange={handleParamChange}
-            presets={[
-              { name: 'Stable', values: { lr: 0.01, maxIter: 700 } },
-              { name: 'Fast', values: { lr: 0.1, maxIter: 300 } },
-              { name: 'Aggressive', values: { lr: 0.5, maxIter: 150 } },
-            ]}
-          />
-
-          <Card title="Training Controls">
-            <div className="space-y-3">
-              <div className="flex gap-2">
-                <button
-                  onClick={handleTrain}
-                  disabled={isTraining}
-                  className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white text-sm font-medium rounded-lg px-4 py-2 transition-colors"
-                >
-                  <Play size={14} /> {isTraining ? 'Training…' : 'Train Model'}
-                </button>
-                <button
-                  onClick={handleReset}
-                  className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2"
-                >
-                  <RotateCcw size={14} /> Reset
-                </button>
-              </div>
-              {trained && (
-                <div>
-                  <label className="text-xs font-medium text-gray-600 dark:text-gray-300 block mb-1">
-                    Decision Threshold: <span className="text-blue-500 font-mono">{threshold.toFixed(2)}</span>
-                  </label>
-                  <input
-                    type="range" min={0.01} max={0.99} step={0.01} value={threshold}
-                    onChange={e => setThreshold(parseFloat(e.target.value))}
-                    className="w-full accent-blue-500"
-                  />
-                  <p className="text-xs text-gray-400 mt-1">P(y=1) ≥ {threshold.toFixed(2)} → predict 1</p>
-                </div>
-              )}
-            </div>
-          </Card>
-
-          {trained && metrics && (
-            <MetricsPanel
-              title="Training Metrics"
-              metrics={[
-                { label: 'Train Accuracy', value: metrics.accuracy, format: 'percent', color: metrics.accuracy > 0.8 ? 'green' : 'default' },
-                { label: 'Train Precision', value: metrics.precision, format: 'percent' },
-                { label: 'Train Recall', value: metrics.recall, format: 'percent' },
-                { label: 'Train F1 Score', value: metrics.f1, format: 'percent', color: 'blue' },
-                { label: 'Train Log-Loss', value: logLossVal, format: 'fixed4' },
-                { label: 'Train AUC', value: roc?.auc ?? 0, format: 'fixed4', color: 'green' },
-              ]}
-            />
-          )}
-
-          {trained && metrics && (
-            <Card title="Confusion Matrix">
-              <div className="grid grid-cols-3 gap-1 text-xs">
-                <div />
-                <div className="text-center font-semibold text-gray-500 py-1">Pred: 0</div>
-                <div className="text-center font-semibold text-gray-500 py-1">Pred: 1</div>
-                <div className="text-center font-semibold text-gray-500 py-1 self-center">Act: 0</div>
-                <div className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded text-center py-3 font-bold text-lg">
-                  {metrics.tn}
-                  <div className="text-xs font-normal text-green-600">TN</div>
-                </div>
-                <div className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 rounded text-center py-3 font-bold text-lg">
-                  {metrics.fp}
-                  <div className="text-xs font-normal text-red-600">FP</div>
-                </div>
-                <div className="text-center font-semibold text-gray-500 py-1 self-center">Act: 1</div>
-                <div className="bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 rounded text-center py-3 font-bold text-lg">
-                  {metrics.fn}
-                  <div className="text-xs font-normal text-orange-600">FN</div>
-                </div>
-                <div className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded text-center py-3 font-bold text-lg">
-                  {metrics.tp}
-                  <div className="text-xs font-normal text-green-600">TP</div>
-                </div>
-              </div>
-            </Card>
-          )}
-        </div>
-
-        {/* Right charts */}
-        <div className="lg:col-span-2 space-y-4">
-          <Tabs
-            tabs={[
-              { id: 'sigmoid', label: 'Sigmoid Curve' },
-              { id: 'loss', label: 'Training Loss' },
-              { id: 'roc', label: 'ROC Curve' },
-              { id: 'predict', label: 'Predict' },
-            ]}
+    <div className={`logistic-page ${dark ? "dark" : "light"}`}>
+      <aside className="lesson-nav">
+        <Link to="/" className="lr-brand">
+          <i>◇</i>
+          <b>
+            Mega ML<small>AI Observatory</small>
+          </b>
+        </Link>
+        <small>⌄ LESSONS</small>
+        <label>
+          Supervised Learning <ChevronDown />
+        </label>
+        {nav.map((v, i) => (
+          <button
+            key={v}
+            className={i === 1 ? "active" : ""}
+            onClick={() => i === 1 && setTab("Visualize")}
           >
-            {(activeTab) => (
+            <i className={i < 2 ? "cyan" : "yellow"}>✓</i>
+            {v}
+            {i === 1 && <em />}
+          </button>
+        ))}
+        {[
+          "Model Evaluation",
+          "Unsupervised Learning",
+          "Deep Learning",
+          "MLOps",
+        ].map((v) => (
+          <label key={v}>
+            {v}
+            <ChevronDown />
+          </label>
+        ))}
+        <div className="your-progress">
+          <b>Your Progress</b>
+          <span>24 / 36 lessons</span>
+          <i />
+        </div>
+        <button className="notes">
+          <BookOpen />
+          Learning Notes
+        </button>
+        <footer>
+          <Settings />
+          <CircleHelp />
+          <button aria-label="Toggle theme" onClick={() => setDark((v) => !v)}>
+            {dark ? <Moon /> : <Sun />}
+          </button>
+        </footer>
+      </aside>
+      <main>
+        <header className="lr-header">
+          <div className="icon">⌁</div>
+          <div>
+            <h1>Logistic Regression</h1>
+            <p>
+              Objective: Learn how logistic regression models probability and
+              makes classifications.
+            </p>
+          </div>
+          <div className="lr-progress">
+            <span>
+              Lesson Progress <b>68%</b>
+            </span>
+            <i />
+          </div>
+          <button onClick={() => setStatus("Progress saved")}>
+            <Play />
+            Resume
+          </button>
+        </header>
+        <nav className="lr-tabs">
+          {tabs.map((v) => (
+            <button
+              key={v}
+              className={tab === v ? "active" : ""}
+              onClick={() => setTab(v)}
+            >
+              {v}
+            </button>
+          ))}
+        </nav>
+        <section className="lr-workspace">
+          <div className="lr-content">
+            {tab === "Dataset" ? (
+              <DataTable rows={rows} setRows={setRows} />
+            ) : tab !== "Visualize" ? (
+              <Generic
+                tab={tab}
+                loss={model.lossHistory}
+                probability={model.proba(predX)}
+              />
+            ) : (
               <>
-                {activeTab === 'sigmoid' && (
-                  <Card title="Sigmoid (Logistic) Function" subtitle="σ(z) = 1 / (1 + e⁻ᶻ)">
-                    <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={sigmoidData} margin={{ top: 10, right: 20, bottom: 20, left: 10 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="x" tick={{ fontSize: 11 }} label={{ value: 'z = w·x + b', position: 'insideBottom', offset: -10, fontSize: 11 }} />
-                        <YAxis domain={[0, 1]} tick={{ fontSize: 11 }} label={{ value: 'σ(z)', angle: -90, position: 'insideLeft', fontSize: 11 }} />
-                        <Tooltip formatter={(v: number) => v.toFixed(4)} />
-                        <ReferenceLine x={0} stroke="#9ca3af" strokeDasharray="3 3" />
-                        <ReferenceLine y={0.5} stroke="#ef4444" strokeDasharray="3 3" label={{ value: 'threshold', fontSize: 9, position: 'right' }} />
-                        <Line type="monotone" dataKey="y" stroke="#3b82f6" dot={false} strokeWidth={2.5} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                    <div className="mt-3 font-mono text-xs bg-gray-900 text-green-400 rounded-lg p-3">
-                      <div>σ(z) = 1 / (1 + exp(-z))</div>
-                      <div className="text-yellow-400 mt-1">z = w₁x₁ + w₂x₂ + ... + b</div>
-                      <div className="text-gray-400 mt-1">Output ∈ (0, 1) → interpreted as P(y=1|x)</div>
+                <article className="probability-chart">
+                  <header>
+                    <b>
+                      ⌁ 1D Feature Space: {current.feature} <Info />
+                    </b>
+                    <span>
+                      <i className="pos" />
+                      Positive (Admit) <i className="neg" /> Negative (Reject) ·
+                      Drag to move points
+                    </span>
+                  </header>
+                  <ProbabilityChart
+                    rows={rows}
+                    proba={model.proba}
+                    threshold={threshold}
+                    view={view}
+                  />
+                  <div className="logodds">
+                    <b>
+                      Log-Odds (Logit) Space <Info />
+                    </b>
+                    <div>
+                      <span className="negative-zone">
+                        Negative (z &lt; 0)<small>P &lt; 0.5</small>
+                      </span>
+                      <i />
+                      <em>
+                        z = 0<small>P = 0.5</small>
+                      </em>
+                      <i />
+                      <span className="positive-zone">
+                        Positive (z &gt; 0)<small>P &gt; 0.5</small>
+                      </span>
                     </div>
-                  </Card>
-                )}
-
-                {activeTab === 'loss' && (
-                  <>
-                    <TrainingLossChart
-                      data={trained ? lossChartData : []}
-                      title="Training Log-Loss"
-                      subtitle="Cross-entropy loss over gradient descent iterations."
-                      xKey="iter"
-                      showAccuracy={false}
-                      emptyText="Train the model first to see the loss curve."
-                    />
-                    <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-                      <strong>Binary Cross-Entropy:</strong>{' '}
-                      <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">L = -1/n · Σ[y·log(p) + (1-y)·log(1-p)]</code>
-                    </div>
-                  </>
-                )}
-
-                {activeTab === 'roc' && (
-                  <Card title="ROC Curve" subtitle="Receiver Operating Characteristic — FPR vs TPR at varying thresholds">
-                    {!trained || !roc ? (
-                      <InfoBox type="info">Train the model first to see the ROC curve.</InfoBox>
-                    ) : (
-                      <>
-                        <ResponsiveContainer width="100%" height={300}>
-                          <LineChart
-                            data={roc.fpr.map((fpr, i) => ({ fpr: parseFloat(fpr.toFixed(3)), tpr: parseFloat(roc.tpr[i].toFixed(3)) }))}
-                            margin={{ top: 10, right: 20, bottom: 20, left: 10 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="fpr" type="number" domain={[0, 1]} tick={{ fontSize: 11 }} label={{ value: 'FPR', position: 'insideBottom', offset: -10, fontSize: 11 }} />
-                            <YAxis domain={[0, 1]} tick={{ fontSize: 11 }} label={{ value: 'TPR', angle: -90, position: 'insideLeft', fontSize: 11 }} />
-                            <Tooltip formatter={(v: number) => v.toFixed(3)} />
-                            <ReferenceLine segment={[{ x: 0, y: 0 }, { x: 1, y: 1 }]} stroke="#9ca3af" strokeDasharray="4 2" />
-                            <Line type="monotone" dataKey="tpr" stroke="#3b82f6" dot={false} strokeWidth={2.5} />
-                          </LineChart>
-                        </ResponsiveContainer>
-                        <div className="mt-2 text-center">
-                          <span className="text-sm font-bold text-blue-600 dark:text-blue-400">AUC = {roc.auc.toFixed(4)}</span>
-                          <span className="text-xs text-gray-400 ml-2">(1.0 = perfect, 0.5 = random)</span>
-                        </div>
-                      </>
-                    )}
-                  </Card>
-                )}
-
-                {activeTab === 'predict' && (
-                  <Card title="Single Prediction" subtitle="Enter feature values to get a loan approval probability">
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                      {Object.keys(predInput).map(key => (
-                        <div key={key}>
-                          <label className="text-xs font-medium text-gray-600 dark:text-gray-300 block mb-1">{key.replace(/_/g, ' ')}</label>
-                          <input
-                            type="number"
-                            value={predInput[key as keyof typeof predInput]}
-                            onChange={e => setPredInput(prev => ({ ...prev, [key]: e.target.value }))}
-                            className="w-full text-xs font-mono bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded px-2 py-1.5 text-gray-800 dark:text-gray-100"
+                  </div>
+                </article>
+                <div className="metric-row">
+                  <article>
+                    <b>
+                      Confusion Matrix (Threshold = {threshold}) <Info />
+                    </b>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th />
+                          <th>Positive</th>
+                          <th>Negative</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <th>Positive</th>
+                          <td>{metrics.tp}</td>
+                          <td>{metrics.fn}</td>
+                        </tr>
+                        <tr>
+                          <th>Negative</th>
+                          <td>{metrics.fp}</td>
+                          <td>{metrics.tn}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </article>
+                  <article>
+                    <b>
+                      Key Metrics <Info />
+                    </b>
+                    {cardMetrics.map(([n, v], i) => (
+                      <label key={n}>
+                        {n}
+                        <strong>{(v * 100).toFixed(1)}%</strong>
+                        <i>
+                          <em
+                            style={{ width: `${v * 100}%` }}
+                            className={`m${i}`}
                           />
-                        </div>
+                        </i>
+                      </label>
+                    ))}
+                  </article>
+                  <article>
+                    <b>
+                      Probability Overview <Info />
+                    </b>
+                    <dl>
+                      <dt>Mean P(Admit) (Positive)</dt>
+                      <dd>
+                        {(
+                          probs
+                            .filter((_, i) => rows[i].y)
+                            .reduce((a, b) => a + b, 0) /
+                          (rows.filter((v) => v.y).length || 1)
+                        ).toFixed(2)}
+                      </dd>
+                      <dt>Mean P(Admit) (Negative)</dt>
+                      <dd>
+                        {(
+                          probs
+                            .filter((_, i) => !rows[i].y)
+                            .reduce((a, b) => a + b, 0) /
+                          (rows.filter((v) => !v.y).length || 1)
+                        ).toFixed(2)}
+                      </dd>
+                      <dt>Min / Max Probability</dt>
+                      <dd>
+                        {Math.min(...probs).toFixed(2)} /{" "}
+                        {Math.max(...probs).toFixed(2)}
+                      </dd>
+                    </dl>
+                    <div className="histogram">
+                      {probs.slice(0, 22).map((p, i) => (
+                        <i key={i} style={{ height: `${12 + p * 45}px` }} />
                       ))}
                     </div>
-                    {!trained || predProba === null ? (
-                      <InfoBox type="info">Train the model first to make predictions.</InfoBox>
-                    ) : (
-                      <div className="space-y-3">
-                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                          <p className="text-xs text-blue-600 dark:text-blue-300 font-medium mb-1">P(Approved = 1):</p>
-                          <p className="text-3xl font-bold font-mono text-blue-700 dark:text-blue-300">{(predProba * 100).toFixed(1)}%</p>
-                          <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2 mt-2">
-                            <div className="bg-blue-500 h-2 rounded-full transition-all" style={{ width: `${predProba * 100}%` }} />
-                          </div>
-                        </div>
-                        <div className={`text-sm font-bold text-center py-2 rounded-lg ${predProba >= threshold ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'}`}>
-                          {predProba >= threshold ? 'APPROVED ✓' : 'DENIED ✗'}
-                          {' '}(threshold: {threshold.toFixed(2)})
-                        </div>
-                        <div className="font-mono text-xs bg-gray-900 text-green-400 rounded p-3">
-                          <div>z = {model!.weights.map((w, i) => `${w.toFixed(3)}·x${i + 1}`).join(' + ')} + {model!.bias.toFixed(3)}</div>
-                          <div className="text-yellow-400">P(y=1) = σ(z) = {predProba.toFixed(4)}</div>
-                        </div>
-                      </div>
-                    )}
-                  </Card>
-                )}
+                  </article>
+                  <article>
+                    <b>
+                      Odds Insight <Info />
+                    </b>
+                    <p>
+                      Odds at Threshold{" "}
+                      <strong>
+                        {(
+                          probabilityThreshold /
+                          (1 - probabilityThreshold)
+                        ).toFixed(2)}{" "}
+                        : 1
+                      </strong>
+                    </p>
+                    <p>
+                      Live P({predX}){" "}
+                      <strong>{(model.proba(predX) * 100).toFixed(1)}%</strong>
+                    </p>
+                    <label>
+                      Exam score
+                      <input
+                        aria-label="Prediction exam score"
+                        type="number"
+                        value={predX}
+                        onChange={(e) => setPredX(Number(e.target.value))}
+                      />
+                    </label>
+                  </article>
+                </div>
               </>
             )}
-          </Tabs>
-
-          {trained && model && (
-            <Card title="Learned Weights">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {featureNames.map((name, i) => (
-                  <div key={name} className="bg-gray-50 dark:bg-gray-700/50 rounded p-2 text-center">
-                    <p className="text-xs text-gray-500">{name.replace(/_/g, ' ')}</p>
-                    <p className={`font-mono font-bold text-sm ${model.weights[i] > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                      {model.weights[i]?.toFixed(4) ?? '—'}
-                    </p>
-                  </div>
+          </div>
+          <aside className="lr-controls">
+            <article>
+              <header>
+                <i>1</i>
+                <b>Controls</b>
+              </header>
+              <label>
+                Decision Threshold
+                <input
+                  className="control-value"
+                  aria-label="Decision threshold value"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={threshold}
+                  onChange={(e) => setThreshold(Number(e.target.value))}
+                />
+                <input
+                  aria-label="Decision threshold"
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={threshold}
+                  onChange={(e) => setThreshold(Number(e.target.value))}
+                />
+                <small>Classify as Positive if P(Admit) ≥ threshold</small>
+              </label>
+              <hr />
+              <b>View</b>
+              <div className="view-buttons">
+                {(["probability", "logodds", "both"] as const).map((v) => (
+                  <button
+                    key={v}
+                    className={view === v ? "active" : ""}
+                    onClick={() => setView(v)}
+                  >
+                    {v === "logodds"
+                      ? "Log-Odds"
+                      : v[0].toUpperCase() + v.slice(1)}
+                  </button>
                 ))}
               </div>
-              <p className="text-xs text-gray-400 mt-2">Bias (intercept): <span className="font-mono">{model.bias.toFixed(4)}</span></p>
-            </Card>
-          )}
-        </div>
-      </div>
-
-      <LearningPanel
-        sections={[
-          {
-            title: 'How Logistic Regression Works',
-            content: (
-              <div className="space-y-2">
-                <p>Logistic regression models P(y=1|x) using the sigmoid function applied to a linear combination of features:</p>
-                <pre className="bg-gray-100 dark:bg-gray-700 rounded p-2 text-xs">P(y=1|x) = σ(w·x + b) = 1 / (1 + e^(-(w·x+b)))</pre>
-                <p>The model learns weights w and bias b to maximise the likelihood of the training labels.</p>
+            </article>
+            <article>
+              <header>
+                <i>2</i>
+                <b>Dataset</b>
+              </header>
+              <select
+                aria-label="Dataset"
+                value={dataset}
+                onChange={(e) => choose(e.target.value as DatasetKey)}
+              >
+                <option value="admissions">University Admissions</option>
+                <option value="loans">Loan Approval</option>
+                <option value="churn">Customer Churn</option>
+                <option value="synthetic">Synthetic Binary</option>
+                {imported && <option value="imported">Imported CSV</option>}
+              </select>
+              <small>N = {rows.length} samples • 1 feature</small>
+              <div className="dataset-workflow">
+                <Link to="/ml/lab/dataset-manager">Go to datasets page</Link>
+                <button
+                  onClick={() => {
+                    setDataLoaded(true);
+                    setStatus(`${current.name} loaded and ready for training`);
+                  }}
+                >
+                  Load
+                </button>
               </div>
-            ),
-          },
-          {
-            title: 'Gradient Descent for Logistic Regression',
-            content: (
-              <div className="space-y-2">
-                <p>We minimise binary cross-entropy loss using gradient descent:</p>
-                <pre className="bg-gray-100 dark:bg-gray-700 rounded p-2 text-xs">{`L = -1/n Σ[y·log(p) + (1-y)·log(1-p)]
-
-∂L/∂w = 1/n · Xᵀ(p - y)
-∂L/∂b = 1/n · Σ(pᵢ - yᵢ)
-
-w ← w - lr · ∂L/∂w
-b ← b - lr · ∂L/∂b`}</pre>
+              <div>
+                <button
+                  onClick={() =>
+                    choose(dataset === "admissions" ? "loans" : "admissions")
+                  }
+                >
+                  <RefreshCw />
+                  Switch Dataset
+                </button>
+                <button onClick={() => fileRef.current?.click()}>
+                  <Upload />
+                  Upload CSV
+                </button>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept=".csv"
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0];
+                    if (!f) return;
+                    try {
+                      const p = parseCsv(await f.text());
+                      setImported(p);
+                      setRows(p);
+                      setDataset("imported");
+                      setStatus(`Imported ${p.length} rows`);
+                    } catch (err) {
+                      setStatus(
+                        err instanceof Error ? err.message : "Import failed",
+                      );
+                    }
+                  }}
+                />
               </div>
-            ),
-          },
-          {
-            title: 'Threshold & Decision Boundary',
-            content: (
-              <p>By default, predict class 1 when P(y=1|x) ≥ 0.5. Adjusting the threshold trades off precision vs recall. A lower threshold catches more positives (higher recall, lower precision). Use the ROC curve to find the optimal threshold for your use-case.</p>
-            ),
-          },
-        ]}
-      />
+              {dataLoaded && (
+                <div className="dataset-next-steps">
+                  <b>Next steps</b>
+                  <Link to="/ml/supervised/logistic-regression">Visualize</Link>
+                  <Link to="/ml/lab/algorithm-comparison">Dashboard</Link>
+                  <Link to="/ml/preprocessing/missing-values">Statistics</Link>
+                  <Link to="/ml/lab/dataset-manager">Data Grid</Link>
+                </div>
+              )}
+              <dl>
+                <dt>Feature</dt>
+                <dd>{current.feature}</dd>
+                <dt>Type</dt>
+                <dd>Numeric</dd>
+                <dt>Range</dt>
+                <dd>
+                  {Math.min(...rows.map((v) => v.x))} –{" "}
+                  {Math.max(...rows.map((v) => v.x))}
+                </dd>
+                <dt>Positive Rate</dt>
+                <dd>{(positive * 100).toFixed(0)}%</dd>
+              </dl>
+            </article>
+            <article>
+              <header>
+                <i>3</i>
+                <b>Model</b>
+                <button className="model-reset" onClick={reset}>
+                  Reset
+                </button>
+              </header>
+              <label>
+                Regularization (L2)
+                <input
+                  className="control-value"
+                  aria-label="L2 regularization value"
+                  type="number"
+                  min="0.01"
+                  max="10"
+                  step="0.01"
+                  value={l2}
+                  onChange={(e) => {
+                    setL2(Number(e.target.value));
+                    setTrained(false);
+                  }}
+                />
+                <input
+                  aria-label="L2 regularization"
+                  type="range"
+                  min="0.01"
+                  max="10"
+                  step="0.01"
+                  value={l2}
+                  onChange={(e) => {
+                    setL2(Number(e.target.value));
+                    setTrained(false);
+                  }}
+                />
+              </label>
+              <button className="train" onClick={retrain}>
+                <Play />
+                Train Model
+              </button>
+              <div className="model-status">
+                <b>
+                  Model Status{" "}
+                  <span>{trained ? "● Trained" : "○ Pending"}</span>
+                </b>
+                <small>{status}</small>
+                {trained && <Check />}
+              </div>
+            </article>
+          </aside>
+        </section>
+        <footer className="active-dataset">
+          <b>
+            Active Dataset: <span>{current.name}</span>
+          </b>
+          <i />
+          Samples: {rows.length}
+          <i />
+          Features: 1<i />
+          Positive Rate: {(positive * 100).toFixed(0)}%
+          <button onClick={() => setTab("Dataset")}>
+            <Calculator />
+            View Dataset
+          </button>
+        </footer>
+      </main>
     </div>
   );
 }

@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Scatter, ScatterChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell } from 'recharts';
 import { Filter } from 'lucide-react';
 import { PageHeader } from '../../../components/common/PageHeader';
 import { Card, InfoBox } from '../../../components/common/Card';
 import { mean, std } from '../../../lib/math/statistics';
+import OutlierDetectionApprovedPage from './OutlierDetectionApprovedPage';
 
 const values = [52,55,53,58,54,57,56,60,59,61,62,58,57,120,54,55,18,59,60,63,56,57];
 const percentile = (arr: number[], p: number) => {
@@ -11,7 +13,7 @@ const percentile = (arr: number[], p: number) => {
   return sorted[Math.floor((sorted.length - 1) * p)];
 };
 
-export default function OutlierDetectionPage() {
+export function OutlierDetectionAdvancedLab() {
   const [method, setMethod] = useState<'z' | 'iqr'>('z');
   const [threshold, setThreshold] = useState(2);
   const stats = useMemo(() => {
@@ -43,4 +45,11 @@ export default function OutlierDetectionPage() {
       </div>
     </div>
   );
+}
+
+export default function OutlierDetectionPage() {
+  const location = useLocation();
+  return new URLSearchParams(location.search).get('advanced') === '1'
+    ? <OutlierDetectionAdvancedLab />
+    : <OutlierDetectionApprovedPage />;
 }

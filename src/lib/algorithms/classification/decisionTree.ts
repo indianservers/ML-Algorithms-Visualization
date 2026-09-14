@@ -29,7 +29,7 @@ function impurity(y: number[], criterion: SplitCriterion): number {
 
 function majorityClass(y: number[]): number {
   const counts = classCounts(y);
-  return parseInt(Object.entries(counts).reduce((a, b) => b[1] > a[1] ? b : a)[0]);
+  return Number(Object.entries(counts).reduce((a, b) => b[1] > a[1] ? b : a)[0]);
 }
 
 function bestSplit(X: number[][], y: number[], criterion: SplitCriterion, minSamples: number): { featureIndex: number; threshold: number; gain: number } | null {
@@ -66,6 +66,15 @@ export function buildDecisionTree(
   criterion: SplitCriterion = 'gini',
   depth = 0
 ): TreeNode {
+  if (depth === 0) {
+    if (!X.length || X.length !== y.length || !X[0]?.length)
+      throw new Error('Decision tree requires aligned non-empty data');
+    const width = X[0].length;
+    if (!X.every(row => row.length === width && row.every(Number.isFinite)) || !y.every(Number.isFinite))
+      throw new Error('Decision tree requires finite rectangular data');
+    if (!Number.isInteger(maxDepth) || maxDepth < 0 || !Number.isInteger(minSamples) || minSamples < 1)
+      throw new Error('Decision tree depth and minimum samples must be valid integers');
+  }
   const counts = classCounts(y);
   const node: TreeNode = { samples: y.length, impurity: impurity(y, criterion), classCounts: counts };
 
@@ -88,6 +97,8 @@ export function buildDecisionTree(
 
 export function predictTree(node: TreeNode, x: number[]): number {
   if (node.classLabel !== undefined) return node.classLabel;
+  if (!Number.isFinite(x[node.featureIndex!]))
+    throw new Error(`Missing finite feature ${node.featureIndex}`);
   if (x[node.featureIndex!] <= node.threshold!) return predictTree(node.left!, x);
   return predictTree(node.right!, x);
 }

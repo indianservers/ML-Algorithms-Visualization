@@ -41,8 +41,10 @@ function trainBoosting(points: Point[], rounds: number) {
   const history: Round[] = [];
   for (let round = 0; round < rounds; round++) {
     const stump = trainStump(weighted);
-    const error = Math.min(0.499, Math.max(0.001, stump.error));
-    const alpha = 0.5 * Math.log((1 - error) / error);
+    const error = stump.error;
+    if (error >= 0.5) break;
+    const stableError = Math.max(1e-12, error);
+    const alpha = 0.5 * Math.log((1 - stableError) / stableError);
     weighted = weighted.map(point => {
       const y = point.label === 1 ? 1 : -1;
       const prediction = predictStump(stump, point) === 1 ? 1 : -1;
@@ -56,6 +58,7 @@ function trainBoosting(points: Point[], rounds: number) {
     });
     const accuracy = predictions.filter((label, index) => label === points[index].label).length / points.length;
     history.push({ stump, alpha, weights: weighted.map(point => point.weight ?? 0), error, accuracy });
+    if (error <= 1e-12) break;
   }
   return history;
 }

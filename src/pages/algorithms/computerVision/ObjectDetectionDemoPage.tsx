@@ -142,15 +142,19 @@ export default function ObjectDetectionDemoPage() {
   const [nmsThreshold, setNmsThreshold] = useState(0.45);
   const [lastLatency, setLastLatency] = useState(0);
   const [training, setTraining] = useState(false);
+  const [extractorReady, setExtractorReady] = useState(false);
+  const [modelReady, setModelReady] = useState(false);
   const [status, setStatus] = useState('Start the camera or import images, draw one or more boxes, save the frame, then train.');
 
-  const currentAnnotations = annotationsByFrame.get(currentFrameIndex) ?? [];
-  const latest = history[history.length - 1];
+  const currentAnnotations = useMemo(
+    () => annotationsByFrame.get(currentFrameIndex) ?? [],
+    [annotationsByFrame, currentFrameIndex],
+  );
   const sampleCounts = useMemo(() => Object.fromEntries(classes.map(item => [
     item.id,
     samples.reduce((sum, sample) => sum + sample.annotations.filter(annotation => annotation.classId === item.id).length, 0),
   ])), [classes, samples]);
-  const readyToTrain = classes.length >= 2 && classes.every(item => (sampleCounts[item.id] ?? 0) >= 3) && !!extractorRef.current && !training && samples.length > 0;
+  const readyToTrain = classes.length >= 2 && classes.every(item => (sampleCounts[item.id] ?? 0) >= 3) && extractorReady && !training && samples.length > 0;
 
   const pushUndo = useCallback(() => {
     undoStackRef.current = [...undoStackRef.current, new Map([...annotationsByFrame.entries()].map(([key, value]) => [key, value.map(item => ({ ...item }))]))].slice(-20);
@@ -196,6 +200,7 @@ export default function ObjectDetectionDemoPage() {
     if (!extractorRef.current) {
       setStatus('Loading TensorFlow.js MobileNet feature extractor...');
       extractorRef.current = await mobilenet.load({ version: 2, alpha: 0.5 });
+      setExtractorReady(true);
     }
     return extractorRef.current;
   };
@@ -432,6 +437,7 @@ export default function ObjectDetectionDemoPage() {
     });
     modelRef.current?.dispose();
     modelRef.current = null;
+    setModelReady(false);
     setPredictions([]);
   };
 
@@ -443,6 +449,7 @@ export default function ObjectDetectionDemoPage() {
     setSelectedClassId(classes.find(item => item.id !== id)?.id ?? initialClasses[0].id);
     modelRef.current?.dispose();
     modelRef.current = null;
+    setModelReady(false);
   };
 
   const train = async () => {
@@ -453,6 +460,7 @@ export default function ObjectDetectionDemoPage() {
     setTraining(true);
     setHistory([]);
     modelRef.current?.dispose();
+    setModelReady(false);
     const model = buildDetector(classes.length, featureSize, learningRate);
     const { xs, ys } = samplesToTensors(samples, classes, featureSize);
     try {
@@ -469,6 +477,7 @@ export default function ObjectDetectionDemoPage() {
         },
       });
       modelRef.current = model;
+      setModelReady(true);
       setStatus('Training complete. Run multi-object inference on the current frame or webcam.');
     } catch (error) {
       model.dispose();
@@ -512,7 +521,7 @@ export default function ObjectDetectionDemoPage() {
     return selected.map(index => candidates[index]);
   };
 
-  const runInference = useCallback(async () => {
+  const runInference = async () => {
     const model = modelRef.current;
     if (!model) {
       setStatus('Train the detector before running inference.');
@@ -532,7 +541,7 @@ export default function ObjectDetectionDemoPage() {
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Inference failed.');
     }
-  }, [classes, confidenceThreshold, nmsThreshold]);
+  };
 
   const startLiveInference = () => {
     if (liveTimerRef.current) {
@@ -560,6 +569,7 @@ export default function ObjectDetectionDemoPage() {
     setSelectedBoxId(null);
     modelRef.current?.dispose();
     modelRef.current = null;
+    setModelReady(false);
     setStatus('Dataset and model cleared.');
   };
 
@@ -642,7 +652,7 @@ export default function ObjectDetectionDemoPage() {
                 <button disabled={!readyToTrain} onClick={train} className="inline-flex items-center justify-center gap-2 rounded bg-emerald-600 px-3 py-2 font-semibold text-white disabled:opacity-50"><Play size={14} /> {training ? 'Training...' : 'Train'}</button>
                 <button onClick={resetAll} className="inline-flex items-center justify-center gap-2 rounded border border-gray-200 px-3 py-2 font-semibold dark:border-gray-700"><RotateCcw size={14} /> Reset</button>
               </div>
-              <button disabled={!modelRef.current} onClick={exportModel} className="inline-flex w-full items-center justify-center gap-2 rounded border border-gray-200 px-3 py-2 font-semibold disabled:opacity-50 dark:border-gray-700"><Download size={14} /> Export Model</button>
+              <button disabled={!modelReady} onClick={exportModel} className="inline-flex w-full items-center justify-center gap-2 rounded border border-gray-200 px-3 py-2 font-semibold disabled:opacity-50 dark:border-gray-700"><Download size={14} /> Export Model</button>
             </div>
           </Card>
         </div>
@@ -655,8 +665,8 @@ export default function ObjectDetectionDemoPage() {
                 <div className="flex flex-wrap gap-2">
                   <button onClick={saveFrame} disabled={!currentAnnotations.length || !sourceReady} className="inline-flex items-center gap-2 rounded bg-blue-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"><Save size={14} /> Save Frame</button>
                   <button onClick={copyToNextFrame} disabled={!currentAnnotations.length} className="inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-2 text-sm font-semibold disabled:opacity-50 dark:border-gray-700"><Copy size={14} /> Copy to Next</button>
-                  <button onClick={() => void runInference()} disabled={!modelRef.current} className="inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-2 text-sm font-semibold disabled:opacity-50 dark:border-gray-700"><Play size={14} /> Infer Current</button>
-                  <button onClick={startLiveInference} disabled={!modelRef.current} className="inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-2 text-sm font-semibold disabled:opacity-50 dark:border-gray-700"><Video size={14} /> Live Webcam</button>
+                  <button onClick={() => void runInference()} disabled={!modelReady} className="inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-2 text-sm font-semibold disabled:opacity-50 dark:border-gray-700"><Play size={14} /> Infer Current</button>
+                  <button onClick={startLiveInference} disabled={!modelReady} className="inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-2 text-sm font-semibold disabled:opacity-50 dark:border-gray-700"><Video size={14} /> Live Webcam</button>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Draw repeatedly to add multiple boxes. Shift-click a box to select it, Delete removes it, Ctrl+Z restores the previous annotation state.</p>
               </div>

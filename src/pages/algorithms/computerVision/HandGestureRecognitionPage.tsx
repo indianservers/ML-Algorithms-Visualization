@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import '@tensorflow/tfjs-backend-webgl';
 import * as tf from '@tensorflow/tfjs';
+import type { Hand as DetectedHand, HandDetector } from '@tensorflow-models/hand-pose-detection';
 import { Camera, Circle, Download, Hand, Play, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { PageHeader } from '../../../components/common/PageHeader';
 import { Card, InfoBox } from '../../../components/common/Card';
 import { MetricsPanel } from '../../../components/ml/MetricsPanel';
 import { stopMediaElementStream, stopMediaStream } from '../../../lib/media/streams';
+import { loadExternalScript } from '../../../lib/media/externalScript';
 
 type GestureClass = { id: string; name: string; color: string };
 type Example = { id: string; classId: string; values: number[] };
@@ -20,28 +22,18 @@ const initialClasses: GestureClass[] = [
   { id: 'fist', name: 'Fist', color: COLORS[1] },
 ];
 
-function loadScript(src: string) {
-  return new Promise<void>((resolve, reject) => {
-    if (document.querySelector(`script[src="${src}"]`)) {
-      resolve();
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = src;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error(`Could not load ${src}`));
-    document.head.appendChild(script);
-  });
+type HandPoseRuntime = Pick<typeof import('@tensorflow-models/hand-pose-detection'), 'createDetector' | 'SupportedModels'>;
+
+async function loadHandPoseDetection(): Promise<HandPoseRuntime> {
+  const runtimeWindow = window as typeof window & { tf?: typeof tf; handPoseDetection?: HandPoseRuntime };
+  runtimeWindow.tf = tf;
+  await loadExternalScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection@2.0.1');
+  if (!runtimeWindow.handPoseDetection) throw new Error('Hand pose detector did not initialize');
+  return runtimeWindow.handPoseDetection;
 }
 
-async function loadHandPoseDetection() {
-  (window as any).tf = tf;
-  await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/hand-pose-detection');
-  return (window as any).handPoseDetection;
-}
-
-function normalizeHand(hand: any) {
-  const points = hand.keypoints as Array<{ x: number; y: number; z?: number }>;
+function normalizeHand(hand: DetectedHand) {
+  const points = hand.keypoints;
   if (!points?.length) return null;
   const wrist = points[0];
   const xs = points.map(point => point.x);
@@ -71,7 +63,7 @@ function downloadJson(filename: string, payload: unknown) {
 export default function HandGestureRecognitionPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const detectorRef = useRef<any>(null);
+  const detectorRef = useRef<HandDetector | null>(null);
   const modelRef = useRef<tf.LayersModel | null>(null);
   const loopRef = useRef<number | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -100,7 +92,7 @@ export default function HandGestureRecognitionPage() {
     stopMediaElementStream(videoRef.current);
   }, []);
 
-  const draw = (hands: any[]) => {
+  const draw = (hands: DetectedHand[]) => {
     const canvas = canvasRef.current;
     const video = videoRef.current;
     if (!canvas || !video) return;
@@ -111,7 +103,7 @@ export default function HandGestureRecognitionPage() {
     ctx.drawImage(video, 0, 0, W, H);
     hands.forEach(hand => {
       ctx.fillStyle = '#2563eb';
-      hand.keypoints.forEach((point: any) => {
+      hand.keypoints.forEach(point => {
         ctx.beginPath();
         ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
         ctx.fill();
@@ -161,7 +153,7 @@ export default function HandGestureRecognitionPage() {
       runtime: 'tfjs',
       modelType: 'lite',
       maxHands: 1,
-    } as any);
+    });
     const stream = await navigator.mediaDevices.getUserMedia({ video: { width: W, height: H }, audio: false });
     if (!videoRef.current) {
       stopMediaStream(stream);

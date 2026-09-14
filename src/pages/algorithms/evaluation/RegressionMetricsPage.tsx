@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Line, LineChart, Scatter, ScatterChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, ReferenceLine } from 'recharts';
 import { BarChart2 } from 'lucide-react';
 import { PageHeader } from '../../../components/common/PageHeader';
@@ -6,8 +7,9 @@ import { Card, InfoBox } from '../../../components/common/Card';
 import { MetricsPanel } from '../../../components/ml/MetricsPanel';
 import { housingDataset } from '../../../data/sampleDatasets';
 import { adjustedRSquared, mae, mape, mse, rSquared, rmse } from '../../../lib/math/metrics';
+import RegressionMetricsApprovedPage from './RegressionMetricsApprovedPage';
 
-export default function RegressionMetricsPage() {
+export function RegressionMetricsAdvancedLab() {
   const [bias, setBias] = useState(0);
   const [noise, setNoise] = useState(0.08);
   const actual = (housingDataset.data as { price: number }[]).map(row => row.price / 1000);
@@ -51,4 +53,11 @@ export default function RegressionMetricsPage() {
       </div>
     </div>
   );
+}
+
+export default function RegressionMetricsPage() {
+  const { search } = useLocation();
+  return new URLSearchParams(search).has('advanced')
+    ? <RegressionMetricsAdvancedLab />
+    : <RegressionMetricsApprovedPage />;
 }

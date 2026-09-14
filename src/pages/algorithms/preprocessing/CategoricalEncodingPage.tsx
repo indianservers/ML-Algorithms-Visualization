@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Filter } from 'lucide-react';
 import { PageHeader } from '../../../components/common/PageHeader';
 import { Card, InfoBox } from '../../../components/common/Card';
+import CategoricalEncodingApprovedPage from './CategoricalEncodingApprovedPage';
 
 const data = [
   { id: 1, city: 'Delhi', plan: 'free', risk: 'low' },
@@ -12,7 +14,7 @@ const data = [
   { id: 6, city: 'Delhi', plan: 'pro', risk: 'high' },
 ];
 
-export default function CategoricalEncodingPage() {
+export function CategoricalEncodingAdvancedLab() {
   const [column, setColumn] = useState<'city' | 'plan' | 'risk'>('plan');
   const categories = useMemo(() => [...new Set(data.map(row => row[column]))], [column]);
   const encoded = useMemo(() => {
@@ -48,4 +50,11 @@ export default function CategoricalEncodingPage() {
       </div>
     </div>
   );
+}
+
+export default function CategoricalEncodingPage() {
+  const location = useLocation();
+  return new URLSearchParams(location.search).get('advanced') === '1'
+    ? <CategoricalEncodingAdvancedLab />
+    : <CategoricalEncodingApprovedPage />;
 }

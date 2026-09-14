@@ -1,159 +1,733 @@
-import { useMemo, useState } from 'react';
-import { Brain, Play } from 'lucide-react';
-import { Line, LineChart, Scatter, ScatterChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { PageHeader } from '../../../components/common/PageHeader';
-import { Card, InfoBox } from '../../../components/common/Card';
-import { MetricsPanel } from '../../../components/ml/MetricsPanel';
-import { generateSyntheticMoons, generateSyntheticCircles } from '../../../data/sampleDatasets';
-
-type Activation = 'tanh' | 'sigmoid' | 'relu';
-
-const act = (x: number, fn: Activation) => fn === 'relu' ? Math.max(0, x) : fn === 'sigmoid' ? 1 / (1 + Math.exp(-x)) : Math.tanh(x);
-const dAct = (y: number, fn: Activation) => fn === 'relu' ? (y > 0 ? 1 : 0) : fn === 'sigmoid' ? y * (1 - y) : 1 - y * y;
-const sigmoid = (x: number) => 1 / (1 + Math.exp(-x));
-
-function trainTinyMlp(X: number[][], y: number[], hidden: number, lr: number, epochs: number, activation: Activation) {
-  const w1 = Array.from({ length: hidden }, (_, h) => [Math.sin(h + 1) * 0.5, Math.cos(h + 2) * 0.5]);
-  const b1 = Array(hidden).fill(0);
-  let w2 = Array.from({ length: hidden }, (_, h) => Math.sin(h + 3) * 0.5);
-  let b2 = 0;
-  const losses: { epoch: number; loss: number; accuracy: number }[] = [];
-
-  for (let epoch = 0; epoch < epochs; epoch++) {
-    let loss = 0;
-    let correct = 0;
-    for (let i = 0; i < X.length; i++) {
-      const hiddenOut = w1.map((weights, h) => act(weights[0] * X[i][0] + weights[1] * X[i][1] + b1[h], activation));
-      const z2 = hiddenOut.reduce((sum, value, h) => sum + value * w2[h], b2);
-      const pred = sigmoid(z2);
-      loss += -(y[i] * Math.log(pred + 1e-9) + (1 - y[i]) * Math.log(1 - pred + 1e-9));
-      correct += (pred >= 0.5 ? 1 : 0) === y[i] ? 1 : 0;
-
-      const dz2 = pred - y[i];
-      const oldW2 = [...w2];
-      w2 = w2.map((weight, h) => weight - lr * dz2 * hiddenOut[h]);
-      b2 -= lr * dz2;
-      for (let h = 0; h < hidden; h++) {
-        const dz1 = dz2 * oldW2[h] * dAct(hiddenOut[h], activation);
-        w1[h][0] -= lr * dz1 * X[i][0];
-        w1[h][1] -= lr * dz1 * X[i][1];
-        b1[h] -= lr * dz1;
-      }
-    }
-    if (epoch % 5 === 0 || epoch === epochs - 1) losses.push({ epoch, loss: Number((loss / X.length).toFixed(4)), accuracy: Number((correct / X.length).toFixed(4)) });
-  }
-
-  const predict = (x: number[]) => {
-    const hiddenOut = w1.map((weights, h) => act(weights[0] * x[0] + weights[1] * x[1] + b1[h], activation));
-    return sigmoid(hiddenOut.reduce((sum, value, h) => sum + value * w2[h], b2));
+import { useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { Play, Upload } from "lucide-react";
+import {
+  forwardMLP,
+  trainMLP,
+  type MLPActivation,
+  type MLPOptimizer,
+  type MLPResult,
+} from "../../../lib/algorithms/neural/mlp";
+import "./NeuralNetworkPlaygroundPage.css";
+type Point = { x: number; y: number; label: number };
+type Dataset = "moons" | "circles" | "xor" | "imported";
+const names: Record<Dataset, string> = {
+    moons: "Two Moons",
+    circles: "Concentric Circles",
+    xor: "XOR",
+    imported: "Imported Dataset",
+  },
+  rnd = (i: number, s: number) => {
+    const v = Math.sin((i + 31) * 12.9898 + s * 78.233) * 43758.5453;
+    return v - Math.floor(v);
   };
-
-  return { losses, predict, params: { w1, b1, w2, b2 } };
+function data(
+  kind: Exclude<Dataset, "imported">,
+  noise = 0.15,
+  seed = 0,
+  n = 300,
+): Point[] {
+  return Array.from({ length: n }, (_, i) => {
+    const label = i < n / 2 ? 0 : 1,
+      j = i % (n / 2),
+      e = (rnd(i, seed + 2) - 0.5) * noise * 2;
+    if (kind === "moons") {
+      const t = (j / (n / 2 - 1)) * Math.PI;
+      return label
+        ? { x: 1 - Math.cos(t) + e, y: -0.5 - Math.sin(t) + e, label }
+        : { x: Math.cos(t) - 0.5 + e, y: Math.sin(t) + e, label };
+    }
+    if (kind === "circles") {
+      const a = (j / (n / 2)) * Math.PI * 2,
+        r = label ? 1.35 : 0.65;
+      return { x: r * Math.cos(a) + e, y: r * Math.sin(a) + e, label };
+    }
+    const sx = j % 2 ? 1 : -1,
+      sy = Math.floor(j / 2) % 2 ? 1 : -1;
+    return {
+      x: sx + (rnd(i, seed + 4) - 0.5) * 1.1,
+      y: sy + (rnd(i, seed + 7) - 0.5) * 1.1,
+      label: sx === sy ? 1 : 0,
+    };
+  });
 }
-
-export default function NeuralNetworkPlaygroundPage() {
-  const [dataset, setDataset] = useState<'moons' | 'circles'>('moons');
-  const [hidden, setHidden] = useState(8);
-  const [lr, setLr] = useState(0.05);
-  const [epochs, setEpochs] = useState(120);
-  const [activation, setActivation] = useState<Activation>('tanh');
-  const [runs, setRuns] = useState(0);
-
-  const points = useMemo(() => {
-    const sampleCount = 120 + (runs % 1);
-    return dataset === 'moons' ? generateSyntheticMoons(sampleCount) : generateSyntheticCircles(sampleCount);
-  }, [dataset, runs]);
-  const X = points.map(point => [point.x, point.y]);
-  const y = points.map(point => point.label);
-  const model = useMemo(() => trainTinyMlp(X, y, hidden, lr, epochs, activation), [X, y, hidden, lr, epochs, activation]);
-  const latest = model.losses[model.losses.length - 1];
-  const boundary = Array.from({ length: 25 }, (_, xi) => Array.from({ length: 25 }, (_, yi) => {
-    const x = -2.8 + xi * 0.23;
-    const yy = -2.2 + yi * 0.2;
-    return { x, y: yy, probability: model.predict([x, yy]) };
-  })).flat();
-
+const fit = (
+  points: Point[],
+  layers: number,
+  neurons: number,
+  activation: MLPActivation,
+  optimizer: MLPOptimizer,
+  lr: number,
+  batch: number,
+  epochs: number,
+  bias: boolean,
+  split: number,
+) =>
+  trainMLP(
+    points.map((p) => [p.x, p.y]),
+    points.map((p) => p.label),
+    {
+      hidden: Array(layers).fill(neurons),
+      activation,
+      optimizer,
+      learningRate: lr,
+      batchSize: batch,
+      epochs,
+      l2: 0.0001,
+      useBias: bias,
+      seed: 41,
+      validationSplit: split,
+    },
+  );
+function Net({ model }: { model: MLPResult }) {
+  const sizes = [
+      model.weights[0].length,
+      ...model.weights.map((layer) => layer[0].length),
+    ],
+    px = (l: number) => 45 + l * (310 / (sizes.length - 1)),
+    py = (n: number, i: number) => 35 + i * (245 / Math.max(1, n - 1));
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-4">
-      <PageHeader title="Neural Network Playground" subtitle="Real tiny MLP trained in the browser with hidden neurons, activation, learning rate, loss curve, and decision boundary." badge="Browser Trainable" category="Deep Learning" icon={<Brain size={22} />} />
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[340px_1fr]">
-        <div className="space-y-4">
-          <Card title="Network Controls">
-            <div className="space-y-4 text-sm">
-              <select value={dataset} onChange={event => setDataset(event.target.value as 'moons' | 'circles')} className="w-full rounded border border-gray-200 bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-900">
-                <option value="moons">Synthetic moons</option>
-                <option value="circles">Synthetic circles</option>
-              </select>
-              <label className="block text-xs font-semibold text-gray-500">Hidden neurons: <span className="font-mono text-blue-600">{hidden}</span></label>
-              <input type="range" min={2} max={16} value={hidden} onChange={event => setHidden(Number(event.target.value))} className="w-full accent-blue-600" />
-              <label className="block text-xs font-semibold text-gray-500">Learning rate: <span className="font-mono text-blue-600">{lr.toFixed(3)}</span></label>
-              <input type="range" min={0.005} max={0.2} step={0.005} value={lr} onChange={event => setLr(Number(event.target.value))} className="w-full accent-blue-600" />
-              <label className="block text-xs font-semibold text-gray-500">Epochs: <span className="font-mono text-blue-600">{epochs}</span></label>
-              <input type="range" min={20} max={300} step={10} value={epochs} onChange={event => setEpochs(Number(event.target.value))} className="w-full accent-blue-600" />
-              <select value={activation} onChange={event => setActivation(event.target.value as Activation)} className="w-full rounded border border-gray-200 bg-white px-3 py-2 dark:border-gray-700 dark:bg-gray-900">
-                <option value="tanh">tanh</option>
-                <option value="sigmoid">sigmoid</option>
-                <option value="relu">relu</option>
-              </select>
-              <button onClick={() => setRuns(r => r + 1)} className="flex w-full items-center justify-center gap-2 rounded bg-blue-600 px-3 py-2 font-semibold text-white"><Play size={14} /> Regenerate and Train</button>
-            </div>
-          </Card>
-          <MetricsPanel title="Training Metrics" metrics={[
-            { label: 'Loss', value: latest?.loss ?? 0, format: 'fixed4', color: 'blue' },
-            { label: 'Train Accuracy', value: latest?.accuracy ?? 0, format: 'percent', color: 'green' },
-            { label: 'Hidden', value: hidden, format: 'number' },
-            { label: 'Params', value: hidden * 4 + 1, format: 'number' },
-          ]} />
-        </div>
-
-        <div className="space-y-4">
-          <Card title="Live Decision Boundary">
-            <ResponsiveContainer width="100%" height={390}>
-              <ScatterChart>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" dataKey="x" tick={{ fontSize: 11 }} />
-                <YAxis type="number" dataKey="y" tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Scatter data={boundary} opacity={0.24}>
-                  {boundary.map((point, i) => <Cell key={i} fill={point.probability >= 0.5 ? '#059669' : '#2563eb'} />)}
-                </Scatter>
-                <Scatter data={points}>
-                  {points.map((point, i) => <Cell key={i} fill={point.label ? '#065f46' : '#1d4ed8'} />)}
-                </Scatter>
-              </ScatterChart>
-            </ResponsiveContainer>
-          </Card>
-
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-            <Card title="Training Loss and Accuracy">
-              <ResponsiveContainer width="100%" height={260}>
-                <LineChart data={model.losses}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="epoch" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Line yAxisId={0} dataKey="loss" stroke="#dc2626" strokeWidth={2} dot={false} />
-                  <Line yAxisId={0} dataKey="accuracy" stroke="#059669" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </Card>
-            <Card title="Model Summary">
-              <div className="space-y-2 text-xs font-mono">
-                <p>Input layer: 2 features</p>
-                <p>Hidden layer: {hidden} neurons, {activation}</p>
-                <p>Output layer: sigmoid probability</p>
-                <p>Optimizer: stochastic gradient descent</p>
-                <p>Output bias: {model.params.b2.toFixed(4)}</p>
-              </div>
-            </Card>
+    <svg viewBox="0 0 360 290" className="nnp-net">
+      {sizes.slice(0, -1).flatMap((n, l) =>
+        Array.from({ length: n }, (_, i) =>
+          Array.from({ length: sizes[l + 1] }, (_, j) => (
+            <line
+              key={`${l}${i}${j}`}
+              x1={px(l)}
+              y1={py(n, i)}
+              x2={px(l + 1)}
+              y2={py(sizes[l + 1], j)}
+              className={model.weights[l][i][j] >= 0 ? "pos" : "neg"}
+              style={{
+                strokeWidth:
+                  0.4 + Math.min(2, Math.abs(model.weights[l][i][j])),
+              }}
+            />
+          )),
+        ),
+      )}
+      {sizes.flatMap((n, l) =>
+        Array.from({ length: n }, (_, i) => (
+          <g key={`${l}:${i}`}>
+            <circle cx={px(l)} cy={py(n, i)} r="12" />
+            <text x={px(l)} y={py(n, i) + 4}>
+              {l === 0 ? `x${i + 1}` : l === sizes.length - 1 ? "σ" : "∿"}
+            </text>
+          </g>
+        )),
+      )}
+    </svg>
+  );
+}
+function Field({
+  points,
+  model,
+  activation,
+}: {
+  points: Point[];
+  model: MLPResult;
+  activation: MLPActivation;
+}) {
+  const cells = [];
+  for (let y = 0; y < 18; y++)
+    for (let x = 0; x < 22; x++) {
+      const xx = -2.5 + (x / 21) * 5,
+        yy = 2 - (y / 17) * 4,
+        p = forwardMLP(
+          [xx, yy],
+          model.weights,
+          model.biases,
+          activation,
+        ).probability;
+      cells.push(
+        <rect
+          key={`${x}:${y}`}
+          x={x * 20}
+          y={y * 18}
+          width="21"
+          height="19"
+          fill={p > 0.5 ? "#dc5362" : "#3d79dd"}
+          opacity={0.16 + Math.abs(p - 0.5) * 0.58}
+        />,
+      );
+    }
+  return (
+    <svg viewBox="0 0 440 324" className="nnp-field">
+      {cells}
+      {points.map((p, i) => (
+        <circle
+          key={i}
+          cx={((p.x + 2.5) / 5) * 440}
+          cy={((2 - p.y) / 4) * 324}
+          r="3"
+          fill={p.label ? "#f05a67" : "#3d8ffc"}
+        />
+      ))}
+    </svg>
+  );
+}
+function Loss({ model }: { model: MLPResult }) {
+  const line = (v: number[]) =>
+    v
+      .map(
+        (x, i) =>
+          `${20 + (i / (v.length - 1)) * 310},${15 + Math.min(130, -Math.log10(Math.max(x, 0.001)) * 40)}`,
+      )
+      .join(" ");
+  return (
+    <svg viewBox="0 0 350 170" className="nnp-loss">
+      <path d="M20 10V150H340" />
+      <polyline points={line(model.trainLoss)} />
+      <polyline className="val" points={line(model.validationLoss)} />
+    </svg>
+  );
+}
+export default function NeuralNetworkPlaygroundPage() {
+  const [tab, setTab] = useState("Build / Train"),
+    [dataset, setDataset] = useState<Dataset>("moons"),
+    [noise, setNoise] = useState(0.15),
+    [split, setSplit] = useState(0.2),
+    [seed, setSeed] = useState(1),
+    [points, setPoints] = useState<Point[]>(() => data("moons")),
+    [imported, setImported] = useState<Point[]>([]),
+    [layers, setLayers] = useState(1),
+    [neurons, setNeurons] = useState(8),
+    [activation, setActivation] = useState<MLPActivation>("relu"),
+    [optimizer, setOptimizer] = useState<MLPOptimizer>("adam"),
+    [lr, setLr] = useState(0.01),
+    [batch, setBatch] = useState(32),
+    [epochs, setEpochs] = useState(150),
+    [bias, setBias] = useState(true),
+    [auto, setAuto] = useState(true),
+    [running, setRunning] = useState(false),
+    [toast, setToast] = useState(""),
+    [features, setFeatures] = useState([0, 0]);
+  const fileRef = useRef<HTMLInputElement>(null),
+    timer = useRef<number | undefined>(undefined),
+    [model, setModel] = useState<MLPResult>(() =>
+      fit(data("moons"), 1, 8, "relu", "adam", 0.01, 32, 150, true, 0.2),
+    );
+  const predictions = model.probabilities.map((p) => (p >= 0.5 ? 1 : 0));
+  let tp = 0,
+    tn = 0,
+    fp = 0,
+    fn = 0;
+  predictions.forEach((p, i) => {
+    const y = points[i]?.label ?? 0;
+    if (p && y) tp++;
+    else if (!p && !y) tn++;
+    else if (p) fp++;
+    else fn++;
+  });
+  const accuracy = (tp + tn) / points.length,
+    precision = tp / Math.max(1, tp + fp),
+    recall = tp / Math.max(1, tp + fn),
+    f1 = (2 * precision * recall) / Math.max(0.0001, precision + recall),
+    loss = model.validationLoss.at(-1) ?? 0;
+  const train = () => {
+      setRunning(true);
+      timer.current = window.setTimeout(() => {
+        setModel(
+          fit(
+            points,
+            layers,
+            neurons,
+            activation,
+            optimizer,
+            lr,
+            batch,
+            epochs,
+            bias,
+            split,
+          ),
+        );
+        setRunning(false);
+        setToast("Network training complete");
+      }, 50);
+    },
+    stop = () => {
+      if (timer.current) window.clearTimeout(timer.current);
+      setRunning(false);
+      setToast("Training stopped");
+    },
+    regenerate = () => {
+      const next =
+        dataset === "imported" ? imported : data(dataset, noise, seed + 1);
+      setSeed((v) => v + 1);
+      setPoints(next);
+      if (auto)
+        setModel(
+          fit(
+            next,
+            layers,
+            neurons,
+            activation,
+            optimizer,
+            lr,
+            batch,
+            Math.min(epochs, 80),
+            bias,
+            split,
+          ),
+        );
+      setToast("Dataset regenerated");
+    },
+    choose = (kind: Dataset) => {
+      const next = kind === "imported" ? imported : data(kind, noise, seed);
+      if (!next.length) return;
+      setDataset(kind);
+      setPoints(next);
+      setModel(
+        fit(
+          next,
+          layers,
+          neurons,
+          activation,
+          optimizer,
+          lr,
+          batch,
+          Math.min(epochs, 80),
+          bias,
+          split,
+        ),
+      );
+    },
+    upload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const f = e.target.files?.[0];
+      if (!f) return;
+      const rows = (await f.text())
+        .trim()
+        .split(/\r?\n/)
+        .slice(1)
+        .map((r) => r.split(",").map(Number))
+        .filter((r) => r.length >= 3 && r.every(Number.isFinite));
+      if (rows.length < 4) return setToast("CSV needs x1, x2, label");
+      const next = rows.map((r) => ({
+        x: r[0],
+        y: r[1],
+        label: r[2] >= 0.5 ? 1 : 0,
+      }));
+      setImported(next);
+      setDataset("imported");
+      setPoints(next);
+      setModel(
+        fit(
+          next,
+          layers,
+          neurons,
+          activation,
+          optimizer,
+          lr,
+          batch,
+          Math.min(epochs, 80),
+          bias,
+          split,
+        ),
+      );
+      setToast(`Imported ${next.length} samples`);
+      e.target.value = "";
+    };
+  return (
+    <div className="nnp-page">
+      <aside className="nnp-side">
+        <Link to="/">
+          〽{" "}
+          <b>
+            Mega ML<small>AI Observatory</small>
+          </b>
+        </Link>
+        <label>Quick Access ⌘K</label>
+        {[
+          "⌂ Home",
+          "⚒ Experiments",
+          "♕ Playgrounds",
+          "　 Neural Network Playground",
+          "　 AutoML Playground",
+          "　 LLM Playground",
+          "▤ Datasets　›",
+          "▽ Models　›",
+          "♧ Deployments　›",
+          "▣ Reports　›",
+          "□ Notebooks　›",
+        ].map((n) => (
+          <button
+            className={n.includes("Neural") ? "active" : ""}
+            key={n}
+            onClick={() => setToast(n)}
+          >
+            {n}
+          </button>
+        ))}
+        <footer>
+          <b>
+            👩 Maya ML<small>Pro Plan</small>
+          </b>
+          <button onClick={() => setToast("Sidebar collapsed")}>
+            ≪ Collapse
+          </button>
+        </footer>
+      </aside>
+      <header className="nnp-head">
+        <h1>‹ Neural Network Playground</h1>
+        <nav>
+          {[
+            "Learn",
+            "Visualize",
+            "Dataset",
+            "Build / Train",
+            "Metrics",
+            "Compare",
+            "Explain",
+          ].map((n) => (
+            <button
+              className={tab === n ? "active" : ""}
+              onClick={() => setTab(n)}
+              key={n}
+            >
+              {n}
+            </button>
+          ))}
+        </nav>
+        <section>
+          <button onClick={() => setToast("Help opened")}>?</button>
+          <button onClick={() => setToast("Theme toggled")}>☾</button>
+          <button onClick={() => setToast("Share copied")}>◔ Share</button>
+          <button onClick={() => setToast("Saved")}>▣ Save</button>
+        </section>
+      </header>
+      <main>
+        <section className="nnp-objective panel">
+          <h3>Lesson: Universal Function Approximation</h3>
+          <p>
+            Neural networks with non-linear activations can approximate
+            <br />
+            complex functions and decision boundaries.
+          </p>
+          <button onClick={() => setToast("Lesson opened")}>
+            Learn more →
+          </button>
+          <div>
+            <span>
+              ⓘ Goal<b>Classify points</b>
+            </span>
+            <span>
+              ⚒ Task<b>Binary classification</b>
+            </span>
+            <span>
+              Metric<b>Accuracy</b>
+            </span>
+            <span>
+              Status<b>● Ready</b>
+            </span>
           </div>
-
-          <InfoBox type="info" title="Real Logic Cross-Check">
-            This page performs forward pass, binary cross-entropy, backpropagation, and stochastic gradient descent in TypeScript for a one-hidden-layer neural network.
-          </InfoBox>
-        </div>
-      </div>
+        </section>
+        <section className="nnp-features panel">
+          <h3>FEATURES ⓘ</h3>
+          {features.map((v, i) => (
+            <label key={i}>
+              X<sub>{i + 1}</sub>
+              <input
+                aria-label={`Feature ${i + 1}`}
+                type="range"
+                min="-3"
+                max="3"
+                step=".1"
+                value={v}
+                onChange={(e) =>
+                  setFeatures(
+                    features.map((x, j) =>
+                      j === i ? Number(e.target.value) : x,
+                    ),
+                  )
+                }
+              />
+            </label>
+          ))}
+          <button onClick={() => setToast("Feature added")}>
+            ＋ Add Feature
+          </button>
+        </section>
+        <section className="nnp-canvas panel">
+          <h3>
+            NETWORK CANVAS{" "}
+            <button onClick={() => setToast("Canvas reset")}>↻ Reset</button>
+          </h3>
+          <small>
+            Architecture: 2 – {Array(layers).fill(neurons).join(" – ")} – 1
+          </small>
+          <div className="network">
+            <Net model={model} />
+            <button onClick={() => setLayers(Math.min(2, layers + 1))}>
+              ＋ Add Layer
+            </button>
+            <footer>
+              Activation ⓘ
+              {(["relu", "tanh", "sigmoid"] as MLPActivation[]).map((a) => (
+                <button
+                  className={activation === a ? "active" : ""}
+                  onClick={() => setActivation(a)}
+                  key={a}
+                >
+                  {a}
+                </button>
+              ))}
+            </footer>
+          </div>
+          <div className="field">
+            <Field points={points} model={model} activation={activation} />
+            <footer>● Class 0 · ● Class 1 · ─ Boundary</footer>
+          </div>
+        </section>
+        <section className="nnp-bottom panel">
+          <article>
+            <h3>TRAINING PROGRESS ⓘ</h3>
+            <p>
+              Epoch{" "}
+              <b>
+                {epochs}/{epochs}
+              </b>
+              {" · "}Loss <b>{loss.toFixed(4)}</b> · Accuracy{" "}
+              <b>{(accuracy * 100).toFixed(1)}%</b>
+            </p>
+            <Loss model={model} />
+          </article>
+          <article>
+            <h3>PERFORMANCE ⓘ</h3>
+            <i
+              style={{
+                background: `conic-gradient(#4bd8cf ${accuracy * 360}deg,#1b2a40 0)`,
+              }}
+            >
+              <b>{(accuracy * 100).toFixed(1)}%</b>
+            </i>
+            <p>
+              Precision <b>{precision.toFixed(3)}</b>
+              <br />
+              Recall <b>{recall.toFixed(3)}</b>
+              <br />
+              F1 Score <b>{f1.toFixed(3)}</b>
+            </p>
+            <div>
+              <span />
+              <span>Pred 0</span>
+              <span>Pred 1</span>
+              <span>True 0</span>
+              <b>{tn}</b>
+              <b>{fp}</b>
+              <span>True 1</span>
+              <b>{fn}</b>
+              <b>{tp}</b>
+            </div>
+          </article>
+          <article>
+            <h3>OUTPUT DISTRIBUTION ⓘ</h3>
+            <div className="hist">
+              {Array.from({ length: 20 }, (_, bin) => {
+                const c0 = model.probabilities.filter(
+                    (p, i) =>
+                      points[i].label === 0 &&
+                      Math.min(19, Math.floor(p * 20)) === bin,
+                  ).length,
+                  c1 = model.probabilities.filter(
+                    (p, i) =>
+                      points[i].label === 1 &&
+                      Math.min(19, Math.floor(p * 20)) === bin,
+                  ).length;
+                return (
+                  <span key={bin}>
+                    <i style={{ height: c0 * 2 }} />
+                    <b style={{ height: c1 * 2 }} />
+                  </span>
+                );
+              })}
+            </div>
+          </article>
+        </section>
+      </main>
+      <aside className="nnp-controls">
+        <section className="panel">
+          <h3>
+            DATASET ⓘ <small>Samples: {points.length}</small>
+          </h3>
+          <select
+            value={dataset}
+            onChange={(e) => choose(e.target.value as Dataset)}
+          >
+            {Object.entries(names)
+              .filter(([k]) => k !== "imported" || imported.length)
+              .map(([k, n]) => (
+                <option value={k} key={k}>
+                  {n}
+                </option>
+              ))}
+          </select>
+          <label>
+            Noise{" "}
+            <input
+              type="number"
+              value={noise}
+              min="0"
+              max=".5"
+              step=".01"
+              onChange={(e) => setNoise(Number(e.target.value))}
+            />
+            <input
+              aria-label="Noise"
+              type="range"
+              min="0"
+              max=".5"
+              step=".01"
+              value={noise}
+              onChange={(e) => setNoise(Number(e.target.value))}
+            />
+          </label>
+          <label>
+            Test Split{" "}
+            <input
+              type="number"
+              value={split}
+              min=".1"
+              max=".4"
+              step=".05"
+              onChange={(e) => setSplit(Number(e.target.value))}
+            />
+            <input
+              aria-label="Test split"
+              type="range"
+              min=".1"
+              max=".4"
+              step=".05"
+              value={split}
+              onChange={(e) => setSplit(Number(e.target.value))}
+            />
+          </label>
+          <button onClick={regenerate}>↻ Regenerate Dataset</button>
+          <button onClick={() => fileRef.current?.click()}>
+            <Upload /> Upload Dataset
+          </button>
+          <input ref={fileRef} type="file" accept=".csv" onChange={upload} />
+        </section>
+        <section className="panel">
+          <h3>MODEL INSPECTOR</h3>
+          <label>
+            Hidden Layers{" "}
+            <span>
+              <button onClick={() => setLayers(Math.max(1, layers - 1))}>
+                −
+              </button>
+              <b>{layers}</b>
+              <button onClick={() => setLayers(Math.min(2, layers + 1))}>
+                ＋
+              </button>
+            </span>
+          </label>
+          <label>
+            Neurons{" "}
+            <span>
+              <button onClick={() => setNeurons(Math.max(2, neurons - 1))}>
+                −
+              </button>
+              <b>{neurons}</b>
+              <button onClick={() => setNeurons(Math.min(12, neurons + 1))}>
+                ＋
+              </button>
+            </span>
+          </label>
+          <label>
+            Activation
+            <select
+              value={activation}
+              onChange={(e) => setActivation(e.target.value as MLPActivation)}
+            >
+              <option value="relu">ReLU</option>
+              <option value="tanh">Tanh</option>
+              <option value="sigmoid">Sigmoid</option>
+            </select>
+          </label>
+          <label>
+            Output Activation
+            <select>
+              <option>Sigmoid</option>
+            </select>
+          </label>
+          <label>
+            Use Bias
+            <input
+              type="checkbox"
+              checked={bias}
+              onChange={(e) => setBias(e.target.checked)}
+            />
+          </label>
+        </section>
+        <section className="panel">
+          <h3>TRAINING CONTROLS</h3>
+          <label>
+            Optimizer
+            <select
+              value={optimizer}
+              onChange={(e) => setOptimizer(e.target.value as MLPOptimizer)}
+            >
+              <option value="adam">Adam</option>
+              <option value="sgd">SGD</option>
+            </select>
+          </label>
+          <label>
+            Learning Rate
+            <input
+              type="number"
+              min=".001"
+              max=".2"
+              step=".001"
+              value={lr}
+              onChange={(e) => setLr(Number(e.target.value))}
+            />
+          </label>
+          <label>
+            Batch Size
+            <select
+              value={batch}
+              onChange={(e) => setBatch(Number(e.target.value))}
+            >
+              <option>16</option>
+              <option>32</option>
+              <option>64</option>
+            </select>
+          </label>
+          <label>
+            Epochs
+            <input
+              type="number"
+              min="10"
+              max="500"
+              value={epochs}
+              onChange={(e) => setEpochs(Number(e.target.value))}
+            />
+          </label>
+          <button className="train" disabled={running} onClick={train}>
+            <Play /> {running ? "Training..." : "Train"}
+          </button>
+          <button disabled={!running} onClick={stop}>
+            ■ Stop
+          </button>
+          <label>
+            Auto Train
+            <input
+              type="checkbox"
+              checked={auto}
+              onChange={(e) => setAuto(e.target.checked)}
+            />
+          </label>
+        </section>
+      </aside>
+      <footer className="nnp-foot">
+        💡 Try adding more neurons or layers. Observe how the decision boundary
+        becomes more complex.
+      </footer>
+      {toast && (
+        <button className="nnp-toast" onClick={() => setToast("")}>
+          {toast}
+        </button>
+      )}
     </div>
   );
 }

@@ -1,8 +1,10 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Download, Upload, RotateCcw, Filter } from 'lucide-react';
 import { PageHeader } from '../../../components/common/PageHeader';
 import { Card, InfoBox } from '../../../components/common/Card';
 import { Tabs } from '../../../components/common/Tabs';
+import MissingValuesApprovedPage from './MissingValuesApprovedPage';
 
 // ─── Built-in dataset with intentional missing values ─────────────────────────
 type Row = Record<string, string | number | null>;
@@ -166,7 +168,7 @@ const MatrixCell: React.FC<{ value: unknown; col: string }> = ({ value }) => {
 };
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
-export default function MissingValuesPage() {
+export function MissingValuesAdvancedLab() {
   const [sourceData, setSourceData]   = useState<Row[]>(BUILTIN_DATA);
   const [sourceCols, setSourceCols]   = useState<string[]>(COLUMNS);
   const [strategy, setStrategy]       = useState('mean');
@@ -567,4 +569,11 @@ export default function MissingValuesPage() {
       </Card>
     </div>
   );
+}
+
+export default function MissingValuesPage() {
+  const location = useLocation();
+  return new URLSearchParams(location.search).get('advanced') === '1'
+    ? <MissingValuesAdvancedLab />
+    : <MissingValuesApprovedPage />;
 }

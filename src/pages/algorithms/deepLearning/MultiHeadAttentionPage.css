@@ -1,0 +1,491 @@
+.mha-page {
+  width: 100%;
+  height: 100vh;
+  overflow: auto;
+  background: #061124;
+  color: #eaf1ff;
+  font:
+    11px Inter,
+    system-ui;
+  padding: 105px 347px 91px 237px;
+}
+.mha-page * {
+  box-sizing: border-box;
+}
+.mha-page button,
+.mha-page input,
+.mha-page select {
+  color: inherit;
+  background: #0b192e;
+  border: 1px solid #283b58;
+  border-radius: 5px;
+}
+.mha-page button {
+  cursor: pointer;
+}
+.mha-page h3,
+.mha-page p {
+  margin: 0 0 7px;
+}
+.mha-page .panel {
+  background: linear-gradient(145deg, #08162a, #091526);
+  border: 1px solid #263a57;
+  border-radius: 8px;
+}
+.mha-side {
+  position: fixed;
+  z-index: 5;
+  inset: 0 auto 0 0;
+  width: 227px;
+  background: #07152a;
+  border-right: 1px solid #213553;
+  padding: 13px 8px;
+  display: flex;
+  flex-direction: column;
+}
+.mha-side a {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  color: #fff;
+  text-decoration: none;
+  font-size: 16px;
+  margin-bottom: 18px;
+}
+.mha-side a small {
+  grid-column: 2;
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: #8c9ab2;
+}
+.mha-side h4 {
+  font-size: 8px;
+  color: #72819b;
+  margin: 12px 8px 4px;
+}
+.mha-side button {
+  height: 35px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 0 13px;
+}
+.mha-side button.active {
+  background: #122644;
+  color: #6797ff;
+}
+.mha-side p {
+  margin-top: auto;
+  border: 1px solid #263a58;
+  padding: 10px;
+}
+.mha-side p small {
+  display: block;
+  margin-left: 28px;
+}
+.mha-head {
+  position: fixed;
+  z-index: 4;
+  left: 227px;
+  right: 0;
+  top: 0;
+  height: 63px;
+  background: #050f20;
+  padding: 11px 16px;
+}
+.mha-head h1 {
+  font-size: 21px;
+  margin: 0;
+}
+.mha-head h1 svg {
+  width: 14px;
+}
+.mha-head p {
+  color: #a6b2c5;
+}
+.mha-head nav {
+  position: absolute;
+  left: 10px;
+  right: 347px;
+  top: 63px;
+  height: 42px;
+  display: flex;
+  border-bottom: 1px solid #243753;
+}
+.mha-head nav button {
+  width: 90px;
+  border: 0;
+  background: transparent;
+}
+.mha-head nav button.active {
+  color: #4f90ff;
+  border-bottom: 2px solid #387bff;
+}
+.mha-head > div {
+  position: absolute;
+  right: 18px;
+  top: 12px;
+  display: flex;
+  gap: 8px;
+}
+.mha-head > div button {
+  height: 33px;
+  padding: 0 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mha-head > div button:last-child {
+  width: 112px;
+  justify-content: center;
+  background: linear-gradient(90deg, #6c3deb, #147cff);
+}
+.mha-head svg {
+  width: 14px;
+}
+.mha-page main {
+  min-width: 940px;
+  display: grid;
+  gap: 8px;
+}
+.mha-input {
+  height: 110px;
+  padding: 13px;
+}
+.mha-input > div {
+  display: flex;
+  justify-content: center;
+  gap: 13px;
+  margin-top: 26px;
+}
+.mha-input span {
+  position: relative;
+  min-width: 61px;
+  text-align: center;
+  border: 1px solid;
+  padding: 9px;
+  border-radius: 5px;
+}
+.mha-input span small {
+  position: absolute;
+  top: -24px;
+  left: 45%;
+  color: #9cacbf;
+}
+.mha-heads {
+  height: 395px;
+  padding: 12px;
+}
+.mha-heads > header {
+  display: flex;
+  justify-content: space-between;
+}
+.mha-heads select {
+  height: 28px;
+}
+.head-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 11px;
+  height: 248px;
+}
+.head-grid article {
+  border-left: 3px solid;
+  padding: 4px 9px;
+}
+.head-grid article > p {
+  font-size: 10px;
+}
+.mha-heatmap {
+  display: grid;
+  height: 175px;
+}
+.mha-heatmap > * {
+  border: 1px solid #172840;
+  min-width: 0;
+}
+.mha-heatmap i {
+  font-style: normal;
+  font-size: 8px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.mha-heads > h3 {
+  border-top: 1px solid #243750;
+  padding-top: 7px;
+}
+.mha-pipeline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.mha-pipeline b {
+  height: 58px;
+  min-width: 70px;
+  border: 1px solid #31496b;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 6px;
+}
+.mha-pipeline b:nth-of-type(2) {
+  min-width: 220px;
+}
+.mha-pipeline i {
+  font-style: normal;
+  color: #39d3e8;
+}
+.mha-bottom {
+  height: 216px;
+  padding: 9px;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr 1.1fr;
+  gap: 10px;
+}
+.mha-bottom article {
+  border: 1px solid #20344f;
+  border-radius: 6px;
+  padding: 8px;
+}
+.mha-bottom table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.mha-bottom td,
+.mha-bottom th {
+  text-align: left;
+  padding: 8px;
+  border-bottom: 1px solid #20344f;
+}
+.mha-bottom .mha-heatmap {
+  height: 165px;
+}
+.radar {
+  position: relative;
+  width: 170px;
+  height: 150px;
+  margin: auto;
+  border: 1px solid #2c4160;
+  border-radius: 50%;
+}
+.radar i {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border: 1px solid;
+  transform-origin: 0 0;
+}
+.mha-controls {
+  position: fixed;
+  z-index: 3;
+  right: 14px;
+  top: 70px;
+  bottom: 91px;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.mha-controls section {
+  padding: 11px;
+}
+.mha-controls section:first-child {
+  height: 338px;
+}
+.mha-controls header {
+  display: flex;
+  align-items: center;
+}
+.mha-controls header h3 {
+  margin-right: auto;
+}
+.mha-controls header button {
+  height: 27px;
+  margin-left: 7px;
+}
+.mha-controls section:first-child > label {
+  height: 42px;
+  border-top: 1px solid #172943;
+  display: grid;
+  grid-template-columns: 1fr 120px 55px;
+  align-items: center;
+}
+.mha-controls .switch-row {
+  height: 42px;
+  border-top: 1px solid #172943;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.mha-controls select {
+  height: 28px;
+}
+.mha-controls label > input[type="range"] {
+  width: 115px;
+}
+.mha-controls .switch-row > input[type="checkbox"] {
+  justify-self: end;
+  width: 38px;
+  accent-color: #347dff;
+}
+.mha-controls .dataset {
+  flex: 1;
+}
+.dataset > label:first-child {
+  display: flex;
+  justify-content: space-between;
+}
+.dataset > label:first-child select {
+  width: 210px;
+}
+.dataset .upload {
+  height: 62px;
+  border: 1px dashed #344963;
+  margin: 11px 0;
+  display: grid;
+  place-items: center;
+}
+.dataset .upload svg {
+  width: 18px;
+}
+.dataset .upload input {
+  display: none;
+}
+.dataset table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.dataset td {
+  padding: 7px;
+  border: 1px solid #1e324c;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 220px;
+}
+.dataset tr {
+  cursor: pointer;
+}
+.dataset tr.active {
+  outline: 1px solid #347dff;
+}
+.dataset > p {
+  text-align: center;
+  color: #8e9bb0;
+  margin-top: 8px;
+}
+.mha-page > footer {
+  position: fixed;
+  z-index: 4;
+  left: 227px;
+  right: 0;
+  bottom: 0;
+  height: 90px;
+  background: #071426;
+  border-top: 1px solid #243750;
+  text-align: center;
+  padding: 19px;
+}
+.mha-page > footer em {
+  display: block;
+  color: #acb8ca;
+}
+.mha-page > footer span {
+  position: absolute;
+  right: 20px;
+  bottom: 16px;
+  background: #0c203b;
+  padding: 9px 16px;
+  border-radius: 18px;
+  color: #89a5c6;
+}
+.mha-page > footer button {
+  position: absolute;
+  left: 20px;
+  bottom: 14px;
+  display: flex;
+  gap: 5px;
+  padding: 8px;
+}
+.mha-page select option {
+  background: #081426;
+}
+@media (max-width: 1200px) {
+  .mha-page {
+    padding-right: 20px;
+  }
+  .mha-head nav {
+    right: 20px;
+  }
+  .mha-controls {
+    position: static;
+    width: auto;
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .mha-page main {
+    min-width: 0;
+  }
+  .head-grid {
+    grid-template-columns: repeat(2, 1fr);
+    height: auto;
+  }
+  .mha-heads {
+    height: auto;
+  }
+  .mha-bottom {
+    height: auto;
+  }
+  .mha-input {
+    overflow: auto;
+  }
+  .mha-input > div {
+    min-width: 700px;
+  }
+  .mha-page > footer {
+    left: 227px;
+  }
+}
+@media (max-width: 700px) {
+  .mha-page {
+    padding: 105px 10px 100px;
+  }
+  .mha-side {
+    display: none;
+  }
+  .mha-head {
+    left: 0;
+    height: 63px;
+  }
+  .mha-head > div {
+    display: none;
+  }
+  .mha-head nav {
+    left: 0;
+    right: 0;
+    overflow: auto;
+  }
+  .mha-controls {
+    display: block;
+  }
+  .mha-controls section {
+    margin-bottom: 10px;
+  }
+  .head-grid,
+  .mha-bottom {
+    grid-template-columns: 1fr;
+  }
+  .mha-pipeline {
+    min-width: 800px;
+  }
+  .mha-heads {
+    overflow: auto;
+  }
+  .mha-page > footer {
+    left: 0;
+  }
+  .mha-page > footer span {
+    display: none;
+  }
+}

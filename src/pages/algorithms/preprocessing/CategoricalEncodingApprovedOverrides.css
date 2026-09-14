@@ -1,0 +1,13 @@
+.ce-main .raw > .table {
+  display: block;
+  width: 100% !important;
+}
+
+.ce-controls a {
+  color: #7f9dff;
+  display: block;
+  font-size: 9px;
+  margin-top: 6px;
+  text-align: center;
+  text-decoration: none;
+}

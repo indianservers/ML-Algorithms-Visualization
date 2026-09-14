@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, Cell,
@@ -8,6 +9,7 @@ import { PageHeader } from '../../../components/common/PageHeader';
 import { Card, InfoBox } from '../../../components/common/Card';
 import { Tabs } from '../../../components/common/Tabs';
 import { mean, median, quantile, std } from '../../../lib/math/statistics';
+import ScalingApprovedPage from './ScalingApprovedPage';
 
 // ─── Built-in sample data ─────────────────────────────────────────────────────
 interface DataRow { income: number; age: number; credit_score: number; debt_ratio: number }
@@ -112,7 +114,7 @@ const METHOD_COLORS: Record<ScalingMethod, string> = {
 };
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
-export default function ScalingNormalizationPage() {
+export function ScalingNormalizationAdvancedLab() {
   const [selectedFeature, setSelectedFeature] = useState<FeatureKey>('income');
   const [activeMethod, setActiveMethod]       = useState<ScalingMethod>('minmax');
 
@@ -356,4 +358,11 @@ export default function ScalingNormalizationPage() {
       </Card>
     </div>
   );
+}
+
+export default function ScalingNormalizationPage() {
+  const location = useLocation();
+  return new URLSearchParams(location.search).get('advanced') === '1'
+    ? <ScalingNormalizationAdvancedLab />
+    : <ScalingApprovedPage />;
 }

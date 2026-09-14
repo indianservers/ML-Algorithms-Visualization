@@ -1,0 +1,617 @@
+.nnp-page {
+  --b: #253149;
+  min-height: 100vh;
+  background: #050d1b;
+  color: #edf3ff;
+  font:
+    12px Inter,
+    system-ui,
+    sans-serif;
+  padding: 99px 351px 51px 259px;
+  box-sizing: border-box;
+}
+.nnp-page * {
+  box-sizing: border-box;
+}
+.nnp-page button,
+.nnp-page select,
+.nnp-page input {
+  font: inherit;
+  color: inherit;
+}
+.panel,
+.nnp-controls section {
+  border: 1px solid var(--b);
+  border-radius: 7px;
+  background: linear-gradient(145deg, #0d182a, #091321);
+}
+.nnp-side {
+  position: fixed;
+  z-index: 5;
+  inset: 0 auto 0 0;
+  width: 237px;
+  padding: 13px;
+  background: #081321;
+  border-right: 1px solid #253149;
+  display: flex;
+  flex-direction: column;
+}
+.nnp-side > a {
+  color: #438eff;
+  text-decoration: none;
+  font-size: 23px;
+  padding: 0 4px 20px;
+}
+.nnp-side > a b {
+  font-size: 14px;
+  color: #f4f7ff;
+}
+.nnp-side small {
+  display: block;
+  font-size: 9px;
+  color: #8897ad;
+  margin-left: 32px;
+}
+.nnp-side > label {
+  border: 1px solid var(--b);
+  border-radius: 4px;
+  padding: 9px;
+  color: #919db0;
+}
+.nnp-side > button {
+  height: 35px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  color: #aab6ca;
+}
+.nnp-side > button.active {
+  background: #173269;
+  border-radius: 5px;
+  color: white;
+}
+.nnp-side footer {
+  margin-top: auto;
+}
+.nnp-side footer > b {
+  display: block;
+  border: 1px solid var(--b);
+  border-radius: 6px;
+  padding: 12px;
+}
+.nnp-side footer > button {
+  width: 100%;
+  height: 40px;
+  margin-top: 20px;
+  border: 0;
+  background: #0d192c;
+  color: #aab6c9;
+  text-align: left;
+}
+.nnp-head {
+  position: fixed;
+  z-index: 4;
+  top: 0;
+  left: 237px;
+  right: 0;
+  height: 57px;
+  border-bottom: 1px solid #263249;
+  background: #050b17;
+  padding: 15px 22px;
+}
+.nnp-head h1 {
+  font-size: 17px;
+  margin: 0;
+}
+.nnp-head nav {
+  position: absolute;
+  left: 22px;
+  top: 57px;
+  height: 42px;
+  display: flex;
+}
+.nnp-head nav button {
+  min-width: 96px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: #08111e;
+  color: #9aa7bb;
+}
+.nnp-head nav button.active {
+  color: #4198ff;
+  border-color: #4198ff;
+}
+.nnp-head > section {
+  position: absolute;
+  right: 12px;
+  top: 10px;
+  display: flex;
+  gap: 8px;
+}
+.nnp-head > section button {
+  height: 35px;
+  border: 1px solid var(--b);
+  border-radius: 5px;
+  background: #0c1728;
+  padding: 0 13px;
+}
+.nnp-head > section button:last-child {
+  background: #2270e7;
+}
+.nnp-page > main {
+  height: 790px;
+  display: grid;
+  grid-template-columns: 162px 1fr;
+  grid-template-rows: 103px 439px 234px;
+  gap: 9px;
+}
+.nnp-page h3 {
+  font-size: 11px;
+  margin: 0;
+}
+.nnp-objective {
+  grid-column: 1/3;
+  padding: 16px;
+}
+.nnp-objective p {
+  color: #95a2b7;
+  line-height: 1.5;
+  margin: 8px 0;
+}
+.nnp-objective > button {
+  border: 0;
+  background: transparent;
+  color: #3f92ff;
+  padding: 0;
+}
+.nnp-objective > div {
+  position: absolute;
+  right: 18px;
+  top: 17px;
+  display: flex;
+}
+.nnp-objective > div span {
+  min-width: 120px;
+  height: 64px;
+  padding: 10px;
+  border-left: 1px solid #233048;
+  color: #929fb4;
+}
+.nnp-objective > div b {
+  display: block;
+  color: #edf3ff;
+  margin-top: 7px;
+}
+.nnp-objective > div span:last-child b {
+  color: #3bd589;
+}
+.nnp-features {
+  grid-column: 1;
+  padding: 16px;
+}
+.nnp-features label {
+  display: block;
+  margin: 27px 0;
+  color: #bac5d7;
+  font-size: 15px;
+}
+.nnp-features input {
+  display: block;
+  width: 100%;
+  margin-top: 9px;
+  accent-color: #428cff;
+}
+.nnp-features button {
+  border: 0;
+  background: transparent;
+  color: #aab6c9;
+}
+.nnp-canvas {
+  grid-column: 2;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 10px;
+}
+.nnp-canvas > h3 {
+  position: absolute;
+}
+.nnp-canvas > small {
+  position: absolute;
+  left: 430px;
+  top: 13px;
+}
+.nnp-canvas .network {
+  position: relative;
+  padding-top: 25px;
+}
+.nnp-net {
+  width: 100%;
+  height: 300px;
+}
+.nnp-net line {
+  opacity: 0.55;
+}
+.nnp-net line.pos {
+  stroke: #2874da;
+}
+.nnp-net line.neg {
+  stroke: #e16a71;
+}
+.nnp-net circle {
+  fill: #124350;
+  stroke: #2dd6c6;
+}
+.nnp-net text {
+  fill: #d9eff1;
+  text-anchor: middle;
+  font-size: 10px;
+}
+.nnp-canvas .network > button {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 31px;
+  height: 36px;
+  border: 1px dashed #2f4d74;
+  background: transparent;
+}
+.nnp-canvas .network footer {
+  position: absolute;
+  bottom: -2px;
+}
+.nnp-canvas .network footer button {
+  height: 26px;
+  border: 1px solid var(--b);
+  border-radius: 4px;
+  background: #101c2e;
+  margin: 0 4px;
+}
+.nnp-canvas .network footer button.active {
+  background: #1d3970;
+}
+.nnp-canvas .field {
+  padding-top: 40px;
+}
+.nnp-field {
+  width: 100%;
+  height: 320px;
+  border: 1px solid #25344e;
+}
+.nnp-canvas .field footer {
+  text-align: center;
+  color: #9ca9bd;
+}
+.nnp-bottom {
+  grid-column: 1/3;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1.05fr 1.55fr 1fr;
+}
+.nnp-bottom > article {
+  padding: 16px;
+  border-right: 1px solid #253149;
+}
+.nnp-bottom > article > p {
+  font-size: 10px;
+  color: #9aa7ba;
+}
+.nnp-loss {
+  width: 100%;
+  height: 150px;
+}
+.nnp-loss path {
+  fill: none;
+  stroke: #40506b;
+}
+.nnp-loss polyline {
+  fill: none;
+  stroke: #3b86ed;
+  stroke-width: 1.5;
+}
+.nnp-loss polyline.val {
+  stroke: #e39543;
+}
+.nnp-bottom article:nth-child(2) > i {
+  display: inline-flex;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  margin: 18px;
+  background: #24364d;
+}
+.nnp-bottom article:nth-child(2) > i:after {
+  content: "";
+  position: absolute;
+  width: 83px;
+  height: 83px;
+  border-radius: 50%;
+  background: #0b1628;
+}
+.nnp-bottom article:nth-child(2) > i b {
+  z-index: 1;
+  font-size: 20px;
+}
+.nnp-bottom article:nth-child(2) > p {
+  display: inline-block;
+  vertical-align: top;
+  margin-top: 32px;
+  line-height: 2;
+}
+.nnp-bottom article:nth-child(2) > div {
+  float: right;
+  margin-top: 30px;
+  display: grid;
+  grid-template-columns: 55px 55px 55px;
+  text-align: center;
+}
+.nnp-bottom article:nth-child(2) > div > * {
+  padding: 6px;
+  border: 1px solid #26334b;
+}
+.hist {
+  height: 155px;
+  margin-top: 22px;
+  display: flex;
+  align-items: flex-end;
+  border-left: 1px solid #38465c;
+  border-bottom: 1px solid #38465c;
+}
+.hist span {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+.hist i,
+.hist b {
+  display: block;
+  width: 50%;
+  background: #2b63c8;
+}
+.hist b {
+  background: #b63d51;
+}
+.nnp-controls {
+  position: fixed;
+  z-index: 3;
+  top: 99px;
+  right: 12px;
+  bottom: 48px;
+  width: 324px;
+  overflow: auto;
+}
+.nnp-controls section {
+  padding: 15px;
+  margin-bottom: 9px;
+}
+.nnp-controls h3 {
+  margin-bottom: 15px;
+}
+.nnp-controls h3 small {
+  float: right;
+}
+.nnp-controls select,
+.nnp-controls input[type="number"] {
+  height: 31px;
+  border: 1px solid var(--b);
+  border-radius: 4px;
+  background: #0f1a2d;
+  padding: 0 9px;
+}
+.nnp-controls section > select {
+  width: 100%;
+  margin-bottom: 9px;
+}
+.nnp-controls label {
+  min-height: 39px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #aeb9cc;
+}
+.nnp-controls label input[type="range"] {
+  width: 130px;
+  accent-color: #438cf5;
+}
+.nnp-controls label input[type="number"] {
+  width: 62px;
+}
+.nnp-controls section > button {
+  width: 100%;
+  height: 34px;
+  margin-top: 7px;
+  border: 1px solid var(--b);
+  border-radius: 4px;
+  background: #10234a;
+}
+.nnp-controls input[type="file"] {
+  display: none;
+}
+.nnp-controls label span {
+  display: flex;
+}
+.nnp-controls label span button {
+  width: 28px;
+  border: 0;
+  background: #101b2e;
+}
+.nnp-controls label span b {
+  padding: 8px 12px;
+  background: #101b2e;
+}
+.nnp-controls label > select {
+  width: 158px;
+}
+.nnp-controls label > input[type="checkbox"] {
+  margin-left: auto;
+  accent-color: #418cff;
+}
+.nnp-controls section:last-child > button {
+  width: 48%;
+  background: #132137;
+}
+.nnp-controls section:last-child > button.train {
+  background: #188859;
+}
+.nnp-foot {
+  position: fixed;
+  z-index: 4;
+  left: 259px;
+  right: 12px;
+  bottom: 8px;
+  height: 36px;
+  padding: 10px 16px;
+  border: 1px solid var(--b);
+  border-radius: 5px;
+  background: #0b1628;
+  color: #93a0b5;
+}
+.nnp-toast {
+  position: fixed;
+  z-index: 20;
+  left: 50%;
+  bottom: 52px;
+  transform: translateX(-50%);
+  padding: 9px 17px;
+  border: 1px solid #33588f;
+  border-radius: 6px;
+  background: #11264a;
+  color: white;
+}
+@media (max-width: 1150px) {
+  .nnp-page {
+    padding-left: 78px;
+    padding-right: 288px;
+  }
+  .nnp-side {
+    width: 67px;
+  }
+  .nnp-side > a b,
+  .nnp-side > button,
+  .nnp-side > label {
+    font-size: 0;
+  }
+  .nnp-side > a {
+    padding-left: 6px;
+  }
+  .nnp-side > button:first-letter {
+    font-size: 16px;
+  }
+  .nnp-side footer {
+    display: none;
+  }
+  .nnp-head {
+    left: 67px;
+  }
+  .nnp-head nav {
+    overflow: auto;
+    right: 0;
+  }
+  .nnp-controls {
+    width: 276px;
+  }
+  .nnp-page > main {
+    height: auto;
+    display: block;
+  }
+  .nnp-page > main > section {
+    margin-bottom: 9px;
+  }
+  .nnp-objective {
+    height: 130px;
+  }
+  .nnp-objective > div {
+    display: none;
+  }
+  .nnp-features {
+    height: 240px;
+  }
+  .nnp-canvas {
+    height: 500px;
+  }
+  .nnp-bottom {
+    height: auto;
+    display: block;
+  }
+  .nnp-bottom > article {
+    min-height: 230px;
+  }
+  .nnp-foot {
+    left: 78px;
+  }
+}
+@media (max-width: 760px) {
+  .nnp-page {
+    padding: 163px 10px 54px;
+  }
+  .nnp-side {
+    position: absolute;
+    width: 100%;
+    height: 58px;
+    right: 0;
+    bottom: auto;
+    flex-direction: row;
+    overflow: auto;
+  }
+  .nnp-side > a {
+    padding: 0 8px;
+  }
+  .nnp-side > button {
+    min-width: 40px;
+    height: 36px;
+  }
+  .nnp-head {
+    position: absolute;
+    left: 0;
+    top: 58px;
+    height: 99px;
+    padding: 12px;
+  }
+  .nnp-head h1 {
+    font-size: 17px;
+  }
+  .nnp-head nav {
+    top: 51px;
+    height: 48px;
+    left: 0;
+  }
+  .nnp-head nav button {
+    min-width: 90px;
+  }
+  .nnp-head > section {
+    display: none;
+  }
+  .nnp-objective {
+    height: 145px;
+  }
+  .nnp-canvas {
+    height: auto;
+    display: block;
+  }
+  .nnp-canvas > small {
+    left: auto;
+    right: 12px;
+  }
+  .nnp-canvas .network,
+  .nnp-canvas .field {
+    height: 390px;
+  }
+  .nnp-controls {
+    position: static;
+    width: auto;
+  }
+  .nnp-foot {
+    left: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .nnp-toast {
+    max-width: 90%;
+    white-space: nowrap;
+  }
+}

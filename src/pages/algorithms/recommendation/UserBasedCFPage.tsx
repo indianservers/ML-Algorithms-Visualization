@@ -14,13 +14,14 @@ const initialRatings: Array<Array<number | null>> = [
   [4, 4, null, 3, null, 5],
 ];
 
-function cosineSimilarity(a: Array<number | null>, b: Array<number | null>) {
+function cosineSimilarity(a: Array<number | null>, b: Array<number | null>, excludedIndex = -1) {
   let dot = 0;
   let aNorm = 0;
   let bNorm = 0;
   for (let index = 0; index < a.length; index++) {
-    const av = a[index] ?? 0;
-    const bv = b[index] ?? 0;
+    if (index === excludedIndex || a[index] === null || b[index] === null) continue;
+    const av = a[index] as number;
+    const bv = b[index] as number;
     dot += av * bv;
     aNorm += av * av;
     bNorm += bv * bv;
@@ -34,7 +35,7 @@ function predictRating(matrix: Array<Array<number | null>>, userIndex: number, i
   let totalSimilarity = 0;
   matrix.forEach((row, otherIndex) => {
     if (otherIndex === userIndex || row[itemIndex] === null) return;
-    const similarity = Math.max(0, cosineSimilarity(matrix[userIndex], row));
+    const similarity = Math.max(0, cosineSimilarity(matrix[userIndex], row, itemIndex));
     weighted += similarity * (row[itemIndex] ?? 0);
     totalSimilarity += similarity;
   });

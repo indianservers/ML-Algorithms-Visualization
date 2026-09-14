@@ -13,7 +13,8 @@
     "audit:pages": "node scripts/audit-pages.mjs",
     "audit:navigation": "node scripts/audit-navigation.mjs",
     "smoke:routes": "node scripts/smoke-routes.mjs",
-    "test:core": "node scripts/unit-core.cjs",
+    "test:core": "vitest run tests/core-algorithms.test.ts",
+    "test": "vitest run --exclude tests/responsive.spec.ts",
     "test:responsive": "playwright test tests/responsive.spec.ts --reporter=line"
   },
   "dependencies": {
@@ -51,6 +52,7 @@
     "tailwindcss": "^3.4.19",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.2",
-    "vite": "^8.0.10"
+    "vite": "^8.0.10",
+    "vitest": "^5.0.0"
   }
 }

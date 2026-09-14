@@ -1,0 +1,606 @@
+.gru-page {
+  width: 100%;
+  height: 100vh;
+  overflow: auto;
+  background: #061124;
+  color: #e8f0ff;
+  font:
+    12px Inter,
+    system-ui;
+  padding: 75px 332px 66px 209px;
+}
+.gru-page * {
+  box-sizing: border-box;
+}
+.gru-page button,
+.gru-page input,
+.gru-page select {
+  color: inherit;
+  background: #0c1930;
+  border: 1px solid #263a58;
+  border-radius: 5px;
+}
+.gru-page button {
+  cursor: pointer;
+}
+.gru-page h2,
+.gru-page h3,
+.gru-page p {
+  margin: 0 0 7px;
+}
+.gru-page h2 {
+  font-size: 13px;
+}
+.gru-page h3 {
+  font-size: 11px;
+}
+.gru-page .panel {
+  background: linear-gradient(145deg, #08162b, #091526);
+  border: 1px solid #243a58;
+  border-radius: 7px;
+}
+.gru-side {
+  position: fixed;
+  z-index: 5;
+  inset: 0 auto 0 0;
+  width: 188px;
+  background: #07152a;
+  border-right: 1px solid #203553;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+}
+.gru-side a {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  color: #fff;
+  text-decoration: none;
+  font-size: 16px;
+  margin: 0 8px 25px;
+}
+.gru-side a small {
+  grid-column: 2;
+  font-size: 10px;
+  color: #96a4bc;
+}
+.gru-side > button {
+  height: 50px;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  padding: 0 14px;
+}
+.gru-side > button.active {
+  background: #102653;
+  color: #4e90ff;
+}
+.gru-side > p {
+  margin-top: auto;
+  border: 1px solid #263957;
+  padding: 13px;
+  border-radius: 7px;
+}
+.gru-side > p small {
+  display: block;
+  margin-left: 27px;
+}
+.gru-head {
+  position: fixed;
+  z-index: 4;
+  left: 188px;
+  right: 0;
+  top: 0;
+  height: 75px;
+  background: #050f20;
+  padding: 14px 27px;
+}
+.gru-head h1 {
+  font-size: 26px;
+  margin: 0;
+}
+.gru-head h1 small {
+  font-size: 13px;
+  font-weight: 400;
+  color: #a7b3c6;
+  margin-left: 10px;
+}
+.gru-head h1 em {
+  font-style: normal;
+  font-size: 10px;
+  background: #102857;
+  color: #639bff;
+  padding: 5px 10px;
+  border-radius: 15px;
+  margin-left: 12px;
+}
+.gru-head p {
+  margin-top: 5px;
+  color: #aab6ca;
+}
+.gru-head nav {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-36%);
+  height: 39px;
+  display: flex;
+}
+.gru-head nav button {
+  width: 83px;
+  border-radius: 0;
+  background: #071328;
+}
+.gru-head nav button.active {
+  background: #102650;
+  border-bottom: 2px solid #347bff;
+}
+.gru-head > div {
+  position: absolute;
+  right: 18px;
+  top: 17px;
+  display: flex;
+  gap: 12px;
+}
+.gru-head > div button {
+  border: 0;
+  background: none;
+}
+.gru-head svg {
+  width: 18px;
+}
+.gru-page main {
+  min-width: 980px;
+  display: grid;
+  gap: 8px;
+}
+.gru-toolbar {
+  height: 48px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.gru-toolbar button {
+  height: 32px;
+  padding: 0 13px;
+}
+.gru-toolbar button,
+.gru-toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.gru-toolbar svg {
+  width: 14px;
+}
+.gru-toolbar span {
+  margin-left: auto;
+}
+.gru-toolbar .active {
+  background: #15336a;
+  color: #69a3ff;
+}
+.gru-timeline {
+  height: 122px;
+  padding: 11px;
+}
+.gru-timeline > div {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 15px;
+}
+.gru-timeline > div button {
+  height: 78px;
+  background: transparent;
+  border: 0;
+  display: grid;
+  place-items: center;
+}
+.gru-timeline button b {
+  border: 1px solid #263957;
+  background: #111e33;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+}
+.gru-timeline button small {
+  color: #9ca9bf;
+}
+.gru-timeline button i {
+  font-style: normal;
+  color: #7184a3;
+}
+.gru-timeline button.active b {
+  box-shadow: 0 0 14px 5px #5337df;
+  border: 3px solid #4c78ff;
+}
+.gru-cell {
+  height: 409px;
+  padding: 10px;
+}
+.gru-cell-flow {
+  height: 242px;
+  position: relative;
+  border-bottom: 1px solid #203653;
+}
+.gru-cell-flow > div {
+  position: absolute;
+  border: 1px solid #2c405e;
+  border-radius: 6px;
+  background: #0d1a30;
+  padding: 10px;
+  text-align: center;
+}
+.gru-cell-flow div b,
+.gru-cell-flow div i {
+  display: block;
+  font-size: 16px;
+  margin-top: 7px;
+}
+.gru-cell-flow .state {
+  left: 3px;
+  top: 15px;
+}
+.gru-cell-flow .input {
+  left: 3px;
+  bottom: 17px;
+  color: #d379ff;
+}
+.gru-cell-flow .gate {
+  top: 38px;
+  width: 84px;
+  height: 150px;
+}
+.gru-cell-flow .gate meter {
+  width: 26px;
+  height: 73px;
+  writing-mode: vertical-lr;
+}
+.gru-cell-flow .update {
+  left: 15%;
+  border-color: #2a997b;
+  color: #4bdaa8;
+}
+.gru-cell-flow .reset {
+  left: 27%;
+  border-color: #bb842e;
+  color: #ffc04d;
+}
+.gru-cell-flow .candidate {
+  left: 55%;
+  top: 80px;
+  border-color: #2c78d7;
+}
+.gru-cell-flow .result-state {
+  right: 7%;
+  top: 80px;
+  color: #42cfee;
+}
+.gru-cell-flow > p {
+  position: absolute;
+  right: 2%;
+  top: 14px;
+  width: 30%;
+  font: italic 14px serif;
+  line-height: 1.8;
+  border: 1px solid #263b59;
+  padding: 12px;
+}
+.gru-cell-flow:before {
+  content: "hidden state → update/reset gates → candidate → interpolated hidden output";
+  position: absolute;
+  left: 10%;
+  right: 35%;
+  top: 5px;
+  border-top: 2px solid #51cbef;
+  padding-top: 5px;
+  text-align: center;
+  color: #718aa8;
+}
+.gru-cell.detailed .gru-cell-flow:after {
+  content: "Detailed tensor paths: Wz, Uz, Wr, Ur, Wh, Uh";
+  position: absolute;
+  left: 15%;
+  bottom: 3px;
+  color: #b270ef;
+}
+.gru-charts {
+  height: 147px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.gru-charts article {
+  padding: 9px;
+  border-right: 1px solid #203653;
+}
+.gate-bars {
+  height: 100px;
+  display: flex;
+  align-items: end;
+  justify-content: space-around;
+}
+.gate-bars span {
+  height: 92px;
+  display: flex;
+  align-items: end;
+  gap: 4px;
+  position: relative;
+}
+.gate-bars span i,
+.gate-bars span b {
+  display: block;
+  width: 13px;
+  background: #34c998;
+}
+.gate-bars span b {
+  background: #ffb335;
+}
+.gate-bars span small {
+  position: absolute;
+  bottom: -18px;
+  left: -3px;
+}
+.gate-bars span.active {
+  background: #123761;
+}
+.gru-charts svg {
+  width: 100%;
+  height: 105px;
+}
+.gru-charts polyline,
+.gru-compare polyline {
+  fill: none;
+  stroke: #30dcf3;
+  stroke-width: 2;
+}
+.gru-charts circle {
+  fill: #9ceafa;
+}
+.gru-compare {
+  height: 196px;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr 0.9fr;
+  gap: 10px;
+}
+.gru-compare > h3 {
+  grid-column: 1/-1;
+}
+.gru-compare > div {
+  border: 1px solid #203653;
+  border-radius: 6px;
+  padding: 9px;
+}
+.gru-compare table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.gru-compare td,
+.gru-compare th {
+  padding: 9px;
+  border-bottom: 1px solid #203653;
+  text-align: left;
+}
+.gru-compare td:last-child {
+  color: #42d49b;
+}
+.gru-compare svg {
+  width: 100%;
+  height: 105px;
+}
+.gru-compare .rnn-line {
+  stroke: #8246dd;
+}
+.gru-compare label {
+  display: grid;
+  grid-template-columns: 90px 1fr 35px;
+  align-items: center;
+  margin: 15px 0;
+}
+.gru-compare meter {
+  width: 100%;
+}
+.gru-controls {
+  position: fixed;
+  z-index: 3;
+  right: 14px;
+  top: 75px;
+  bottom: 66px;
+  width: 304px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.gru-controls section {
+  padding: 13px;
+}
+.gru-controls header {
+  display: flex;
+  justify-content: space-between;
+}
+.gru-controls section:first-child > label {
+  height: 76px;
+  display: grid;
+  grid-template-columns: 1fr 57px;
+  border-bottom: 1px solid #152842;
+  align-items: center;
+}
+.gru-controls label > input[type="range"] {
+  grid-column: 1;
+  width: 190px;
+}
+.gru-controls label > b {
+  grid-column: 2;
+  grid-row: 1/3;
+  border: 1px solid #263a58;
+  padding: 10px;
+  text-align: center;
+}
+.gru-controls select {
+  width: 100px;
+  height: 30px;
+}
+.gru-controls section:first-child > button {
+  width: 100%;
+  height: 33px;
+  text-align: left;
+}
+.gru-controls .dataset {
+  flex: 1;
+}
+.gru-controls .dataset > label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 8px 0;
+}
+.preview {
+  height: 28px;
+  border: 1px solid #192b45;
+  padding: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.preview i {
+  display: inline-block;
+  width: 20px;
+}
+.preview b {
+  float: right;
+  font-size: 9px;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+.preview .pos {
+  color: #43d99e;
+  background: #0b3a33;
+}
+.preview .neg {
+  color: #ff6b78;
+  background: #3d1824;
+}
+.dataset .upload {
+  height: 37px !important;
+  border: 1px solid #263a58;
+  padding: 8px;
+}
+.dataset .upload input {
+  display: none;
+}
+.dataset > button {
+  width: 100%;
+  height: 35px;
+}
+.gru-page > footer {
+  position: fixed;
+  z-index: 4;
+  left: 188px;
+  right: 0;
+  bottom: 0;
+  height: 55px;
+  background: #071426;
+  border-top: 1px solid #213653;
+  padding: 12px 22px;
+}
+.gru-page > footer button {
+  float: right;
+  height: 34px;
+  margin-left: 12px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.gru-page > footer button:last-child {
+  background: #256feb;
+}
+.gru-page > footer svg {
+  width: 14px;
+}
+.gru-advanced {
+  min-height: 100vh;
+  background: #071326;
+}
+.gru-advanced > button {
+  position: fixed;
+  z-index: 30;
+  right: 18px;
+  top: 8px;
+  padding: 8px 14px;
+}
+.gru-advanced .page {
+  padding-top: 50px;
+}
+@media (max-width: 1200px) {
+  .gru-page {
+    padding-right: 20px;
+  }
+  .gru-page main {
+    min-width: 0;
+  }
+  .gru-controls {
+    position: static;
+    width: auto;
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .gru-head nav {
+    display: none;
+  }
+  .gru-timeline {
+    overflow: auto;
+  }
+  .gru-timeline > div {
+    min-width: 800px;
+  }
+  .gru-cell-flow {
+    min-width: 760px;
+  }
+  .gru-cell {
+    overflow: auto;
+  }
+  .gru-compare {
+    height: auto;
+  }
+  .gru-page > footer {
+    left: 188px;
+  }
+}
+@media (max-width: 700px) {
+  .gru-page {
+    padding: 85px 10px 65px;
+  }
+  .gru-side {
+    display: none;
+  }
+  .gru-head {
+    left: 0;
+    height: 75px;
+    padding: 12px;
+  }
+  .gru-head > div {
+    display: none;
+  }
+  .gru-controls {
+    display: block;
+  }
+  .gru-controls section {
+    margin-bottom: 10px;
+  }
+  .gru-compare {
+    grid-template-columns: 1fr;
+  }
+  .gru-toolbar {
+    overflow: auto;
+  }
+  .gru-page > footer {
+    left: 0;
+  }
+  .gru-page > footer span {
+    display: none;
+  }
+}

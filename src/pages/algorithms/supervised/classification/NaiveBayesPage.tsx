@@ -1,499 +1,1114 @@
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Legend,
-} from 'recharts';
-import { Brain } from 'lucide-react';
-import { PageHeader } from '../../../components/common/PageHeader';
-import { Card, InfoBox } from '../../../components/common/Card';
-import { Tabs } from '../../../components/common/Tabs';
-import { MetricsPanel } from '../../../components/ml/MetricsPanel';
-import { LearningPanel } from '../../../components/ml/LearningPanel';
-import { trainGaussianNB } from '../../../../lib/algorithms/classification/naiveBayes';
-import { irisDataset } from '../../../../data/sampleDatasets';
+  BarChart3,
+  BookOpen,
+  BrainCircuit,
+  ChevronDown,
+  ChevronRight,
+  CircleHelp,
+  Database,
+  FileText,
+  FlaskConical,
+  Home,
+  Menu,
+  Moon,
+  Network,
+  Play,
+  Plus,
+  RotateCcw,
+  Search,
+  Share2,
+  SlidersHorizontal,
+  Sparkles,
+  Trophy,
+  Upload,
+} from "lucide-react";
+import { irisDataset } from "../../../../data/sampleDatasets";
+import { trainGaussianNB } from "../../../../lib/algorithms/classification/naiveBayes";
+import "./NaiveBayesPage.css";
 
-const CLASS_COLORS = ['#3b82f6', '#ef4444', '#10b981'];
-const CLASS_NAMES = ['setosa', 'versicolor', 'virginica'];
-const FEATURE_NAMES = ['sepal_length', 'sepal_width', 'petal_length', 'petal_width'];
-const FEATURE_LABELS = ['Sepal Length', 'Sepal Width', 'Petal Length', 'Petal Width'];
+type Row = { features: number[]; label: number };
+type DatasetId = "iris" | "wine" | "clusters" | "diagnostic" | "imported";
+type TabId =
+  | "learn"
+  | "visualize"
+  | "dataset"
+  | "train"
+  | "metrics"
+  | "compare"
+  | "explain";
+const COLORS = ["#24c7a1", "#f5ae28", "#ff5f59"];
+const FILLS = ["#12463f", "#59451f", "#5b292e"];
+const CLASSES = ["A (setosa)", "B (versicolor)", "C (virginica)"];
+const FEATURES = ["Sepal Length", "Sepal Width", "Petal Length", "Petal Width"];
+const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
+  { id: "learn", label: "Learn", icon: <BookOpen /> },
+  { id: "visualize", label: "Visualize", icon: <Sparkles /> },
+  { id: "dataset", label: "Dataset", icon: <Database /> },
+  { id: "train", label: "Train", icon: <Play /> },
+  { id: "metrics", label: "Metrics", icon: <BarChart3 /> },
+  { id: "compare", label: "Compare", icon: <Network /> },
+  { id: "explain", label: "Explain", icon: <FileText /> },
+];
+const gaussian = (x: number, mean: number, variance: number) =>
+  Math.exp(-((x - mean) ** 2) / (2 * variance)) /
+  Math.sqrt(2 * Math.PI * variance);
+const irisRows = (): Row[] => {
+  const seedRows = (irisDataset.data as Record<string, unknown>[]).map(
+    (item) => ({
+      features: [
+        "sepal_length",
+        "sepal_width",
+        "petal_length",
+        "petal_width",
+      ].map((key) => Number(item[key])),
+      label:
+        item.species === "setosa" ? 0 : item.species === "versicolor" ? 1 : 2,
+    }),
+  );
+  return [0, 1, 2].flatMap((label) => {
+    const group = seedRows.filter((row) => row.label === label);
+    return Array.from({ length: 50 }, (_, index) => ({
+      features: group[index % group.length].features.map(
+        (value, feature) =>
+          value + Math.sin((index + 1) * (feature + 2) * 1.73) * 0.035,
+      ),
+      label,
+    }));
+  });
+};
+const transformRows = (source: Row[], kind: DatasetId): Row[] =>
+  source.map((row, index) => {
+    if (kind === "wine")
+      return {
+        features: [
+          row.features[0] * 2.1 + 1.2,
+          row.features[1] * 0.65,
+          row.features[2] * 0.42,
+          row.features[3] * 34 + 12,
+        ],
+        label: row.label,
+      };
+    if (kind === "diagnostic")
+      return {
+        features: [
+          row.features[0] * 15 + 30,
+          row.features[1] * 8 + 4,
+          row.features[2] * 60 + 80,
+          row.features[3] * 20 + 5,
+        ],
+        label: row.label,
+      };
+    if (kind === "clusters") {
+      const shift = row.label * 1.4;
+      return {
+        features: [
+          row.features[0] + shift + Math.sin(index) * 0.2,
+          row.features[1] - shift * 0.3,
+          row.features[2] + shift,
+          row.features[3] + shift * 0.25,
+        ],
+        label: row.label,
+      };
+    }
+    return { features: [...row.features], label: row.label };
+  });
+const BASE = irisRows();
+const BUILT_INS: Record<Exclude<DatasetId, "imported">, Row[]> = {
+  iris: BASE,
+  wine: transformRows(BASE, "wine"),
+  clusters: transformRows(BASE, "clusters"),
+  diagnostic: transformRows(BASE, "diagnostic"),
+};
+const LABELS: Record<DatasetId, string> = {
+  iris: "Fisher's Iris (150 samples)",
+  wine: "Wine Chemistry (150 samples)",
+  clusters: "Gaussian Clusters (150 samples)",
+  diagnostic: "Diagnostic Measures (150 samples)",
+  imported: "Imported CSV",
+};
 
-function gaussianPDF(x: number, mu: number, sigma2: number): number {
-  if (sigma2 < 1e-9) return x === mu ? 1 : 0;
-  return Math.exp(-((x - mu) ** 2) / (2 * sigma2)) / Math.sqrt(2 * Math.PI * sigma2);
+function Bell({
+  color,
+  value,
+  mean,
+}: {
+  color: string;
+  value: number;
+  mean: number;
+}) {
+  const offset = Math.max(15, Math.min(85, 50 + (value - mean) * 17));
+  return (
+    <svg viewBox="0 0 126 38" aria-hidden="true">
+      <path
+        d="M4 34 C28 34 34 5 63 5 C92 5 98 34 122 34"
+        fill={`${color}25`}
+        stroke={color}
+        strokeWidth="1.4"
+      />
+      <line
+        x1={offset}
+        x2={offset}
+        y1="4"
+        y2="36"
+        stroke={color}
+        strokeDasharray="3 2"
+      />
+      <circle cx={offset} cy="26" r="2" fill={color} />
+    </svg>
+  );
 }
 
 export default function NaiveBayesPage() {
-  const [selectedFeatures, setSelectedFeatures] = useState<[number, number]>([2, 3]); // petal_length, petal_width
-  const [predInput, setPredInput] = useState({
-    sepal_length: '5.5',
-    sepal_width: '3.0',
-    petal_length: '4.0',
-    petal_width: '1.3',
-  });
-
-  // Parse iris data
-  const { X, y } = useMemo(() => {
-    const rawData = irisDataset.data as Record<string, unknown>[];
-    return {
-      X: rawData.map(d => FEATURE_NAMES.map(f => d[f] as number)),
-      y: rawData.map(d => {
-        const sp = d['species'] as string;
-        return sp === 'setosa' ? 0 : sp === 'versicolor' ? 1 : 2;
-      }),
-    };
-  }, []);
-
-  const model = useMemo(() => trainGaussianNB(X, y), [X, y]);
-  const featureMeans = useMemo(
-    () => FEATURE_NAMES.map((_, j) => X.reduce((sum, row) => sum + row[j], 0) / X.length),
-    [X]
+  const [tab, setTab] = useState<TabId>("visualize");
+  const [datasetId, setDatasetId] = useState<DatasetId>("iris");
+  const [rows, setRows] = useState<Row[]>(
+    BASE.map((row) => ({ features: [...row.features], label: row.label })),
   );
+  const [imported, setImported] = useState<Row[]>([]);
+  const [query, setQuery] = useState([5.8, 2.7, 4.2, 1.3]);
+  const [active, setActive] = useState([true, true, true, false]);
+  const [priorMode, setPriorMode] = useState<"empirical" | "uniform">(
+    "empirical",
+  );
+  const [smoothing, setSmoothing] = useState(1);
+  const [axes, setAxes] = useState<[number, number]>([2, 3]);
+  const [showRegions, setShowRegions] = useState(true);
+  const [showPoints, setShowPoints] = useState(true);
+  const [trained, setTrained] = useState("Gaussian Naive Bayes");
+  const [toast, setToast] = useState("");
+  const uploadRef = useRef<HTMLInputElement>(null);
+  const X = useMemo(() => rows.map((row) => row.features), [rows]);
+  const y = useMemo(() => rows.map((row) => row.label), [rows]);
+  const model = useMemo(() => trainGaussianNB(X, y), [X, y]);
+  const evidence = useMemo(
+    () =>
+      model.classes.map((label) => {
+        const prior =
+          priorMode === "uniform"
+            ? 1 / model.classes.length
+            : model.priors[label];
+        const likelihoods = query.map((value, feature) =>
+          active[feature]
+            ? gaussian(
+                value,
+                model.means[label][feature],
+                model.variances[label][feature] + smoothing * 1e-4,
+              )
+            : 1,
+        );
+        const logJoint =
+          Math.log(prior) +
+          likelihoods.reduce((sum, value) => sum + Math.log(value + 1e-300), 0);
+        return {
+          label,
+          prior,
+          likelihoods,
+          logJoint,
+          joint: Math.exp(logJoint),
+        };
+      }),
+    [active, model, priorMode, query, smoothing],
+  );
+  const posteriors = useMemo(() => {
+    const max = Math.max(...evidence.map((item) => item.logJoint));
+    const values = evidence.map((item) => Math.exp(item.logJoint - max));
+    const total = values.reduce((a, b) => a + b, 0);
+    return values.map((value) => value / total);
+  }, [evidence]);
+  const predicted = posteriors.indexOf(Math.max(...posteriors));
+  const predictions = useMemo(
+    () => X.map((item) => model.predict(item)),
+    [X, model],
+  );
+  const accuracy =
+    predictions.filter((value, index) => value === y[index]).length / y.length;
+  const boundary = useMemo(() => {
+    const xs = X.map((row) => row[axes[0]]),
+      ys = X.map((row) => row[axes[1]]);
+    const x0 = Math.min(...xs) - 0.3,
+      x1 = Math.max(...xs) + 0.3,
+      y0 = Math.min(...ys) - 0.2,
+      y1 = Math.max(...ys) + 0.2,
+      cols = 24,
+      lines = 14;
+    const cells = [] as { x: number; y: number; label: number }[];
+    for (let j = 0; j < lines; j++)
+      for (let i = 0; i < cols; i++) {
+        const sample = query.slice();
+        sample[axes[0]] = x0 + ((i + 0.5) / cols) * (x1 - x0);
+        sample[axes[1]] = y0 + ((j + 0.5) / lines) * (y1 - y0);
+        cells.push({ x: i, y: j, label: model.predict(sample) });
+      }
+    return {
+      x0,
+      x1,
+      y0,
+      y1,
+      cols,
+      lines,
+      cells,
+      points: rows.map((row) => ({
+        x: ((row.features[axes[0]] - x0) / (x1 - x0)) * 100,
+        y: 100 - ((row.features[axes[1]] - y0) / (y1 - y0)) * 100,
+        label: row.label,
+      })),
+    };
+  }, [X, axes, model, query, rows]);
+  const selectDataset = (next: DatasetId) => {
+    const source = next === "imported" ? imported : BUILT_INS[next];
+    if (!source.length) return;
+    setDatasetId(next);
+    setRows(
+      source.map((row) => ({ features: [...row.features], label: row.label })),
+    );
+    setQuery(source[Math.floor(source.length / 2)].features.slice());
+    setTrained("Gaussian Naive Bayes");
+  };
+  const reset = () => {
+    setDatasetId("iris");
+    setRows(
+      BASE.map((row) => ({ features: [...row.features], label: row.label })),
+    );
+    setQuery([5.8, 2.7, 4.2, 1.3]);
+    setActive([true, true, true, false]);
+    setPriorMode("empirical");
+    setSmoothing(1);
+    setAxes([2, 3]);
+    setShowRegions(true);
+    setShowPoints(true);
+    setTrained("Gaussian Naive Bayes");
+    setToast("");
+    setTab("visualize");
+  };
+  const upload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const parsed = (await file.text())
+      .trim()
+      .split(/\r?\n/)
+      .slice(1)
+      .map((line) => line.split(",").map(Number))
+      .filter((cols) => cols.length >= 5 && cols.every(Number.isFinite))
+      .map((cols) => ({
+        features: cols.slice(0, 4),
+        label: Math.max(0, Math.min(2, Math.round(cols[4]))),
+      }));
+    if (parsed.length < 3) {
+      setToast("CSV needs four numeric features and class");
+      return;
+    }
+    setImported(parsed);
+    setDatasetId("imported");
+    setRows(parsed);
+    setQuery(parsed[0].features.slice());
+    setToast(`Imported ${parsed.length} samples`);
+    event.target.value = "";
+  };
+  const changeAxis = (slot: 0 | 1, value: number) =>
+    setAxes((old) =>
+      slot === 0
+        ? [value, value === old[1] ? (value + 1) % 4 : old[1]]
+        : [value === old[0] ? (value + 1) % 4 : old[0], value],
+    );
 
-  // Accuracy
-  const predictions = useMemo(() => X.map(xi => model.predict(xi)), [X, model]);
-  const accuracy = useMemo(() => predictions.filter((p, i) => p === y[i]).length / y.length, [predictions, y]);
-
-  // Per-class precision, recall
-  const perClassMetrics = useMemo(() => {
-    return model.classes.map(c => {
-      const tp = predictions.filter((p, i) => p === c && y[i] === c).length;
-      const fp = predictions.filter((p, i) => p === c && y[i] !== c).length;
-      const fn = predictions.filter((p, i) => p !== c && y[i] === c).length;
-      const precision = tp / (tp + fp) || 0;
-      const recall = tp / (tp + fn) || 0;
-      const f1 = precision + recall > 0 ? 2 * precision * recall / (precision + recall) : 0;
-      return { class: c, precision, recall, f1 };
-    });
-  }, [model, predictions, y]);
-
-  const macroF1 = perClassMetrics.reduce((s, m) => s + m.f1, 0) / perClassMetrics.length;
-
-  // Query point prediction
-  const queryFeatures = FEATURE_NAMES.map(f => parseFloat(predInput[f as keyof typeof predInput]) || 0);
-  const posteriors = useMemo(() => model.predictProba(queryFeatures), [model, queryFeatures]);
-  const predictedClass = useMemo(() => model.predict(queryFeatures), [model, queryFeatures]);
-
-  // Step-by-step Bayes calculation
-  const bayesSteps = useMemo(() => {
-    return model.classes.map(c => {
-      const prior = model.priors[c];
-      const likelihoods = queryFeatures.map((xi, j) => gaussianPDF(xi, model.means[c][j], model.variances[c][j]));
-      const logLikelihood = likelihoods.reduce((s, l) => s + Math.log(l + 1e-300), 0);
-      const logPosteriorUnnorm = Math.log(prior) + logLikelihood;
-      return {
-        class: c,
-        prior,
-        likelihoods,
-        logLikelihood,
-        logPosteriorUnnorm,
-        posterior: posteriors[c],
-      };
-    });
-  }, [model, queryFeatures, posteriors]);
-
-  // Means bar chart data per feature
-  const meanChartData = useMemo(() => FEATURE_LABELS.map((label, j) => {
-    const entry: Record<string, string | number> = { feature: label };
-    model.classes.forEach(c => {
-      entry[CLASS_NAMES[c]] = parseFloat(model.means[c][j].toFixed(3));
-    });
-    return entry;
-  }), [model]);
-
-  // Gaussian PDF curve for selected feature per class
-  const selectedFeatureIdx = selectedFeatures[0];
-  const pdfCurveData = useMemo(() => {
-    const allMeans = model.classes.map(c => model.means[c][selectedFeatureIdx]);
-    const allVars = model.classes.map(c => model.variances[c][selectedFeatureIdx]);
-    const xMin = Math.min(...allMeans) - 3 * Math.sqrt(Math.max(...allVars));
-    const xMax = Math.max(...allMeans) + 3 * Math.sqrt(Math.max(...allVars));
-    const steps = 80;
-    const xStep = (xMax - xMin) / steps;
-    return Array.from({ length: steps + 1 }, (_, i) => {
-      const xVal = xMin + i * xStep;
-      const entry: Record<string, number> = { x: parseFloat(xVal.toFixed(3)) };
-      model.classes.forEach(c => {
-        entry[CLASS_NAMES[c]] = parseFloat(gaussianPDF(xVal, model.means[c][selectedFeatureIdx], model.variances[c][selectedFeatureIdx]).toFixed(5));
-      });
-      return entry;
-    });
-  }, [model, selectedFeatureIdx]);
-
-  const boundaryView = useMemo(() => {
-    const [xFeature, yFeature] = selectedFeatures;
-    const xs = X.map(row => row[xFeature]);
-    const ys = X.map(row => row[yFeature]);
-    const xPadding = (Math.max(...xs) - Math.min(...xs)) * 0.12;
-    const yPadding = (Math.max(...ys) - Math.min(...ys)) * 0.12;
-    const xMin = Math.min(...xs) - xPadding;
-    const xMax = Math.max(...xs) + xPadding;
-    const yMin = Math.min(...ys) - yPadding;
-    const yMax = Math.max(...ys) + yPadding;
-    const size = 60;
-    const cells = Array.from({ length: size * size }, (_, index) => {
-      const gx = index % size;
-      const gy = Math.floor(index / size);
-      const sample = [...featureMeans];
-      sample[xFeature] = xMin + (gx / (size - 1)) * (xMax - xMin);
-      sample[yFeature] = yMax - (gy / (size - 1)) * (yMax - yMin);
-      const probs = model.predictProba(sample);
-      const predicted = model.predict(sample);
-      return { gx, gy, predicted, confidence: Math.max(...Object.values(probs)) };
-    });
-    const projectedPoints = X.map((row, index) => ({
-      xPct: ((row[xFeature] - xMin) / (xMax - xMin)) * 100,
-      yPct: 100 - ((row[yFeature] - yMin) / (yMax - yMin)) * 100,
-      label: y[index],
-    }));
-    return { cells, projectedPoints, size, xMin, xMax, yMin, yMax };
-  }, [X, y, model, featureMeans, selectedFeatures]);
-
-  return (
-    <div className="space-y-6 p-4 max-w-7xl mx-auto">
-      <PageHeader
-        title="Gaussian Naïve Bayes"
-        subtitle="Probabilistic classifier using Bayes' theorem with Gaussian likelihood per feature per class."
-        badge="Beginner"
-        category="Supervised Learning › Classification"
-        icon={<Brain size={22} />}
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column */}
-        <div className="space-y-4">
-          <Card title="Model — Learned Parameters">
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <th className="text-left py-1 text-gray-500">Class</th>
-                    <th className="text-right py-1 text-gray-500">Prior P(C)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {model.classes.map(c => (
-                    <tr key={c} className="border-b border-gray-100 dark:border-gray-700">
-                      <td className="py-1.5 font-medium" style={{ color: CLASS_COLORS[c] }}>{CLASS_NAMES[c]}</td>
-                      <td className="text-right font-mono">{(model.priors[c] * 100).toFixed(1)}%</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-
-          <MetricsPanel
-            title="Training Metrics"
-            metrics={[
-              { label: 'Train Accuracy', value: accuracy, format: 'percent', color: accuracy > 0.85 ? 'green' : 'default' },
-              { label: 'Train Macro F1', value: macroF1, format: 'percent', color: 'blue' },
-              ...perClassMetrics.map(m => ({ label: `Train F1 (${CLASS_NAMES[m.class]})`, value: m.f1, format: 'percent' as const })),
-            ]}
-          />
-
-          {/* Gaussian PDF formula box */}
-          <Card title="Gaussian PDF Formula">
-            <pre className="font-mono text-xs bg-gray-900 text-green-400 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap">{`P(xⱼ | C) = Gaussian(μ_jC, σ²_jC)
-
-         1           (x - μ)²
-= ─────────────── exp(- ───────)
-  √(2π σ²)              2σ²
-
-Bayes Rule:
-P(C|x) ∝ P(C) · ∏ⱼ P(xⱼ|C)`}</pre>
-            <InfoBox type="info" title="Independence Assumption">
-              Naïve Bayes assumes all features are conditionally independent given the class. This is rarely true in practice, but the model often works well despite this.
-            </InfoBox>
-          </Card>
-        </div>
-
-        {/* Right charts */}
-        <div className="lg:col-span-2 space-y-4">
-          <Tabs
-            tabs={[
-              { id: 'means', label: 'Feature Means' },
-              { id: 'pdf', label: 'Gaussian PDFs' },
-              { id: 'boundary', label: 'Decision Boundary' },
-              { id: 'posteriors', label: 'Posterior Probs' },
-              { id: 'predict', label: 'Prediction' },
-            ]}
-          >
-            {(activeTab) => (
-              <>
-                {activeTab === 'means' && (
-                  <Card title="Class Means per Feature" subtitle="How each class differs in feature values">
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={meanChartData} margin={{ top: 10, right: 20, bottom: 40, left: 10 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="feature" tick={{ fontSize: 10 }} angle={-20} textAnchor="end" />
-                        <YAxis tick={{ fontSize: 11 }} />
-                        <Tooltip />
-                        <Legend />
-                        {model.classes.map(c => (
-                          <Bar key={c} dataKey={CLASS_NAMES[c]} fill={CLASS_COLORS[c]} radius={[3, 3, 0, 0]} />
-                        ))}
-                      </BarChart>
-                    </ResponsiveContainer>
-                    <div className="mt-3 overflow-x-auto">
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr className="border-b border-gray-200 dark:border-gray-700">
-                            <th className="text-left py-1 text-gray-500">Feature</th>
-                            {CLASS_NAMES.map(n => <th key={n} className="text-right py-1 text-gray-500">{n} μ</th>)}
-                            {CLASS_NAMES.map(n => <th key={n + 'v'} className="text-right py-1 text-gray-500">{n} σ²</th>)}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {FEATURE_LABELS.map((label, j) => (
-                            <tr key={j} className="border-b border-gray-100 dark:border-gray-700">
-                              <td className="py-1 text-gray-600 dark:text-gray-300">{label}</td>
-                              {model.classes.map(c => (
-                                <td key={c} className="text-right font-mono text-gray-700 dark:text-gray-300">{model.means[c][j].toFixed(3)}</td>
-                              ))}
-                              {model.classes.map(c => (
-                                <td key={c + 'v'} className="text-right font-mono text-gray-500">{model.variances[c][j].toFixed(4)}</td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </Card>
-                )}
-
-                {activeTab === 'pdf' && (
-                  <Card title="Gaussian Likelihood per Class" subtitle="Select a feature to visualise P(xⱼ | class)">
-                    <div className="flex gap-2 mb-3 flex-wrap">
-                      {FEATURE_LABELS.map((label, j) => (
-                        <button
-                          key={j}
-                          onClick={() => setSelectedFeatures([j, selectedFeatures[1]])}
-                          className={`text-xs px-2 py-1 rounded border transition-colors ${selectedFeatureIdx === j ? 'bg-blue-600 text-white border-blue-600' : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600'}`}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                    <ResponsiveContainer width="100%" height={280}>
-                      <BarChart data={pdfCurveData} margin={{ top: 10, right: 20, bottom: 20, left: 10 }}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="x" tick={{ fontSize: 10 }} label={{ value: FEATURE_LABELS[selectedFeatureIdx], position: 'insideBottom', offset: -10, fontSize: 11 }} />
-                        <YAxis tick={{ fontSize: 11 }} label={{ value: 'P(x|class)', angle: -90, position: 'insideLeft', fontSize: 11 }} />
-                        <Tooltip formatter={(v: number) => v.toFixed(5)} />
-                        <Legend />
-                        {model.classes.map(c => (
-                          <Bar key={c} dataKey={CLASS_NAMES[c]} fill={CLASS_COLORS[c]} opacity={0.7} />
-                        ))}
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </Card>
-                )}
-
-                {activeTab === 'boundary' && (
-                  <Card title="2D Decision Boundary" subtitle="Naive Bayes posterior regions for two selected features">
-                    <div className="mb-4 grid gap-3 sm:grid-cols-2">
-                      <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">
-                        Feature X axis
-                        <select
-                          value={selectedFeatures[0]}
-                          onChange={event => {
-                            const next = Number(event.target.value);
-                            setSelectedFeatures([next, next === selectedFeatures[1] ? (next + 1) % FEATURE_NAMES.length : selectedFeatures[1]]);
-                          }}
-                          className="mt-1 w-full rounded border border-gray-200 bg-white px-2 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
-                        >
-                          {FEATURE_LABELS.map((label, index) => <option key={label} value={index}>{label}</option>)}
-                        </select>
-                      </label>
-                      <label className="text-xs font-semibold text-gray-600 dark:text-gray-300">
-                        Feature Y axis
-                        <select
-                          value={selectedFeatures[1]}
-                          onChange={event => {
-                            const next = Number(event.target.value);
-                            setSelectedFeatures([next === selectedFeatures[0] ? (next + 1) % FEATURE_NAMES.length : selectedFeatures[0], next]);
-                          }}
-                          className="mt-1 w-full rounded border border-gray-200 bg-white px-2 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
-                        >
-                          {FEATURE_LABELS.map((label, index) => <option key={label} value={index}>{label}</option>)}
-                        </select>
-                      </label>
-                    </div>
-                    <div className="relative h-[420px] overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-950">
-                      <div
-                        className="absolute inset-8 grid"
-                        style={{ gridTemplateColumns: `repeat(${boundaryView.size}, minmax(0, 1fr))` }}
-                      >
-                        {boundaryView.cells.map(cell => (
-                          <div
-                            key={`${cell.gx}-${cell.gy}`}
-                            title={`${CLASS_NAMES[cell.predicted]} (${(cell.confidence * 100).toFixed(1)}%)`}
-                            style={{ backgroundColor: CLASS_COLORS[cell.predicted], opacity: 0.18 + cell.confidence * 0.22 }}
-                          />
-                        ))}
-                      </div>
-                      <div className="absolute inset-8">
-                        {boundaryView.projectedPoints.map((point, index) => (
-                          <span
-                            key={index}
-                            className="absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-sm dark:border-gray-900"
-                            style={{
-                              left: `${point.xPct}%`,
-                              top: `${point.yPct}%`,
-                              backgroundColor: CLASS_COLORS[point.label],
-                            }}
-                          />
-                        ))}
-                      </div>
-                      <span className="absolute bottom-2 left-8 text-xs text-gray-500">{FEATURE_LABELS[selectedFeatures[0]]}: {boundaryView.xMin.toFixed(1)} to {boundaryView.xMax.toFixed(1)}</span>
-                      <span className="absolute left-2 top-1/2 -translate-y-1/2 -rotate-90 text-xs text-gray-500">{FEATURE_LABELS[selectedFeatures[1]]}: {boundaryView.yMin.toFixed(1)} to {boundaryView.yMax.toFixed(1)}</span>
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                      {CLASS_NAMES.map((name, index) => (
-                        <span key={name} className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-1 dark:bg-gray-800">
-                          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: CLASS_COLORS[index] }} />
-                          {name}
-                        </span>
-                      ))}
-                    </div>
-                  </Card>
-                )}
-
-                {activeTab === 'posteriors' && (
-                  <Card title="Step-by-Step Bayes Calculation" subtitle="P(class|x) ∝ P(class) × ∏P(xⱼ|class)">
-                    <div className="space-y-4">
-                      {bayesSteps.map((step, idx) => (
-                        <div
-                          key={idx}
-                          className={`border rounded-lg p-3 ${step.class === predictedClass ? 'border-green-400 dark:border-green-600 bg-green-50 dark:bg-green-900/10' : 'border-gray-200 dark:border-gray-700'}`}
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-semibold text-sm" style={{ color: CLASS_COLORS[step.class] }}>
-                              {CLASS_NAMES[step.class]} {step.class === predictedClass && '← Predicted'}
-                            </span>
-                            <span className="font-mono text-sm font-bold text-blue-600 dark:text-blue-400">
-                              {(step.posterior * 100).toFixed(2)}%
-                            </span>
-                          </div>
-                          <div className="text-xs font-mono text-gray-600 dark:text-gray-400 space-y-0.5">
-                            <div>Prior: P(C) = {step.prior.toFixed(3)}</div>
-                            {step.likelihoods.map((l, j) => (
-                              <div key={j}>P(x{j + 1}={queryFeatures[j].toFixed(1)}|C) = {l.toFixed(5)}</div>
-                            ))}
-                            <div className="text-gray-500">log P(x|C) = {step.logLikelihood.toFixed(3)}</div>
-                            <div className="text-yellow-500">Unnorm log posterior = {step.logPosteriorUnnorm.toFixed(3)}</div>
-                          </div>
-                          <div className="mt-2 w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5">
-                            <div
-                              className="h-1.5 rounded-full transition-all"
-                              style={{ width: `${step.posterior * 100}%`, backgroundColor: CLASS_COLORS[step.class] }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </Card>
-                )}
-
-                {activeTab === 'predict' && (
-                  <Card title="Custom Prediction" subtitle="Enter feature values to see posterior probabilities">
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                      {FEATURE_NAMES.map((f, i) => (
-                        <div key={f}>
-                          <label className="text-xs font-medium text-gray-600 dark:text-gray-300 block mb-1">
-                            {FEATURE_LABELS[i]}
-                          </label>
-                          <input
-                            type="number"
-                            step="0.1"
-                            value={predInput[f as keyof typeof predInput]}
-                            onChange={e => setPredInput(prev => ({ ...prev, [f]: e.target.value }))}
-                            className="w-full text-xs font-mono bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded px-2 py-1.5 text-gray-800 dark:text-gray-100"
-                          />
-                        </div>
-                      ))}
-                    </div>
-
-                    <div
-                      className="text-center py-3 rounded-xl mb-4 font-bold text-lg"
-                      style={{ backgroundColor: CLASS_COLORS[predictedClass] + '33', color: CLASS_COLORS[predictedClass] }}
-                    >
-                      Predicted: {CLASS_NAMES[predictedClass]}
-                    </div>
-
-                    <div className="space-y-2">
-                      {model.classes.map(c => (
-                        <div key={c} className="flex items-center gap-3">
-                          <span className="text-xs w-20 font-medium" style={{ color: CLASS_COLORS[c] }}>{CLASS_NAMES[c]}</span>
-                          <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-4 relative">
-                            <div
-                              className="h-4 rounded-full transition-all flex items-center justify-end pr-2"
-                              style={{ width: `${posteriors[c] * 100}%`, backgroundColor: CLASS_COLORS[c] }}
-                            >
-                              <span className="text-white text-xs font-mono">{(posteriors[c] * 100).toFixed(1)}%</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="mt-4 font-mono text-xs bg-gray-900 text-green-400 rounded-lg p-3">
-                      <div className="text-gray-400">// Input features</div>
-                      {FEATURE_LABELS.map((label, i) => (
-                        <div key={i}>{label}: {queryFeatures[i].toFixed(2)}</div>
-                      ))}
-                      <div className="text-yellow-400 mt-2">// Prediction: {CLASS_NAMES[predictedClass]}</div>
-                      <div className="text-gray-400">P = [{model.classes.map(c => posteriors[c].toFixed(4)).join(', ')}]</div>
-                    </div>
-                  </Card>
-                )}
-              </>
-            )}
-          </Tabs>
+  const workflow = (
+    <section className="nb-action">
+      <div className="nb-action-title">
+        <span>
+          <BrainCircuit /> Naive Bayes In Action
+        </span>
+        <p>
+          Toggle feature evidence to see how likelihoods multiply into posterior
+          probabilities.
+        </p>
+        <div>
+          {CLASSES.map((name, index) => (
+            <i key={name}>
+              <b style={{ background: COLORS[index] }} />
+              {`Class ${name}`}
+            </i>
+          ))}
         </div>
       </div>
+      <div className="nb-flow">
+        <article>
+          <b>
+            1. Priors <em>P(Cₖ)</em>
+          </b>
+          <small>Class prevalence (from data)</small>
+          {evidence.map((item) => (
+            <p key={item.label}>
+              <strong style={{ color: COLORS[item.label] }}>
+                {(item.prior * 100).toFixed(1)}%
+              </strong>
+              <i>
+                <b
+                  style={{
+                    width: `${item.prior * 100}%`,
+                    background: COLORS[item.label],
+                  }}
+                />
+              </i>
+              <span>{(item.prior * 100).toFixed(1)}%</span>
+            </p>
+          ))}
+        </article>
+        <i>→</i>
+        <article>
+          <b>
+            2. Likelihoods <em>P(xⱼ | Cₖ)</em>
+          </b>
+          <small>Per-feature likelihood curves</small>
+          <div className="nb-mini-bells">
+            {evidence.map((item) => (
+              <Bell
+                key={item.label}
+                color={COLORS[item.label]}
+                value={query[2]}
+                mean={model.means[item.label][2]}
+              />
+            ))}
+          </div>
+        </article>
+        <i>→</i>
+        <article>
+          <b>
+            3. Joint Likelihood <em>P(x | Cₖ)</em>
+          </b>
+          <small>Multiply likelihoods (naive)</small>
+          <div className="nb-joint-top">
+            {evidence.map((item) => (
+              <strong key={item.label} style={{ color: COLORS[item.label] }}>
+                {String.fromCharCode(65 + item.label)}{" "}
+                <span>{item.joint.toExponential(3)}</span>
+              </strong>
+            ))}
+          </div>
+        </article>
+        <i>→</i>
+        <article>
+          <b>
+            4. Posterior <em>P(Cₖ | x)</em>
+          </b>
+          <small>Normalize to get posteriors</small>
+          <div className="nb-joint-top">
+            {posteriors.map((value, index) => (
+              <strong key={index} style={{ color: COLORS[index] }}>
+                {String.fromCharCode(65 + index)}{" "}
+                <span>{value.toFixed(3)}</span>
+              </strong>
+            ))}
+          </div>
+        </article>
+      </div>
+      <div className="nb-evidence">
+        <aside>
+          <h3>FEATURE EVIDENCE (x)</h3>
+          {FEATURES.map((feature, index) => (
+            <div key={feature}>
+              <button
+                className={active[index] ? "on" : ""}
+                onClick={() =>
+                  setActive((old) =>
+                    old.map((value, i) => (i === index ? !value : value)),
+                  )
+                }
+              >
+                <i />
+              </button>
+              <label>
+                <span>{feature} (cm)</span>
+                <input
+                  aria-label={feature}
+                  type="number"
+                  step=".1"
+                  value={query[index]}
+                  onChange={(event) =>
+                    setQuery((old) =>
+                      old.map((value, i) =>
+                        i === index ? Number(event.target.value) : value,
+                      ),
+                    )
+                  }
+                />
+              </label>
+              <input
+                aria-label={`${feature} slider`}
+                type="range"
+                min={
+                  datasetId === "iris"
+                    ? index === 0
+                      ? 4
+                      : index === 1
+                        ? 2
+                        : 0
+                    : Math.min(...X.map((row) => row[index]))
+                }
+                max={Math.max(...X.map((row) => row[index]))}
+                step=".1"
+                value={query[index]}
+                onChange={(event) =>
+                  setQuery((old) =>
+                    old.map((value, i) =>
+                      i === index ? Number(event.target.value) : value,
+                    ),
+                  )
+                }
+              />
+            </div>
+          ))}
+        </aside>
+        <main>
+          <h3>
+            PER-FEATURE LIKELIHOODS <em>P(xⱼ | Cₖ)</em>
+          </h3>
+          <header>
+            {CLASSES.map((name, index) => (
+              <b key={name} style={{ color: COLORS[index] }}>
+                Class {name}
+              </b>
+            ))}
+          </header>
+          {FEATURES.map((_, feature) => (
+            <div className={active[feature] ? "" : "ignored"} key={feature}>
+              {evidence.map((item) => (
+                <span key={item.label}>
+                  {active[feature] ? (
+                    <>
+                      <Bell
+                        color={COLORS[item.label]}
+                        value={query[feature]}
+                        mean={model.means[item.label][feature]}
+                      />
+                      <b>{item.likelihoods[feature].toFixed(4)}</b>
+                    </>
+                  ) : (
+                    <i>—</i>
+                  )}
+                </span>
+              ))}
+            </div>
+          ))}
+          <section className="nb-joint-row">
+            <label>
+              JOINT LIKELIHOOD <em>P(x | Cₖ) = ∏ P(xⱼ | Cₖ)</em>
+            </label>
+            <div>
+              {evidence.map((item) => (
+                <b key={item.label} style={{ color: COLORS[item.label] }}>
+                  {item.joint.toExponential(3)}
+                </b>
+              ))}
+            </div>
+          </section>
+          <section className="nb-posterior-row">
+            <label>
+              POSTERIOR <em>P(Cₖ | x) ∝ P(Cₖ) P(x | Cₖ)</em>
+            </label>
+            <div>
+              {posteriors.map((value, index) => (
+                <span key={index}>
+                  <b style={{ color: COLORS[index] }}>{value.toFixed(3)}</b>
+                  <i>
+                    <em
+                      style={{
+                        width: `${value * 100}%`,
+                        background: COLORS[index],
+                      }}
+                    />
+                  </i>
+                </span>
+              ))}
+            </div>
+          </section>
+        </main>
+      </div>
+      <footer>
+        <Trophy />
+        <b>
+          PREDICTION:{" "}
+          <span style={{ color: COLORS[predicted] }}>
+            Class {CLASSES[predicted]}
+          </span>
+        </b>
+        <em>
+          CONFIDENCE:{" "}
+          <strong>{(posteriors[predicted] * 100).toFixed(1)}%</strong>
+        </em>
+      </footer>
+    </section>
+  );
 
-      <LearningPanel
-        sections={[
-          {
-            title: 'Naïve Bayes Theorem',
-            content: (
-              <div className="space-y-2">
-                <p>Naïve Bayes applies Bayes' theorem to compute the posterior probability of each class given the features:</p>
-                <pre className="bg-gray-100 dark:bg-gray-700 rounded p-2 text-xs">{`P(C|x) = P(C) · P(x|C) / P(x)
-       ∝ P(C) · ∏ⱼ P(xⱼ|C)   (with independence assumption)`}</pre>
-                <p>The "naïve" part is the assumption that features are conditionally independent given the class.</p>
-              </div>
-            ),
-          },
-          {
-            title: 'Gaussian Likelihood',
-            content: (
-              <div className="space-y-2">
-                <p>For continuous features, we assume P(xⱼ|C) follows a Gaussian distribution with class-specific mean μ and variance σ²:</p>
-                <pre className="bg-gray-100 dark:bg-gray-700 rounded p-2 text-xs">{`P(xⱼ|C) = 1/√(2πσ²) · exp(-(xⱼ - μ)² / (2σ²))
+  const tabPanel = () => {
+    if (tab === "visualize" || tab === "learn") return workflow;
+    if (tab === "dataset")
+      return (
+        <section className="nb-generic nb-data">
+          <div className="nb-section-title">
+            <span>
+              <Database /> Live Dataset
+            </span>
+            <button
+              onClick={() =>
+                setRows((old) => [
+                  ...old,
+                  { features: query.slice(), label: predicted },
+                ])
+              }
+            >
+              <Plus /> Add evidence
+            </button>
+          </div>
+          <p>
+            Edit training samples directly. Parameters, likelihoods, boundaries,
+            and predictions refit immediately.
+          </p>
+          <div>
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  {FEATURES.map((name) => (
+                    <th key={name}>{name}</th>
+                  ))}
+                  <th>Class</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, index) => (
+                  <tr key={index}>
+                    <td>{index + 1}</td>
+                    {row.features.map((value, feature) => (
+                      <td key={feature}>
+                        <input
+                          aria-label={`Feature ${feature + 1} row ${index + 1}`}
+                          type="number"
+                          step=".1"
+                          value={Number(value.toFixed(3))}
+                          onChange={(event) =>
+                            setRows((old) =>
+                              old.map((item, i) =>
+                                i === index
+                                  ? {
+                                      ...item,
+                                      features: item.features.map((entry, j) =>
+                                        j === feature
+                                          ? Number(event.target.value)
+                                          : entry,
+                                      ),
+                                    }
+                                  : item,
+                              ),
+                            )
+                          }
+                        />
+                      </td>
+                    ))}
+                    <td>
+                      <select
+                        aria-label={`Class row ${index + 1}`}
+                        value={row.label}
+                        onChange={(event) =>
+                          setRows((old) =>
+                            old.map((item, i) =>
+                              i === index
+                                ? { ...item, label: Number(event.target.value) }
+                                : item,
+                            ),
+                          )
+                        }
+                      >
+                        <option value="0">A</option>
+                        <option value="1">B</option>
+                        <option value="2">C</option>
+                      </select>
+                    </td>
+                    <td>
+                      <button
+                        aria-label={`Remove row ${index + 1}`}
+                        disabled={rows.length <= 3}
+                        onClick={() =>
+                          setRows((old) => old.filter((_, i) => i !== index))
+                        }
+                      >
+                        ×
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      );
+    if (tab === "train")
+      return (
+        <section className="nb-generic nb-train">
+          <BrainCircuit />
+          <h2>Fit Gaussian class distributions</h2>
+          <p>
+            Training estimates a prior, mean, and variance for every feature
+            within every class. The shared model evaluates posteriors in
+            log-space for numerical stability.
+          </p>
+          <div>
+            {model.classes.map((label) => (
+              <article key={label}>
+                <b style={{ color: COLORS[label] }}>Class {CLASSES[label]}</b>
+                <span>Prior {(model.priors[label] * 100).toFixed(1)}%</span>
+                <span>
+                  {rows.filter((row) => row.label === label).length} samples
+                </span>
+              </article>
+            ))}
+          </div>
+          <button
+            onClick={() => {
+              setTrained(`Refit on ${rows.length} live samples`);
+              setToast("Gaussian model trained");
+            }}
+          >
+            <Play /> Train Model
+          </button>
+          <small>{trained}</small>
+        </section>
+      );
+    if (tab === "metrics")
+      return (
+        <section className="nb-generic">
+          <div className="nb-section-title">
+            <span>
+              <BarChart3 /> Performance Metrics
+            </span>
+          </div>
+          <div className="nb-metrics">
+            <article>
+              <b>{(accuracy * 100).toFixed(1)}%</b>
+              <span>Training accuracy</span>
+            </article>
+            <article>
+              <b>{rows.length}</b>
+              <span>Samples</span>
+            </article>
+            <article>
+              <b>{active.filter(Boolean).length}/4</b>
+              <span>Active features</span>
+            </article>
+            <article>
+              <b>{(posteriors[predicted] * 100).toFixed(1)}%</b>
+              <span>Query confidence</span>
+            </article>
+          </div>
+        </section>
+      );
+    if (tab === "compare")
+      return (
+        <section className="nb-generic">
+          <div className="nb-section-title">
+            <span>
+              <Network /> Prior Comparison
+            </span>
+          </div>
+          <div className="nb-compare">
+            {["empirical", "uniform"].map((mode) => (
+              <article
+                className={priorMode === mode ? "active" : ""}
+                key={mode}
+                onClick={() => setPriorMode(mode as "empirical" | "uniform")}
+              >
+                <FlaskConical />
+                <h3>{mode} priors</h3>
+                <p>
+                  {mode === "empirical"
+                    ? "Estimate class prevalence from the current data."
+                    : "Give every class equal starting probability."}
+                </p>
+                <button>Use priors</button>
+              </article>
+            ))}
+          </div>
+        </section>
+      );
+    return (
+      <section className="nb-generic nb-explain">
+        <div className="nb-section-title">
+          <span>
+            <FileText /> Formula Walkthrough
+          </span>
+        </div>
+        <div>
+          <article>
+            <b>1</b>
+            <h3>Start with priors</h3>
+            <p>
+              P(Cₖ) represents how frequent each class is before seeing the
+              query.
+            </p>
+          </article>
+          <article>
+            <b>2</b>
+            <h3>Multiply evidence</h3>
+            <p>
+              Gaussian likelihoods model every active feature independently
+              within each class.
+            </p>
+          </article>
+          <article>
+            <b>3</b>
+            <h3>Normalize</h3>
+            <p>
+              Log-sum-exp turns joint scores into posterior probabilities that
+              sum to one.
+            </p>
+          </article>
+        </div>
+      </section>
+    );
+  };
 
-μ_jC  = sample mean of feature j in class C
-σ²_jC = sample variance of feature j in class C`}</pre>
+  return (
+    <div className="nb-page">
+      <aside className="nb-nav">
+        <Link to="/" className="nb-brand">
+          <i>
+            <Network />
+          </i>
+          <span>
+            <b>
+              Mega ML <em>✦</em>
+            </b>
+            <small>AI OBSERVATORY</small>
+          </span>
+        </Link>
+        <label>
+          <Search />
+          <input placeholder="Search lessons..." />
+          <kbd>⌘ K</kbd>
+        </label>
+        <h3>LEARNING PATH</h3>
+        <button>
+          <ChevronDown /> 1. Foundations <span>8</span>
+        </button>
+        <button className="section">
+          <ChevronDown /> 2. Supervised <span>12</span>
+        </button>
+        <div className="nb-lessons">
+          {[
+            "Linear Regression",
+            "Logistic Regression",
+            "Decision Trees",
+            "Random Forest",
+            "k-Nearest Neighbors",
+            "Support Vector Machines",
+            "Naive Bayes",
+            "Gradient Boosting",
+            "Neural Networks",
+            "XGBoost",
+            "LightGBM",
+          ].map((name) => (
+            <i className={name === "Naive Bayes" ? "active" : ""} key={name}>
+              {name}
+              {name === "Naive Bayes" && <b />}
+            </i>
+          ))}
+        </div>
+        {[
+          "3. Unsupervised",
+          "4. Deep Learning",
+          "5. MLOps",
+          "6. Advanced Topics",
+        ].map((name, index) => (
+          <button key={name}>
+            <ChevronRight />
+            {name}
+            <span>{[7, 9, 6, 6][index]}</span>
+          </button>
+        ))}
+        <Link className="nb-notes" to="/">
+          <FileText /> My Notes
+        </Link>
+      </aside>
+      <main>
+        <header className="nb-header">
+          <div>
+            <h1>Naive Bayes</h1>
+            <p>Probabilistic classification with conditional independence.</p>
+          </div>
+          <section>
+            <label>LESSON PROGRESS</label>
+            <i>
+              <b />
+            </i>
+            <strong>62%</strong>
+          </section>
+          <article>
+            <b>OBJECTIVE</b>
+            <p>
+              See how class likelihoods are computed from feature evidence and
+              combined with priors to get posteriors.
+            </p>
+          </article>
+          <button>
+            <SlidersHorizontal /> Lesson Mode <ChevronDown />
+          </button>
+          <button
+            aria-label="Theme"
+            onClick={() => setToast("Dark observatory mode is active")}
+          >
+            <Moon />
+          </button>
+          <button aria-label="Menu">
+            <Menu />
+          </button>
+        </header>
+        <nav className="nb-tabs">
+          {tabs.map((item) => (
+            <button
+              key={item.id}
+              className={tab === item.id ? "active" : ""}
+              onClick={() => setTab(item.id)}
+            >
+              {item.icon}
+              {item.label}
+            </button>
+          ))}
+        </nav>
+        <div className="nb-workspace">
+          <div className="nb-center">
+            {tabPanel()}
+            <div className="nb-bottom">
+              <article className="nb-donut-card">
+                <h3>POSTERIOR DISTRIBUTION</h3>
+                <div
+                  className="nb-donut"
+                  style={{
+                    background: `conic-gradient(${COLORS[0]} 0 ${posteriors[0] * 100}%,${COLORS[1]} ${posteriors[0] * 100}% ${(posteriors[0] + posteriors[1]) * 100}%,${COLORS[2]} ${(posteriors[0] + posteriors[1]) * 100}% 100%)`,
+                  }}
+                >
+                  <span>P(Cₖ | x)</span>
+                </div>
+                <div>
+                  {posteriors.map((value, index) => (
+                    <p key={index}>
+                      <i style={{ background: COLORS[index] }} />
+                      {String.fromCharCode(65 + index)}{" "}
+                      <b>{(value * 100).toFixed(1)}%</b>
+                    </p>
+                  ))}
+                </div>
+              </article>
+              <article>
+                <h3>
+                  LOG PROBABILITIES <small>(numerically stable)</small>
+                </h3>
+                {evidence.map((item) => (
+                  <p key={item.label}>
+                    <i style={{ background: COLORS[item.label] }} />{" "}
+                    {CLASSES[item.label]} <b>{item.logJoint.toFixed(3)}</b>
+                  </p>
+                ))}
+              </article>
+              <article>
+                <h3>EVIDENCE SUMMARY</h3>
+                <p>
+                  Active features <b>{active.filter(Boolean).length} / 4</b>
+                </p>
+                <p>
+                  Independence assumption <b>Naive</b>
+                </p>
+                <p>
+                  Working in log-space <b>Yes</b>
+                </p>
+                <p>
+                  Normalization <b>Softmax</b>
+                </p>
+              </article>
+              <article className="nb-formula">
+                <h3>FORMULA RECAP</h3>
+                <b>
+                  P(Cₖ | x) = <span>P(Cₖ) ∏ᵢ P(xᵢ | Cₖ)</span> / Σⱼ P(Cⱼ) ∏ᵢ
+                  P(xᵢ | Cⱼ)
+                </b>
+                <p>
+                  Assumes features are conditionally independent given the
+                  class.
+                </p>
+              </article>
+            </div>
+          </div>
+          <aside className="nb-controls">
+            <section>
+              <h3>DATASET</h3>
+              <select
+                aria-label="Dataset"
+                value={datasetId}
+                onChange={(event) =>
+                  selectDataset(event.target.value as DatasetId)
+                }
+              >
+                {Object.entries(LABELS)
+                  .filter(([key]) => key !== "imported" || imported.length)
+                  .map(([key, label]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+              </select>
+              <div>
+                <span>Switch dataset</span>
+                <button onClick={() => uploadRef.current?.click()}>
+                  <Upload /> Upload CSV
+                </button>
+                <input
+                  ref={uploadRef}
+                  hidden
+                  type="file"
+                  accept=".csv,text/csv"
+                  onChange={upload}
+                />
               </div>
-            ),
-          },
-          {
-            title: 'Why Naïve Bayes Works Well',
-            content: (
-              <div className="space-y-1">
-                <p>Despite the strong independence assumption, GNB works well because:</p>
-                <ul className="list-disc ml-4 space-y-1">
-                  <li>Only mean and variance needed per class/feature — very data-efficient</li>
-                  <li>Robust to irrelevant features</li>
-                  <li>Works well for text classification, spam detection, medical diagnosis</li>
-                  <li>Fast: O(nd) training, O(Cd) prediction</li>
-                </ul>
+            </section>
+            <section>
+              <h3>MODEL CONTROLS</h3>
+              <label>
+                Priors <CircleHelp />
+                <select
+                  aria-label="Priors"
+                  value={priorMode}
+                  onChange={(event) =>
+                    setPriorMode(event.target.value as "empirical" | "uniform")
+                  }
+                >
+                  <option value="empirical">From data (empirical)</option>
+                  <option value="uniform">Uniform (equal)</option>
+                </select>
+              </label>
+              <label>
+                Smoothing <CircleHelp />
+                <select
+                  aria-label="Smoothing"
+                  value={smoothing}
+                  onChange={(event) => setSmoothing(Number(event.target.value))}
+                >
+                  <option value="0">None</option>
+                  <option value="0.1">Variance ε = 0.1</option>
+                  <option value="1">Laplace (α = 1)</option>
+                </select>
+              </label>
+              <label>
+                Distribution <CircleHelp />
+                <select aria-label="Distribution" value="gaussian" disabled>
+                  <option>Gaussian</option>
+                </select>
+              </label>
+            </section>
+            <section className="nb-boundary">
+              <h3>
+                DECISION BOUNDARY (2D) <CircleHelp />
+              </h3>
+              <label>
+                X axis
+                <select
+                  aria-label="X axis"
+                  value={axes[0]}
+                  onChange={(event) =>
+                    changeAxis(0, Number(event.target.value))
+                  }
+                >
+                  {FEATURES.map((name, index) => (
+                    <option value={index} key={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Y axis
+                <select
+                  aria-label="Y axis"
+                  value={axes[1]}
+                  onChange={(event) =>
+                    changeAxis(1, Number(event.target.value))
+                  }
+                >
+                  {FEATURES.map((name, index) => (
+                    <option value={index} key={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="nb-checks">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={showRegions}
+                    onChange={(event) => setShowRegions(event.target.checked)}
+                  />{" "}
+                  Show decision regions
+                </label>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={showPoints}
+                    onChange={(event) => setShowPoints(event.target.checked)}
+                  />{" "}
+                  Show training points
+                </label>
               </div>
-            ),
-          },
-        ]}
-      />
+              <div className="nb-boundary-chart">
+                {showRegions &&
+                  boundary.cells.map((cell, index) => (
+                    <i
+                      key={index}
+                      style={{
+                        left: `${(cell.x / boundary.cols) * 100}%`,
+                        top: `${((boundary.lines - 1 - cell.y) / boundary.lines) * 100}%`,
+                        width: `${100 / boundary.cols + 0.2}%`,
+                        height: `${100 / boundary.lines + 0.3}%`,
+                        background: FILLS[cell.label],
+                      }}
+                    />
+                  ))}
+                {showPoints &&
+                  boundary.points.map((point, index) => (
+                    <b
+                      key={index}
+                      style={{
+                        left: `${point.x}%`,
+                        top: `${point.y}%`,
+                        background: COLORS[point.label],
+                      }}
+                    />
+                  ))}
+                <span className="x-label">{FEATURES[axes[0]]} (cm)</span>
+                <span className="y-label">{FEATURES[axes[1]]} (cm)</span>
+              </div>
+            </section>
+          </aside>
+        </div>
+        <footer className="nb-status">
+          <Link to="/">
+            <Home /> Naive Bayes
+          </Link>
+          <span>
+            <i /> Dataset: <b>{LABELS[datasetId]}</b>
+          </span>
+          <span>
+            <BrainCircuit /> Model: <b>{trained}</b>
+          </span>
+          <button onClick={() => setToast("Share link copied")}>
+            <Share2 /> Share
+          </button>
+          <button onClick={reset}>
+            <RotateCcw /> Reset
+          </button>
+        </footer>
+      </main>
+      {toast && <div className="nb-toast">{toast}</div>}
     </div>
   );
 }

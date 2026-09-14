@@ -15,6 +15,11 @@ function gaussianPDF(x: number, mu: number, sigma2: number): number {
 }
 
 export function trainGaussianNB(X: number[][], y: number[]): GaussianNBModel {
+  if (!X.length || X.length !== y.length || !X[0]?.length)
+    throw new Error('Gaussian Naive Bayes requires aligned non-empty data');
+  const width = X[0].length;
+  if (!X.every(row => row.length === width && row.every(Number.isFinite)) || !y.every(Number.isFinite))
+    throw new Error('Gaussian Naive Bayes requires finite rectangular data');
   const classes = [...new Set(y)].sort((a, b) => a - b);
   const n = y.length;
   const priors: Record<number, number> = {};
@@ -31,6 +36,8 @@ export function trainGaussianNB(X: number[][], y: number[]): GaussianNBModel {
   });
 
   const predictProba = (x: number[]): Record<number, number> => {
+    if (x.length !== width || !x.every(Number.isFinite))
+      throw new Error(`Expected ${width} finite features`);
     const logProbs: Record<number, number> = {};
     classes.forEach(c => {
       let lp = Math.log(priors[c]);

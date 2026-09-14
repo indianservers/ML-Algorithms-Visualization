@@ -1,0 +1,8 @@
+.mv-page { grid-template-rows: 113px minmax(0, 1fr); }
+.lesson-progress progress { appearance: none; background: #17233e; border: 0; border-radius: 5px; overflow: hidden; }
+.lesson-progress progress::-webkit-progress-bar { background: #17233e; }
+.lesson-progress progress::-webkit-progress-value { background: #3964f5; }
+
+@media (max-width: 1200px) {
+  .mv-page { grid-template-rows: 113px max-content max-content; }
+}

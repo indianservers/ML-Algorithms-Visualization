@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Activity } from 'lucide-react';
 import { Line, LineChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { PageHeader } from '../../../components/common/PageHeader';
 import { Card, InfoBox } from '../../../components/common/Card';
 import { timeSeriesSalesDataset } from '../../../data/sampleDatasets';
+import ExponentialSmoothingApprovedPage from './ExponentialSmoothingApprovedPage';
 
-export default function ExponentialSmoothingPage() {
+function OriginalExponentialSmoothingPage() {
   const [alpha, setAlpha] = useState(0.35);
   const rows = timeSeriesSalesDataset.data as { month: string; sales: number }[];
   const chart = useMemo(() => {
@@ -36,4 +38,11 @@ export default function ExponentialSmoothingPage() {
       </div>
     </div>
   );
+}
+
+export default function ExponentialSmoothingPage() {
+  const location = useLocation();
+  return new URLSearchParams(location.search).get('advanced') === '1'
+    ? <OriginalExponentialSmoothingPage />
+    : <ExponentialSmoothingApprovedPage />;
 }

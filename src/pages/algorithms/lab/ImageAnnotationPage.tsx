@@ -206,7 +206,10 @@ export default function ImageAnnotationPage() {
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      images: images.map(({ url: _url, ...image }) => image),
+      images: images.map(({ url, ...image }) => {
+        void url;
+        return image;
+      }),
       classes,
     }));
   }, [classes, images]);

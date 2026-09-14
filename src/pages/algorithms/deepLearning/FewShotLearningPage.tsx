@@ -1,194 +1,447 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import * as mobilenet from '@tensorflow-models/mobilenet';
-import * as tf from '@tensorflow/tfjs';
-import { Camera, Sparkles, Upload } from 'lucide-react';
-import { CartesianGrid, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from 'recharts';
-import { PageHeader } from '../../../components/common/PageHeader';
-import { Card, InfoBox } from '../../../components/common/Card';
-import { stopMediaElementStream, stopMediaStream } from '../../../lib/media/streams';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { Moon, Share2, Upload } from "lucide-react";
+import {
+  createFewShotEpisode,
+  type FewShotMetric,
+} from "../../../lib/algorithms/neural/fewShot";
+import FewShotMobileNetLab from "./FewShotMobileNetLab";
+import "./FewShotLearningPage.css";
 
-type SupportExample = { id: string; classId: string; preview: string; embedding: number[] };
-type FewShotClass = { id: string; name: string; color: string };
-
-const COLORS = ['#2563eb', '#059669', '#dc2626', '#9333ea', '#ea580c'];
-
-function cosine(a: number[], b: number[]) {
-  let dot = 0, ma = 0, mb = 0;
-  for (let index = 0; index < Math.min(a.length, b.length); index++) {
-    dot += a[index] * b[index];
-    ma += a[index] * a[index];
-    mb += b[index] * b[index];
-  }
-  return dot / Math.max(1e-8, Math.sqrt(ma) * Math.sqrt(mb));
-}
-
-function meanEmbedding(items: SupportExample[]) {
-  const length = items[0]?.embedding.length ?? 0;
-  return Array.from({ length }, (_, index) => items.reduce((sum, item) => sum + item.embedding[index], 0) / Math.max(1, items.length));
-}
-
-function loadImage(file: File) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
-    const url = URL.createObjectURL(file);
-    const image = new Image();
-    image.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve(image);
-    };
-    image.onerror = reject;
-    image.src = url;
-  });
-}
-
+const names = [
+    "bird",
+    "frog",
+    "ship",
+    "car",
+    "dog",
+    "cat",
+    "plane",
+    "deer",
+    "horse",
+    "truck",
+  ],
+  colors = [
+    "#26c3d6",
+    "#8bdd43",
+    "#f39122",
+    "#8c5bea",
+    "#ef5060",
+    "#43a6ff",
+    "#ffd13c",
+    "#56d19c",
+    "#d870dc",
+    "#ff7d52",
+  ],
+  glyphs = ["🐦", "🐸", "⛵", "🚗", "🐶", "🐱", "✈️", "🦌", "🐴", "🚚"];
 export default function FewShotLearningPage() {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const timerRef = useRef<number | null>(null);
-  const extractorRef = useRef<mobilenet.MobileNet | null>(null);
-  const [classCount, setClassCount] = useState(3);
-  const [shots, setShots] = useState(2);
-  const [classes, setClasses] = useState<FewShotClass[]>(() => Array.from({ length: 3 }, (_, index) => ({ id: `class_${index}`, name: `Class ${index + 1}`, color: COLORS[index] })));
-  const [examples, setExamples] = useState<SupportExample[]>([]);
-  const [query, setQuery] = useState<{ embedding: number[]; scores: Array<{ classId: string; score: number }> } | null>(null);
-  const [status, setStatus] = useState('Load MobileNet, add 1-5 examples per class, then run live cosine similarity.');
-
-  useEffect(() => () => {
-    if (timerRef.current) window.clearInterval(timerRef.current);
-    stopMediaStream(streamRef.current);
-    stopMediaElementStream(videoRef.current);
-  }, []);
-
-  useEffect(() => {
-    setClasses(current => Array.from({ length: classCount }, (_, index) => current[index] ?? { id: `class_${index}`, name: `Class ${index + 1}`, color: COLORS[index] }));
-  }, [classCount]);
-
-  const ensureExtractor = async () => {
-    await tf.ready();
-    if (!extractorRef.current) {
-      setStatus('Loading MobileNet feature extractor...');
-      extractorRef.current = await mobilenet.load({ version: 2, alpha: 0.5 });
-    }
-    return extractorRef.current;
+  const [advanced, setAdvanced] = useState(false),
+    [nWay, setNWay] = useState(5),
+    [kShot, setKShot] = useState(5),
+    [batch, setBatch] = useState(false),
+    [metric, setMetric] = useState<FewShotMetric>("euclidean"),
+    [embedding, setEmbedding] = useState("ResNet-18 (pretrained)"),
+    [boundaries, setBoundaries] = useState(true),
+    [distances, setDistances] = useState(true),
+    [seed, setSeed] = useState(3),
+    [toast, setToast] = useState("Ready");
+  const episode = createFewShotEpisode(
+      nWay,
+      kShot,
+      batch ? 5 : 1,
+      metric,
+      seed,
+    ),
+    query = episode.queries[0],
+    prediction = episode.predictions[0],
+    world = (v: number, axis: "x" | "y") =>
+      axis === "x" ? 50 + (v / 8) * 100 : 50 - (v / 7) * 100;
+  const reset = () => {
+    setNWay(5);
+    setKShot(5);
+    setBatch(false);
+    setMetric("euclidean");
+    setEmbedding("ResNet-18 (pretrained)");
+    setBoundaries(true);
+    setDistances(true);
+    setSeed(3);
+    setToast("Parameters reset");
   };
-
-  const embedSource = async (source: HTMLImageElement | HTMLVideoElement | HTMLCanvasElement) => {
-    const extractor = await ensureExtractor();
-    const activation = extractor.infer(source, true) as tf.Tensor;
-    const values = Array.from(await activation.data());
-    activation.dispose();
-    return values;
-  };
-
-  const startCamera = async () => {
-    await ensureExtractor();
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
-    streamRef.current = stream;
-    if (videoRef.current) {
-      videoRef.current.srcObject = stream;
-      await videoRef.current.play();
-    }
-    setStatus('Camera is live. Capture support images or watch the query prediction update.');
-    if (timerRef.current) window.clearInterval(timerRef.current);
-    timerRef.current = window.setInterval(() => void updateQuery(), 400);
-  };
-
-  const addSupportFromVideo = async (classId: string) => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas || video.readyState < 2) return;
-    canvas.width = 96;
-    canvas.height = 96;
-    canvas.getContext('2d')?.drawImage(video, 0, 0, 96, 96);
-    const embedding = await embedSource(video);
-    setExamples(current => [...current.filter(item => !(item.classId === classId && current.filter(entry => entry.classId === classId).indexOf(item) >= shots)), { id: `${classId}_${Date.now()}`, classId, preview: canvas.toDataURL('image/jpeg', 0.75), embedding }]);
-  };
-
-  const addSupportFile = async (classId: string, file: File | null) => {
-    if (!file) return;
-    const image = await loadImage(file);
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    canvas.width = 96;
-    canvas.height = 96;
-    canvas.getContext('2d')?.drawImage(image, 0, 0, 96, 96);
-    const embedding = await embedSource(image);
-    setExamples(current => [...current, { id: `${classId}_${Date.now()}`, classId, preview: canvas.toDataURL('image/jpeg', 0.75), embedding }]);
-  };
-
-  const updateQuery = useCallback(async () => {
-    const video = videoRef.current;
-    if (!video || video.readyState < 2 || examples.length === 0) return;
-    const embedding = await embedSource(video);
-    const scores = classes.map(cls => {
-      const items = examples.filter(item => item.classId === cls.id);
-      return { classId: cls.id, score: items.length ? cosine(embedding, meanEmbedding(items)) : -1 };
-    }).sort((a, b) => b.score - a.score);
-    setQuery({ embedding, scores });
-  }, [classes, examples]);
-
-  const top = query?.scores[0];
-  const scatter = useMemo(() => {
-    const points = examples.map(item => ({ x: item.embedding[0] ?? 0, y: item.embedding[1] ?? 0, classId: item.classId, kind: 'support' }));
-    if (query) points.push({ x: query.embedding[0] ?? 0, y: query.embedding[1] ?? 0, classId: 'query', kind: 'query' });
-    return points;
-  }, [examples, query]);
-
-  return (
-    <div className="mx-auto max-w-7xl space-y-6 p-4">
-      <PageHeader title="Few-Shot Learning" subtitle="Classify new images from 1-5 support examples per class using MobileNet embeddings and cosine similarity, with no retraining." badge="Browser Inference" category="Deep Learning" icon={<Sparkles size={22} />} />
-      <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
-        <div className="space-y-4">
-          <Card title="Support Set">
-            <label className="block text-sm font-semibold">Classes: {classCount}<input type="range" min={2} max={5} value={classCount} onChange={event => setClassCount(Number(event.target.value))} className="mt-2 w-full accent-blue-600" /></label>
-            <label className="mt-3 block text-sm font-semibold">K-shot: {shots}<input type="range" min={1} max={5} value={shots} onChange={event => setShots(Number(event.target.value))} className="mt-2 w-full accent-blue-600" /></label>
-            <button onClick={startCamera} className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded bg-blue-600 px-3 py-2 text-sm font-bold text-white"><Camera size={14} /> Start Camera</button>
-          </Card>
-          {classes.map(cls => {
-            const classExamples = examples.filter(item => item.classId === cls.id).slice(-shots);
-            return (
-              <Card key={cls.id} title={cls.name}>
-                <input value={cls.name} onChange={event => setClasses(current => current.map(item => item.id === cls.id ? { ...item, name: event.target.value } : item))} className="mb-2 w-full rounded border border-gray-200 bg-white p-2 text-sm font-bold dark:border-gray-700 dark:bg-gray-900" />
-                <div className="grid grid-cols-2 gap-2">
-                  <button onClick={() => void addSupportFromVideo(cls.id)} className="inline-flex items-center justify-center gap-2 rounded border border-gray-200 px-2 py-2 text-xs font-bold dark:border-gray-700"><Camera size={13} /> Capture</button>
-                  <label className="inline-flex cursor-pointer items-center justify-center gap-2 rounded border border-gray-200 px-2 py-2 text-xs font-bold dark:border-gray-700"><Upload size={13} /> Upload<input type="file" accept="image/*" className="hidden" onChange={event => void addSupportFile(cls.id, event.target.files?.[0] ?? null)} /></label>
-                </div>
-                <div className="mt-3 grid grid-cols-5 gap-1">{classExamples.map(item => <img key={item.id} src={item.preview} alt="" className="aspect-square rounded object-cover" />)}</div>
-              </Card>
-            );
-          })}
-        </div>
-        <div className="space-y-4">
-          <Card title="Live Query">
-            <video ref={videoRef} muted playsInline className="aspect-video w-full rounded-lg bg-gray-950 object-cover" />
-            <canvas ref={canvasRef} className="hidden" />
-            <div className="mt-4 rounded-2xl bg-gray-50 p-5 text-center dark:bg-gray-900">
-              <p className="text-xs font-bold uppercase text-gray-500">Prediction</p>
-              <p className="text-4xl font-black" style={{ color: classes.find(cls => cls.id === top?.classId)?.color }}>{classes.find(cls => cls.id === top?.classId)?.name ?? 'Add support images'}</p>
-              <p className="text-sm text-gray-500">{top ? `${(top.score * 100).toFixed(1)}% cosine similarity` : 'Waiting for query frame'}</p>
-            </div>
-            <div className="mt-4 space-y-2">
-              {query?.scores.map(score => {
-                const cls = classes.find(item => item.id === score.classId);
-                return <div key={score.classId}><div className="flex justify-between text-xs font-bold"><span>{cls?.name}</span><span>{(score.score * 100).toFixed(1)}%</span></div><div className="h-3 rounded bg-gray-100 dark:bg-gray-800"><div className="h-3 rounded" style={{ width: `${Math.max(0, score.score) * 100}%`, backgroundColor: cls?.color }} /></div></div>;
-              })}
-            </div>
-          </Card>
-          <Card title="Embedding Space">
-            <ResponsiveContainer width="100%" height={300}>
-              <ScatterChart>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="x" type="number" name="feature 1" />
-                <YAxis dataKey="y" type="number" name="feature 2" />
-                <Tooltip />
-                {classes.map(cls => <Scatter key={cls.id} name={cls.name} data={scatter.filter(item => item.classId === cls.id)} fill={cls.color} />)}
-                <Scatter name="Query" data={scatter.filter(item => item.kind === 'query')} fill="#111827" shape="star" />
-              </ScatterChart>
-            </ResponsiveContainer>
-          </Card>
-          <InfoBox type="info" title="Why This Works">{status} MobileNet was trained on a broad image corpus, so nearby 1024-dimensional feature vectors often share visual meaning even for new classes.</InfoBox>
-        </div>
+  if (advanced)
+    return (
+      <div className="few-advanced">
+        <button onClick={() => setAdvanced(false)}>
+          ← Return to Episode Visualizer
+        </button>
+        <FewShotMobileNetLab />
       </div>
+    );
+  return (
+    <div className="few-page">
+      <aside className="few-side">
+        <Link to="/">
+          ⌘ <b>Mega ML</b>
+          <small>AI Observatory</small>
+        </Link>
+        <h4>NAVIGATION</h4>
+        {[
+          "⌂ Home",
+          "☷ Topics",
+          "⌘ Playground",
+          "♧ Experiments",
+          "◇ Models",
+          "▤ Datasets",
+          "⌂ Uploads",
+        ].map((item) => (
+          <button onClick={() => setToast(item)} key={item}>
+            {item}
+          </button>
+        ))}
+        <h4>RECENT</h4>
+        {[
+          "▣ Few-Shot Learning",
+          "⌘ Prototypical Networks",
+          "◇ Metric Learning",
+          "♧ Image Classification",
+          "ⓘ Cluster Analysis",
+        ].map((item) => (
+          <button
+            className={item.includes("Few-Shot") ? "active" : ""}
+            onClick={() => setToast(item)}
+            key={item}
+          >
+            {item}
+          </button>
+        ))}
+        <h4>SHORTCUTS</h4>
+        <button>◉ New Experiment</button>
+        <button>⌑ Saved Views</button>
+        <button>⇩ Export Report</button>
+        <p>
+          Active Model
+          <br />
+          <b>Prototypical Net</b>
+          <small>● Ready</small>
+        </p>
+      </aside>
+      <header className="few-head">
+        <h3>
+          ◉ Learn › <b>Few-Shot Learning</b>
+        </h3>
+        <nav>
+          {[
+            "Learn",
+            "Visualize",
+            "Dataset",
+            "Build / Train",
+            "Metrics",
+            "Compare",
+            "Explain",
+          ].map((tab) => (
+            <button
+              className={tab === "Learn" ? "active" : ""}
+              onClick={() =>
+                tab === "Build / Train"
+                  ? setAdvanced(true)
+                  : setToast(`${tab} selected`)
+              }
+              key={tab}
+            >
+              {tab}
+            </button>
+          ))}
+        </nav>
+        <div>
+          <button>?</button>
+          <button onClick={() => setToast("Share link copied")}>
+            <Share2 /> Share
+          </button>
+          <button onClick={() => setToast("Theme toggled")}>
+            <Moon />
+          </button>
+          <b>MM</b>
+        </div>
+      </header>
+      <main>
+        <section className="few-title panel">
+          <h1>⚙ Few-Shot Learning</h1>
+          <p>
+            Explore how few-shot learning classifies queries by comparing them
+            to class prototypes in an embedding space.
+          </p>
+          <label>
+            DATASET
+            <select>
+              <option>miniImageNet (sample)</option>
+              <option>Omniglot (sample)</option>
+            </select>
+          </label>
+          <button onClick={() => setAdvanced(true)}>
+            <Upload /> Upload / Switch
+          </button>
+        </section>
+        <section className="few-plot panel">
+          <header>
+            <h3>EMBEDDING SPACE (t-SNE)</h3>
+            <span>
+              <i /> Support (K-shot) — ○ Query — × Prototype —
+              {boundaries ? "--- Decision Boundary" : ""}
+            </span>
+          </header>
+          <svg viewBox="0 0 900 420">
+            {boundaries &&
+              episode.prototypes.map((p, i) => (
+                <line
+                  className="boundary"
+                  x1="450"
+                  y1="210"
+                  x2={world(p.x, "x") * 9}
+                  y2={world(p.y, "y") * 4.2}
+                  key={i}
+                />
+              ))}
+            {distances &&
+              episode.prototypes.map((p, i) => (
+                <line
+                  className="distance"
+                  x1={world(query.x, "x") * 9}
+                  y1={world(query.y, "y") * 4.2}
+                  x2={world(p.x, "x") * 9}
+                  y2={world(p.y, "y") * 4.2}
+                  style={{ stroke: colors[i] }}
+                  key={i}
+                />
+              ))}
+            {episode.points
+              .filter((p) => p.support)
+              .map((p, i) => (
+                <circle
+                  cx={world(p.x, "x") * 9}
+                  cy={world(p.y, "y") * 4.2}
+                  r="5"
+                  fill={colors[p.classIndex]}
+                  key={i}
+                />
+              ))}
+            {episode.prototypes.map((p, i) => (
+              <text
+                x={world(p.x, "x") * 9 - 7}
+                y={world(p.y, "y") * 4.2 + 8}
+                fill={colors[i]}
+                fontSize="25"
+                key={i}
+              >
+                ×
+              </text>
+            ))}
+            {episode.queries.map((p, i) => (
+              <circle
+                className="query"
+                cx={world(p.x, "x") * 9}
+                cy={world(p.y, "y") * 4.2}
+                r="8"
+                key={i}
+              />
+            ))}
+          </svg>
+          <aside>
+            <h3>CLASSES (N)</h3>
+            {names.slice(0, nWay).map((name, i) => (
+              <p style={{ color: colors[i] }} key={name}>
+                ● {name}
+              </p>
+            ))}
+            <hr />
+            <h3>Nearest Prototype</h3>
+            <b style={{ color: colors[prediction.classIndex] }}>
+              ★ {names[prediction.classIndex]}
+            </b>
+            <p>
+              Distance
+              <br />
+              {prediction.distance.toFixed(2)}
+            </p>
+          </aside>
+          <div className="plot-tools">
+            <button>⌁</button>
+            <button>✥</button>
+            <button>−</button>
+            <button>＋</button>
+          </div>
+        </section>
+        <section className="few-results panel">
+          <h3>CURRENT EPISODE RESULTS</h3>
+          <div>
+            <article>
+              <small>Query ({episode.queries.length})</small>
+              <b className="photo">{glyphs[query.classIndex]}</b>
+            </article>
+            <article>
+              <small>Predicted Class</small>
+              <b style={{ color: colors[prediction.classIndex] }}>
+                ★ {names[prediction.classIndex]}
+              </b>
+              <p>Confidence</p>
+              <strong>{prediction.confidence.toFixed(2)}</strong>
+              <meter min="0" max="1" value={prediction.confidence} />
+            </article>
+            <article>
+              <small>Nearest Prototype</small>
+              <b style={{ color: colors[prediction.classIndex] }}>
+                × {names[prediction.classIndex]}
+              </b>
+              <p>Distance</p>
+              <strong>{prediction.distance.toFixed(2)}</strong>
+            </article>
+            <article>
+              <small>All Distances</small>
+              {prediction.distances.map((d, i) => (
+                <p key={i}>
+                  <b style={{ color: colors[i] }}>★ {names[i]}</b>
+                  <meter
+                    min="0"
+                    max={Math.max(...prediction.distances)}
+                    value={d}
+                  />
+                  {d.toFixed(2)}
+                </p>
+              ))}
+            </article>
+            <article>
+              <small>Episode Summary</small>
+              <p>
+                N-way <b>{nWay}</b>
+              </p>
+              <p>
+                K-shot <b>{kShot}</b>
+              </p>
+              <p>
+                Total Support <b>{nWay * kShot}</b>
+              </p>
+              <p>
+                Total Queries <b>{episode.queries.length}</b>
+              </p>
+            </article>
+          </div>
+        </section>
+        <section className="few-prototypes panel">
+          <h3>CLASS PROTOTYPES ⓘ</h3>
+          <div>
+            {episode.prototypes.map((p, i) => (
+              <article style={{ borderColor: colors[i] }} key={i}>
+                <b style={{ color: colors[i] }}>× {names[i]}</b>
+                <span>{glyphs[i]}</span>
+                <small>
+                  ({p.x.toFixed(1)}, {p.y.toFixed(1)})
+                </small>
+              </article>
+            ))}
+          </div>
+        </section>
+      </main>
+      <aside className="few-controls">
+        <section className="panel">
+          <header>
+            <h3>PARAMETERS</h3>
+            <button onClick={reset}>Reset</button>
+          </header>
+          <label>
+            N-way ⓘ <b>{nWay}</b>
+            <input
+              aria-label="N-way"
+              type="range"
+              min="2"
+              max="10"
+              value={nWay}
+              onInput={(e) => setNWay(Number(e.currentTarget.value))}
+            />
+          </label>
+          <label>
+            K-shot ⓘ <b>{kShot}</b>
+            <input
+              aria-label="K-shot"
+              type="range"
+              min="1"
+              max="10"
+              value={kShot}
+              onInput={(e) => setKShot(Number(e.currentTarget.value))}
+            />
+          </label>
+          <h4>QUERY MODE</h4>
+          <div>
+            <button
+              className={!batch ? "active" : ""}
+              onClick={() => setBatch(false)}
+            >
+              Single Query
+            </button>
+            <button
+              className={batch ? "active" : ""}
+              onClick={() => setBatch(true)}
+            >
+              Batch Queries
+            </button>
+          </div>
+          <label>
+            DISTANCE METRIC
+            <select
+              value={metric}
+              onChange={(e) => setMetric(e.target.value as FewShotMetric)}
+            >
+              <option value="euclidean">Euclidean (L2)</option>
+              <option value="cosine">Cosine</option>
+            </select>
+          </label>
+          <label>
+            EMBEDDING
+            <select
+              value={embedding}
+              onChange={(e) => setEmbedding(e.target.value)}
+            >
+              <option>ResNet-18 (pretrained)</option>
+              <option>MobileNetV2 (pretrained)</option>
+              <option>Conv-4 (episodic)</option>
+            </select>
+          </label>
+          <label className="toggle">
+            Show Decision Boundaries
+            <input
+              type="checkbox"
+              checked={boundaries}
+              onChange={(e) => setBoundaries(e.target.checked)}
+            />
+          </label>
+          <label className="toggle">
+            Show Distances
+            <input
+              type="checkbox"
+              checked={distances}
+              onChange={(e) => setDistances(e.target.checked)}
+            />
+          </label>
+          <button className="episode" onClick={() => setSeed(seed + 1)}>
+            ⟳ New Episode
+          </button>
+          <p className="tip">
+            ⓘ An episode samples N classes and K examples per class as support.
+            The model classifies query examples by nearest prototype.
+          </p>
+        </section>
+      </aside>
+      <footer>
+        <span>
+          ⓘ Tip: Try increasing N-way or K-shot and observe how the decision
+          boundaries and accuracy change.
+        </span>
+        <label>
+          Auto New Episode{" "}
+          <input
+            type="checkbox"
+            onChange={(e) => e.target.checked && setSeed(seed + 1)}
+          />
+        </label>
+        <button onClick={() => setSeed(seed + 1)}>Next Episode ›</button>
+        <em>{toast}</em>
+      </footer>
     </div>
   );
 }

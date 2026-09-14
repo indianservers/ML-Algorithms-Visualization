@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import * as tf from '@tensorflow/tfjs';
-import { Camera, Flame, Upload } from 'lucide-react';
+import { Flame, Upload } from 'lucide-react';
 import { PageHeader } from '../../../components/common/PageHeader';
 import { Card, InfoBox } from '../../../components/common/Card';
 
