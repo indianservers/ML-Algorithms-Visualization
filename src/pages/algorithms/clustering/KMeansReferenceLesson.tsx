@@ -32,6 +32,7 @@ import {
   datasetGNoisyBlobs,
   datasetIElongated,
 } from "../../../lib/clustering/clusteringDatasets";
+import { scatterPercents } from "../../../lib/clustering/clusteringEval";
 import "./KMeansReferenceLesson.css";
 
 type Shape = "blobs" | "rings" | "mixed" | "elongated" | "four";
@@ -44,7 +45,13 @@ const COLORS = [
   "#8067ed",
   "#2bde8c",
   "#ff6b6b",
+  "#4ade80",
+  "#f97316",
+  "#38bdf8",
+  "#e879f9",
 ];
+const MAX_K = 10;
+const clusterColor = (index: number) => COLORS[((index % COLORS.length) + COLORS.length) % COLORS.length];
 function makePoints(shape: Shape) {
   const source =
     shape === "rings"
@@ -121,11 +128,36 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
     setStep(0);
     setManual(null);
   };
+  const changeK = (next: number) => {
+    setK(Math.max(2, Math.min(MAX_K, Math.min(next, Math.max(2, points.length)))));
+    setManual(null);
+    setStep(10_000);
+  };
+  const plotSamples = useMemo(
+    () => [
+      ...points.map(([x, y]) => ({ x, y })),
+      ...centroids.map(([x, y]) => ({ x, y })),
+    ],
+    [points, centroids],
+  );
+  const plotAt = (x: number, y: number) => scatterPercents(x, y, plotSamples, 0.16);
   const coords = (event: React.PointerEvent | React.MouseEvent) => {
     const rect = plotRef.current!.getBoundingClientRect();
+    const xs = plotSamples.map((sample) => sample.x);
+    const ys = plotSamples.map((sample) => sample.y);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    const spanX = Math.max(1e-6, maxX - minX);
+    const spanY = Math.max(1e-6, maxY - minY);
+    const left = minX - spanX * 0.16;
+    const right = maxX + spanX * 0.16;
+    const bottom = minY - spanY * 0.16;
+    const top = maxY + spanY * 0.16;
     return [
-      ((event.clientX - rect.left) / rect.width) * 16 - 8,
-      8 - ((event.clientY - rect.top) / rect.height) * 12,
+      left + ((event.clientX - rect.left) / rect.width) * (right - left),
+      top - ((event.clientY - rect.top) / rect.height) * (top - bottom),
     ];
   };
   const interact = (event: React.PointerEvent | React.MouseEvent) => {
@@ -259,66 +291,82 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
         >
           <svg viewBox="0 0 100 100" preserveAspectRatio="none">
             <defs>
-              {COLORS.slice(0, k).map((color, i) => (
-                <radialGradient id={`g${i}`} key={color}>
-                  <stop stopColor={color} stopOpacity=".22" />
-                  <stop offset="1" stopColor={color} stopOpacity=".03" />
+              {Array.from({ length: safeK }, (_, i) => (
+                <radialGradient id={`g${i}`} key={i}>
+                  <stop stopColor={clusterColor(i)} stopOpacity=".5" />
+                  <stop offset="1" stopColor={clusterColor(i)} stopOpacity="0" />
                 </radialGradient>
               ))}
             </defs>
-            {centroids.map((c, i) => (
-              <circle
-                key={i}
-                cx={((c[0] + 8) / 16) * 100}
-                cy={((8 - c[1]) / 12) * 100}
-                r="39"
-                fill={`url(#g${i})`}
-              />
-            ))}
+            {centroids.map((c, i) => {
+              const { left, top } = plotAt(c[0], c[1]);
+              return (
+                <circle
+                  key={`glow-${i}`}
+                  cx={left}
+                  cy={top}
+                  r="28"
+                  fill={`url(#g${i})`}
+                />
+              );
+            })}
+            {points.map((p, i) => {
+              const centroid = centroids[assignments[i]];
+              if (!centroid) return null;
+              const from = plotAt(p[0], p[1]);
+              const to = plotAt(centroid[0], centroid[1]);
+              return (
+                <line
+                  key={`link-${i}`}
+                  x1={from.left}
+                  y1={from.top}
+                  x2={to.left}
+                  y2={to.top}
+                  stroke={clusterColor(assignments[i])}
+                  strokeWidth="0.45"
+                  strokeLinecap="round"
+                  vectorEffect="non-scaling-stroke"
+                  opacity="0.55"
+                />
+              );
+            })}
           </svg>
-          {points.map((p, i) => (
-            <i
-              className="point"
-              key={i}
-              style={{
-                left: `${((p[0] + 8) / 16) * 100}%`,
-                top: `${((8 - p[1]) / 12) * 100}%`,
-                background: COLORS[assignments[i]],
-                boxShadow: `0 0 8px ${COLORS[assignments[i]]}`,
-              }}
-            />
-          ))}
-          {points.map((p, i) => (
-            <span
-              className="link"
-              key={i}
-              style={{
-                left: `${((p[0] + 8) / 16) * 100}%`,
-                top: `${((8 - p[1]) / 12) * 100}%`,
-                width: `${(distance(p, centroids[assignments[i]]) / 16) * 100}%`,
-                transform: `rotate(${(Math.atan2(-(centroids[assignments[i]][1] - p[1]), centroids[assignments[i]][0] - p[0]) * 180) / Math.PI}deg)`,
-                background: COLORS[assignments[i]],
-              }}
-            />
-          ))}
-          {centroids.map((c, i) => (
-            <button
-              aria-label={`centroid ${i + 1}`}
-              className="centroid"
-              key={i}
-              onPointerDown={(e) => {
-                e.stopPropagation();
-                setDragging(i);
-              }}
-              style={{
-                left: `${((c[0] + 8) / 16) * 100}%`,
-                top: `${((8 - c[1]) / 12) * 100}%`,
-                background: COLORS[i],
-              }}
-            >
-              ◇
-            </button>
-          ))}
+          {points.map((p, i) => {
+            const { left, top } = plotAt(p[0], p[1]);
+            return (
+              <i
+                className="point"
+                key={i}
+                style={{
+                  left: `${left}%`,
+                  top: `${top}%`,
+                  background: clusterColor(assignments[i]),
+                  boxShadow: `0 0 10px ${clusterColor(assignments[i])}`,
+                }}
+              />
+            );
+          })}
+          {centroids.map((c, i) => {
+            const { left, top } = plotAt(c[0], c[1]);
+            return (
+              <button
+                aria-label={`centroid ${i + 1}`}
+                className="centroid"
+                key={i}
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  setDragging(i);
+                }}
+                style={{
+                  left: `${left}%`,
+                  top: `${top}%`,
+                  background: clusterColor(i),
+                }}
+              >
+                ◇
+              </button>
+            );
+          })}
           <div className="drag-tip">
             ☝ Drag centroids
             <br />
@@ -356,7 +404,7 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
           <div className="legend">
             {counts.map((count, i) => (
               <p key={i}>
-                <i style={{ background: COLORS[i] }} /> Cluster {i + 1}
+                <i style={{ background: clusterColor(i) }} /> Cluster {i + 1}
                 <b>{count}</b>
               </p>
             ))}
@@ -427,7 +475,7 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
             <h3>Cluster sizes</h3>
             {counts.map((count, i) => (
               <p key={i}>
-                <i style={{ background: COLORS[i] }} /> Cluster {i + 1}
+                <i style={{ background: clusterColor(i) }} /> Cluster {i + 1}
                 <b>
                   {count} · {((count / points.length) * 100).toFixed(1)}%
                 </b>
@@ -444,9 +492,9 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
         <h3>LAB CONTROLS</h3>
         <label>Number of clusters (K)</label>
         <div className="stepper">
-          <button onClick={() => setK(Math.max(2, k - 1))}>−</button>
+          <button aria-label="Decrease clusters" onClick={() => changeK(k - 1)}>−</button>
           <b>{k}</b>
-          <button onClick={() => setK(Math.min(6, k + 1))}>＋</button>
+          <button aria-label="Increase clusters" onClick={() => changeK(k + 1)}>＋</button>
         </div>
         <label>Initialization ⓘ</label>
         <select

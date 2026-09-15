@@ -330,13 +330,45 @@
   right: 26px;
   top: 54px;
   width: 177px;
-  height: 244px;
+  min-height: 244px;
   padding: 15px;
   border: 1px solid #273951;
   border-radius: 7px;
   background: #091426ee;
 }
-.kmed-plot > article > b {
+.kmed-plot > article > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.kmed-plot > article > header button {
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #9eb0c8;
+}
+.kmed-plot > article > header svg {
+  width: 14px;
+  height: 14px;
+}
+.kmed-step-open {
+  position: absolute;
+  z-index: 6;
+  right: 26px;
+  top: 54px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid #273951;
+  border-radius: 6px;
+  background: #091426ee;
+  color: #d7e2f0;
+}
+.kmed-plot > article > b,
+.kmed-plot > article > header b {
   color: #4b93ff;
 }
 .kmed-plot > article h3 {

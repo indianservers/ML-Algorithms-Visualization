@@ -223,21 +223,27 @@
   color: #40d887;
 }
 .km-plot {
-  height: 510px;
+  height: min(62vh, 560px);
   position: relative;
   overflow: hidden;
-  border: 1px solid #344358;
-  border-radius: 6px;
+  border: 1px solid #3a4f78;
+  border-radius: 10px;
   background:
-    linear-gradient(#091928aa, #081522aa),
-    repeating-linear-gradient(0deg, transparent 0 81px, #27394b 82px),
-    repeating-linear-gradient(90deg, transparent 0 106px, #27394b 107px);
+    repeating-linear-gradient(0deg, transparent 0 79px, rgb(255 255 255 / 0.06) 80px),
+    repeating-linear-gradient(90deg, transparent 0 99px, rgb(255 255 255 / 0.06) 100px),
+    radial-gradient(ellipse 85% 90% at 16% 55%, #128a96 0%, transparent 52%),
+    radial-gradient(ellipse 80% 95% at 84% 42%, #7a22b8 0%, #3b1570 48%, #14082c 100%);
 }
 .km-plot > svg {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: visible;
+  pointer-events: none;
+}
+.km-plot > svg line {
+  vector-effect: non-scaling-stroke;
 }
 .km-plot .point {
   position: absolute;
@@ -251,8 +257,8 @@
 .km-plot .link {
   position: absolute;
   z-index: 2;
-  height: 1px;
-  opacity: 0.3;
+  height: 1.4px;
+  opacity: 0.42;
   transform-origin: left;
 }
 .km-plot .centroid {
@@ -265,6 +271,7 @@
   border-radius: 3px;
   color: white;
   font-size: 0;
+  box-shadow: 0 0 18px currentColor;
 }
 .drag-tip,
 .plot-tools,
@@ -323,13 +330,12 @@
 }
 .km-bottom {
   position: relative;
-  width: 1305px;
-  height: 243px;
-  margin-top: 6px;
+  width: 100%;
+  min-height: 243px;
+  margin-top: 8px;
   display: grid;
-  grid-template-columns: 703px 596px;
-  grid-template-rows: 1fr;
-  gap: 6px;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(210px, 0.75fr);
+  gap: 8px;
 }
 .km-bottom > article {
   border: 1px solid #344358;
@@ -405,8 +411,8 @@
   position: relative;
   left: auto;
   right: auto;
-  height: 243px;
-  padding: 12px 280px 10px 12px;
+  height: auto;
+  padding: 12px;
 }
 .curve h3 {
   margin: 0;
@@ -425,12 +431,12 @@
   stroke-width: 3;
 }
 .summary {
-  position: absolute;
-  right: 8px;
-  width: 250px;
-  height: 225px;
-  margin-top: 9px;
-  padding: 10px;
+  position: relative;
+  right: auto;
+  width: auto;
+  height: auto;
+  margin-top: 0;
+  padding: 12px;
 }
 .summary h3 {
   margin: 0 0 7px;

@@ -1223,7 +1223,7 @@ export function KMeansAdvancedWorkbench() {
               <input
                 type="range"
                 min={2}
-                max={6}
+                max={10}
                 value={k}
                 onChange={(event) => {
                   setK(Number(event.target.value));

@@ -15,7 +15,9 @@ import {
   Network,
   Pause,
   Play,
+  Plus,
   RefreshCw,
+  Trash2,
   Upload,
 } from "lucide-react";
 import {
@@ -33,6 +35,7 @@ import {
 import { scatterPercents } from "../../../lib/clustering/clusteringEval";
 import "./KMedoidsPage.css";
 type Point = { x: number; y: number; outlier: boolean };
+type PlotTool = "select" | "add" | "remove";
 type DataKey = "mall" | "customers" | "traffic" | "elongated" | "four" | "imported";
 type Tab =
   | "learn"
@@ -42,7 +45,41 @@ type Tab =
   | "metrics"
   | "compare"
   | "explain";
-const COLORS = ["#25c5d8", "#6bce43", "#ff9909", "#8a6cf0", "#ef4f8f"];
+const COLORS = ["#25c5d8", "#6bce43", "#ff9909", "#8a6cf0", "#ef4f8f", "#38bdf8", "#f97316", "#4ade80", "#e879f9", "#facc15"];
+const MAX_K = 10;
+const clusterColor = (index: number) => COLORS[((index % COLORS.length) + COLORS.length) % COLORS.length];
+function plotFrame(points: Array<{ x: number; y: number }>, pad = 0.12) {
+  const xs = points.map((point) => point.x);
+  const ys = points.map((point) => point.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const spanX = Math.max(1e-6, maxX - minX);
+  const spanY = Math.max(1e-6, maxY - minY);
+  return {
+    left: minX - spanX * pad,
+    right: maxX + spanX * pad,
+    bottom: minY - spanY * pad,
+    top: maxY + spanY * pad,
+  };
+}
+function pointFromPointer(
+  event: { clientX: number; clientY: number },
+  rect: DOMRect,
+  frame: ReturnType<typeof plotFrame>,
+) {
+  return {
+    x:
+      frame.left +
+      ((event.clientX - rect.left) / Math.max(1, rect.width)) *
+        (frame.right - frame.left),
+    y:
+      frame.top -
+      ((event.clientY - rect.top) / Math.max(1, rect.height)) *
+        (frame.top - frame.bottom),
+  };
+}
 function tagged(
   source: { x: number; y: number }[],
   outlierFrom = Number.POSITIVE_INFINITY,
@@ -96,10 +133,18 @@ export default function KMedoidsPage() {
     [showDistances, setShowDistances] = useState(false),
     [view, setView] = useState("clusters"),
     [scale, setScale] = useState("standard"),
+    [showStepCard, setShowStepCard] = useState(false),
+    [tool, setTool] = useState<PlotTool>("select"),
+    [selectedCluster, setSelectedCluster] = useState<number | null>(null),
+    [manualMedoids, setManualMedoids] = useState<number[] | null>(null),
+    [dragging, setDragging] = useState<number | null>(null),
     [toast, setToast] = useState("");
   const go = useLabNavigate();
-  const uploadRef = useRef<HTMLInputElement>(null),
-    X = useMemo(() => points.map((p) => [p.x, p.y]), [points]);
+  const uploadRef = useRef<HTMLInputElement>(null);
+  const plotRef = useRef<HTMLDivElement>(null);
+  const boundsRef = useRef<ReturnType<typeof plotFrame> | null>(null);
+  const dragMoved = useRef(false);
+  const X = useMemo(() => points.map((p) => [p.x, p.y]), [points]);
   const safeK = Math.max(1, Math.min(k, Math.max(1, X.length)));
   const result = useMemo(
       () => trainKMedoids(X, { k: safeK, maxIterations, metric, init, seed: 42 }),
@@ -108,6 +153,52 @@ export default function KMedoidsPage() {
     phase = Math.min(step, Math.max(0, result.steps.length - 1)),
     active = result.steps[phase] ?? result.steps.at(-1)!,
     medoidSet = new Set(active.medoidIndices);
+  const liveMedoids = useMemo(() => {
+    const source = (manualMedoids ?? active.medoidIndices).filter(
+      (index) => index >= 0 && index < points.length,
+    );
+    const unique: number[] = [];
+    for (const index of source)
+      if (!unique.includes(index)) unique.push(index);
+    for (let index = 0; unique.length < safeK && index < points.length; index++)
+      if (!unique.includes(index)) unique.push(index);
+    return unique.slice(0, safeK);
+  }, [manualMedoids, active.medoidIndices, points.length, safeK]);
+  const liveAssignments = useMemo(() => {
+    if (!manualMedoids) return active.assignments;
+    return points.map((point) =>
+      liveMedoids.reduce((best, index, cluster) => {
+        const medoid = points[index];
+        const current = points[liveMedoids[best]];
+        if (!medoid || !current) return best;
+        return kMedoidsDistance([point.x, point.y], [medoid.x, medoid.y], metric) <
+          kMedoidsDistance([point.x, point.y], [current.x, current.y], metric)
+          ? cluster
+          : best;
+      }, 0),
+    );
+  }, [manualMedoids, liveMedoids, points, metric, active.assignments]);
+  const liveMedoidSet = new Set(liveMedoids);
+  const displayPoints = useMemo(() => {
+    if (scale.toLowerCase() !== "normalized" || points.length < 2) return points;
+    const meanX = points.reduce((sum, point) => sum + point.x, 0) / points.length;
+    const meanY = points.reduce((sum, point) => sum + point.y, 0) / points.length;
+    const stdX =
+      Math.sqrt(
+        points.reduce((sum, point) => sum + (point.x - meanX) ** 2, 0) /
+          points.length,
+      ) || 1;
+    const stdY =
+      Math.sqrt(
+        points.reduce((sum, point) => sum + (point.y - meanY) ** 2, 0) /
+          points.length,
+      ) || 1;
+    return points.map((point) => ({
+      ...point,
+      x: (point.x - meanX) / stdX,
+      y: (point.y - meanY) / stdY,
+    }));
+  }, [points, scale]);
   const previous = result.steps[Math.max(0, phase - 1)],
     improvement = previous ? previous.cost - active.cost : 0;
   useEffect(() => {
@@ -121,12 +212,17 @@ export default function KMedoidsPage() {
     );
     return () => clearInterval(timer);
   }, [playing, delay, result.steps.length]);
+  useEffect(() => {
+    setStep(Math.max(0, result.steps.length - 1));
+  }, [safeK, metric, init, points, result.steps.length]);
   const choose = (next: DataKey) => {
     const source = next === "imported" ? imported : BUILT[next];
     if (!source.length) return;
     setDataKey(next);
     setPoints(source.map((p) => ({ ...p })));
     setStep(0);
+    setManualMedoids(null);
+    setSelectedCluster(null);
   };
   const reset = () => {
     choose("mall");
@@ -139,6 +235,8 @@ export default function KMedoidsPage() {
     setDelay(800);
     setPlaying(false);
     setShowDistances(false);
+    setManualMedoids(null);
+    setSelectedCluster(null);
   };
   const upload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -325,8 +423,8 @@ export default function KMedoidsPage() {
                 style={{
                   left: `${scatterPercents(p.x, p.y, points).left}%`,
                   top: `${scatterPercents(p.x, p.y, points).top}%`,
-                  background: p.outlier ? "transparent" : COLORS[cluster],
-                  borderColor: COLORS[cluster],
+                  background: p.outlier ? "transparent" : clusterColor(cluster),
+                  borderColor: clusterColor(cluster),
                 }}
               >
                 {p.outlier ? "×" : medoid ? "●" : ""}
@@ -344,44 +442,63 @@ export default function KMedoidsPage() {
                     top: `${scatterPercents(p.x, p.y, points).top}%`,
                     width: `${Math.min(40, kMedoidsDistance([p.x, p.y], m, metric) * 8)}%`,
                     transform: `rotate(${(Math.atan2(-(m[1] - p.y), m[0] - p.x) * 180) / Math.PI}deg)`,
-                    background: COLORS[active.assignments[i]],
+                    background: clusterColor(active.assignments[i]),
                   }}
                 />
               );
             })}
-          <article>
-            <b>Step {phase + 1} of {result.steps.length}</b>
-            <h3>
-              {
-                [
-                  "Initialize Medoids",
-                  "Assign to Nearest Medoid",
-                  "Swap & Improve",
-                  "Converge Check",
-                  "Final Assignment",
-                  "Done",
-                ][phase]
-              }
-            </h3>
-            <p>
-              Evaluate swaps between medoids and non-medoid points. Keep the
-              swap that reduces total cost.
-            </p>
-            <div>
-              <button onClick={() => setStep(Math.max(0, step - 1))}>
-                <ChevronLeft />
-                Back
+          {showStepCard ? (
+            <article>
+              <header>
+                <b>Step {phase + 1} of {result.steps.length}</b>
+                <button
+                  type="button"
+                  aria-label="Close step guide"
+                  onClick={() => setShowStepCard(false)}
+                >
+                  ×
+                </button>
+              </header>
+              <h3>
+                {
+                  [
+                    "Initialize Medoids",
+                    "Assign to Nearest Medoid",
+                    "Swap & Improve",
+                    "Converge Check",
+                    "Final Assignment",
+                    "Done",
+                  ][phase]
+                }
+              </h3>
+              <p>
+                Evaluate swaps between medoids and non-medoid points. Keep the
+                swap that reduces total cost.
+              </p>
+              <div>
+                <button onClick={() => setStep(Math.max(0, step - 1))}>
+                  <ChevronLeft />
+                  Back
+                </button>
+                <button onClick={() => setStep(Math.min(result.steps.length - 1, step + 1))}>
+                  Next
+                  <ChevronRight />
+                </button>
+              </div>
+              <button onClick={() => setPlaying(!playing)}>
+                {playing ? <Pause /> : <Play />}
+                {playing ? "Pause" : "Play"}
               </button>
-              <button onClick={() => setStep(Math.min(5, step + 1))}>
-                Next
-                <ChevronRight />
-              </button>
-            </div>
-            <button onClick={() => setPlaying(!playing)}>
-              {playing ? <Pause /> : <Play />}
-              {playing ? "Pause" : "Play"}
+            </article>
+          ) : (
+            <button
+              type="button"
+              className="kmed-step-open"
+              onClick={() => setShowStepCard(true)}
+            >
+              Show steps
             </button>
-          </article>
+          )}
           <footer>
             <label>
               View
@@ -457,7 +574,7 @@ export default function KMedoidsPage() {
                 New Cost<strong>{active.cost.toFixed(2)}</strong>
               </span>
             </div>
-            <button onClick={() => setStep(Math.min(5, step + 1))}>
+            <button onClick={() => setStep(Math.min(result.steps.length - 1, step + 1))}>
               Apply Swap
             </button>
           </article>
@@ -511,9 +628,9 @@ export default function KMedoidsPage() {
         </h3>
         <label>K (Number of Clusters)</label>
         <div className="stepper">
-          <button onClick={() => setK(Math.max(2, k - 1))}>−</button>
+          <button aria-label="Decrease clusters" onClick={() => setK(Math.max(2, k - 1))}>−</button>
           <b>{k}</b>
-          <button onClick={() => setK(Math.min(5, k + 1))}>＋</button>
+          <button aria-label="Increase clusters" onClick={() => setK(Math.max(2, Math.min(MAX_K, Math.min(k + 1, Math.max(2, points.length)))))}>＋</button>
         </div>
         <label>Distance Metric</label>
         <select
