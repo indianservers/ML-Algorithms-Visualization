@@ -5,14 +5,26 @@ import { runTransferLearning } from "../../../lib/algorithms/neural/transferLear
 import "./TransferLearningPage.css";
 
 const datasets = [
-  { name: "Oxford Flowers 102", icon: "🌼", images: 8189, classes: 102 },
-  { name: "Stanford Dogs", icon: "🐕", images: 20580, classes: 120 },
-  { name: "Food-101", icon: "🍜", images: 101000, classes: 101 },
+  { name: "Synthetic 3-class embeddings", icon: "▦", images: 96, classes: 3 },
+  { name: "Synthetic 5-class embeddings", icon: "▣", images: 160, classes: 5 },
+  { name: "Synthetic 8-class embeddings", icon: "▤", images: 256, classes: 8 },
 ];
 const backbones = [
-  { name: "ResNet-50", params: "23.6M", source: "ImageNet (1.2M images)" },
-  { name: "MobileNetV3", params: "5.4M", source: "ImageNet (1.2M images)" },
-  { name: "EfficientNet-B0", params: "5.3M", source: "ImageNet (1.2M images)" },
+  {
+    name: "Frozen 12-D feature extractor",
+    params: "12 features",
+    source: "Deterministic class-conditional embedding (browser substitute for ImageNet)",
+  },
+  {
+    name: "Frozen 12-D extractor + extra noise",
+    params: "12 features",
+    source: "Same extractor, different seed",
+  },
+  {
+    name: "Frozen 12-D extractor (narrow head)",
+    params: "12 features",
+    source: "Same extractor, fewer trainable blocks",
+  },
 ];
 const formatPercent = (value: number) => `${(value * 100).toFixed(1)}%`;
 
@@ -21,7 +33,7 @@ export default function TransferLearningPage() {
     [backbone, setBackbone] = useState(0),
     [blocks, setBlocks] = useState(2),
     [learningRate, setLearningRate] = useState(0.0001),
-    [optimizer, setOptimizer] = useState("AdamW"),
+    [optimizer, setOptimizer] = useState("SGD"),
     [batch, setBatch] = useState(32),
     [epochs, setEpochs] = useState(25),
     [earlyStopping, setEarlyStopping] = useState(true),
@@ -44,8 +56,11 @@ export default function TransferLearningPage() {
         learningRate,
         trainableBlocks: blocks,
         seed: 113 + dataset * 19 + backbone * 7 + run,
+        batchSize: batch,
+        earlyStopping,
+        patience,
       }),
-    [data, epochs, learningRate, blocks, dataset, backbone, run],
+    [data, epochs, learningRate, blocks, dataset, backbone, run, batch, earlyStopping, patience],
   );
   const history = result.history;
   const maxLoss = Math.max(...history.map((x) => x.validationLoss), 0.01);
@@ -61,7 +76,7 @@ export default function TransferLearningPage() {
     setBackbone(0);
     setBlocks(2);
     setLearningRate(0.0001);
-    setOptimizer("AdamW");
+    setOptimizer("SGD");
     setBatch(32);
     setEpochs(25);
     setEarlyStopping(true);
@@ -318,9 +333,7 @@ export default function TransferLearningPage() {
                 setTrained(false);
               }}
             >
-              <option>AdamW</option>
-              <option>Adam</option>
-              <option>SGD + Momentum</option>
+              <option>SGD</option>
             </select>
           </label>
           <div>
@@ -425,15 +438,18 @@ export default function TransferLearningPage() {
           <h3>Insights</h3>
           <div>
             <p>
-              ❄ Frozen layers preserve generic visual features learned from
-              ImageNet.
+              ❄ When the extractor is frozen, only the linear head updates.
+              This lab uses synthetic 12-D embeddings, not ImageNet weights.
             </p>
             <p>
-              🔥 Fine-tuning the last blocks and head adapts features to{" "}
-              {data.name}.
+              🔥 Unfreezing blocks lets the extractor scales change on this
+              target set ({data.name}).
             </p>
-            <p>▱ Large accuracy gains with minimal data and compute.</p>
-            <p>💡 Try unfreezing more layers if the gap plateaus.</p>
+            <p>
+              ▱ Fine-tuning can help with limited data; it does not always
+              need little data, and gains depend on the source/target match.
+            </p>
+            <p>💡 Try unfreezing more layers if validation loss plateaus.</p>
           </div>
         </section>
       </main>
@@ -443,9 +459,9 @@ export default function TransferLearningPage() {
           <article>
             <small>Source Dataset (Pretraining)</small>
             <b>
-              <Database /> ImageNet
+              <Database /> Synthetic source features
             </b>
-            <p>1.2M images • 1,000 classes</p>
+            <p>12-D hashed embeddings • not ImageNet (1.2M / 1000 classes)</p>
           </article>
           <i>↓</i>
           <strong>♧ → Transfer Knowledge</strong>
@@ -465,16 +481,17 @@ export default function TransferLearningPage() {
             <figure />
             <p>
               <span>■ Train</span>{" "}
-              {Math.round(data.images * 0.8).toLocaleString()} (80%)
+              80% of generated embeddings
               <br />
               <span>■ Val</span>{" "}
-              {Math.round(data.images * 0.1).toLocaleString()} (10%)
-              <br />
-              <span>■ Test</span>{" "}
-              {Math.floor(data.images * 0.1).toLocaleString()} (10%)
+              20% held-out embeddings (same split used for the curves)
             </p>
           </div>
-          <button onClick={() => setMessage("Dataset preparation opened")}>
+          <button
+            onClick={() =>
+              setMessage("In-browser educational head — no separate dataset prep screen.")
+            }
+          >
             View / Prep Dataset →
           </button>
         </section>
@@ -482,7 +499,16 @@ export default function TransferLearningPage() {
           <h3>Quick Actions</h3>
           {["Visualize Features →", "Compare Runs →", "Export Model →"].map(
             (x) => (
-              <button onClick={() => setMessage(x.replace(" →", ""))} key={x}>
+              <button
+                onClick={() =>
+                  setMessage(
+                    x.includes("Export")
+                      ? "Export is not available: this educational classifier lives in memory only."
+                      : `${x.replace(" →", "")} is the current loss/accuracy view on this page.`,
+                  )
+                }
+                key={x}
+              >
                 {x}
               </button>
             ),
@@ -497,7 +523,9 @@ export default function TransferLearningPage() {
         <span>{trained ? "COMPLETED" : "READY"}</span> Backbone:{" "}
         <b>{backbones[backbone].name}</b> · Trainable:{" "}
         <b>{blocks === 0 ? "Head Only" : `Last ${blocks} Blocks + Head`}</b> ·
-        Epochs: <b>{result.stoppedAt}</b> · Best Val Acc:{" "}
+        <b>{result.trainableParameters}</b> trainable ·{" "}
+        <b>{result.frozenParameters}</b> frozen extractor scales ·
+        Epochs: <b>{result.stoppedAt}</b> · Val Acc:{" "}
         <b>{formatPercent(result.afterAccuracy)}</b>
         <em>{message}</em>
       </footer>

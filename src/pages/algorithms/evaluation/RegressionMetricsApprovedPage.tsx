@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, type CSSProperties } from "react";
+import { useLabNavigate } from "../../../lib/labNavigation";
 import { Link } from "react-router-dom";
 import { mae, mse, rSquared, rmse } from "../../../lib/math/metrics";
 import "./RegressionMetricsApprovedPage.css";
@@ -100,6 +101,7 @@ export default function RegressionMetricsApprovedPage() {
   const [outlierRule, setOutlierRule] = useState("IQR (1.5×)");
   const [selected, setSelected] = useState<number | null>(null);
   const [message, setMessage] = useState("Linked Views");
+  const go = useLabNavigate();
   const uploadRef = useRef<HTMLInputElement>(null);
   const dataset = customDataset ?? datasets[datasetIndex];
 
@@ -238,13 +240,13 @@ export default function RegressionMetricsApprovedPage() {
         <Link className="rm-brand" to="/"><span>▥</span><b>Mega ML<small>AI Observatory</small></b></Link>
         <div className="rm-nav panel">
           <b>LEARN</b>
-          <button onClick={() => setMessage("All Lessons opened")}>⇧ All Lessons</button>
+          <button onClick={() => go("All Lessons")}>⇧ All Lessons</button>
           <hr /><b>REGRESSION</b>
-          {["◉ Overview", "▥ Regression Metrics", "♧ Algorithms", "◇ Feature Engineering"].map((item) => <button className={item.includes("Regression Metrics") ? "active" : ""} onClick={() => setMessage(`${item.slice(2)} opened`)} key={item}>{item}</button>)}
+          {["◉ Overview", "▥ Regression Metrics", "♧ Algorithms", "◇ Feature Engineering"].map((item) => <button className={item.includes("Regression Metrics") ? "active" : ""} onClick={() => go(item)} key={item}>{item}</button>)}
           <hr /><b>PLAYGROUND</b>
-          {["☷ Notebooks", "⌘ Experiments", "♧ Models"].map((item) => <button onClick={() => setMessage(`${item.slice(2)} opened`)} key={item}>{item}</button>)}
+          {["☷ Notebooks", "⌘ Experiments", "♧ Models"].map((item) => <button onClick={() => go(item)} key={item}>{item}</button>)}
           <hr /><b>DATA</b>
-          <button onClick={() => setMessage("Datasets opened")}>▤ Datasets</button>
+          <button onClick={() => go("Datasets")}>▤ Datasets</button>
           <button onClick={() => uploadRef.current?.click()}>⇧ Uploads</button>
         </div>
         <section className="rm-progress panel"><b>Learning Progress</b><div><span>74%</span></div><small>Progress</small><p>Lesson 4 of 12</p><progress max="100" value="74" /><p>Next: Outlier Impact</p><button onClick={() => setMessage("Lesson continued")}>Continue Lesson</button></section>

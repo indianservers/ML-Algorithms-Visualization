@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLabNavigate } from '../../../lib/labNavigation';
 import { ridgeRegression } from '../../../lib/algorithms/regression/linearRegression';
 import { mse, rSquared } from '../../../lib/math/metrics';
 import './BiasVarianceApprovedPage.css';
@@ -95,6 +96,7 @@ export default function BiasVarianceApprovedPage() {
   const [status, setStatus] = useState('Ready');
   const [uploaded, setUploaded] = useState<{ name: string; points: Point[] } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const go = useLabNavigate();
   const points = useMemo(() => uploaded?.points ?? makeDataset(dataset, noise, seed), [dataset, noise, seed, uploaded]);
 
   const analysis = useMemo(() => computeBiasVariance(points, complexity, testSize, seed, scaling, modelKind), [points, complexity, testSize, seed, scaling, modelKind]);
@@ -154,11 +156,11 @@ export default function BiasVarianceApprovedPage() {
       <a className="bv-brand" href="/"><span>✺</span><b>Mega ML<small>AI OBSERVATORY</small></b></a>
       <nav>
         <small>MAIN</small>
-        {['⌂  Home', '◉  AI Observatory', '◇  Models', '▤  Datasets', '⌘  Experiments'].map(label => <button key={label} onClick={() => setStatus(`${label.slice(3)} opened`)}>{label}</button>)}
+        {['⌂  Home', '◉  AI Observatory', '◇  Models', '▤  Datasets', '⌘  Experiments'].map(label => <button key={label} onClick={() => go(label)}>{label}</button>)}
         <hr/><small>LEARN</small>
-        {['▣  Core Concepts', '▤  Lessons', '▦  Playgrounds', '▥  Cheat Sheets'].map((label, index) => <button className={index === 0 ? 'active' : ''} key={label} onClick={() => setStatus(`${label.slice(3)} selected`)}>{label}</button>)}
+        {['▣  Core Concepts', '▤  Lessons', '▦  Playgrounds', '▥  Cheat Sheets'].map((label, index) => <button className={index === 0 ? 'active' : ''} key={label} onClick={() => go(label)}>{label}</button>)}
         <hr/><small>TOOLS</small>
-        {['▧  Notebooks', '⬡  AutoML', '◈  Deployments', '▤  Reports'].map(label => <button key={label} onClick={() => setStatus(`${label.slice(3)} opened`)}>{label}</button>)}
+        {['▧  Notebooks', '⬡  AutoML', '◈  Deployments', '▤  Reports'].map(label => <button key={label} onClick={() => go(label)}>{label}</button>)}
       </nav>
       <button className="bv-collapse" onClick={() => setCollapsed(value => !value)}>{collapsed ? '»' : '‹  Collapse'}</button>
     </aside>

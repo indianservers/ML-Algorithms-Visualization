@@ -48,21 +48,32 @@ const cloneState = (state: GaussianMixtureState): GaussianMixtureState => ({
   ),
   responsibilities: state.responsibilities.map((row) => [...row]),
 });
+function seeded(seed: number) {
+  let state = seed >>> 0;
+  return () => {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    return state / 4294967296;
+  };
+}
+
 export function fitGaussianMixture(
   X: number[][],
   components = 4,
   maxIterations = 24,
   tolerance = 1e-4,
   regularization = 1e-3,
+  seed = 42,
 ): GaussianMixtureResult {
   if (!Number.isInteger(components) || components < 1 || X.length < components ||
       X.some((row) => row.length !== 2 || !row.every(Number.isFinite)))
     throw new Error("GMM requires at least K two-dimensional samples.");
   if (!Number.isInteger(maxIterations) || maxIterations < 1 ||
       !Number.isFinite(tolerance) || tolerance < 0 ||
-      !Number.isFinite(regularization) || regularization <= 0)
+      !Number.isFinite(regularization) || regularization <= 0 ||
+      !Number.isFinite(seed))
     throw new Error("GMM requires valid positive iteration and regularization settings.");
-  const means = [[...X[0]]];
+  const random = seeded(seed);
+  const means = [[...X[Math.floor(random() * X.length)]]];
   while (means.length < components) {
     const next = X.reduce(
       (best, point) => {

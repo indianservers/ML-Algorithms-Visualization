@@ -3,6 +3,7 @@ export type ArimaFit = {
   acf: number[];
   pacf: number[];
   fitted: number[];
+  fittedOriginal: number[];
   residuals: number[];
   forecast: number[];
   lower: number[];
@@ -118,6 +119,33 @@ function restoreForecast(original: number[], changes: number[], order: number) {
   });
 }
 
+function restoreInSample(original: number[], fittedDiff: number[], order: number) {
+  if (order <= 0) return [...fittedDiff];
+  if (order === 1) {
+    const fitted = [original[0] ?? 0];
+    for (let i = 0; i < fittedDiff.length; i++) {
+      fitted.push((original[i] ?? fitted[i]) + fittedDiff[i]);
+    }
+    return fitted.slice(0, original.length);
+  }
+  return restoreForecast(original.slice(0, original.length - fittedDiff.length + 1), fittedDiff, order);
+}
+
+export function inspectDifference(values: number[], index: number) {
+  if (index <= 0 || index >= values.length) {
+    return { previous: Number.NaN, current: values[index], delta: Number.NaN };
+  }
+  return {
+    previous: values[index - 1],
+    current: values[index],
+    firstDifference: values[index] - values[index - 1],
+    secondDifference:
+      index < 2
+        ? Number.NaN
+        : values[index] - 2 * values[index - 1] + values[index - 2],
+  };
+}
+
 export function fitArima(
   values: number[],
   p: number,
@@ -130,6 +158,36 @@ export function fitArima(
   const differenced = differenceSeries(source, d);
   const arOrder = Math.max(0, Math.min(8, Math.round(p)));
   const maOrder = Math.max(0, Math.min(8, Math.round(q)));
+  if (arOrder === 0 && maOrder === 0) {
+    const mean =
+      source.reduce((sum, value) => sum + value, 0) / Math.max(1, source.length);
+    const last = source.at(-1) ?? 0;
+    const forecast = Array.from(
+      { length: Math.max(1, Math.round(horizon)) },
+      () => (d <= 0 ? mean : last),
+    );
+    const residuals = source.map((value) => value - (d <= 0 ? mean : last));
+    const sigma = Math.sqrt(
+      residuals.reduce((sum, value) => sum + value * value, 0) /
+        Math.max(1, residuals.length),
+    );
+    return {
+      differenced,
+      acf: autocorrelation(differenced.length ? differenced : source, Math.min(36, source.length - 1)),
+      pacf: partialAutocorrelation(differenced.length ? differenced : source, Math.min(36, source.length - 1)),
+      fitted: source.map(() => (d <= 0 ? mean : last)),
+      fittedOriginal: source.map(() => (d <= 0 ? mean : last)),
+      residuals,
+      forecast,
+      lower: forecast.map((value, index) => value - confidenceZ * sigma * Math.sqrt(index + 1)),
+      upper: forecast.map((value, index) => value + confidenceZ * sigma * Math.sqrt(index + 1)),
+      coefficients: d <= 0 ? [mean] : [0],
+      sigma,
+      logLikelihood: 0,
+      aic: Number.NaN,
+      bic: Number.NaN,
+    };
+  }
   const start = Math.max(1, arOrder, maOrder);
   let errors = Array(differenced.length).fill(0);
   let coefficients: number[] = [];
@@ -242,6 +300,7 @@ export function fitArima(
       Math.min(36, differenced.length - 1),
     ),
     fitted: fittedDiff,
+    fittedOriginal: d === 0 ? fittedDiff : restoreInSample(source, fittedDiff, d),
     residuals: errors,
     forecast,
     lower,

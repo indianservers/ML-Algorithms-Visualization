@@ -11,7 +11,7 @@ import {
 import "./MLPPage.css";
 
 type Point = { x: number; y: number; label: number };
-type Dataset = "moons" | "circles" | "xor" | "imported";
+type Dataset = "moons" | "circles" | "xor" | "spiral" | "imported";
 const color = (probability: number) =>
   probability >= 0.5 ? "#ef4960" : "#4fe0df";
 const rand = (i: number, salt: number) => {
@@ -43,22 +43,28 @@ function makeData(kind: Exclude<Dataset, "imported">, count = 240): Point[] {
     }
     const sx = j % 2 ? 1 : -1,
       sy = Math.floor(j / 2) % 2 ? 1 : -1;
-    return {
-      x: sx + (rand(i, 3) - 0.5) * 1.2,
-      y: sy + (rand(i, 4) - 0.5) * 1.2,
-      label: sx === sy ? 1 : 0,
-    };
+    if (kind === "xor")
+      return {
+        x: sx + (rand(i, 3) - 0.5) * 1.2,
+        y: sy + (rand(i, 4) - 0.5) * 1.2,
+        label: sx === sy ? 1 : 0,
+      };
+    const r = 0.25 + (j / (count / 2)) * 1.25;
+    const a = (j / (count / 2)) * Math.PI * 3 + label * Math.PI;
+    return { x: Math.cos(a) * r + noise, y: Math.sin(a) * r + noise, label };
   });
 }
 const BUILT = {
   moons: makeData("moons"),
   circles: makeData("circles"),
   xor: makeData("xor"),
+  spiral: makeData("spiral"),
 };
 const NAMES: Record<Dataset, string> = {
   moons: "Two Moons",
   circles: "Concentric Circles",
   xor: "XOR Quadrants",
+  spiral: "Two Spirals",
   imported: "Imported CSV",
 };
 const arrays = (points: Point[]) => ({

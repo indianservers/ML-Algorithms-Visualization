@@ -66,6 +66,7 @@ export function confusionMatrix(actual: number[], predicted: number[]): number[]
 export function binaryMetrics(actual: number[], predicted: number[]): {
   tp: number; tn: number; fp: number; fn: number;
   accuracy: number; precision: number; recall: number; specificity: number; f1: number;
+  balancedAccuracy: number;
 } {
   validateBinaryPairs(actual, predicted, 'Binary metrics');
   if (!predicted.every(value => value === 0 || value === 1)) throw new Error('Binary metrics requires binary predicted labels');
@@ -82,11 +83,14 @@ export function binaryMetrics(actual: number[], predicted: number[]): {
   const recall = tp / (tp + fn) || 0;
   const specificity = tn / (tn + fp) || 0;
   const f1 = precision + recall > 0 ? 2 * precision * recall / (precision + recall) : 0;
-  return { tp, tn, fp, fn, accuracy, precision, recall, specificity, f1 };
+  const balancedAccuracy = (recall + specificity) / 2;
+  return { tp, tn, fp, fn, accuracy, precision, recall, specificity, f1, balancedAccuracy };
 }
 
 export function rocCurve(actual: number[], scores: number[]): { fpr: number[]; tpr: number[]; thresholds: number[]; auc: number } {
-  validateBinaryPairs(actual, scores, 'ROC curve');
+  validateBinaryPairs(actual, actual, 'ROC curve');
+  if (actual.length !== scores.length) throw new Error('ROC curve requires arrays of equal length');
+  if (!scores.every(Number.isFinite)) throw new Error('ROC curve requires finite scores');
   const sorted = scores.map((s, i) => ({ s, a: actual[i] })).sort((a, b) => b.s - a.s);
   const totalPos = actual.filter(a => a === 1).length;
   const totalNeg = actual.length - totalPos;
@@ -111,7 +115,9 @@ export function rocCurve(actual: number[], scores: number[]): { fpr: number[]; t
 }
 
 export function precisionRecallCurve(actual: number[], scores: number[]): { precision: number[]; recall: number[]; thresholds: number[] } {
-  validateBinaryPairs(actual, scores, 'Precision-recall curve');
+  validateBinaryPairs(actual, actual, 'Precision-recall curve');
+  if (actual.length !== scores.length) throw new Error('Precision-recall curve requires arrays of equal length');
+  if (!scores.every(Number.isFinite)) throw new Error('Precision-recall curve requires finite scores');
   const sorted = scores.map((s, i) => ({ s, a: actual[i] })).sort((a, b) => b.s - a.s);
   const totalPos = actual.filter(a => a === 1).length;
   let tp = 0, fp = 0;
@@ -129,8 +135,20 @@ export function precisionRecallCurve(actual: number[], scores: number[]): { prec
   return { precision: prec, recall: rec, thresholds: thr };
 }
 
+export function prAuc(actual: number[], scores: number[]): number {
+  const curve = precisionRecallCurve(actual, scores);
+  const recall = [0, ...curve.recall];
+  const precision = [curve.precision[0] ?? 1, ...curve.precision];
+  let auc = 0;
+  for (let i = 1; i < recall.length; i++) {
+    auc += (recall[i] - recall[i - 1]) * (precision[i] + precision[i - 1]) / 2;
+  }
+  return auc;
+}
+
 export function logLoss(actual: number[], probs: number[]): number {
-  validateBinaryPairs(actual, probs, 'Log loss');
+  validateBinaryPairs(actual, actual, 'Log loss');
+  if (actual.length !== probs.length) throw new Error('Log loss requires arrays of equal length');
   if (!probs.every(value => value >= 0 && value <= 1)) throw new Error('Log loss probabilities must be between 0 and 1');
   const eps = 1e-15;
   return -mean(actual.map((a, i) => {

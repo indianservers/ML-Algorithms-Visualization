@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
+import { useLabNavigate } from "../../../lib/labNavigation";
 import { Pause, Play, RotateCcw, Upload } from "lucide-react";
 import {
   crossValidate,
@@ -58,6 +59,7 @@ export default function CrossValidationPage() {
     [playing, setPlaying] = useState(false),
     [tab, setTab] = useState("Visualize"),
     [message, setMessage] = useState("Rotation ready");
+  const go = useLabNavigate();
   const inputRef = useRef<HTMLInputElement>(null),
     timerRef = useRef<number | null>(null),
     meta = datasets[dataset],
@@ -138,7 +140,7 @@ export default function CrossValidationPage() {
             "⌁ Time Series",
             "♧ Reinforcement Learning",
           ].map((x) => (
-            <button onClick={() => setMessage(`${x} opened`)} key={x}>
+            <button onClick={() => go(x)} key={x}>
               {x}
             </button>
           ))}
@@ -152,18 +154,18 @@ export default function CrossValidationPage() {
             "⌘ Models",
             "▤ Datasets",
           ].map((x) => (
-            <button onClick={() => setMessage(`${x} opened`)} key={x}>
+            <button onClick={() => go(x)} key={x}>
               {x}
             </button>
           ))}
         </section>
         <section>
           <h3>▣ LEARN ⌄</h3>
-          <button onClick={() => setMessage("Tutorials opened")}>
+          <button onClick={() => go("Tutorials")}>
             Tutorials
           </button>
-          <button onClick={() => setMessage("Guides opened")}>Guides</button>
-          <button onClick={() => setMessage("Playground opened")}>
+          <button onClick={() => go("Guides")}>Guides</button>
+          <button onClick={() => go("Playground")}>
             Playground
           </button>
         </section>
@@ -173,7 +175,7 @@ export default function CrossValidationPage() {
         >
           ⚙ Settings
         </button>
-        <button onClick={() => setMessage("Help opened")}>? Help & Docs</button>
+        <button onClick={() => go("Help")}>? Help & Docs</button>
         <footer>
           Ⓜ <b>Mega ML</b> <span>Pro</span>
         </footer>

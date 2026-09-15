@@ -18,6 +18,12 @@ import {
   SwitchCamera,
   Upload,
 } from "lucide-react";
+import {
+  datasetAPerfectBinary,
+  datasetCXor,
+  datasetDTwoMoons,
+  datasetINoisy,
+} from "../../../../lib/classification/classificationDatasets";
 import { binaryMetrics } from "../../../../lib/math/metrics";
 import { trainAdaBoostClassification } from "../../../../lib/algorithms/classification/adaBoostClassification";
 import "./AdaBoostClassificationPage.css";
@@ -42,51 +48,18 @@ const TABS: [Tab, string][] = [
   ["explain", "Explain"],
 ];
 const LABELS: Record<Dataset, string> = {
-  spiral: "2D Spiral (Synthetic)",
+  spiral: "XOR regions",
   moons: "Two Moons",
   blobs: "Gaussian Blobs",
   outliers: "Noisy Outliers",
   imported: "Imported Dataset",
 };
 const rand = (i: number, k = 1) => Math.sin(i * 77.13 * k) * 0.5 + 0.5;
-function makeData(kind: Exclude<Dataset, "imported">, n = 400): Point[] {
-  return Array.from({ length: n }, (_, i) => {
-    const label = i % 2,
-      t = (i / 2 / (n / 2 - 1)) * Math.PI * 2.2,
-      noise = (rand(i, 1.7) - 0.5) * 0.22;
-    if (kind === "spiral") {
-      const r = 0.32 + t * 0.2;
-      return {
-        x: Math.cos(t + label * Math.PI) * r + noise,
-        y: Math.sin(t + label * Math.PI) * r + (rand(i, 2.1) - 0.5) * 0.22,
-        label,
-      };
-    }
-    if (kind === "moons")
-      return label
-        ? {
-            x: Math.cos(t / 2) - 0.45 + noise,
-            y: Math.sin(t / 2) + 0.2 + noise,
-            label,
-          }
-        : {
-            x: 1 - Math.cos(t / 2) - 0.45 + noise,
-            y: -Math.sin(t / 2) - 0.2 + noise,
-            label,
-          };
-    if (kind === "blobs")
-      return {
-        x: (rand(i, 2.4) - 0.5) * 1.2 + (label ? 0.8 : -0.8),
-        y: (rand(i, 3.2) - 0.5) * 1.2 + (label ? 0.55 : -0.55),
-        label,
-      };
-    const base = {
-      x: (rand(i, 2.4) - 0.5) * 1.3 + (label ? 0.85 : -0.85),
-      y: (rand(i, 3.2) - 0.5) * 1.2 + (label ? 0.5 : -0.5),
-      label,
-    };
-    return i % 13 === 0 ? { ...base, x: -base.x, y: -base.y } : base;
-  });
+function makeData(kind: Exclude<Dataset, "imported">): Point[] {
+  if (kind === "moons") return datasetDTwoMoons(90, 9);
+  if (kind === "blobs") return datasetAPerfectBinary();
+  if (kind === "outliers") return datasetINoisy();
+  return datasetCXor();
 }
 const BUILT = {
   spiral: makeData("spiral"),
@@ -112,6 +85,26 @@ function AdaPlot({
 }) {
   return (
     <div className={`ada-plot ${compact ? "compact" : ""}`}>
+      {boundary &&
+        Array.from({ length: 16 * 16 }, (_, i) => {
+          const x = -2.4 + ((i % 16) + 0.5) * (4.8 / 16),
+            y = -1.8 + (Math.floor(i / 16) + 0.5) * (3.6 / 16),
+            label = predict({ x, y, label: 0 });
+          return (
+            <em
+              key={`g${i}`}
+              className={label ? "one" : "zero"}
+              style={{
+                left: `${((x + 2.4) / 4.8) * 100}%`,
+                top: `${((1.8 - y) / 3.6) * 100}%`,
+                width: compact ? 8 : 12,
+                height: compact ? 8 : 12,
+                opacity: 0.18,
+                borderRadius: 0,
+              }}
+            />
+          );
+        })}
       {points
         .filter((_, i) => i % (compact ? 8 : 3) === 0)
         .map((p, j) => {
@@ -131,7 +124,7 @@ function AdaPlot({
             />
           );
         })}
-      {boundary && <span />}
+      {false && <span />}
     </div>
   );
 }
@@ -305,6 +298,37 @@ export default function AdaBoostClassificationLesson() {
             </section>
           </div>
         </div>
+        <table className="ada-weight-table">
+          <caption>
+            Round {current} weight update (misclassified samples usually gain
+            relative weight)
+          </caption>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>w before</th>
+              <th>h(x)</th>
+              <th>ok?</th>
+              <th>w after</th>
+            </tr>
+          </thead>
+          <tbody>
+            {points.slice(0, 8).map((point, index) => {
+              const pred = active.predictions[index];
+              const ySigned = point.label ? 1 : -1;
+              const ok = pred === ySigned;
+              return (
+                <tr key={index}>
+                  <td>{index + 1}</td>
+                  <td>{active.weightsBefore[index].toFixed(3)}</td>
+                  <td>{pred}</td>
+                  <td>{ok ? "yes" : "no"}</td>
+                  <td>{active.weightsAfter[index].toFixed(3)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
         <footer>
           {model.rounds.map((item, i) => (
             <button
@@ -370,7 +394,7 @@ export default function AdaBoostClassificationLesson() {
             Model Performance <small>(on training data)</small>
           </h3>
           <p>
-            Training Accuracy <b>{(metrics.accuracy * 100).toFixed(2)}%</b>
+            In-sample accuracy <b>{(metrics.accuracy * 100).toFixed(2)}%</b>
           </p>
           <p>
             Weighted Error (Final Round){" "}
@@ -565,7 +589,7 @@ export default function AdaBoostClassificationLesson() {
           <h2>Ensemble Metrics</h2>
           <div className="ada-metrics">
             {[
-              ["Accuracy", metrics.accuracy],
+              ["In-sample accuracy", metrics.accuracy],
               ["Precision", metrics.precision],
               ["Recall", metrics.recall],
               ["F1", metrics.f1],

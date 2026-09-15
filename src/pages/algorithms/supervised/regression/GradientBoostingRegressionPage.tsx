@@ -24,6 +24,7 @@ import {
 } from "../../../../lib/algorithms/regression/gradientBoostingRegression";
 import { parseRegressionCsv } from "../../../../lib/algorithms/regression/decisionTreeRegression";
 import { mae, rSquared, rmse } from "../../../../lib/math/metrics";
+import { splitRegressionData } from "../../../../lib/regression/regressionEval";
 import "./GradientBoostingRegressionPage.css";
 
 type BoostRow = { features: number[]; target: number };
@@ -57,7 +58,7 @@ const californiaNames = [
 ];
 
 function californiaRows() {
-  return Array.from({ length: 8256 }, (_, index) => {
+  return Array.from({ length: 240 }, (_, index) => {
     const income = 0.7 + ((index * 37) % 1250) / 100,
       age = 1 + ((index * 19) % 52),
       rooms = 2.2 + ((index * 23) % 710) / 100,
@@ -180,29 +181,29 @@ function fitBoost(
   rows: BoostRow[],
   options: GradientBoostingRegressionOptions,
 ) {
-  const sampled = sampleRows(rows),
-    model = trainGradientBoostingRegression(
-      sampled.map((row) => row.features),
-      sampled.map((row) => row.target),
-      options,
-    );
-  const predictions = sampled.map((row) => model.predict(row.features));
+  const sampled = sampleRows(rows);
+  const split = splitRegressionData(
+    sampled.map((row) => row.features),
+    sampled.map((row) => row.target),
+    0.2,
+    options.seed,
+    true,
+  );
+  const model = trainGradientBoostingRegression(split.trainX, split.trainY, options);
+  const trainPred = split.trainX.map((row) => model.predict(row));
+  const testPred = split.testX.map((row) => model.predict(row));
   return {
     model,
     rows: sampled,
-    predictions,
-    rmse: rmse(
-      sampled.map((row) => row.target),
-      predictions,
-    ),
-    mae: mae(
-      sampled.map((row) => row.target),
-      predictions,
-    ),
-    r2: rSquared(
-      sampled.map((row) => row.target),
-      predictions,
-    ),
+    predictions: sampled.map((row) => model.predict(row.features)),
+    trainRmse: rmse(split.trainY, trainPred),
+    testRmse: rmse(split.testY, testPred),
+    rmse: rmse(split.testY, testPred),
+    mae: mae(split.testY, testPred),
+    r2: rSquared(split.testY, testPred),
+    trainR2: rSquared(split.trainY, trainPred),
+    testActual: split.testY,
+    testPredicted: testPred,
   };
 }
 function mean(values: number[]) {

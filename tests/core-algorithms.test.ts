@@ -70,9 +70,11 @@ import { euclideanDistance, linspace, median, quantile, shuffle } from "../src/l
 
 const productionModules = import.meta.glob([
   "../src/lib/algorithms/**/*.ts",
+  "../src/lib/dimensionality/**/*.ts",
   "../src/lib/evaluation/**/*.ts",
   "../src/lib/preprocessing/**/*.ts",
   "../src/lib/timeSeries/**/*.ts",
+  "../src/lib/nlp/**/*.ts",
 ], { eager: true });
 
 const separatedX = [[0, 0], [0, 1], [1, 0], [8, 8], [8, 9], [9, 8]];

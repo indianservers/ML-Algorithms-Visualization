@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { normalizeNavLabel, resolveNavRoute } from "../../lib/labNavigation";
 import { navigationData } from "../../data/navigation";
+import DatasetLibrary from "./DatasetLibraryApproved";
 import "./PlatformApprovedPages.css";
 
 type PlatformPage =
@@ -121,31 +123,37 @@ const algorithms = [
   "Transformer",
   "Autoencoder",
 ];
-const datasets = [
-  "Customer Churn Dataset",
-  "Heart Disease Dataset",
-  "Titanic Survival Dataset",
-  "House Prices Dataset",
-  "Iris Flower Dataset",
-  "Market Sales Dataset",
-  "Credit Card Fraud Dataset",
-  "Energy Efficiency Dataset",
-  "Employee Attrition Dataset",
-  "Text Sentiment Dataset",
-];
+const categoryCatalogFilters: Record<string, string[]> = {
+  "Supervised Learning": [
+    "Supervised - Regression",
+    "Supervised - Classification",
+  ],
+  "Unsupervised Learning": ["Clustering"],
+  "Deep Learning": ["Deep Learning"],
+  "Dimensionality Reduction": ["Dimensionality Reduction"],
+  "Time Series": ["Time Series"],
+  "NLP & Text": ["NLP"],
+};
+
+function sideItemLabel(raw: string) {
+  return normalizeNavLabel(raw);
+}
 
 function Side({
   page,
   active,
+  collapsed,
   onAction,
 }: {
   page: PlatformPage;
   active: string;
+  collapsed?: boolean;
   onAction: (x: string) => void;
 }) {
+  const activeKey = normalizeNavLabel(active);
   return (
     <aside className="pp-side">
-      <a href="/" className="pp-brand">
+      <Link to="/" className="pp-brand" onClick={() => onAction("Home")}>
         <i>∞</i>
         <span>
           <b>Mega ML</b>
@@ -153,38 +161,60 @@ function Side({
             {page === "home" ? "ALGORITHMS SUITE" : "AI OBSERVATORY"}
           </small>
         </span>
-      </a>
+      </Link>
       {sideGroups[page].map(([group, items], groupIndex) => (
         <section className="pp-sidegroup" key={`${group}-${groupIndex}`}>
           {group && <p>{group}</p>}
-          {items.map((x) => (
-            <button
-              className={x.includes(active) ? "active" : ""}
-              key={x}
-              onClick={() => onAction(x.slice(2))}
-            >
-              {x}
-              {page === "home" && group === "RECENT" && (
-                <small>{x.includes("Linear") ? "Beginner" : x.includes("K-Means") ? "Intermediate" : "Advanced"} <span>›</span></small>
-              )}
-            </button>
-          ))}
+          {items.map((x) => {
+            const label = sideItemLabel(x);
+            const route = resolveNavRoute(label);
+            const className = label === activeKey || x.includes(active) ? "active" : "";
+            const body = (
+              <>
+                {x}
+                {page === "home" && group === "RECENT" && (
+                  <small>
+                    {x.includes("Linear")
+                      ? "Beginner"
+                      : x.includes("K-Means")
+                        ? "Intermediate"
+                        : "Advanced"}{" "}
+                    <span>›</span>
+                  </small>
+                )}
+              </>
+            );
+            return route ? (
+              <Link
+                className={className}
+                key={x}
+                to={route}
+                onClick={() => onAction(label)}
+              >
+                {body}
+              </Link>
+            ) : (
+              <button
+                type="button"
+                className={className}
+                key={x}
+                onClick={() => onAction(label)}
+              >
+                {body}
+              </button>
+            );
+          })}
         </section>
       ))}
       <div className="pp-side-footer">
-        {page === "home" && (
-          <article className="pp-upgrade">
-            <b>★ Upgrade to Pro</b>
-            <p>Unlock advanced labs, more algorithms, and priority support.</p>
-            <button onClick={() => onAction("Upgrade")}>Upgrade Now</button>
-          </article>
-        )}
         {page === "datasets" && (
           <article className="pp-storage">
             <small>STORAGE</small>
             <b>412 GB / 1 TB</b>
             <progress value="41" max="100" />
-            <a>Manage Storage</a>
+            <button type="button" className="pp-storage-link" onClick={() => onAction("Manage Storage")}>
+              Manage Storage
+            </button>
           </article>
         )}
         {page === "documentation" && (
@@ -195,7 +225,9 @@ function Side({
             </span>
           </article>
         )}
-        <button onClick={() => onAction("Collapse")}>« Collapse</button>
+        <button type="button" onClick={() => onAction("Collapse")}>
+          {collapsed ? "» Expand" : "« Collapse"}
+        </button>
       </div>
     </aside>
   );
@@ -204,10 +236,14 @@ function Header({
   title,
   subtitle,
   onAction,
+  search,
+  onSearch,
 }: {
   title: string;
   subtitle: string;
   onAction: (x: string) => void;
+  search?: string;
+  onSearch?: (value: string) => void;
 }) {
   return (
     <header className="pp-head">
@@ -218,9 +254,18 @@ function Header({
       <input
         aria-label="Global Search"
         placeholder={`Search ${title.toLowerCase()}...`}
+        value={search ?? ""}
+        onChange={(event) => onSearch?.(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") onAction("Search");
+        }}
       />
-      <button onClick={() => onAction("Theme")}>◔</button>
-      <button onClick={() => onAction("Profile")}>ML</button>
+      <button onClick={() => onAction("Theme")} aria-label="Toggle theme">
+        ◔
+      </button>
+      <button onClick={() => onAction("Profile")} aria-label="Open profile">
+        ML
+      </button>
     </header>
   );
 }
@@ -557,295 +602,6 @@ function Documentation({ act }: { act: (x: string) => void }) {
     </>
   );
 }
-function DatasetLibrary({ act }: { act: (x: string) => void }) {
-  const [selected, setSelected] = useState(0);
-  const uploadRef = useRef<HTMLInputElement>(null);
-  return (
-    <>
-      <nav className="pp-tabs">
-        {["Browse", "Preview", "Profile", "Versions"].map((x) => (
-          <button key={x} onClick={() => act(x)}>
-            {x}
-          </button>
-        ))}
-        <span className="pp-dataset-actions">
-          <button onClick={() => act("Import from Source")}>
-            ＋ Import from Source
-          </button>
-          <button onClick={() => uploadRef.current?.click()}>
-            ↑ Upload Dataset
-          </button>
-          <input
-            ref={uploadRef}
-            type="file"
-            accept=".csv,.json,.tsv"
-            aria-label="Upload dataset file"
-            hidden
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) act(`Uploaded ${file.name}`);
-            }}
-          />
-        </span>
-      </nav>
-      <section className="pp-dataset-tools">
-        <input aria-label="Search datasets" placeholder="Search datasets..." />
-        {[
-          "Task: All",
-          "Data Type: All",
-          "Rows: Any",
-          "Columns: Any",
-          "More Filters",
-        ].map((x) => (
-          <button key={x} onClick={() => act(x)}>
-            {x}⌄
-          </button>
-        ))}
-      </section>
-      <section className="pp-library">
-        <article className="card pp-dataset-list">
-          <header>
-            <span>DATASET</span>
-            <span>TASK</span>
-            <span>ROWS</span>
-            <span>COLUMNS</span>
-            <span>ADDED</span>
-          </header>
-          {datasets.map((x, i) => (
-            <button
-              className={selected === i ? "selected" : ""}
-              key={x}
-              onClick={() => setSelected(i)}
-            >
-              {x}
-              <span>
-                {
-                  [
-                    "Classification",
-                    "Classification",
-                    "Classification",
-                    "Regression",
-                    "Classification",
-                    "Regression",
-                    "Classification",
-                    "Regression",
-                    "Classification",
-                    "Classification",
-                  ][i]
-                }
-              </span>
-              <b>
-                {[
-                  10000, 1024, 891, 14560, 150, 50000, 284807, 7680, 1470,
-                  20000,
-                ][i].toLocaleString()}
-              </b>
-              <small>{[21, 14, 12, 18, 5, 24, 31, 10, 35, 8][i]}</small>
-              <em>
-                {
-                  [
-                    "25 min",
-                    "2 hrs",
-                    "5 hrs",
-                    "1 day",
-                    "2 days",
-                    "2 days",
-                    "3 days",
-                    "4 days",
-                    "5 days",
-                    "6 days",
-                  ][i]
-                }{" "}
-                ago
-              </em>
-            </button>
-          ))}
-          <footer>
-            <span>1–10 of 24 datasets</span>
-            <button>‹</button>
-            <button>1</button>
-            <button>2</button>
-            <button>3</button>
-            <button>›</button>
-          </footer>
-        </article>
-        <article className="card pp-preview">
-          <h3>
-            Preview: {datasets[selected]} <small>Classification</small>
-          </h3>
-          <div className="table">
-            <header>
-              {[
-                "customer_id",
-                "tenure_months",
-                "monthly_charges",
-                "total_charges",
-                "contract_type",
-                "churn",
-              ].map((x, i) => (
-                <b key={x}>
-                  {x}
-                  <small>
-                    {i < 2 ? "int64" : i < 4 ? "float64" : "object"}
-                  </small>
-                </b>
-              ))}
-            </header>
-            {[
-              [10001, 34, "56.05", "1905.70", "Month-to-month", "No"],
-              [10002, 2, "20.15", "39.70", "Month-to-month", "Yes"],
-              [10003, 45, "71.20", "3204.00", "One year", "No"],
-              [10004, 2, "72.10", "72.10", "Month-to-month", "Yes"],
-              [10005, 8, "28.50", "213.40", "Month-to-month", "No"],
-            ].map((row, i) => (
-              <p key={i}>
-                {row.map((value, j) => (
-                  <span
-                    className={j === 5 && value === "Yes" ? "danger" : ""}
-                    key={j}
-                  >
-                    {value}
-                  </span>
-                ))}
-              </p>
-            ))}
-          </div>
-          <footer>
-            <span>Showing first 5 rows</span>
-            <span>10,000 rows × 21 columns</span>
-          </footer>
-        </article>
-        <aside>
-          <section className="card">
-            <h3>Dataset Actions</h3>
-            {[
-              "↗ Open in New Tab",
-              "☆ Add to Collection",
-              "▣ Create New Version",
-              "↓ Download CSV",
-              "↓ Download Parquet",
-              "♜ Delete Dataset",
-            ].map((x) => (
-              <button
-                className={x.includes("Delete") ? "danger" : ""}
-                key={x}
-                onClick={() => act(x)}
-              >
-                {x}
-              </button>
-            ))}
-          </section>
-          <section className="card pp-dataset-info">
-            <h3>Dataset Info</h3>
-            <p>
-              Created <b>May 20, 2025, 10:15 AM</b>
-            </p>
-            <p>
-              Source <b>Uploaded</b>
-            </p>
-            <p>
-              File Format <b>CSV</b>
-            </p>
-            <p>
-              Size <b>2.4 MB</b>
-            </p>
-            <p>
-              Rows × Columns <b>10,000 × 21</b>
-            </p>
-            <p>
-              Target Column <b>churn</b>
-            </p>
-            <p>
-              Task <b>Classification</b>
-            </p>
-          </section>
-        </aside>
-      </section>
-      <section className="pp-profile">
-        {[
-          "Schema Overview",
-          "Missing Values",
-          "Class Balance (churn)",
-          "Feature Types",
-        ].map((x, i) => (
-          <article className="card" key={x}>
-            <h3>{x}</h3>
-            <div className={i % 2 ? "bars" : "ring"}>
-              {i % 2 ? (
-                <>
-                  {[57, 29, 10, 5].map((v, j) => (
-                    <i key={j}>
-                      <span style={{ width: `${v}%` }} />
-                    </i>
-                  ))}
-                </>
-              ) : i === 0 ? (
-                "21"
-              ) : (
-                "73.5%"
-              )}
-            </div>
-            <p>
-              {i === 0 ? (
-                <>
-                  ● Numeric <b>12 (57.1%)</b>
-                  <br />● Categorical <b>6 (28.6%)</b>
-                  <br />● Boolean <b>2 (9.5%)</b>
-                  <br />● Date/Time <b>1 (4.8%)</b>
-                </>
-              ) : i === 1 ? (
-                <>
-                  Overall Missing <b>325 / 10,000</b>
-                  <br />
-                  total_charges <b>1.20%</b>
-                  <br />
-                  last_contact_date <b>18.40%</b>
-                </>
-              ) : i === 2 ? (
-                <>
-                  ● No <b>7,353</b>
-                  <br />● Yes <b>2,647</b>
-                  <br />
-                  Imbalance Ratio <b>2.78:1</b>
-                </>
-              ) : (
-                <>
-                  Numeric <b>12 (57.1%)</b>
-                  <br />
-                  Categorical <b>6 (28.6%)</b>
-                  <br />
-                  Boolean <b>2 (9.5%)</b>
-                </>
-              )}
-            </p>
-          </article>
-        ))}
-      </section>
-      <section className="card pp-insights">
-        <h3>Insights</h3>
-        <p>
-          {[
-            ["✓", "Dataset is clean", "No duplicate rows detected."],
-            ["⚠", "Missing values", "2 columns have > 10% missing values."],
-            ["ⓘ", "Class imbalance", "Target ratio is 2.78:1 (No:Yes)."],
-            [
-              "♧",
-              "High cardinality",
-              "2 categorical columns with high cardinality.",
-            ],
-            ["ϟ", "Ready to model", "Dataset is ready for training."],
-          ].map((x) => (
-            <span key={x[1]}>
-              <i>{x[0]}</i>
-              <b>{x[1]}</b>
-              <small>{x[2]}</small>
-            </span>
-          ))}
-        </p>
-      </section>
-    </>
-  );
-}
 function Sitemap({ act }: { act: (x: string) => void }) {
   const groups = [
     [
@@ -992,7 +748,7 @@ function Sitemap({ act }: { act: (x: string) => void }) {
         <h3>Learning Insights</h3>
         {[
           ["42%", "Overall Progress"],
-          ["56", "Completed"],
+          ["63", "Completed"],
           ["32", "In Progress"],
           ["18", "To Review"],
           ["78h 24m", "Time Invested"],
@@ -1190,38 +946,94 @@ export default function PlatformApprovedPage({ page }: { page: PlatformPage }) {
     ],
   };
   const actionRoutes: Record<string, string> = {
-    Home: "/", Curriculum: "/sitemap", Experiments: "/ml/lab/saved-experiments",
-    Visualizations: "/ml/lab/interactive-training-visualizations", Playground: "/ml/deep-learning/nn-playground",
-    Datasets: "/dataset-library", Bookmarks: "/sitemap", Achievements: "/implementation-matrix",
-    "Gradient Boosting": "/ml/supervised/gradient-boosting-classification", "LSTM Networks": "/ml/deep-learning/lstm",
-    "K-Means Clustering": "/ml/clustering/k-means", "Linear Regression": "/ml/supervised/simple-linear-regression",
-    "SVM Classification": "/ml/supervised/svm-classification", Practice: "/ml/lab/algorithm-comparison",
-    Teacher: "/documentation", Demo: "/ml/deep-learning/nn-playground", "Resume Lesson": "/ml/supervised/svm-classification",
-    "Beginner Path": "/ml/supervised/simple-linear-regression", "Intermediate Path": "/ml/supervised/ridge-regression",
-    "Advanced Path": "/ml/deep-learning/transformer-attention", "Data Scientist Track": "/ml/lab/algorithm-comparison",
-    "Supervised Learning": "/ml/supervised/simple-linear-regression", "Unsupervised Learning": "/ml/clustering/k-means",
-    "Deep Learning": "/ml/deep-learning/perceptron", "Dimensionality Reduction": "/ml/dimensionality-reduction/pca",
-    "Time Series": "/ml/time-series/moving-average", "NLP & Text": "/ml/nlp/tf-idf",
+    Datasets: "/dataset-library",
+    "Dataset Library": "/dataset-library",
+    Demo: "/ml/deep-learning/nn-playground",
+    "Resume Lesson": "/ml/supervised/svm-classification",
   };
+  const [catalogFilter, setCatalogFilter] = useState<string | null>(null);
+  const [headerSearch, setHeaderSearch] = useState("");
+  const [datasetCommand, setDatasetCommand] = useState<string | null>(null);
+  const [datasetShelf, setDatasetShelf] = useState("Dataset Library");
+  const [collapsed, setCollapsed] = useState(false);
+  const [lightTheme, setLightTheme] = useState(false);
+  const openCatalog = (filter: string | null) => {
+    setCatalogFilter(filter);
+    setCatalogOpen(true);
+  };
+  const catalogGroups = catalogFilter
+    ? navigationData.filter((group) =>
+        categoryCatalogFilters[catalogFilter]?.includes(group.category),
+      )
+    : navigationData;
+  const datasetCommands = new Set([
+    "Browse",
+    "Preview",
+    "Profile",
+    "Versions",
+    "Dataset Library",
+    "My Collections",
+    "Favorites",
+    "Data Sources",
+    "Import from Source",
+    "Upload Dataset",
+    "Manage Storage",
+    "New Project",
+    "Customer Churn",
+    "Fraud Detection",
+    "Market Basket",
+    "Medical Imaging",
+    "Text Analytics",
+    "Customer Churn Dataset",
+    "Heart Disease Dataset",
+    "Titanic Survival Dataset",
+    "House Prices Dataset",
+    "Iris Dataset",
+    "Open Dataset",
+    "Add to Collection",
+    "Download Parquet",
+  ]);
   const act = (x: string) => {
-    if (x === "All algorithms" || x === "Learning Paths") {
-      setCatalogOpen(true);
+    if (x === "Collapse") {
+      setCollapsed((open) => !open);
       return;
     }
-    const route = actionRoutes[x];
+    if (x === "Theme") {
+      setLightTheme((value) => !value);
+      return;
+    }
+    if (x === "Profile" || x === "Search") {
+      setStatus(x === "Profile" ? "Signed in as Alex Morgan · Explorer" : `Search: ${headerSearch || "type a query"}`);
+      return;
+    }
+    if (x === "All algorithms" || x === "Learning Paths") {
+      openCatalog(null);
+      return;
+    }
+    if (x in categoryCatalogFilters) {
+      openCatalog(x);
+      return;
+    }
+    if (page === "datasets" && datasetCommands.has(x)) {
+      setDatasetCommand(x);
+      return;
+    }
+    const route = actionRoutes[x] ?? resolveNavRoute(x);
     if (route) navigate(route);
-    else setStatus(`${x} opened`);
+    else setStatus(x);
   };
   useEffect(() => {
-    if (!sideOpen) return;
+    if (!sideOpen && !catalogOpen) return;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSideOpen(false);
+      if (event.key !== "Escape") return;
+      setSideOpen(false);
+      setCatalogOpen(false);
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [sideOpen]);
+  }, [sideOpen, catalogOpen]);
   return (
-    <div className={`pp-page pp-${page}${sideOpen ? " side-open" : ""}`}>
+    <div className={`pp-page pp-${page}${sideOpen ? " side-open" : ""}${collapsed ? " side-collapsed" : ""}${lightTheme ? " pp-light" : ""}`}>
       <button
         className="pp-mobile-menu"
         aria-label={sideOpen ? "Close menu" : "Open menu"}
@@ -1246,11 +1058,12 @@ export default function PlatformApprovedPage({ page }: { page: PlatformPage }) {
             </div>
             <Side
               page={page}
+              collapsed={collapsed}
               active={
                 page === "home"
                   ? "Home"
                   : page === "datasets"
-                    ? "Dataset Library"
+                    ? datasetShelf
                     : page === "sitemap"
                       ? "Curriculum"
                       : page === "documentation"
@@ -1267,11 +1080,12 @@ export default function PlatformApprovedPage({ page }: { page: PlatformPage }) {
       )}
       <Side
         page={page}
+        collapsed={collapsed}
         active={
           page === "home"
             ? "Home"
             : page === "datasets"
-              ? "Dataset Library"
+              ? datasetShelf
               : page === "sitemap"
                 ? "Curriculum"
                 : page === "documentation"
@@ -1288,6 +1102,8 @@ export default function PlatformApprovedPage({ page }: { page: PlatformPage }) {
           title={titles[page][0]}
           subtitle={titles[page][1]}
           onAction={act}
+          search={page === "datasets" ? headerSearch : undefined}
+          onSearch={page === "datasets" ? setHeaderSearch : undefined}
         />
       )}
       {page === "home" && (
@@ -1295,7 +1111,7 @@ export default function PlatformApprovedPage({ page }: { page: PlatformPage }) {
           <input
             aria-label="Search algorithms"
             placeholder="Search algorithms, topics, experiments..."
-            onKeyDown={(event) => { if (event.key === "Enter") setCatalogOpen(true); }}
+            onKeyDown={(event) => { if (event.key === "Enter") openCatalog(null); }}
           />
           <button onClick={() => act("Datasets")}>▤ Datasets</button>
           <button onClick={() => act("Practice")}>▧ Practice</button>
@@ -1313,7 +1129,13 @@ export default function PlatformApprovedPage({ page }: { page: PlatformPage }) {
         ) : page === "documentation" ? (
           <Documentation act={act} />
         ) : page === "datasets" ? (
-          <DatasetLibrary act={act} />
+          <DatasetLibrary
+            act={act}
+            command={datasetCommand}
+            onCommandHandled={() => setDatasetCommand(null)}
+            headerSearch={headerSearch}
+            onShelfChange={setDatasetShelf}
+          />
         ) : page === "sitemap" ? (
           <Sitemap act={act} />
         ) : (
@@ -1326,21 +1148,25 @@ export default function PlatformApprovedPage({ page }: { page: PlatformPage }) {
           www.AimerSociety.com · AI Learning Tools
         </span>
       </footer>
-      {page === "home" && catalogOpen && (
+      {catalogOpen && (
         <section
           className="pp-catalog"
           role="dialog"
-          aria-label="All algorithms"
+          aria-label={catalogFilter ?? "All algorithms"}
         >
           <header>
             <div>
               <small>MEGA ML CATALOG</small>
-              <h2>All Algorithms, Lessons, Labs & Tools</h2>
+              <h2>
+                {catalogFilter
+                  ? `${catalogFilter} algorithms`
+                  : "All Algorithms, Lessons, Labs & Tools"}
+              </h2>
             </div>
             <button onClick={() => setCatalogOpen(false)}>Close ×</button>
           </header>
-          <div>
-            {navigationData.map((group) => (
+          <div className={catalogGroups.length <= 2 ? "pp-catalog-narrow" : undefined}>
+            {catalogGroups.map((group) => (
               <article key={group.category}>
                 <h3>{group.category}</h3>
                 {group.items.map((item) => (

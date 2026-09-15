@@ -6,6 +6,8 @@ import {
   type TSNEInitialization,
   type TSNEMetric,
 } from "../../../lib/algorithms/dimensionality/tsne";
+import { getDimensionalityDataset } from "../../../lib/dimensionality/dimensionalityDatasets";
+import { MAX_EMBEDDING_SAMPLES, subsampleIndices } from "../../../lib/dimensionality/dimensionalityPrep";
 import "./TSNEPage.css";
 type Sample = { values: number[]; label: number };
 type Dataset = "digits" | "fashion" | "iris" | "swiss" | "imported";
@@ -17,37 +19,21 @@ const COLORS = [
   "#ec3f70",
   "#2f70ef",
 ];
-const rand = (i: number, s: number) => {
-  const v = Math.sin((i + 9) * 12.9898 + s * 78.233) * 43758.5453;
-  return v - Math.floor(v);
-};
-function makeData(kind: Exclude<Dataset, "imported">, n = 180): Sample[] {
-  const classes = kind === "iris" ? 3 : 6;
-  return Array.from({ length: n }, (_, i) => {
-    const label = i % classes,
-      angle = (label / classes) * Math.PI * 2,
-      spread = kind === "swiss" ? 1.4 : 0.9;
-    return {
-      label,
-      values: Array.from(
-        { length: kind === "iris" ? 4 : 8 },
-        (_, d) =>
-          Math.cos(angle + d * 0.7) * 2 + (rand(i, d + 1) - 0.5) * spread,
-      ),
-    };
-  });
-}
+const iris = getDimensionalityDataset("d-iris");
+const swiss = getDimensionalityDataset("f-swiss-roll");
+const digits = getDimensionalityDataset("e-digit-glyphs");
+const blobs = getDimensionalityDataset("c-hd-blobs");
 const BUILT = {
-    digits: makeData("digits"),
-    fashion: makeData("fashion"),
-    iris: makeData("iris", 150),
-    swiss: makeData("swiss"),
+    digits: digits.X.map((values, i) => ({ values, label: digits.y?.[i] ?? 0 })),
+    fashion: blobs.X.map((values, i) => ({ values, label: blobs.y?.[i] ?? 0 })),
+    iris: iris.X.map((values, i) => ({ values, label: iris.y?.[i] ?? 0 })),
+    swiss: swiss.X.map((values, i) => ({ values, label: swiss.y?.[i] ?? 0 })),
   },
   NAMES: Record<Dataset, string> = {
-    digits: "Digit Embeddings",
-    fashion: "Fashion Embeddings",
+    digits: "Digit glyphs (8×8)",
+    fashion: "High-D blobs",
     iris: "Iris",
-    swiss: "Swiss Roll Features",
+    swiss: "Swiss roll",
     imported: "Imported Data",
   };
 export default function TSNEPage() {
@@ -63,32 +49,72 @@ export default function TSNEPage() {
     [initialization, setInitialization] = useState<TSNEInitialization>("pca"),
     [frame, setFrame] = useState(12),
     [playing, setPlaying] = useState(false),
-    [toast, setToast] = useState("");
-  const fileRef = useRef<HTMLInputElement>(null),
-    X = useMemo(() => samples.map((s) => s.values), [samples]);
-  const result = useMemo(
-    () =>
-      tsne(
-        X,
-        Math.min(perplexity, samples.length - 1),
+    [toast, setToast] = useState(""),
+    [status, setStatus] = useState<"NOT RUN" | "RUNNING" | "COMPLETED" | "STALE" | "ERROR">("NOT RUN"),
+    [tsneResult, setTsneResult] = useState<ReturnType<typeof tsne> | null>(null),
+    [error, setError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const abortRef = useRef(false);
+  const used = useMemo(() => {
+      const indices = subsampleIndices(samples.length, MAX_EMBEDDING_SAMPLES);
+      return {
+        X: indices.map((i) => samples[i].values),
+        labels: indices.map((i) => samples[i].label),
+        sampled: indices.length !== samples.length,
+        n: indices.length,
+      };
+    }, [samples]);
+  const runTsne = () => {
+    abortRef.current = false;
+    setStatus("RUNNING");
+    setError(null);
+    setPlaying(false);
+    try {
+      if (perplexity >= used.n) {
+        throw new Error(`t-SNE perplexity must be less than N=${used.n}.`);
+      }
+      const computed = tsne(
+        used.X,
+        perplexity,
         learningRate,
         exaggeration,
         iterations,
         metric,
         initialization,
         42,
-      ),
-    [
-      X,
-      perplexity,
-      learningRate,
-      exaggeration,
-      iterations,
-      metric,
-      initialization,
-      samples.length,
-    ],
-  );
+        () => abortRef.current,
+      );
+      if (abortRef.current) {
+        setStatus("NOT RUN");
+        setTsneResult(null);
+        return;
+      }
+      setTsneResult(computed);
+      setStatus("COMPLETED");
+      setFrame(computed.snapshots.length - 1);
+    } catch (cause) {
+      setTsneResult(null);
+      setStatus("ERROR");
+      setError(cause instanceof Error ? cause.message : "t-SNE failed");
+    }
+  };
+  useEffect(() => () => {
+    abortRef.current = true;
+    setPlaying(false);
+  }, []);
+  useEffect(() => {
+    setStatus((current) => (current === "NOT RUN" || current === "ERROR" ? current : "STALE"));
+    setPlaying(false);
+  }, [used, perplexity, learningRate, exaggeration, iterations, metric, initialization]);
+  const result = tsneResult ?? {
+    embedding: [] as number[][],
+    snapshots: [] as number[][][],
+    klHistory: [] as number[],
+    trustworthiness: 0,
+    continuity: 0,
+    incomplete: false,
+    iterationsCompleted: 0,
+  };
   useEffect(() => {
     if (!playing) return;
     const timer = window.setInterval(
@@ -137,6 +163,7 @@ export default function TSNEPage() {
     event.target.value = "";
   };
   const reset = () => {
+    abortRef.current = true;
     setPerplexity(30);
     setLearningRate(200);
     setExaggeration(12);
@@ -144,6 +171,9 @@ export default function TSNEPage() {
     setMetric("euclidean");
     setInitialization("pca");
     setPlaying(false);
+    setTsneResult(null);
+    setStatus("NOT RUN");
+    setFrame(0);
   };
   const numericControls = [
     {
@@ -260,7 +290,33 @@ export default function TSNEPage() {
         <section className="ts-work">
           <header>
             <h2>Interactive t-SNE Visualization ⓘ</h2>
-            <button className="primary" onClick={() => setPlaying(!playing)}>
+            {error && <p>{error}</p>}
+            <p>State: {status}. Seed=42. Color is labels only — labels are not used in the t-SNE fit. Axes TSNE1/TSNE2 have no original-feature meaning.</p>
+            {(result.incomplete || result.iterationsCompleted < 250) && result.iterationsCompleted > 0 && (
+              <p>Optimization incomplete.</p>
+            )}
+            {used.sampled && (
+              <p>
+                Computation used {used.n} of {samples.length} samples (browser cap {MAX_EMBEDDING_SAMPLES}).
+              </p>
+            )}
+            <p>
+              t-SNE emphasizes local neighborhoods. Cluster sizes and global spacing can be misleading. Same seed + settings are repeatable here (seed=42). New points cannot be transformed with this implementation.
+            </p>
+            <button className="primary" onClick={runTsne} disabled={status === "RUNNING"}>
+              {status === "RUNNING" ? "Running…" : "Run t-SNE"}
+            </button>
+            <button
+              onClick={() => {
+                abortRef.current = true;
+                setPlaying(false);
+                setStatus("NOT RUN");
+                setTsneResult(null);
+              }}
+            >
+              Cancel
+            </button>
+            <button className="primary" onClick={() => setPlaying(!playing)} disabled={!result.snapshots.length}>
               {playing ? "Ⅱ Pause" : "▶ Animate"}
             </button>
             <button
@@ -310,7 +366,7 @@ export default function TSNEPage() {
                     style={{
                       left: `${plot(point[0])}%`,
                       top: `${plot(-point[1])}%`,
-                      background: COLORS[samples[i].label % COLORS.length],
+                      background: COLORS[used.labels[i] % COLORS.length],
                     }}
                   />
                 ))}

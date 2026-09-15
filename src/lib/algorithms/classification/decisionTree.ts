@@ -107,3 +107,51 @@ export function treeDepth(node: TreeNode): number {
   if (node.classLabel !== undefined) return 0;
   return 1 + Math.max(treeDepth(node.left!), treeDepth(node.right!));
 }
+
+export function treeNodeCount(node: TreeNode): number {
+  if (!node.left && !node.right) return 1;
+  return 1 + (node.left ? treeNodeCount(node.left) : 0) + (node.right ? treeNodeCount(node.right) : 0);
+}
+
+export function treeLeafCount(node: TreeNode): number {
+  if (!node.left && !node.right) return 1;
+  return (node.left ? treeLeafCount(node.left) : 0) + (node.right ? treeLeafCount(node.right) : 0);
+}
+
+export function splitQuality(node: TreeNode) {
+  if (!node.left || !node.right || node.impurity === undefined || !node.samples) return null;
+  const n = node.samples;
+  const leftN = node.left.samples ?? 0;
+  const rightN = node.right.samples ?? 0;
+  const leftImp = node.left.impurity ?? 0;
+  const rightImp = node.right.impurity ?? 0;
+  const weightedChild = (leftN / n) * leftImp + (rightN / n) * rightImp;
+  return {
+    parent: node.impurity,
+    left: leftImp,
+    right: rightImp,
+    weightedChild,
+    reduction: node.impurity - weightedChild,
+  };
+}
+
+export interface ClassificationTreeStep {
+  node: TreeNode;
+  featureIndex?: number;
+  threshold?: number;
+  wentLeft?: boolean;
+}
+
+export function classificationTreePath(node: TreeNode, x: number[]): ClassificationTreeStep[] {
+  const steps: ClassificationTreeStep[] = [];
+  let current = node;
+  while (current.classLabel === undefined) {
+    const featureIndex = current.featureIndex!;
+    const threshold = current.threshold!;
+    const wentLeft = x[featureIndex] <= threshold;
+    steps.push({ node: current, featureIndex, threshold, wentLeft });
+    current = wentLeft ? current.left! : current.right!;
+  }
+  steps.push({ node: current });
+  return steps;
+}

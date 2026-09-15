@@ -33,6 +33,10 @@ export function trainHierarchicalClustering(
 ): HierarchicalModel {
   if (X.length < 2 || !X[0]?.length)
     throw new Error("Hierarchical clustering requires at least two samples.");
+  if (X.length > 360)
+    throw new Error(
+      "Hierarchical clustering is capped at 360 samples in the browser lab because of O(n²) merge cost.",
+    );
   let clusters: Cluster[] = X.map((row, i) => ({
     id: i,
     members: [i],

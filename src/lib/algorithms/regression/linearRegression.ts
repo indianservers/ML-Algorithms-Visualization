@@ -67,6 +67,53 @@ export function multipleLinearRegression(
   return { coefficients, intercept, predict, residuals };
 }
 
+export interface OlsDiagnostics extends MultipleRegressionResult {
+  residualStd: number;
+  coefficientStdErrors: number[];
+  tStatistics: number[];
+  rankWarning: boolean;
+}
+
+export function multipleLinearRegressionDiagnostics(
+  X: number[][],
+  y: number[],
+): OlsDiagnostics {
+  const fit = multipleLinearRegression(X, y);
+  const n = y.length;
+  const p = X[0].length;
+  const df = n - p - 1;
+  const sse = fit.residuals.reduce((sum, r) => sum + r * r, 0);
+  const residualStd = df > 0 ? Math.sqrt(sse / df) : Number.NaN;
+  const Xb = X.map((row) => [1, ...row]);
+  const cols = p + 1;
+  const XtX: number[][] = Array.from({ length: cols }, () => Array(cols).fill(0));
+  for (let i = 0; i < n; i++) {
+    for (let r = 0; r < cols; r++) {
+      for (let c = 0; c < cols; c++) XtX[r][c] += Xb[i][r] * Xb[i][c];
+    }
+  }
+  const identity = Array.from({ length: cols }, (_, i) =>
+    Array.from({ length: cols }, (_, j) => (i === j ? 1 : 0)),
+  );
+  const inverse = identity.map((_, j) => solveLinearSystem(XtX, identity.map((row) => row[j])));
+  const xtxInv = inverse[0].map((_, r) => inverse.map((col) => col[r]));
+  const coefficientStdErrors = xtxInv.map((row, i) =>
+    Number.isFinite(residualStd) ? residualStd * Math.sqrt(Math.max(row[i], 0)) : Number.NaN,
+  );
+  const betas = [fit.intercept, ...fit.coefficients];
+  const tStatistics = betas.map((b, i) =>
+    coefficientStdErrors[i] ? b / coefficientStdErrors[i] : Number.NaN,
+  );
+  const condProxy = Math.max(...xtxInv.map((row, i) => Math.abs(row[i])));
+  return {
+    ...fit,
+    residualStd,
+    coefficientStdErrors,
+    tStatistics,
+    rankWarning: !Number.isFinite(condProxy) || condProxy > 1e8,
+  };
+}
+
 function solveLinearSystem(A: number[][], b: number[]): number[] {
   const n = b.length;
   const aug = A.map((row, i) => [...row, b[i]]);

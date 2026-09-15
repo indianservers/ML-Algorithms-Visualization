@@ -100,3 +100,37 @@ export function runBackpropagation(
     outputDelta,
   };
 }
+
+export function numericalGradientCheck(
+  input: number[],
+  target: number[],
+  activation: BackpropActivation,
+  epsilon = 1e-4,
+) {
+  const base = runBackpropagation(input, target, activation, 1);
+  const analytic = base.gradient1[0][0];
+  const lossAt = (delta: number) => {
+    const weights1 = base.weights1.map((row, i) =>
+      row.map((weight, j) => (i === 0 && j === 0 ? weight + delta : weight)),
+    );
+    const hiddenPre = Array.from({ length: 4 }, (_, j) =>
+      input.reduce((sum, value, i) => sum + value * weights1[i][j], 0),
+    );
+    const hidden = hiddenPre.map((value) => activate(value, activation));
+    const output = target.map((_, j) =>
+      hidden.reduce((sum, value, i) => sum + value * base.weights2[i][j], 0),
+    );
+    return (
+      output.reduce((sum, value, j) => sum + (value - target[j]) ** 2, 0) /
+      target.length
+    );
+  };
+  const numeric = (lossAt(epsilon) - lossAt(-epsilon)) / (2 * epsilon);
+  return {
+    analytic,
+    numeric,
+    relative:
+      Math.abs(analytic - numeric) /
+      Math.max(1, Math.abs(analytic), Math.abs(numeric)),
+  };
+}

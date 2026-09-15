@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { HelpCircle, Moon } from "lucide-react";
 import { runAttention } from "../../../lib/algorithms/neural/attention";
 import "./TransformerAttentionPage.css";
 
@@ -9,11 +8,7 @@ const sequences = [
   "Attention connects every relevant token across the entire sequence",
   "Transformers learn contextual representations without recurrent hidden states",
 ];
-const shown = (vector: number[]) => [
-  ...vector.slice(0, 3),
-  NaN,
-  ...vector.slice(-4),
-];
+const EMBED_DIM = 8;
 
 export default function TransformerAttentionPage() {
   const [sequence, setSequence] = useState(sequences[0]),
@@ -22,11 +17,16 @@ export default function TransformerAttentionPage() {
     [head, setHead] = useState(3),
     [temperature, setTemperature] = useState(1),
     [causal, setCausal] = useState(false),
+    [selectedKey, setSelectedKey] = useState(2),
     [toast, setToast] = useState("Attention ready");
   const tokens = sequence.split(/\s+/).slice(0, 12),
     index = Math.min(selected, tokens.length - 1),
-    result = runAttention(tokens, layer, head, temperature, causal),
-    weights = result.weights[index],
+    keyIndex = Math.min(selectedKey, tokens.length - 1),
+    result = runAttention(tokens, layer, head, temperature, causal, EMBED_DIM),
+    weights = result.weights[index] ?? [],
+    scaleFactor = Math.sqrt(EMBED_DIM) * Math.max(0.1, temperature),
+    cellScore = result.scores[index]?.[keyIndex] ?? 0,
+    cellWeight = result.weights[index]?.[keyIndex] ?? 0,
     reset = () => {
       setSequence(sequences[0]);
       setSelected(2);
@@ -34,6 +34,7 @@ export default function TransformerAttentionPage() {
       setHead(3);
       setTemperature(1);
       setCausal(false);
+      setSelectedKey(2);
       setToast("View reset");
     },
     switchDataset = () => {
@@ -46,35 +47,17 @@ export default function TransformerAttentionPage() {
     <div className="attention-page">
       <aside className="attention-side">
         <Link to="/">⚛</Link>
-        {[
-          "⌘ Overview",
-          "⚙ Attention",
-          "◉ Feed Forward",
-          "▱ Layers",
-          "♨ Playground",
-          "⌘ Comparisons",
-          "▤ Notes",
-        ].map((item) => (
-          <button
-            className={item.includes("Attention") ? "active" : ""}
-            onClick={() => setToast(item)}
-            key={item}
-          >
-            {item}
-          </button>
-        ))}
-        <button onClick={() => setToast("Theme toggled")}>
-          <Moon /> Theme⌄
-        </button>
-        <button onClick={() => setToast("Help opened")}>
-          <HelpCircle /> Help⌄
-        </button>
+        <p className="attention-chrome-note">
+          Single-view lab. Layer/head change hashed projection matrices, not a
+          pretrained 768-D model.
+        </p>
       </aside>
       <header className="attention-head">
         <h1>Transformer Attention ✦</h1>
         <p>
-          Explore how a token attends to others. Click any token to see its
-          attention flow.
+          Educational scaled-dot-product attention on hashed {EMBED_DIM}-D
+          embeddings. Click a heatmap cell to inspect that query row. Attention
+          weights are similarities, not an explanation of “why” a model decided.
         </p>
         <div>
           <label>
@@ -164,8 +147,11 @@ export default function TransformerAttentionPage() {
               row.map((weight, c) => (
                 <button
                   aria-label={`query ${r} key ${c}: ${(weight * 100).toFixed(1)}%`}
-                  onClick={() => setSelected(r)}
-                  className={r === index ? "selected" : ""}
+                  onClick={() => {
+                    setSelected(r);
+                    setSelectedKey(c);
+                  }}
+                  className={r === index && c === keyIndex ? "selected" : ""}
                   style={{
                     background: `rgba(120,70,255,${Math.min(1, weight * 4.5)})`,
                   }}
@@ -204,12 +190,25 @@ export default function TransformerAttentionPage() {
             Selected Token <small>Index {index}</small>
             <strong>{tokens[index]}</strong>
           </label>
+          <p className="cell-inspector">
+            Query “{tokens[index]}” × key “{tokens[keyIndex]}”
+            <br />
+            Raw Q·K {Number.isFinite(cellScore) ? (cellScore * scaleFactor).toFixed(4) : "masked"}
+            <br />
+            Scale √dₖ·τ {scaleFactor.toFixed(4)}
+            <br />
+            Scaled score{" "}
+            {Number.isFinite(cellScore) ? cellScore.toFixed(4) : "−∞"}
+            <br />
+            Softmax weight {cellWeight.toFixed(4)}
+          </p>
           <h3>
-            Query Vector — Q₂ <small>(d_model = 768)</small>
+            Query Vector — Q{index}{" "}
+            <small>(d_model = {EMBED_DIM})</small>
           </h3>
-          <Vector values={shown(result.query[index])} />
+          <Vector values={result.query[index] ?? []} />
           <h3>
-            Key Vectors — Kᵢ <small>(d_model = 768)</small>
+            Key Vectors — Kᵢ <small>(d_model = {EMBED_DIM})</small>
           </h3>
           {result.key.map((vector, i) => (
             <div
@@ -217,13 +216,13 @@ export default function TransformerAttentionPage() {
               key={i}
             >
               <b>{tokens[i]}</b>
-              <Vector values={shown(vector)} />
+              <Vector values={vector} />
             </div>
           ))}
           <h3>
-            Value Vectors — Vᵢ <small>(d_model = 768)</small>
+            Value Vectors — Vᵢ <small>(d_model = {EMBED_DIM})</small>
           </h3>
-          <Vector values={shown(result.value[index])} value />
+          <Vector values={result.value[index] ?? []} value />
           <hr />
           <div className="head-step">
             <label>
@@ -259,9 +258,9 @@ export default function TransformerAttentionPage() {
             Output <small>(contextualized embedding) ⓘ</small>
           </h2>
           <h3>
-            z₂ <small>(for token “{tokens[index]}”)</small>
+            z{index} <small>(for token “{tokens[index]}”)</small>
           </h3>
-          <Vector values={shown(result.output[index])} value />
+          <Vector values={result.output[index] ?? []} value />
           <p>
             This vector is the weighted sum of all value vectors using the
             attention weights from the selected query.

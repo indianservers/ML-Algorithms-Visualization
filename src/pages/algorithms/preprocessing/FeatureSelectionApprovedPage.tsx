@@ -1,5 +1,6 @@
 /* eslint-disable no-irregular-whitespace, react-hooks/preserve-manual-memoization */
 import { useMemo, useRef, useState } from "react";
+import { useLabNavigate } from "../../../lib/labNavigation";
 import {
   pearson,
   rankNumericFeatures,
@@ -125,6 +126,7 @@ export default function FeatureSelectionApprovedPage() {
     [selectionMode, setSelectionMode] = useState("Manual"),
     [status, setStatus] = useState("Saved just now"),
     [collapsed, setCollapsed] = useState(false);
+  const go = useLabNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
   const rows = uploaded?.rows ?? DATA[dataset].data,
     target = uploaded?.target ?? DATA[dataset].target,
@@ -209,7 +211,7 @@ export default function FeatureSelectionApprovedPage() {
             Mega ML<small>AI OBSERVATORY</small>
           </b>
         </a>
-        <button className="home" onClick={() => setStatus("Home opened")}>
+        <button className="home" onClick={() => go("Home")}>
           ⌂　Home
         </button>
         <small>PROJECT</small>
@@ -220,7 +222,7 @@ export default function FeatureSelectionApprovedPage() {
           <button
             className={i === 2 ? "active" : ""}
             key={x}
-            onClick={() => setStatus(`${x.slice(2)} opened`)}
+            onClick={() => go(x)}
           >
             {x}
           </button>
@@ -228,12 +230,12 @@ export default function FeatureSelectionApprovedPage() {
         <button className="sub active">Feature Selection</button>
         <button
           className="sub"
-          onClick={() => setStatus("Feature Engineering opened")}
+          onClick={() => go("Feature Engineering")}
         >
           Feature Engineering
         </button>
         {["⌘　Train", "⌁　Evaluate", "◇　Deploy"].map((x) => (
-          <button key={x} onClick={() => setStatus(`${x.slice(2)} opened`)}>
+          <button key={x} onClick={() => go(x)}>
             {x}
           </button>
         ))}
@@ -244,14 +246,14 @@ export default function FeatureSelectionApprovedPage() {
           "▣　Models",
           "▣　Data Registry",
         ].map((x) => (
-          <button key={x} onClick={() => setStatus(`${x.slice(2)} opened`)}>
+          <button key={x} onClick={() => go(x)}>
             {x}
           </button>
         ))}
         <section>
           <b>SA　 Sarah A.</b>
           <small>Data Scientist</small>
-          <button onClick={() => setStatus("Help opened")}>?</button>
+          <button onClick={() => go("Help")}>?</button>
           <button onClick={() => setStatus("Settings opened")}>⚙</button>
           <button onClick={() => setStatus("Theme toggled")}>☼</button>
           <button

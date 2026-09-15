@@ -37,12 +37,18 @@
   border-radius: 8px;
 }
 .pp-side {
+  grid-column: 1;
   grid-row: 1/4;
+  z-index: 8;
+  position: relative;
   background: #071225;
   border-right: 1px solid #1c2d47;
   padding: 12px 10px 10px;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  pointer-events: auto;
 }
 .pp-brand {
   height: 58px;
@@ -76,13 +82,22 @@
   letter-spacing: 0.08em;
 }
 .pp-side button,
-.pp-sidegroup button {
+.pp-sidegroup button,
+.pp-sidegroup a {
   height: 41px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   border: 0;
   background: transparent;
   text-align: left;
   color: #b2bed0;
   padding: 0 14px;
+  text-decoration: none;
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
 }
 .pp-sidegroup {
   display: flex;
@@ -94,59 +109,132 @@
   margin: 12px 14px 4px;
   letter-spacing: 0.06em;
 }
-.pp-sidegroup button small {
+.pp-sidegroup button small,
+.pp-sidegroup a small {
   display: block;
   margin-left: 16px;
   font-size: 9px;
   color: #536fcd;
 }
-.pp-home .pp-sidegroup:nth-of-type(2) button {
+.pp-home .pp-sidegroup:nth-of-type(2) button,
+.pp-home .pp-sidegroup:nth-of-type(2) a {
   height: 44px;
   font-size: 10px;
 }
-.pp-home .pp-sidegroup:nth-of-type(2) button:nth-of-type(1) {
+.pp-home .pp-sidegroup:nth-of-type(2) a:nth-of-type(1) {
   color: #7edb7a;
 }
-.pp-home .pp-sidegroup:nth-of-type(2) button:nth-of-type(3) {
+.pp-home .pp-sidegroup:nth-of-type(2) a:nth-of-type(3) {
   color: #efad47;
 }
-.pp-home .pp-sidegroup:nth-of-type(2) button:nth-of-type(4) {
+.pp-home .pp-sidegroup:nth-of-type(2) a:nth-of-type(4) {
   color: #56ccd2;
 }
-.pp-home .pp-sidegroup:nth-of-type(2) button:nth-of-type(5) {
+.pp-home .pp-sidegroup:nth-of-type(2) a:nth-of-type(5) {
   color: #e55f9a;
 }
-.pp-upgrade,
 .pp-storage {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
   padding: 12px;
   border: 1px solid #34405c;
   border-radius: 7px;
   background: linear-gradient(145deg, #111b34, #0b1529);
   margin: 8px 1px;
 }
-.pp-upgrade p {
-  font-size: 10px;
-  color: #9da9bc;
-}
-.pp-upgrade button {
-  width: 100%;
-  height: 36px !important;
-  text-align: center !important;
-  background: linear-gradient(90deg, #2767ef, #a12de0) !important;
-  color: white !important;
-  border-radius: 5px;
-}
-.pp-storage {
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-}
 .pp-storage progress {
   width: 100%;
   accent-color: #2c72f2;
 }
-.pp-storage a {
+.pp-storage-link {
   color: #4e8fff;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  height: auto !important;
+}
+.pp-page.side-collapsed {
+  grid-template-columns: 52px minmax(0, 1fr);
+}
+.pp-page.side-collapsed .pp-side {
+  display: flex;
+  padding: 12px 6px 10px;
+  overflow: hidden;
+}
+.pp-page.side-collapsed .pp-brand span,
+.pp-page.side-collapsed .pp-sidegroup,
+.pp-page.side-collapsed .pp-storage,
+.pp-page.side-collapsed .pp-account {
+  display: none;
+}
+.pp-page.side-collapsed .pp-side-footer button {
+  padding: 0;
+  text-align: center;
+}
+.pp-page.pp-light {
+  background: radial-gradient(circle at 70% 0, #dce7ff, #eef3ff 55%);
+  color: #12203a;
+}
+.pp-import,
+.pp-versions,
+.pp-compatible,
+.pp-preview-full {
+  margin-top: 12px;
+  padding: 16px;
+}
+.pp-import h3,
+.pp-versions h3,
+.pp-compatible h3 {
+  margin-top: 0;
+}
+.pp-import > div {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0;
+}
+.pp-import input,
+.pp-import textarea {
+  width: 100%;
+  background: #091529;
+  border: 1px solid #243752;
+  border-radius: 5px;
+  color: inherit;
+  padding: 8px 10px;
+}
+.pp-import button,
+.pp-versions button,
+.pp-preview-full footer button {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid #3667ac;
+  border-radius: 5px;
+  background: #19345f;
+}
+.pp-versions header,
+.pp-versions article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid #21344f;
+  padding: 10px 0;
+}
+.pp-compatible a {
+  display: flex;
+  justify-content: space-between;
+  color: #d5e2f5;
+  text-decoration: none;
+  padding: 8px 0;
+  border-bottom: 1px solid #1d2e47;
+}
+.pp-empty {
+  padding: 16px;
+  color: #8a98ac;
+}
+.pp-preview-full {
+  overflow: auto;
 }
 .pp-account {
   display: flex;
@@ -168,13 +256,15 @@
   display: block;
   color: #8e9db2;
 }
-.pp-side button.active {
+.pp-side button.active,
+.pp-side a.active {
   background: #102448;
   color: #438cff;
   border-radius: 6px;
   position: relative;
 }
-.pp-side button.active::after {
+.pp-side button.active::after,
+.pp-side a.active::after {
   content: "";
   position: absolute;
   right: 0;
@@ -230,8 +320,21 @@
 .pp-content {
   grid-column: 2;
   grid-row: 2;
-  overflow: hidden;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: 0 26px 14px;
+  scrollbar-gutter: stable;
+}
+.pp-content::-webkit-scrollbar {
+  width: 10px;
+}
+.pp-content::-webkit-scrollbar-thumb {
+  background: #4a678f;
+  border-radius: 8px;
+}
+.pp-content::-webkit-scrollbar-track {
+  background: #071225;
 }
 .pp-status {
   grid-column: 2;
@@ -303,6 +406,9 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
+}
+.pp-catalog > div.pp-catalog-narrow {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .pp-catalog article {
   border: 1px solid #213754;
@@ -814,10 +920,12 @@
   border: 0;
   background: transparent;
   color: #c0c9d7;
+  border-bottom: 2px solid transparent;
 }
-.pp-tabs button:first-child {
+.pp-tabs button.active,
+.pp-tabs button:focus-visible {
   color: #5b9aff;
-  border-bottom: 2px solid #3983ff;
+  border-bottom-color: #3983ff;
 }
 .pp-dataset-actions {
   margin-left: auto;
@@ -978,22 +1086,35 @@
   width: 265px;
 }
 .pp-dataset-tools input,
-.pp-dataset-tools button {
+.pp-dataset-tools button,
+.pp-dataset-tools select {
   height: 32px;
   background: #091529;
   border: 1px solid #243752;
   border-radius: 5px;
   padding: 0 12px;
+  color: inherit;
+}
+.pp-dataset-tools label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #8a98ac;
 }
 .pp-library {
-  height: 410px;
+  min-height: 410px;
+  height: min(520px, calc(100vh - 280px));
   display: grid;
-  grid-template-columns: 490px 1fr 192px;
+  grid-template-columns: minmax(280px, 490px) minmax(0, 1fr) 192px;
   gap: 10px;
 }
 .pp-library > article,
 .pp-library > aside > section {
   padding: 12px;
+  min-width: 0;
+}
+.pp-dataset-list {
+  overflow: auto;
 }
 .pp-dataset-list header {
   font-size: 9px;
@@ -1001,6 +1122,10 @@
   display: grid;
   grid-template-columns: 1.7fr 0.9fr 0.55fr 0.45fr 0.55fr;
   color: #73839a;
+  position: sticky;
+  top: 0;
+  background: #0b172d;
+  z-index: 1;
 }
 .pp-dataset-list button {
   width: 100%;
@@ -1045,6 +1170,9 @@
 .pp-dataset-list button span {
   color: #2bd998;
 }
+.pp-preview {
+  overflow: auto;
+}
 .pp-preview h3 {
   margin-top: 0;
 }
@@ -1058,15 +1186,16 @@
 }
 .pp-preview .table {
   font-size: 9px;
-  overflow: hidden;
+  overflow-x: auto;
   border-top: 1px solid #26364d;
 }
 .pp-preview .table header,
 .pp-preview .table p {
   display: grid;
-  grid-template-columns: 0.8fr 0.9fr 1fr 0.9fr 1.2fr 0.45fr;
+  grid-template-columns: var(--preview-cols, repeat(6, minmax(72px, 1fr)));
   margin: 0;
   border-bottom: 1px solid #1e2f48;
+  min-width: 420px;
 }
 .pp-preview .table header b,
 .pp-preview .table p span {
@@ -1558,7 +1687,15 @@
 @media (max-width: 1100px) {
   .pp-page {
     display: block;
+    overflow-x: hidden;
     overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .pp-content {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    padding: 10px;
   }
   .pp-side {
     height: 58px;
@@ -1600,13 +1737,14 @@
     background: #071225;
   }
   .pp-mobile-nav-tools {
-    position: fixed;
-    z-index: 20;
-    left: 10px;
-    width: min(280px, calc(82vw - 20px));
-    top: 66px;
+    position: sticky;
+    z-index: 2;
+    top: 0;
+    width: 100%;
     display: grid;
     gap: 6px;
+    padding: 8px 10px 10px;
+    background: #071225;
   }
   .pp-mobile-nav-tools input,
   .pp-mobile-nav-tools a {
@@ -1631,7 +1769,7 @@
     display: block;
   }
   .pp-mobile-drawer .pp-side .pp-sidegroup:first-of-type {
-    margin-top: 88px;
+    margin-top: 8px;
   }
   .pp-brand {
     width: 170px;
@@ -1646,11 +1784,6 @@
   }
   .pp-head input {
     width: 300px;
-  }
-  .pp-content {
-    height: auto;
-    min-height: 1800px;
-    padding: 10px;
   }
   .pp-home .pp-content {
     padding: 10px;
@@ -1766,9 +1899,6 @@
   }
   .pp-library {
     grid-template-columns: 1fr;
-  }
-  .pp-content {
-    min-height: 2600px;
   }
   .pp-page {
     min-width: 0;

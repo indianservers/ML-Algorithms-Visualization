@@ -1,9 +1,13 @@
 /* eslint-disable no-irregular-whitespace */
 import { useRef, useState } from "react";
+import { useLabNavigate } from "../../../lib/labNavigation";
 import {
+  inspectMovingAverageWindow,
   movingAverageAnalysis,
   type MovingAverageAlignment,
 } from "../../../lib/timeSeries/movingAverage";
+import { TIME_SERIES_CATALOG } from "../../../lib/timeSeries/timeSeriesDatasets";
+import { useActiveTimeSeries } from "../../../lib/timeSeries/useActiveTimeSeries";
 import "./MovingAverageApprovedPage.css";
 
 type Point = { time: string; value: number };
@@ -47,6 +51,11 @@ const DATA = [
       value: p.value * 1.18 + (i % 96 === 0 ? 700 : 0),
     })),
   },
+  ...TIME_SERIES_CATALOG.map((item) => ({
+    name: item.name,
+    rows: item.points.length,
+    points: item.points.map((point) => ({ time: point.date, value: point.value })),
+  })),
 ];
 function path(
   values: number[],
@@ -83,15 +92,33 @@ export default function MovingAverageApprovedPage() {
     [theme, setTheme] = useState(0),
     [status, setStatus] = useState("View synced across tabs"),
     [collapsed, setCollapsed] = useState(false);
+  const go = useLabNavigate();
+  const handoff = useActiveTimeSeries("/ml/time-series/moving-average");
   const fileRef = useRef<HTMLInputElement>(null);
-  const source = uploaded?.points ?? DATA[dataset].points,
+  const source =
+      uploaded?.points ??
+      (handoff
+        ? handoff.points.map((point) => ({ time: point.date, value: point.value }))
+        : DATA[dataset].points),
+    fullValues = source.map((p) => p.value),
+    fullAnalysis = movingAverageAnalysis(fullValues, windowSize, alignment, lag),
     limit =
       { "7D": 168, "30D": 720, "90D": 2160, "1Y": 8760, All: source.length }[
         range
       ] ?? source.length,
     points = source.slice(-Math.min(source.length, limit)),
+    offset = source.length - points.length,
     values = points.map((p) => p.value),
-    analysis = movingAverageAnalysis(values, windowSize, alignment, lag),
+    analysis = {
+      average: fullAnalysis.average.slice(offset),
+      residual: fullAnalysis.residual.slice(offset),
+      absoluteResidual: fullAnalysis.absoluteResidual.slice(offset),
+    },
+    inspect = inspectMovingAverageWindow(
+      fullValues,
+      windowSize,
+      fullValues.length - 1,
+    ),
     min = Math.min(...values) * 0.88,
     max = Math.max(...values) * 1.05,
     resMin = Math.min(...analysis.residual.filter(Number.isFinite), -1),
@@ -150,7 +177,7 @@ export default function MovingAverageApprovedPage() {
           <button
             className={i === 1 ? "active" : ""}
             key={x}
-            onClick={() => setStatus(`${x.slice(2)} opened`)}
+            onClick={() => go(x)}
           >
             {x}
           </button>
@@ -169,7 +196,7 @@ export default function MovingAverageApprovedPage() {
           Lesson · Time Series　›　<b>Moving Average</b>
         </p>
         <div>
-          <button onClick={() => setStatus("Help opened")}>?</button>
+          <button onClick={() => go("Help")}>?</button>
           <button onClick={() => setTheme((v) => (v + 1) % 5)}>☀</button>
           <b>MM</b>
         </div>
@@ -299,6 +326,12 @@ export default function MovingAverageApprovedPage() {
               n = {windowSize}
             </text>
           </svg>
+          <p>
+            Last full window (not a partial start):{" "}
+            {inspect.observations.length
+              ? `${inspect.observations.map((value) => value.toFixed(1)).join(", ")} → mean ${inspect.mean.toFixed(3)}`
+              : "N/A until the window is full"}
+          </p>
         </section>
         <section className="chart residual">
           <h2>Residual (Raw − Moving Average)</h2>
@@ -360,6 +393,14 @@ export default function MovingAverageApprovedPage() {
               Centered
             </button>
           </div>
+          {alignment === "centered" ? (
+            <small>
+              Visualization / decomposition only — centered MA uses future
+              observations and is not used for forecasting.
+            </small>
+          ) : (
+            <small>Trailing MA uses only observations at or before t.</small>
+          )}
         </label>
         <label>
           LAG (for comparison)

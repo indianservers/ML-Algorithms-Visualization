@@ -10,7 +10,8 @@ export interface GRUStep {
   simpleRNN: number;
 }
 
-const sigmoid = (value: number) => 1 / (1 + Math.exp(-value));
+const sigmoid = (value: number) =>
+  1 / (1 + Math.exp(-Math.max(-30, Math.min(30, value))));
 const activate = (value: number, mode: GRUActivation) =>
   mode === "relu"
     ? Math.max(0, value)
@@ -38,27 +39,19 @@ export function runGRU(
 ) {
   let hidden = initialHidden;
   let simple = initialHidden;
-  return tokens.map((token, time): GRUStep => {
+  const Wz = 0.72 * weightScale;
+  const Uz = 0.38 * weightScale;
+  const Wr = -0.45 * weightScale;
+  const Ur = 0.51 * weightScale;
+  const Wh = 0.83 * weightScale;
+  const Uh = 0.57 * weightScale;
+  return tokens.map((token): GRUStep => {
     const input = tokenSignal(token);
-    const update = sigmoid(
-      weightScale * (0.72 * input + 0.38 * hidden) +
-        gateBias +
-        Math.sin(time * 1.7) * 0.12,
-    );
-    const reset = sigmoid(
-      weightScale * (-0.45 * input + 0.51 * hidden) +
-        gateBias -
-        Math.cos(time * 1.1) * 0.1,
-    );
-    const candidate = activate(
-      weightScale * (0.83 * input + 0.57 * reset * hidden),
-      activation,
-    );
+    const update = sigmoid(Wz * input + Uz * hidden + gateBias);
+    const reset = sigmoid(Wr * input + Ur * hidden + gateBias);
+    const candidate = activate(Wh * input + Uh * reset * hidden, activation);
     hidden = quantize((1 - update) * hidden + update * candidate, precision);
-    simple = quantize(
-      activate(weightScale * (0.83 * input + 0.57 * simple), activation),
-      precision,
-    );
+    simple = quantize(activate(Wh * input + Uh * simple, activation), precision);
     return { input, update, reset, candidate, hidden, simpleRNN: simple };
   });
 }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useLabNavigate } from "../../../lib/labNavigation";
 import {
   BookOpen,
   Moon,
@@ -12,10 +13,18 @@ import {
   meanShift,
   type MeanShiftKernel,
 } from "../../../lib/algorithms/clustering/meanShift";
+import {
+  datasetAWellSeparatedBlobs,
+  datasetBFourBlobs,
+  datasetETwoMoons,
+  datasetGNoisyBlobs,
+  datasetIElongated,
+  datasetKVariableDensity,
+} from "../../../lib/clustering/clusteringDatasets";
 import "./MeanShiftPage.css";
 
 type Point = { x: number; y: number };
-type Dataset = "mixed" | "density" | "anisotropic" | "imported";
+type Dataset = "mixed" | "density" | "anisotropic" | "moons" | "four" | "imported";
 const COLORS = [
   "#16d7ac",
   "#ff766c",
@@ -24,50 +33,19 @@ const COLORS = [
   "#a77bff",
   "#f45cd0",
 ];
-const rand = (i: number, salt: number) => {
-  const value = Math.sin((i + 5) * 12.9898 + salt * 78.233) * 43758.5453;
-  return value - Math.floor(value);
-};
-function makeData(kind: Exclude<Dataset, "imported">): Point[] {
-  const centers =
-    kind === "density"
-      ? [
-          [-3, 1.6],
-          [-0.8, -0.7],
-          [2.8, 1.2],
-          [2, -2.4],
-        ]
-      : [
-          [-3.2, 0.6],
-          [-1.1, 2.6],
-          [2.8, 1.1],
-          [1.5, -2.6],
-        ];
-  const sizes = [45, 66, 38, 51];
-  return sizes.flatMap((size, cluster) =>
-    Array.from({ length: size }, (_, local) => {
-      const i = cluster * 100 + local,
-        angle = rand(i, 1) * Math.PI * 2,
-        radius =
-          Math.sqrt(rand(i, 2)) *
-          (kind === "density" ? 0.42 + cluster * 0.11 : 0.65);
-      const stretch = kind === "anisotropic" ? [1.5, 0.45] : [1, 1];
-      return {
-        x: centers[cluster][0] + Math.cos(angle) * radius * stretch[0],
-        y: centers[cluster][1] + Math.sin(angle) * radius * stretch[1],
-      };
-    }),
-  );
-}
 const BUILT = {
-  mixed: makeData("mixed"),
-  density: makeData("density"),
-  anisotropic: makeData("anisotropic"),
+  mixed: datasetAWellSeparatedBlobs(),
+  density: datasetKVariableDensity(),
+  anisotropic: datasetIElongated().concat(datasetGNoisyBlobs().slice(-6)),
+  moons: datasetETwoMoons(),
+  four: datasetBFourBlobs(),
 };
 const LABELS: Record<Dataset, string> = {
-  mixed: "Two Moons + Blobs",
-  density: "Multi-density Peaks",
-  anisotropic: "Anisotropic Groups",
+  mixed: "Well-separated blobs",
+  density: "Variable-density clusters",
+  anisotropic: "Elongated clusters + noise",
+  moons: "Two moons",
+  four: "Four blobs",
   imported: "Imported Data",
 };
 
@@ -87,11 +65,27 @@ export default function MeanShiftPage() {
     [showHeatmap, setShowHeatmap] = useState(false),
     [autoAnimate, setAutoAnimate] = useState(true),
     [toast, setToast] = useState("");
+  const go = useLabNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
   const X = useMemo(() => points.map((point) => [point.x, point.y]), [points]);
   const result = useMemo(
-    () => meanShift(X, bandwidth, maxIterations, tolerance, kernel),
+    () =>
+      meanShift(
+        X,
+        bandwidth > 0 ? bandwidth : 1.25,
+        Math.max(1, maxIterations),
+        tolerance > 0 ? tolerance : 0.001,
+        kernel,
+      ),
     [X, bandwidth, maxIterations, tolerance, kernel],
+  );
+  const bandwidthSweep = useMemo(
+    () =>
+      [0.7, 1.1, 1.6, 2.2].map((h) => ({
+        h,
+        modes: meanShift(X, h, 10, 0.01, kernel).centers.length,
+      })),
+    [X, kernel],
   );
   const activeFrame = Math.min(frame, result.iterations),
     positions = result.trajectories.map(
@@ -174,7 +168,7 @@ export default function MeanShiftPage() {
         ].map((name, index) => (
           <button
             className={index === 3 ? "active" : index < 3 ? "done" : ""}
-            onClick={() => setToast(name)}
+            onClick={() => go(name)}
             key={name}
           >
             {name}
@@ -183,14 +177,14 @@ export default function MeanShiftPage() {
         ))}
         <b>ADVANCED</b>
         {["7. Spectral Clustering", "8. OPTICS", "9. BIRCH"].map((name) => (
-          <button onClick={() => setToast(name)} key={name}>
+          <button onClick={() => go(name)} key={name}>
             {name}
           </button>
         ))}
         <b>RESOURCES</b>
         {["▤ Cheat Sheet", "▧ Key Formulas", "▤ Further Reading"].map(
           (name) => (
-            <button onClick={() => setToast(name)} key={name}>
+            <button onClick={() => go(name)} key={name}>
               {name}
             </button>
           ),
@@ -199,7 +193,7 @@ export default function MeanShiftPage() {
           <Rocket />
           <b>Practice Mode</b>
           <p>Test your understanding with guided challenges.</p>
-          <button onClick={() => setToast("Practice started")}>
+          <button onClick={() => go("Practice")}>
             Start Practice
           </button>
         </article>
@@ -224,7 +218,7 @@ export default function MeanShiftPage() {
           </i>
           <strong>65%</strong>
         </section>
-        <button onClick={() => setToast("Roadmap opened")}>
+        <button onClick={() => go("Lesson Roadmap")}>
           <BookOpen />
           Lesson Roadmap
         </button>
@@ -262,7 +256,7 @@ export default function MeanShiftPage() {
               </option>
             ))}
           </select>
-          <button onClick={() => setToast("Sample datasets opened")}>
+          <button onClick={() => go("Sample Datasets")}>
             ◉ Sample Datasets
           </button>
           <button onClick={() => fileRef.current?.click()}>
@@ -446,6 +440,12 @@ export default function MeanShiftPage() {
           ⓘ Tip: Mean Shift finds density peaks without specifying cluster
           count. Try adjusting the bandwidth to explore different granularities.
         </footer>
+        <p>
+          Bandwidth sweep (genuine refits):{" "}
+          {bandwidthSweep
+            .map((row) => `h=${row.h.toFixed(1)} → ${row.modes} modes`)
+            .join(" · ")}
+        </p>
       </main>
       <aside className="ms-controls">
         <h2>MEAN SHIFT CONTROLS</h2>

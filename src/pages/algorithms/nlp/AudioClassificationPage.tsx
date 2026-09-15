@@ -6,9 +6,10 @@ import { PageHeader } from '../../../components/common/PageHeader';
 import { Card, InfoBox } from '../../../components/common/Card';
 import { stopMediaStream } from '../../../lib/media/streams';
 import { generateExperimentId, saveModelMetadata } from '../../../stores/experimentStore';
+import { AUDIO_DEMO_CLASSES, bandEnergies, demoClip, featureScaler, isSilent, resampleLinear, rms, stereoToMono, stft, zeroCrossingRate } from '../../../lib/nlp/audioFeatures';
 
 type AudioClass = { id: string; name: string; color: string };
-type AudioExample = { id: string; classId: string; feature: number[]; frames: number[][]; createdAt: number };
+type AudioExample = { id: string; classId: string; feature: number[]; frames: number[][]; samples?: number[]; createdAt: number };
 type Prediction = AudioClass & { probability: number };
 type EpochPoint = { epoch: number; loss: number; accuracy: number };
 type CalibrationSample = { classId: string; confidence: number };
@@ -94,6 +95,7 @@ export default function AudioClassificationPage() {
   const rafRef = useRef<number | null>(null);
   const inferenceRef = useRef<number | null>(null);
   const modelRef = useRef<tf.LayersModel | null>(null);
+  const scalerRef = useRef<ReturnType<typeof featureScaler> | null>(null);
   const classesRef = useRef<AudioClass[]>(initialClasses);
   const [classes, setClasses] = useState<AudioClass[]>(initialClasses);
   const [examples, setExamples] = useState<AudioExample[]>([]);
@@ -109,11 +111,14 @@ export default function AudioClassificationPage() {
   const [calibrationSamples, setCalibrationSamples] = useState<CalibrationSample[]>([]);
   const [calibrating, setCalibrating] = useState(false);
   const [epochData, setEpochData] = useState<EpochPoint[]>([]);
+  const [holdout, setHoldout] = useState<{ labels: string[]; matrix: number[][] } | null>(null);
   const [status, setStatus] = useState('Start the microphone, record at least 8 one-second clips per class, then train.');
 
   useEffect(() => { classesRef.current = classes; }, [classes]);
+  const aliveRef = useRef(true);
 
   useEffect(() => () => {
+    aliveRef.current = false;
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     if (inferenceRef.current) window.clearInterval(inferenceRef.current);
     stopMediaStream(streamRef.current);
@@ -126,6 +131,10 @@ export default function AudioClassificationPage() {
     [classes, examples]
   );
   const readyToTrain = classes.length >= 2 && classes.every(cls => (counts[cls.id] ?? 0) >= MIN_SAMPLES_PER_CLASS) && !training;
+  const pcmExample = examples.find((example) => example.samples && example.samples.length > 10);
+  const pcm = pcmExample?.samples ?? [];
+  const spectrogram = pcm.length ? stft(pcm, 64, 32) : [];
+  const probSum = predictions.reduce((s, item) => s + item.probability, 0);
   const topPrediction = predictions[0];
   const displayLabel = topPrediction && topPrediction.probability >= threshold ? topPrediction.name : 'Uncertain';
   const rejectionRate = calibrationSamples.length
@@ -161,7 +170,9 @@ export default function AudioClassificationPage() {
   const classifyBands = useCallback(async (bands: number[]) => {
     const model = modelRef.current;
     if (!model) return;
-    const input = tf.tensor2d(bands, [1, MEL_BANDS]);
+    const scaler = scalerRef.current;
+    const features = scaler ? scaler.apply(bands) : bands;
+    const input = tf.tensor2d(features, [1, MEL_BANDS]);
     const output = model.predict(input) as tf.Tensor;
     const values = Array.from(await output.data());
     input.dispose();
@@ -176,7 +187,9 @@ export default function AudioClassificationPage() {
   const readAudioPrediction = useCallback(async (bands: number[]) => {
     const model = modelRef.current;
     if (!model) return null;
-    const input = tf.tensor2d(bands, [1, MEL_BANDS]);
+    const scaler = scalerRef.current;
+    const features = scaler ? scaler.apply(bands) : bands;
+    const input = tf.tensor2d(features, [1, MEL_BANDS]);
     const output = model.predict(input) as tf.Tensor;
     const values = Array.from(await output.data());
     input.dispose();
@@ -281,16 +294,32 @@ export default function AudioClassificationPage() {
     setTraining(true);
     setEpochData([]);
     setCalibrationSamples([]);
+    setHoldout(null);
     setModelReady(false);
     modelRef.current?.dispose();
     const model = buildAudioModel(classes.length);
     const classIndex = new Map(classes.map((cls, index) => [cls.id, index]));
-    const xs = tf.tensor2d(examples.flatMap(example => example.feature), [examples.length, MEL_BANDS]);
-    const ys = tf.tensor2d(examples.flatMap(example => {
+    const trainSet: AudioExample[] = [];
+    const testSet: AudioExample[] = [];
+    classes.forEach((cls) => {
+      const group = examples.filter((example) => example.classId === cls.id);
+      const nTest = Math.max(1, Math.floor(group.length * 0.2));
+      testSet.push(...group.slice(0, nTest));
+      trainSet.push(...group.slice(nTest));
+    });
+    if (trainSet.length < 2) {
+      setTraining(false);
+      setStatus('Not enough training clips after the stratified hold-out.');
+      return;
+    }
+    const scaler = featureScaler(trainSet.map((example) => example.feature));
+    scalerRef.current = scaler;
+    const xs = tf.tensor2d(trainSet.map((example) => scaler.apply(example.feature)), [trainSet.length, MEL_BANDS]);
+    const ys = tf.tensor2d(trainSet.flatMap((example) => {
       const row = Array(classes.length).fill(0);
       row[classIndex.get(example.classId) ?? 0] = 1;
       return row;
-    }), [examples.length, classes.length]);
+    }), [trainSet.length, classes.length]);
     let finalAccuracy = 0;
 
     await model.fit(xs, ys, {
@@ -300,6 +329,10 @@ export default function AudioClassificationPage() {
       validationSplit: examples.length >= 24 ? 0.2 : 0,
       callbacks: {
         onEpochEnd: async (epoch, logs) => {
+          if (!aliveRef.current) {
+            model.stopTraining = true;
+            return;
+          }
           finalAccuracy = (logs?.acc as number | undefined) ?? (logs?.accuracy as number | undefined) ?? 0;
           setEpochData(current => [...current, {
             epoch: epoch + 1,
@@ -312,6 +345,27 @@ export default function AudioClassificationPage() {
     });
     xs.dispose();
     ys.dispose();
+    if (!aliveRef.current) {
+      model.dispose();
+      return;
+    }
+    if (testSet.length) {
+      const xt = tf.tensor2d(testSet.map((example) => scaler.apply(example.feature)));
+      const pred = model.predict(xt) as tf.Tensor;
+      const values = await pred.array() as number[][];
+      xt.dispose();
+      pred.dispose();
+      const labels = classes.map((cls) => cls.name);
+      const matrix = labels.map(() => labels.map(() => 0));
+      const hits = values.filter((row, i) => {
+        const predicted = row.indexOf(Math.max(...row));
+        const actual = classIndex.get(testSet[i].classId) ?? -1;
+        if (actual >= 0 && predicted >= 0) matrix[actual][predicted] += 1;
+        return predicted === actual;
+      }).length;
+      setHoldout({ labels, matrix });
+      setStatus(`Trained. Hold-out accuracy ${((hits / testSet.length) * 100).toFixed(0)}% on ${testSet.length} clips (scaler fit on train only).`);
+    }
     modelRef.current = model;
     setModelReady(true);
     await saveModelMetadata({
@@ -350,22 +404,75 @@ export default function AudioClassificationPage() {
     ]);
   };
 
+  const loadSyntheticTones = () => {
+    const nextClasses = AUDIO_DEMO_CLASSES.map((item, index) => ({
+      id: item.id,
+      name: item.name,
+      color: COLORS[index],
+    }));
+    const nextExamples: AudioExample[] = [];
+    nextClasses.forEach((cls) => {
+      for (let variant = 0; variant < 8; variant += 1) {
+        const samples = demoClip(cls.id, variant);
+        const feature = bandEnergies(samples, MEL_BANDS);
+        nextExamples.push({
+          id: `${cls.id}_${variant}`,
+          classId: cls.id,
+          feature,
+          frames: [feature],
+          samples,
+          createdAt: Date.now() + variant,
+        });
+      }
+    });
+    setClasses(nextClasses);
+    setExamples(nextExamples);
+    setStatus('Loaded synthetic 440 Hz / 880 Hz / noise clips with real PCM. Waveform and STFT come from those samples, not a decorative sine drawing.');
+  };
+
   const reset = () => {
     modelRef.current?.dispose();
     modelRef.current = null;
+    scalerRef.current = null;
     setModelReady(false);
     setExamples([]);
     setPredictions([]);
     setEpochData([]);
     setCalibrationSamples([]);
+    setHoldout(null);
     setStatus('Dataset and trained model cleared.');
+  };
+
+  const addUploadedClip = async (file: File, classId: string) => {
+    const AudioContextCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextCtor) {
+      setStatus('Web Audio API is not available.');
+      return;
+    }
+    const context = new AudioContextCtor();
+    try {
+      const buffer = await context.decodeAudioData(await file.arrayBuffer());
+      const channels = Array.from({ length: buffer.numberOfChannels }, (_, c) => Array.from(buffer.getChannelData(c)));
+      const mono = stereoToMono(channels);
+      const resampled = resampleLinear(mono, buffer.sampleRate, 16000);
+      const feature = bandEnergies(resampled, MEL_BANDS);
+      setExamples((current) => [
+        ...current,
+        { id: `${classId}_${file.name}_${Date.now()}`, classId, feature, frames: [feature], samples: resampled, createdAt: Date.now() },
+      ]);
+      setStatus(`Decoded ${file.name}: ${buffer.numberOfChannels} ch @ ${buffer.sampleRate} Hz → averaged mono → 16 kHz (${resampled.length} samples). ${isSilent(resampled) ? "Low-information / silent clip." : ""}`);
+    } catch {
+      setStatus(`Could not decode ${file.name}.`);
+    } finally {
+      await context.close();
+    }
   };
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4">
       <PageHeader
         title="Audio Classification"
-        subtitle="Train a no-backend sound classifier from 40-band Mel spectrogram windows and run live microphone inference."
+        subtitle="Audio (not text): Mel bands from analyser FFT, or synthetic PCM tones with real waveform/STFT. Train an MLP; hold-out clips are not the training clips."
         badge="Browser Trainable"
         category="Browser Training"
         icon={<Mic size={22} />}
@@ -405,6 +512,19 @@ export default function AudioClassificationPage() {
                         {counts[cls.id] ?? 0} / {MIN_SAMPLES_PER_CLASS}
                       </span>
                     </div>
+                    <label className="mt-2 block text-[11px] text-gray-500">
+                      Upload WAV/MP3
+                      <input
+                        type="file"
+                        accept="audio/*"
+                        className="mt-1 block w-full text-[11px]"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          if (file) void addUploadedClip(file, cls.id);
+                          event.target.value = "";
+                        }}
+                      />
+                    </label>
                     <div className="mt-3 flex h-12 items-end gap-[2px] rounded bg-gray-100 p-1 dark:bg-gray-900">
                       {preview.map((value, index) => (
                         <span key={index} className="flex-1 rounded-t" style={{ height: `${Math.max(4, value * 44)}px`, backgroundColor: cls.color, opacity: 0.35 + value * 0.55 }} />
@@ -418,6 +538,34 @@ export default function AudioClassificationPage() {
         </div>
 
         <div className="space-y-4">
+          <Card title="PCM waveform and STFT (not a decorative sine)">
+            {pcm.length ? (
+              <>
+                <p className="text-xs">Samples {pcm.length} · RMS {rms(pcm).toFixed(3)} · ZCR {zeroCrossingRate(pcm).toFixed(3)} · class {pcmExample?.classId}{isSilent(pcm) ? " · Low-information input (near-silent)." : ""}</p>
+                <svg viewBox="0 0 300 60" className="h-16 w-full">
+                  <polyline
+                    fill="none"
+                    stroke="#2563eb"
+                    strokeWidth="1"
+                    points={pcm.filter((_, i) => i % 8 === 0).map((v, i, arr) => `${(i / (arr.length - 1)) * 300},${30 - v * 24}`).join(" ")}
+                  />
+                </svg>
+                <div className="mt-2 grid gap-[1px]" style={{ gridTemplateColumns: `repeat(${Math.min(spectrogram.length, 40)}, minmax(0, 1fr))` }}>
+                  {spectrogram.slice(0, 40).map((frame, i) => (
+                    <div key={i} className="flex h-16 flex-col-reverse">
+                      {frame.slice(0, 16).map((bin, j) => (
+                        <span key={j} className="flex-1" style={{ backgroundColor: `rgba(37,99,235,${Math.min(1, bin * 8)})` }} />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs">STFT magnitude: X = time (frames, hop 32), Y = frequency bins (FFT 64, Hann window). Color = magnitude. Live mic path uses analyser FFT (fftSize 1024) into 40 triangular Mel bands from 80 Hz to min(7600, Nyquist). Stereo uploads average channels then resample to 16 kHz.</p>
+              </>
+            ) : (
+              <p className="text-xs">Load synthetic tones to inspect real PCM. Microphone recording stores Mel frames, not raw samples.</p>
+            )}
+            {predictions.length > 0 && <p className="text-xs">Softmax mass {probSum.toFixed(3)}. Closed-set softmax must choose among known classes; probability does not guarantee the clip belongs to one of them.</p>}
+          </Card>
           <Card title="Training Controls">
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="text-sm font-semibold text-gray-600 dark:text-gray-300">
@@ -430,9 +578,10 @@ export default function AudioClassificationPage() {
               </label>
             </div>
             <div className="mt-4 grid gap-2 sm:grid-cols-4">
+              <button onClick={loadSyntheticTones} className="inline-flex items-center justify-center gap-2 rounded border border-gray-200 px-3 py-2 text-sm font-semibold dark:border-gray-700">Load synthetic tones</button>
               <button onClick={startMic} disabled={running} className="inline-flex items-center justify-center gap-2 rounded bg-blue-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"><Mic size={14} /> Start Mic</button>
               <button onClick={stopMic} disabled={!running} className="inline-flex items-center justify-center gap-2 rounded border border-gray-200 px-3 py-2 text-sm font-semibold disabled:opacity-50 dark:border-gray-700"><Square size={14} /> Stop</button>
-              <button onClick={train} disabled={!readyToTrain} className="inline-flex items-center justify-center gap-2 rounded bg-emerald-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"><Play size={14} /> {training ? 'Training...' : 'Train'}</button>
+              <button onClick={train} disabled={!readyToTrain} className="inline-flex items-center justify-center gap-2 rounded bg-emerald-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"><Play size={14} /> {training ? 'Training audio...' : 'Train audio model'}</button>
               <button onClick={reset} className="inline-flex items-center justify-center gap-2 rounded border border-gray-200 px-3 py-2 text-sm font-semibold dark:border-gray-700"><RotateCcw size={14} /> Reset</button>
             </div>
           </Card>
@@ -469,11 +618,25 @@ export default function AudioClassificationPage() {
         </div>
 
         <div className="space-y-4">
+          {holdout && (
+            <Card title="Hold-out confusion matrix">
+              <table className="text-xs">
+                <thead><tr><th /><th className="p-1" colSpan={holdout.labels.length}>predicted</th></tr>
+                  <tr><th />{holdout.labels.map((label) => <th key={label} className="p-1">{label}</th>)}</tr>
+                </thead>
+                <tbody>
+                  {holdout.matrix.map((row, i) => (
+                    <tr key={holdout.labels[i]}><th className="p-1 text-left">{holdout.labels[i]}</th>{row.map((v, j) => <td key={j} className="border p-1 text-center font-mono">{v}</td>)}</tr>
+                  ))}
+                </tbody>
+              </table>
+            </Card>
+          )}
           <Card title="Live Inference">
             <div className={`rounded-2xl p-5 text-center ${displayLabel === 'Uncertain' ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-200' : 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-200'}`}>
               <p className="text-xs font-bold uppercase tracking-wide">Top prediction</p>
               <p className="mt-1 text-3xl font-black">{displayLabel}</p>
-              <p className="text-sm">{topPrediction ? `${(topPrediction.probability * 100).toFixed(1)}% confidence` : 'No model output yet'}</p>
+              <p className="text-sm">{topPrediction ? `${(topPrediction.probability * 100).toFixed(1)}% softmax among known classes` : 'No model output yet'}</p>
             </div>
             <label className="mt-4 block text-sm font-semibold text-gray-600 dark:text-gray-300">
               Confidence threshold: {(threshold * 100).toFixed(0)}%

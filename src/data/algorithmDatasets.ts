@@ -27,6 +27,17 @@ import {
   generateSyntheticMoons,
 } from './sampleDatasets';
 import type { Dataset } from './sampleDatasets';
+import {
+  bookRatingsDataset,
+  courseRatingsDataset,
+  ecommerceInteractionsDataset,
+  musicRatingsDataset,
+  restaurantRatingsDataset,
+  videoWatchRatingsDataset,
+} from './expandedSampleDatasets';
+import { timeSeriesCatalogTables } from '../lib/timeSeries/timeSeriesDatasets';
+import { dimensionalityCatalogTables } from '../lib/dimensionality/dimensionalityDatasets';
+import { audioCatalogTables, nlpCatalogTables } from '../lib/nlp/nlpDatasets';
 
 export interface AlgorithmDatasetSuggestion {
   id: string;
@@ -62,6 +73,16 @@ function sample(dataset: Dataset, target?: string): AlgorithmDatasetSuggestion {
     dataset,
   };
 }
+
+export const timeSeriesLibraryDatasets: Dataset[] = timeSeriesCatalogTables();
+export const dimensionalityLibraryDatasets: Dataset[] = dimensionalityCatalogTables();
+export const nlpLibraryDatasets: Dataset[] = [...nlpCatalogTables(), ...audioCatalogTables()];
+const timeSeriesSuggestions = timeSeriesLibraryDatasets.map((dataset) =>
+  sample(dataset, 'value'),
+);
+const dimensionalitySuggestions = dimensionalityLibraryDatasets.map((dataset) =>
+  sample(dataset, dataset.columns.includes('species') || dataset.columns.includes('class') || dataset.columns.includes('digit') || dataset.columns.includes('cluster') || dataset.columns.includes('ring') || dataset.columns.includes('roll') ? dataset.columns.at(-1) : undefined),
+);
 
 const synthetic = {
   linear: {
@@ -162,12 +183,12 @@ const routeSpecific: Record<string, AlgorithmDatasetSuggestion[]> = {
   '/ml/clustering/spectral-clustering': [synthetic.moons, synthetic.blobs],
   '/ml/clustering/optics': [sample(sensorAnomalyDataset, 'is_anomaly'), synthetic.moons, sample(mallCustomersDataset)],
 
-  '/ml/dimensionality-reduction/pca': [sample(medicalRiskDataset, 'high_risk'), sample(retailBasketDataset), sample(irisDataset, 'species')],
-  '/ml/dimensionality-reduction/kernel-pca': [sample(medicalRiskDataset, 'high_risk'), sample(irisDataset, 'species'), synthetic.moons],
-  '/ml/dimensionality-reduction/tsne': [sample(retailBasketDataset), sample(irisDataset, 'species'), synthetic.blobs],
-  '/ml/dimensionality-reduction/umap-concept': [sample(retailBasketDataset), sample(irisDataset, 'species'), synthetic.blobs],
-  '/ml/dimensionality-reduction/lda': [sample(medicalRiskDataset, 'high_risk'), sample(irisDataset, 'species')],
-  '/ml/dimensionality-reduction/autoencoder': [sample(energyDemandDataset, 'demand_mw'), sample(irisDataset, 'species'), synthetic.imageGrid],
+  '/ml/dimensionality-reduction/pca': [sample(irisDataset, 'species'), ...dimensionalitySuggestions],
+  '/ml/dimensionality-reduction/kernel-pca': [sample(irisDataset, 'species'), ...dimensionalitySuggestions.filter((item) => item.id.includes('concentric') || item.id.includes('swiss') || item.id.includes('iris'))],
+  '/ml/dimensionality-reduction/tsne': [sample(irisDataset, 'species'), ...dimensionalitySuggestions.filter((item) => item.id.includes('digit') || item.id.includes('blobs') || item.id.includes('swiss') || item.id.includes('iris'))],
+  '/ml/dimensionality-reduction/umap-concept': [sample(irisDataset, 'species'), ...dimensionalitySuggestions.filter((item) => item.id.includes('digit') || item.id.includes('blobs') || item.id.includes('swiss') || item.id.includes('iris'))],
+  '/ml/dimensionality-reduction/lda': [sample(irisDataset, 'species'), ...dimensionalitySuggestions.filter((item) => item.id.includes('iris') || item.id.includes('class') || item.id.includes('informative'))],
+  '/ml/dimensionality-reduction/autoencoder': [sample(irisDataset, 'species'), ...dimensionalitySuggestions.filter((item) => item.id.includes('digit') || item.id.includes('noisy') || item.id.includes('informative'))],
 
   '/ml/deep-learning/perceptron': [synthetic.blobs],
   '/ml/deep-learning/mlp': [synthetic.moons, synthetic.circles],
@@ -196,21 +217,22 @@ const routeSpecific: Record<string, AlgorithmDatasetSuggestion[]> = {
   '/ml/preprocessing/feature-selection': [sample(medicalRiskDataset, 'high_risk'), sample(energyDemandDataset, 'demand_mw'), sample(loanDataset, 'approved')],
   '/ml/preprocessing/polynomial-features': [sample(studentMarksDataset, 'marks'), synthetic.linear],
 
-  '/ml/time-series/moving-average': [sample(weatherDailyDataset, 'temperature_c'), sample(timeSeriesSalesDataset, 'sales')],
-  '/ml/time-series/exponential-smoothing': [sample(weatherDailyDataset, 'temperature_c'), sample(timeSeriesSalesDataset, 'sales')],
-  '/ml/time-series/holt-winters': [sample(weatherDailyDataset, 'temperature_c'), sample(timeSeriesSalesDataset, 'sales')],
-  '/ml/time-series/arima-concept': [sample(weatherDailyDataset, 'temperature_c'), sample(timeSeriesSalesDataset, 'sales'), synthetic.sequence],
-  '/ml/time-series/anomaly-detection': [sample(sensorAnomalyDataset, 'is_anomaly'), sample(weatherDailyDataset, 'temperature_c'), synthetic.sequence],
-  '/ml/time-series/rnn-forecasting': [sample(recurrentTrafficDataset, 'visits'), sample(weatherDailyDataset, 'temperature_c'), synthetic.sequence],
-  '/ml/time-series/lstm-forecasting': [sample(lstmRetailDemandDataset, 'orders'), sample(timeSeriesSalesDataset, 'sales'), sample(recurrentTrafficDataset, 'visits')],
-  '/ml/time-series/gru-forecasting': [sample(gruMachineLoadDataset, 'load_kw'), sample(sensorAnomalyDataset, 'temperature_c'), sample(recurrentTrafficDataset, 'conversions')],
+  '/ml/time-series/moving-average': [sample(weatherDailyDataset, 'temperature_c'), sample(timeSeriesSalesDataset, 'sales'), ...timeSeriesSuggestions],
+  '/ml/time-series/exponential-smoothing': [sample(weatherDailyDataset, 'temperature_c'), sample(timeSeriesSalesDataset, 'sales'), ...timeSeriesSuggestions],
+  '/ml/time-series/holt-winters': [sample(weatherDailyDataset, 'temperature_c'), sample(timeSeriesSalesDataset, 'sales'), ...timeSeriesSuggestions],
+  '/ml/time-series/arima-concept': [sample(weatherDailyDataset, 'temperature_c'), sample(timeSeriesSalesDataset, 'sales'), synthetic.sequence, ...timeSeriesSuggestions],
+  '/ml/time-series/anomaly-detection': [sample(sensorAnomalyDataset, 'is_anomaly'), sample(weatherDailyDataset, 'temperature_c'), ...timeSeriesSuggestions.filter((item) => item.id.includes('anomal') || item.id.includes('spike') || item.id.includes('shift'))],
+  '/ml/time-series/rnn-forecasting': [sample(recurrentTrafficDataset, 'visits'), sample(weatherDailyDataset, 'temperature_c'), ...timeSeriesSuggestions],
+  '/ml/time-series/lstm-forecasting': [sample(lstmRetailDemandDataset, 'orders'), sample(timeSeriesSalesDataset, 'sales'), ...timeSeriesSuggestions],
+  '/ml/time-series/gru-forecasting': [sample(gruMachineLoadDataset, 'load_kw'), sample(sensorAnomalyDataset, 'temperature_c'), ...timeSeriesSuggestions],
 
-  '/ml/nlp/bag-of-words': [sample(newsTopicDataset, 'label'), sample(productReviewsDataset, 'label'), sample(spamDataset, 'label')],
-  '/ml/nlp/tf-idf': [sample(newsTopicDataset, 'label'), sample(productReviewsDataset, 'label'), sample(spamDataset, 'label')],
-  '/ml/nlp/text-classification': [sample(newsTopicDataset, 'label'), sample(productReviewsDataset, 'label'), sample(sentimentDataset, 'label')],
+  '/ml/nlp/bag-of-words': [sample(newsTopicDataset, 'label'), sample(productReviewsDataset, 'label'), sample(spamDataset, 'label'), ...nlpLibraryDatasets.filter((item) => item.columns.includes('text')).map((item) => sample(item, item.columns.includes('label') ? 'label' : undefined))],
+  '/ml/nlp/tf-idf': [sample(newsTopicDataset, 'label'), sample(productReviewsDataset, 'label'), sample(spamDataset, 'label'), ...nlpLibraryDatasets.filter((item) => item.columns.includes('text')).map((item) => sample(item, item.columns.includes('label') ? 'label' : undefined))],
+  '/ml/nlp/text-classification': [sample(newsTopicDataset, 'label'), sample(productReviewsDataset, 'label'), sample(sentimentDataset, 'label'), ...nlpLibraryDatasets.filter((item) => item.columns.includes('label')).map((item) => sample(item, 'label'))],
   '/ml/nlp/word-embedding-concept': [sample(newsTopicDataset, 'label'), sample(productReviewsDataset, 'label'), sample(sentimentDataset, 'label')],
   '/ml/nlp/sentiment-analysis': [sample(productReviewsDataset, 'label'), sample(sentimentDataset, 'label')],
   '/ml/nlp/naive-bayes-spam': [sample(spamDataset, 'label'), sample(newsTopicDataset, 'label')],
+  '/ml/nlp/audio-classification': nlpLibraryDatasets.filter((item) => item.id === 'j-audio-tones').map((item) => sample(item, 'class')),
 
   '/ml/computer-vision/image-classification': [synthetic.imageGrid],
   '/ml/computer-vision/cnn-filter-explorer': [synthetic.imageGrid],
@@ -218,10 +240,10 @@ const routeSpecific: Record<string, AlgorithmDatasetSuggestion[]> = {
   '/ml/computer-vision/edge-detection': [synthetic.imageGrid],
   '/ml/computer-vision/object-detection-demo': [synthetic.imageGrid],
 
-  '/ml/recommendation/user-based-cf': [sample(ratingsDataset, 'rating')],
-  '/ml/recommendation/item-based-cf': [sample(ratingsDataset, 'rating')],
-  '/ml/recommendation/matrix-factorization': [sample(ratingsDataset, 'rating')],
-  '/ml/recommendation/content-based': [sample(ratingsDataset, 'rating'), sample(retailBasketDataset), sample(productReviewsDataset, 'label')],
+  '/ml/recommendation/user-based-cf': [sample(ratingsDataset, 'rating'), sample(bookRatingsDataset, 'fantasy'), sample(musicRatingsDataset, 'pop'), sample(restaurantRatingsDataset, 'italian')],
+  '/ml/recommendation/item-based-cf': [sample(ratingsDataset, 'rating'), sample(musicRatingsDataset, 'pop'), sample(bookRatingsDataset, 'mystery'), sample(restaurantRatingsDataset, 'indian')],
+  '/ml/recommendation/matrix-factorization': [sample(ratingsDataset, 'rating'), sample(ecommerceInteractionsDataset, 'rating'), sample(videoWatchRatingsDataset, 'rating')],
+  '/ml/recommendation/content-based': [sample(ratingsDataset, 'rating'), sample(courseRatingsDataset, 'rating'), sample(ecommerceInteractionsDataset, 'rating'), sample(productReviewsDataset, 'label')],
 
   '/ml/reinforcement-learning/multi-armed-bandit': [synthetic.bandit],
   '/ml/reinforcement-learning/q-learning-grid-world': [synthetic.gridWorld],
@@ -263,14 +285,14 @@ function categoryFallback(category: string): AlgorithmDatasetSuggestion[] {
   if (normalized.includes('regression')) return [sample(energyDemandDataset, 'demand_mw'), sample(housingDataset, 'price'), sample(studentMarksDataset, 'marks'), synthetic.linear];
   if (normalized.includes('classification')) return [sample(medicalRiskDataset, 'high_risk'), sample(customerChurnDataset, 'churned'), sample(loanDataset, 'approved'), synthetic.blobs];
   if (normalized.includes('clustering')) return [sample(retailBasketDataset), sample(mallCustomersDataset), sample(sensorAnomalyDataset, 'is_anomaly'), synthetic.blobs, synthetic.moons];
-  if (normalized.includes('dimensionality')) return [sample(medicalRiskDataset, 'high_risk'), sample(retailBasketDataset), sample(irisDataset, 'species')];
+  if (normalized.includes('dimensionality')) return dimensionalitySuggestions;
   if (normalized.includes('deep')) return [sample(weatherDailyDataset, 'temperature_c'), sample(newsTopicDataset, 'label'), synthetic.moons, synthetic.imageGrid];
   if (normalized.includes('evaluation')) return [sample(fraudTransactionsDataset, 'fraud'), sample(medicalRiskDataset, 'high_risk'), sample(energyDemandDataset, 'demand_mw')];
   if (normalized.includes('preprocessing')) return [sample(sensorAnomalyDataset, 'is_anomaly'), sample(energyDemandDataset, 'demand_mw'), sample(customerChurnDataset, 'churned')];
   if (normalized.includes('time')) return [sample(weatherDailyDataset, 'temperature_c'), sample(sensorAnomalyDataset, 'is_anomaly'), sample(timeSeriesSalesDataset, 'sales'), synthetic.sequence];
   if (normalized.includes('nlp')) return [sample(newsTopicDataset, 'label'), sample(productReviewsDataset, 'label'), sample(spamDataset, 'label')];
   if (normalized.includes('vision')) return [synthetic.imageGrid];
-  if (normalized.includes('recommendation')) return [sample(ratingsDataset, 'rating'), sample(retailBasketDataset), sample(productReviewsDataset, 'label')];
+  if (normalized.includes('recommendation')) return [sample(ratingsDataset, 'rating'), sample(bookRatingsDataset, 'fantasy'), sample(courseRatingsDataset, 'rating'), sample(ecommerceInteractionsDataset, 'rating')];
   if (normalized.includes('reinforcement')) return [synthetic.gridWorld, synthetic.bandit];
   if (normalized.includes('optimization')) return [synthetic.linear];
   return allSampleDatasets.slice(0, 3).map(dataset => sample(dataset));

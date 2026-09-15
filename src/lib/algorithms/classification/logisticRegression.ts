@@ -59,6 +59,15 @@ export function logisticRegression(
     if (x.length !== p || !x.every(Number.isFinite)) throw new Error(`Expected ${p} finite features`);
     return sigmoid(x.reduce((s, v, j) => s + v * weights[j], bias));
   };
-  const predict = (x: number[]) => (predictProba(x) >= 0.5 ? 1 : 0);
+  const predict = (x: number[], threshold = 0.5, mapExtra?: unknown) => {
+    const cut =
+      mapExtra === undefined && Number.isFinite(threshold) && threshold >= 0 && threshold <= 1
+        ? threshold
+        : 0.5;
+    if (mapExtra === undefined && threshold !== cut) {
+      throw new Error("Logistic threshold must be in [0, 1]");
+    }
+    return predictProba(x) >= cut ? 1 : 0;
+  };
   return { weights, bias, predict, predictProba, lossHistory };
 }

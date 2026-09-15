@@ -16,9 +16,41 @@ export type LSTMOverrides = Record<
   Partial<Pick<LSTMStep, "forget" | "write" | "candidate" | "output">>
 >;
 
-const sigmoid = (value: number) => 1 / (1 + Math.exp(-value));
-const hardSigmoid = (value: number) =>
-  Math.max(0, Math.min(1, value * 0.2 + 0.5));
+export interface LSTMWeights {
+  Wf: number;
+  Uf: number;
+  bf: number;
+  Wi: number;
+  Ui: number;
+  bi: number;
+  Wg: number;
+  Ug: number;
+  bg: number;
+  Wo: number;
+  Uo: number;
+  bo: number;
+}
+
+const sigmoid = (value: number) => 1 / (1 + Math.exp(-Math.max(-30, Math.min(30, value))));
+const hardSigmoid = (value: number) => Math.max(0, Math.min(1, value * 0.2 + 0.5));
+
+export function defaultLstmWeights(units = 16, layers = 1): LSTMWeights {
+  const scale = Math.sqrt(16 / Math.max(1, units)) * (1 + (Math.max(1, layers) - 1) * 0.04);
+  return {
+    Wf: 0.7 * scale,
+    Uf: 0.35 * scale,
+    bf: 1.35,
+    Wi: 0.9 * scale,
+    Ui: 0.25 * scale,
+    bi: -0.2,
+    Wg: 1.1 * scale,
+    Ug: 0.55 * scale,
+    bg: -0.15,
+    Wo: 0.45 * scale,
+    Uo: 0.4 * scale,
+    bo: 0.35,
+  };
+}
 
 export function runLSTM(
   inputs: number[],
@@ -30,46 +62,36 @@ export function runLSTM(
   overrides: LSTMOverrides = {},
   units = 16,
   layers = 1,
+  weights = defaultLstmWeights(units, layers),
 ) {
   const gate = gateActivation === "sigmoid" ? sigmoid : hardSigmoid;
-  const candidate =
+  const candidateFn =
     candidateActivation === "tanh"
       ? Math.tanh
       : (value: number) => Math.max(0, value);
   const steps: LSTMStep[] = [];
   let cell = 0;
   let hidden = 0;
-  const capacityScale = Math.sqrt(16 / Math.max(1, units));
-  const depthScale = 1 + (Math.max(1, layers) - 1) * 0.04;
 
   inputs.forEach((rawInput, time) => {
     const inputMask =
-      Math.sin((time + 1) * 19.17) > inputDropout * 2 - 1 ? 1 : 0;
+      inputDropout <= 0 || Math.sin((time + 1) * 19.17) > inputDropout * 2 - 1
+        ? 1
+        : 0;
     const recurrentMask =
-      Math.cos((time + 1) * 13.11) > recurrentDropout * 2 - 1 ? 1 : 0;
-    const input = rawInput * inputMask * capacityScale;
-    const recurrent = hidden * recurrentMask * depthScale;
+      recurrentDropout <= 0 ||
+      Math.cos((time + 1) * 13.11) > recurrentDropout * 2 - 1
+        ? 1
+        : 0;
+    const input = rawInput * inputMask;
+    const recurrent = hidden * recurrentMask;
     const previousCell = cell;
+    const peephole = peepholes ? previousCell : 0;
     const defaults = {
-      forget: gate(
-        1.35 +
-          input * 0.7 +
-          recurrent * 0.35 +
-          (peepholes ? previousCell * 0.2 : 0),
-      ),
-      write: gate(
-        -0.2 +
-          input * 0.9 +
-          recurrent * 0.25 +
-          (peepholes ? previousCell * 0.12 : 0),
-      ),
-      candidate: candidate(input * 1.1 + recurrent * 0.55 - 0.15),
-      output: gate(
-        0.35 +
-          input * 0.45 +
-          recurrent * 0.4 +
-          (peepholes ? previousCell * 0.18 : 0),
-      ),
+      forget: gate(weights.Wf * input + weights.Uf * recurrent + weights.bf + 0.2 * peephole),
+      write: gate(weights.Wi * input + weights.Ui * recurrent + weights.bi + 0.12 * peephole),
+      candidate: candidateFn(weights.Wg * input + weights.Ug * recurrent + weights.bg),
+      output: gate(weights.Wo * input + weights.Uo * recurrent + weights.bo + 0.18 * peephole),
     };
     const active = { ...defaults, ...overrides[time] };
     cell = active.forget * previousCell + active.write * active.candidate;

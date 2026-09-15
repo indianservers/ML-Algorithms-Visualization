@@ -1,5 +1,6 @@
 /* eslint-disable no-irregular-whitespace */
 import { useMemo, useRef, useState } from "react";
+import { useLabNavigate } from "../../../lib/labNavigation";
 import {
   expandPolynomial,
   fitPolynomial,
@@ -66,6 +67,7 @@ export default function PolynomialFeaturesApprovedPage() {
     [model, setModel] = useState("Linear Regression"),
     [status, setStatus] = useState("Ready"),
     [collapsed, setCollapsed] = useState(false);
+  const go = useLabNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
   const rows = uploaded?.rows ?? DATA[dataset].data,
     target = uploaded?.target ?? "MedHouseVal",
@@ -159,7 +161,7 @@ export default function PolynomialFeaturesApprovedPage() {
         ].map((x, i) => (
           <button
             className={i === 5 ? "active" : ""}
-            onClick={() => setStatus(`${x.slice(2)} opened`)}
+            onClick={() => go(x)}
             key={x}
           >
             {x}
@@ -173,7 +175,7 @@ export default function PolynomialFeaturesApprovedPage() {
             <button
               className="recent"
               key={x}
-              onClick={() => setStatus(`${x} opened`)}
+              onClick={() => go(x)}
             >
               {x}
             </button>
@@ -183,7 +185,7 @@ export default function PolynomialFeaturesApprovedPage() {
           <button onClick={() => setStatus("Settings opened")}>
             ⚙　Settings
           </button>
-          <button onClick={() => setStatus("Help opened")}>?　 Help</button>
+          <button onClick={() => go("Help")}>?　 Help</button>
           <button onClick={() => setCollapsed((v) => !v)}>
             MM　 Mega ML　 <b>Pro</b>
           </button>

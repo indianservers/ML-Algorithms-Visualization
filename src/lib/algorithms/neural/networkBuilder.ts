@@ -28,7 +28,16 @@ export interface NetworkLayerResult {
   parameters: number;
   valid: boolean;
 }
+export const MAX_NETWORK_LAYERS = 24;
+export const MAX_DENSE_UNITS = 2048;
+export const MAX_CONV_FILTERS = 256;
+
 export function evaluateNetwork(layers: NetworkLayer[]): NetworkLayerResult[] {
+  if (layers.length > MAX_NETWORK_LAYERS) {
+    throw new Error(
+      `Network builder is capped at ${MAX_NETWORK_LAYERS} layers in the browser lab.`,
+    );
+  }
   const results: NetworkLayerResult[] = [];
   let shape: number[] = [];
   for (const layer of layers) {
@@ -38,7 +47,7 @@ export function evaluateNetwork(layers: NetworkLayer[]): NetworkLayerResult[] {
       valid = true;
     if (layer.type === "input") output = [...layer.shape];
     else if (layer.type === "conv") {
-      valid = shape.length === 3;
+      valid = shape.length === 3 && layer.filters <= MAX_CONV_FILTERS;
       const [h = 0, w = 0, c = 0] = shape;
       output =
         layer.padding === "same"
@@ -74,6 +83,8 @@ export function evaluateNetwork(layers: NetworkLayer[]): NetworkLayerResult[] {
       valid = shape.length === 1;
       const inputs = shape.reduce((a, b) => a * b, 1);
       output = [layer.units];
+      if (layer.units > MAX_DENSE_UNITS)
+        valid = false;
       parameters = inputs * layer.units + (layer.bias ? layer.units : 0);
     }
     valid =

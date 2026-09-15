@@ -15,11 +15,33 @@ import {
   Upload,
 } from "lucide-react";
 import { logisticRegression } from "../../../../lib/algorithms/classification/logisticRegression";
-import { binaryMetrics } from "../../../../lib/math/metrics";
+import { binaryMetrics, prAuc, rocCurve } from "../../../../lib/math/metrics";
+import {
+  applyThreshold,
+  classificationSplit,
+  fitStandardScaler,
+  majorityBaseline,
+  thresholdSweep,
+} from "../../../../lib/classification/classificationEval";
+import {
+  datasetA1D,
+  datasetB1D,
+  datasetCXor1DFails,
+  datasetH1D,
+  datasetHSevere1D,
+} from "../../../../lib/classification/classificationDatasets";
+import { ClassificationDiagnosticsPanel } from "../../../../components/ml/ClassificationDiagnosticsPanel";
 import "./LogisticRegressionPage.css";
 
-type Point = { x: number; y: number };
-type DatasetKey = "admissions" | "loans" | "churn" | "synthetic" | "imported";
+type Point = { x: number; y: number; z?: number };
+type DatasetKey =
+  | "admissions"
+  | "separable"
+  | "overlap"
+  | "imbalanced"
+  | "severe"
+  | "xor"
+  | "imported";
 const tabs = [
   "Learn",
   "Visualize",
@@ -42,32 +64,35 @@ const datasets = {
     source: "Recommended",
     rows: admissions,
   },
-  loans: {
-    name: "Loan Approval",
-    feature: "Credit Score",
-    source: "Finance",
-    rows: Array.from({ length: 90 }, (_, i) => {
-      const x = 300 + ((i * 53) % 551);
-      return { x, y: x + ((i * 19) % 101) - 50 > 625 ? 1 : 0 };
-    }),
-  },
-  churn: {
-    name: "Customer Churn",
-    feature: "Satisfaction",
-    source: "Business",
-    rows: Array.from({ length: 140 }, (_, i) => {
-      const x = (i * 7) % 101;
-      return { x, y: x + ((i * 11) % 31) - 15 < 48 ? 1 : 0 };
-    }),
-  },
-  synthetic: {
-    name: "Synthetic Binary",
+  separable: {
+    name: "Perfect separable (lab A)",
     feature: "Feature x",
-    source: "Generated",
-    rows: Array.from({ length: 160 }, (_, i) => {
-      const x = (i * 29) % 101;
-      return { x, y: x + ((i * 13) % 25) - 12 > 55 ? 1 : 0 };
-    }),
+    source: "Lab",
+    rows: datasetA1D(),
+  },
+  overlap: {
+    name: "Overlapping binary (lab B)",
+    feature: "Feature x",
+    source: "Lab",
+    rows: datasetB1D(),
+  },
+  imbalanced: {
+    name: "Imbalanced 90/10 (lab H)",
+    feature: "Feature x",
+    source: "Lab",
+    rows: datasetH1D(),
+  },
+  severe: {
+    name: "Severe imbalance 95/5",
+    feature: "Feature x",
+    source: "Lab",
+    rows: datasetHSevere1D(),
+  },
+  xor: {
+    name: "XOR two features (lab C)",
+    feature: "x1, x2",
+    source: "Lab",
+    rows: datasetCXor1DFails(),
   },
 };
 const nav = [
@@ -89,25 +114,58 @@ function parseCsv(text: string) {
     return { x: v[0], y: v.at(-1)! };
   });
 }
+function featuresOf(row: Point) {
+  return row.z === undefined ? [row.x] : [row.x, row.z];
+}
+
 function train(rows: Point[], l2: number) {
-  const mean = rows.reduce((s, v) => s + v.x, 0) / rows.length,
-    scale =
-      Math.sqrt(
-        rows.reduce((s, v) => s + (v.x - mean) ** 2, 0) / rows.length,
-      ) || 1;
+  if (rows.length < 4) {
+    throw new Error("Need at least four labeled rows to train.");
+  }
+  const X = rows.map(featuresOf);
+  const y = rows.map((v) => v.y);
+  const split = classificationSplit(X, y, 0.2, 42);
+  const scaler = fitStandardScaler(split.trainX);
   const model = logisticRegression(
-    rows.map((v) => [(v.x - mean) / scale]),
-    rows.map((v) => v.y),
+    scaler.transformAll(split.trainX),
+    split.trainY,
     0.12,
     650,
     undefined,
     l2 * 0.03,
   );
+  const dim = split.trainX[0].length;
+  const zMean =
+    dim > 1
+      ? split.trainX.reduce((s, row) => s + row[1], 0) / split.trainX.length
+      : 0;
+  const probaRow = (row: number[]) => {
+    const padded =
+      row.length === dim
+        ? row
+        : dim === 1
+          ? [row[0]]
+          : [row[0], row[1] ?? zMean];
+    return model.predictProba(scaler.transform(padded));
+  };
+  const logitRow = (row: number[]) => {
+    const padded =
+      row.length === dim
+        ? row
+        : dim === 1
+          ? [row[0]]
+          : [row[0], row[1] ?? zMean];
+    const x = scaler.transform(padded);
+    return x.reduce((sum, value, j) => sum + value * model.weights[j], model.bias);
+  };
   return {
     ...model,
-    mean,
-    scale,
-    proba: (x: number) => model.predictProba([(x - mean) / scale]),
+    split,
+    scaler,
+    probaRow,
+    logitRow,
+    proba: (x: number) => probaRow(dim === 1 ? [x] : [x, zMean]),
+    logit: (x: number) => logitRow(dim === 1 ? [x] : [x, zMean]),
   };
 }
 
@@ -142,7 +200,6 @@ function ProbabilityChart({
       (v, i) => `${i ? "L" : "M"}${sx(v.x).toFixed(1)},${sy(v.p).toFixed(1)}`,
     )
     .join(" ");
-  const tx = Math.max(xmin, Math.min(xmax, threshold));
   return (
     <svg
       viewBox={`0 0 ${W} ${H}`}
@@ -161,15 +218,8 @@ function ProbabilityChart({
       <line
         x1={l}
         x2={W - r}
-        y1={sy(0.5)}
-        y2={sy(0.5)}
-        className="threshold-line"
-      />
-      <line
-        x1={sx(tx)}
-        x2={sx(tx)}
-        y1={t - 10}
-        y2={H - b}
+        y1={sy(threshold)}
+        y2={sy(threshold)}
         className="threshold-line"
       />
       {(view === "probability" || view === "both") && (
@@ -185,15 +235,15 @@ function ProbabilityChart({
         />
       ))}
       <rect
-        x={sx(tx) - 45}
+        x={l + 12}
         y={10}
-        width="90"
+        width="130"
         height="28"
         rx="5"
         className="threshold-box"
       />
-      <text x={sx(tx)} y={29} className="threshold-text">
-        Threshold: {Math.round(threshold)}
+      <text x={l + 77} y={29} className="threshold-text">
+        Threshold: {threshold.toFixed(2)}
       </text>
       <text x={(l + W - r) / 2} y={H - 10}>
         {view === "logodds" ? "Log-Odds (z)" : "Exam Score"}
@@ -303,7 +353,7 @@ export default function LogisticRegressionPage() {
     [dataset, setDataset] = useState<DatasetKey>("admissions"),
     [rows, setRows] = useState<Point[]>(admissions),
     [imported, setImported] = useState<Point[] | null>(null),
-    [threshold, setThreshold] = useState(60),
+    [threshold, setThreshold] = useState(0.5),
     [view, setView] = useState<"probability" | "logodds" | "both">(
       "probability",
     ),
@@ -314,17 +364,48 @@ export default function LogisticRegressionPage() {
     [dark, setDark] = useState(true),
     [predX, setPredX] = useState(72);
   const fileRef = useRef<HTMLInputElement>(null),
-    model = useMemo(() => train(rows, l2), [rows, l2]);
-  const probabilityThreshold = model.proba(threshold),
-    predictions = rows.map((v) =>
-      model.proba(v.x) >= probabilityThreshold ? 1 : 0,
-    ),
-    metrics = binaryMetrics(
-      rows.map((v) => v.y),
-      predictions,
-    ),
-    probs = rows.map((v) => model.proba(v.x)),
-    positive = rows.filter((v) => v.y).length / rows.length;
+    model = useMemo(() => {
+      try {
+        return train(rows, l2);
+      } catch {
+        return null;
+      }
+    }, [rows, l2]);
+  const testScores = model
+    ? model.split.testX.map((row) => model.probaRow(row))
+    : [];
+  const testPred = applyThreshold(testScores, threshold);
+  const metrics = model
+    ? binaryMetrics(model.split.testY, testPred)
+    : {
+        tp: 0,
+        tn: 0,
+        fp: 0,
+        fn: 0,
+        accuracy: 0,
+        precision: 0,
+        recall: 0,
+        specificity: 0,
+        f1: 0,
+        balancedAccuracy: 0,
+      };
+  const roc = testScores.length ? rocCurve(model!.split.testY, testScores) : null;
+  const pr = testScores.length ? prAuc(model!.split.testY, testScores) : null;
+  const trainScores = model
+    ? model.split.trainX.map((row) => model.probaRow(row))
+    : [];
+  const trainMetrics = model
+    ? binaryMetrics(model.split.trainY, applyThreshold(trainScores, threshold))
+    : null;
+  const sweep = model
+    ? thresholdSweep(model.split.testY, testScores)
+    : [];
+  const baseline = model ? majorityBaseline(model.split.testY) : null;
+  const inspectZ = model ? model.logit(predX) : 0;
+  const inspectP = model ? model.proba(predX) : 0;
+  const inspectClass = inspectP >= threshold ? 1 : 0;
+  const oddsRatios = model?.weights.map((w) => Math.exp(w)) ?? [];
+  const positive = rows.filter((v) => v.y).length / Math.max(1, rows.length);
   const current =
     dataset === "imported"
       ? { name: "Imported CSV", feature: "Feature", source: "Local", rows }
@@ -338,7 +419,7 @@ export default function LogisticRegressionPage() {
   const reset = () => {
     setDataset("admissions");
     setRows(admissions);
-    setThreshold(60);
+    setThreshold(0.5);
     setView("probability");
     setL2(1);
     setPredX(72);
@@ -354,7 +435,8 @@ export default function LogisticRegressionPage() {
     }, 400);
   };
   const cardMetrics = [
-    ["Accuracy", metrics.accuracy],
+    ["Test accuracy", metrics.accuracy],
+    ["Balanced accuracy", metrics.balancedAccuracy ?? 0],
     ["Precision (PPV)", metrics.precision],
     ["Recall (Sensitivity)", metrics.recall],
     ["F1 Score", metrics.f1],
@@ -450,8 +532,10 @@ export default function LogisticRegressionPage() {
             ) : tab !== "Visualize" ? (
               <Generic
                 tab={tab}
-                loss={model.lossHistory}
-                probability={model.proba(predX)}
+                loss={model?.lossHistory ?? []}
+                probability={
+                  model ? model.proba(predX) : 0
+                }
               />
             ) : (
               <>
@@ -468,7 +552,7 @@ export default function LogisticRegressionPage() {
                   </header>
                   <ProbabilityChart
                     rows={rows}
-                    proba={model.proba}
+                    proba={(x) => model?.proba(x) ?? 0.5}
                     threshold={threshold}
                     view={view}
                   />
@@ -494,24 +578,24 @@ export default function LogisticRegressionPage() {
                 <div className="metric-row">
                   <article>
                     <b>
-                      Confusion Matrix (Threshold = {threshold}) <Info />
+                      Confusion Matrix (test, threshold {threshold.toFixed(2)}){" "}
                     </b>
                     <table>
                       <thead>
                         <tr>
                           <th />
-                          <th>Positive</th>
-                          <th>Negative</th>
+                          <th>Predicted +</th>
+                          <th>Predicted −</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr>
-                          <th>Positive</th>
+                          <th>Actual +</th>
                           <td>{metrics.tp}</td>
                           <td>{metrics.fn}</td>
                         </tr>
                         <tr>
-                          <th>Negative</th>
+                          <th>Actual −</th>
                           <td>{metrics.fp}</td>
                           <td>{metrics.tn}</td>
                         </tr>
@@ -540,32 +624,40 @@ export default function LogisticRegressionPage() {
                       Probability Overview <Info />
                     </b>
                     <dl>
-                      <dt>Mean P(Admit) (Positive)</dt>
+                      <dt>Test samples / classes</dt>
+                      <dd>
+                        {model
+                          ? `${model.split.nTest} / ${model.split.nClasses}`
+                          : "Train first"}
+                      </dd>
+                      <dt>Mean test P (positive)</dt>
                       <dd>
                         {(
-                          probs
-                            .filter((_, i) => rows[i].y)
+                          testScores
+                            .filter((_, i) => model?.split.testY[i])
                             .reduce((a, b) => a + b, 0) /
-                          (rows.filter((v) => v.y).length || 1)
+                          (testScores.filter((_, i) => model?.split.testY[i])
+                            .length || 1)
                         ).toFixed(2)}
                       </dd>
-                      <dt>Mean P(Admit) (Negative)</dt>
+                      <dt>Mean test P (negative)</dt>
                       <dd>
                         {(
-                          probs
-                            .filter((_, i) => !rows[i].y)
+                          testScores
+                            .filter((_, i) => model && !model.split.testY[i])
                             .reduce((a, b) => a + b, 0) /
-                          (rows.filter((v) => !v.y).length || 1)
+                          (testScores.filter(
+                            (_, i) => model && !model.split.testY[i],
+                          ).length || 1)
                         ).toFixed(2)}
                       </dd>
-                      <dt>Min / Max Probability</dt>
-                      <dd>
-                        {Math.min(...probs).toFixed(2)} /{" "}
-                        {Math.max(...probs).toFixed(2)}
-                      </dd>
+                      <dt>Test ROC-AUC</dt>
+                      <dd>{roc ? roc.auc.toFixed(3) : "—"}</dd>
+                      <dt>Test PR-AUC</dt>
+                      <dd>{pr != null ? pr.toFixed(3) : "—"}</dd>
                     </dl>
                     <div className="histogram">
-                      {probs.slice(0, 22).map((p, i) => (
+                      {testScores.slice(0, 22).map((p, i) => (
                         <i key={i} style={{ height: `${12 + p * 45}px` }} />
                       ))}
                     </div>
@@ -575,18 +667,21 @@ export default function LogisticRegressionPage() {
                       Odds Insight <Info />
                     </b>
                     <p>
-                      Odds at Threshold{" "}
+                      Odds at threshold {threshold.toFixed(2)}{" "}
                       <strong>
-                        {(
-                          probabilityThreshold /
-                          (1 - probabilityThreshold)
-                        ).toFixed(2)}{" "}
+                        {(threshold / Math.max(1e-6, 1 - threshold)).toFixed(2)}{" "}
                         : 1
                       </strong>
                     </p>
                     <p>
-                      Live P({predX}){" "}
-                      <strong>{(model.proba(predX) * 100).toFixed(1)}%</strong>
+                      Live inspector at x={predX}: z={inspectZ.toFixed(3)}, sigmoid(z)={inspectP.toFixed(3)},
+                      threshold={threshold.toFixed(2)}, class={inspectClass}. The dashed line is the
+                      chosen threshold; z=0 is P=0.5, which matches the boundary only when threshold=0.5.
+                    </p>
+                    <p>
+                      Standardized odds ratios (exp(coefficient)), holding other included features
+                      constant — not a causal claim:{" "}
+                      {oddsRatios.map((r, i) => `x${i + 1}=${r.toFixed(2)}`).join(", ") || "—"}
                     </p>
                     <label>
                       Exam score
@@ -599,6 +694,26 @@ export default function LogisticRegressionPage() {
                     </label>
                   </article>
                 </div>
+                {model && (
+                  <ClassificationDiagnosticsPanel
+                    algorithm="Logistic regression"
+                    dataset={current.name}
+                    samples={rows.length}
+                    features={model.split.trainX[0]?.length ?? 1}
+                    classes={model.split.nClasses}
+                    split={`stratified ${model.split.nTrain}/${model.split.nTest}`}
+                    seed={42}
+                    state={trained ? "TRAINED" : "STALE — RETRAIN REQUIRED"}
+                    scoreKind="probability"
+                    train={trainMetrics ? { accuracy: trainMetrics.accuracy, f1: trainMetrics.f1 } : undefined}
+                    test={metrics}
+                    rocAuc={roc?.auc}
+                    prAuc={pr}
+                    baselineAccuracy={baseline?.accuracy}
+                    sweep={sweep}
+                    suitability="Learns a linear log-odds surface. Works on linearly separable or overlapping classes; fails on XOR without extra features. Threshold changes labels without retraining."
+                  />
+                )}
               </>
             )}
           </div>
@@ -614,16 +729,18 @@ export default function LogisticRegressionPage() {
                   className="control-value"
                   aria-label="Decision threshold value"
                   type="number"
-                  min="0"
-                  max="100"
+                  min="0.05"
+                  max="0.95"
+                  step="0.01"
                   value={threshold}
                   onChange={(e) => setThreshold(Number(e.target.value))}
                 />
                 <input
                   aria-label="Decision threshold"
                   type="range"
-                  min="0"
-                  max="100"
+                  min="0.05"
+                  max="0.95"
+                  step="0.01"
                   value={threshold}
                   onChange={(e) => setThreshold(Number(e.target.value))}
                 />
@@ -656,9 +773,11 @@ export default function LogisticRegressionPage() {
                 onChange={(e) => choose(e.target.value as DatasetKey)}
               >
                 <option value="admissions">University Admissions</option>
-                <option value="loans">Loan Approval</option>
-                <option value="churn">Customer Churn</option>
-                <option value="synthetic">Synthetic Binary</option>
+                <option value="separable">Perfect separable</option>
+                <option value="overlap">Overlapping binary</option>
+                <option value="imbalanced">Imbalanced 90/10</option>
+                <option value="severe">Severe imbalance 95/5</option>
+                <option value="xor">XOR (linear cannot solve)</option>
                 {imported && <option value="imported">Imported CSV</option>}
               </select>
               <small>N = {rows.length} samples • 1 feature</small>
@@ -676,7 +795,7 @@ export default function LogisticRegressionPage() {
               <div>
                 <button
                   onClick={() =>
-                    choose(dataset === "admissions" ? "loans" : "admissions")
+                    choose(dataset === "admissions" ? "xor" : "admissions")
                   }
                 >
                   <RefreshCw />

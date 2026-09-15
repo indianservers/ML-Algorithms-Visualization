@@ -10,7 +10,7 @@ import {
 import "./PerceptronPage.css";
 
 type Point = { x: number; y: number; label: number };
-type DatasetKey = "linear" | "overlap" | "diagonal" | "imported";
+type DatasetKey = "linear" | "overlap" | "diagonal" | "xor" | "imported";
 type TrainingRun = { steps: PerceptronStep[] };
 
 const random = (index: number, salt: number) => {
@@ -19,6 +19,22 @@ const random = (index: number, salt: number) => {
 };
 
 function makeDataset(kind: Exclude<DatasetKey, "imported">): Point[] {
+  if (kind === "xor") {
+    const corners = [
+      { x: -1, y: -1, label: 0 },
+      { x: 1, y: 1, label: 0 },
+      { x: -1, y: 1, label: 1 },
+      { x: 1, y: -1, label: 1 },
+    ];
+    return Array.from({ length: 80 }, (_, index) => {
+      const base = corners[index % 4];
+      return {
+        x: base.x + (random(index, 1) - 0.5) * 0.18,
+        y: base.y + (random(index, 2) - 0.5) * 0.18,
+        label: base.label,
+      };
+    });
+  }
   return Array.from({ length: 120 }, (_, index) => {
     const sourceLabel = index < 60 ? 0 : 1;
     const spread = kind === "overlap" ? 1.25 : 0.82;
@@ -38,11 +54,13 @@ const BUILT_IN = {
   linear: makeDataset("linear"),
   overlap: makeDataset("overlap"),
   diagonal: makeDataset("diagonal"),
+  xor: makeDataset("xor"),
 };
 const DATASET_NAMES: Record<DatasetKey, string> = {
   linear: "Linearly Separable (2D)",
   overlap: "Overlapping Classes (2D)",
   diagonal: "Diagonal Margin (2D)",
+  xor: "XOR (not linearly separable)",
   imported: "Imported CSV",
 };
 
@@ -643,7 +661,12 @@ export default function PerceptronPage() {
                 </option>
               ))}
           </select>
-          <span>{points.length} samples</span>
+          <span>
+            {points.length} samples
+            {dataset === "xor"
+              ? " · a perceptron cannot separate XOR"
+              : ""}
+          </span>
           <MiniPlot points={points} />
           <button
             onClick={() =>
@@ -652,7 +675,9 @@ export default function PerceptronPage() {
                   ? "overlap"
                   : dataset === "overlap"
                     ? "diagonal"
-                    : "linear",
+                    : dataset === "diagonal"
+                      ? "xor"
+                      : "linear",
               )
             }
           >
@@ -685,6 +710,15 @@ export default function PerceptronPage() {
             </p>
             <p>
               Converged <b>{active?.errors === 0 ? "Yes" : "No"}</b>
+            </p>
+            <p>
+              Sample ({sample.x.toFixed(2)}, {sample.y.toFixed(2)}) y={sample.label}{" "}
+              ŷ={net >= threshold ? 1 : 0} error={sample.label - (net >= threshold ? 1 : 0)}{" "}
+              Δw=η(y−ŷ)x → [
+              {(learningRate * (sample.label - (net >= threshold ? 1 : 0)) * sample.x).toFixed(3)}
+              ,{" "}
+              {(learningRate * (sample.label - (net >= threshold ? 1 : 0)) * sample.y).toFixed(3)}
+              ]
             </p>
           </div>
           <i className="bar">

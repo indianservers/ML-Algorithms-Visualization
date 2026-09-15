@@ -5,6 +5,8 @@ export interface KMeansStep {
   centroids: number[][];
   assignments: number[];
   inertia: number;
+  maxMovement: number;
+  assignmentsChanged: number;
 }
 
 export interface KMeansResult {
@@ -13,6 +15,8 @@ export interface KMeansResult {
   inertia: number;
   steps: KMeansStep[];
   converged: boolean;
+  nInit: number;
+  emptyClusterResets: number;
 }
 
 function randomCentroids(
@@ -79,8 +83,7 @@ function updateCentroids(
   X: number[][],
   assignments: number[],
   k: number,
-  random: () => number,
-): number[][] {
+): { centroids: number[][]; emptyClusterResets: number } {
   const dims = X[0].length;
   const sums = Array.from({ length: k }, () => Array(dims).fill(0));
   const counts = Array(k).fill(0);
@@ -90,11 +93,28 @@ function updateCentroids(
       sums[c][d] += v;
     });
   });
-  return sums.map((s, c) =>
-    counts[c] > 0
-      ? s.map((v) => v / counts[c])
-      : X[Math.floor(random() * X.length)],
+  let emptyClusterResets = 0;
+  const occupied = sums.map((s, c) =>
+    counts[c] > 0 ? s.map((v) => v / counts[c]) : null,
   );
+  const filled = occupied.map((centroid, c) => {
+    if (centroid) return centroid;
+    emptyClusterResets += 1;
+    const references = occupied.filter((value): value is number[] => value !== null);
+    let farthest = X[0];
+    let best = -1;
+    X.forEach((row) => {
+      const d = references.length
+        ? Math.min(...references.map((ref) => euclideanDistance(row, ref)))
+        : 0;
+      if (d > best) {
+        best = d;
+        farthest = row;
+      }
+    });
+    return [...farthest];
+  });
+  return { centroids: filled, emptyClusterResets };
 }
 
 function seeded(seed: number) {
@@ -122,6 +142,7 @@ export function kmeans(
   maxIter = 100,
   init: "random" | "kmeans++" = "kmeans++",
   seed = 42,
+  tolerance = 1e-4,
 ): KMeansResult {
   if (!X.length || !X[0]?.length)
     throw new Error("K-means requires a non-empty feature matrix");
@@ -129,7 +150,8 @@ export function kmeans(
   if (!X.every((row) => row.length === width && row.every(Number.isFinite)))
     throw new Error("K-means requires a finite rectangular feature matrix");
   if (!Number.isInteger(k) || k < 1 || k > X.length ||
-      !Number.isInteger(maxIter) || maxIter < 1 || !Number.isFinite(seed))
+      !Number.isInteger(maxIter) || maxIter < 1 || !Number.isFinite(seed) ||
+      !Number.isFinite(tolerance) || tolerance < 0)
     throw new Error("Invalid K-means hyperparameters");
   const random = seeded(seed);
   let centroids =
@@ -139,6 +161,7 @@ export function kmeans(
   const steps: KMeansStep[] = [];
   let assignments = assignClusters(X, centroids);
   let converged = false;
+  let emptyClusterResets = 0;
 
   for (let iter = 0; iter < maxIter; iter++) {
     const inertia = calcInertia(X, assignments, centroids);
@@ -147,13 +170,28 @@ export function kmeans(
       centroids: centroids.map((c) => [...c]),
       assignments: [...assignments],
       inertia,
+      maxMovement: 0,
+      assignmentsChanged: 0,
     });
-    const newCentroids = updateCentroids(X, assignments, k, random);
+    const updated = updateCentroids(X, assignments, k);
+    emptyClusterResets += updated.emptyClusterResets;
+    const newCentroids = updated.centroids;
     const newAssignments = assignClusters(X, newCentroids);
-    const changed = newAssignments.some((a, i) => a !== assignments[i]);
+    const assignmentsChanged = newAssignments.reduce(
+      (sum, a, i) => sum + (a !== assignments[i] ? 1 : 0),
+      0,
+    );
+    const maxMovement = Math.max(
+      0,
+      ...centroids.map((centroid, i) =>
+        euclideanDistance(centroid, newCentroids[i]),
+      ),
+    );
+    steps[steps.length - 1].maxMovement = maxMovement;
+    steps[steps.length - 1].assignmentsChanged = assignmentsChanged;
     centroids = newCentroids;
     assignments = newAssignments;
-    if (!changed) {
+    if (!assignmentsChanged || maxMovement <= tolerance) {
       converged = true;
       break;
     }
@@ -169,17 +207,45 @@ export function kmeans(
       centroids: centroids.map((centroid) => [...centroid]),
       assignments: [...assignments],
       inertia,
+      maxMovement: 0,
+      assignmentsChanged: 0,
     });
   }
-  return { centroids, assignments, inertia, steps, converged };
+  return {
+    centroids,
+    assignments,
+    inertia,
+    steps,
+    converged,
+    nInit: 1,
+    emptyClusterResets,
+  };
+}
+
+export function kmeansWithRestarts(
+  X: number[][],
+  k: number,
+  nInit = 5,
+  maxIter = 100,
+  init: "random" | "kmeans++" = "kmeans++",
+  seed = 42,
+  tolerance = 1e-4,
+) {
+  const starts = Math.max(1, Math.round(nInit));
+  let best = kmeans(X, k, maxIter, init, seed, tolerance);
+  for (let i = 1; i < starts; i++) {
+    const trial = kmeans(X, k, maxIter, init, seed + i * 9973, tolerance);
+    if (trial.inertia < best.inertia) best = trial;
+  }
+  return { ...best, nInit: starts };
 }
 
 export function elbowMethod(X: number[][], maxK = 10): number[] {
   const upper = Math.min(maxK, X.length);
-  if (!Number.isInteger(maxK) || upper < 2)
-    throw new Error("Elbow method requires at least two samples and maxK >= 2");
-  return Array.from({ length: upper - 1 }, (_, i) => {
-    const { inertia } = kmeans(X, i + 2, 50);
+  if (!Number.isInteger(maxK) || upper < 1)
+    throw new Error("Elbow method requires samples and maxK >= 1");
+  return Array.from({ length: upper }, (_, i) => {
+    const { inertia } = kmeans(X, i + 1, 50);
     return inertia;
   });
 }

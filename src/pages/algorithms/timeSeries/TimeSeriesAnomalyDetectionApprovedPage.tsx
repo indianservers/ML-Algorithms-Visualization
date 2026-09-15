@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { detectAdaptiveAnomalies } from "../../../lib/timeSeries/anomalyDetection";
+import { useLabNavigate } from "../../../lib/labNavigation";
+import {
+  detectGlobalZScoreAnomalies,
+  detectIqrAnomalies,
+  detectResidualAnomalies,
+  detectRollingZScoreAnomalies,
+} from "../../../lib/timeSeries/anomalyDetection";
+import { useActiveTimeSeries } from "../../../lib/timeSeries/useActiveTimeSeries";
+import { anomalyBenchmark } from "../../../lib/timeSeries/forecastDiagnostics";
+import { getTimeSeriesDataset, seriesValues, TIME_SERIES_CATALOG } from "../../../lib/timeSeries/timeSeriesDatasets";
 import "./TimeSeriesAnomalyDetectionApprovedPage.css";
 
 type DataSet = { name: string; signal: string; unit: string; values: number[] };
@@ -60,6 +69,18 @@ const DATASETS: DataSet[] = [
     unit: "tpm",
     values: makeSignal(680, 95, 180, { 63: -410, 126: 520, 169: -360 }),
   },
+  {
+    name: "Known spike anomalies",
+    signal: "Value",
+    unit: "",
+    values: seriesValues(getTimeSeriesDataset("spike-anomalies")),
+  },
+  ...TIME_SERIES_CATALOG.filter((item) => item.id !== "spike-anomalies").map((item) => ({
+    name: item.name,
+    signal: "Value",
+    unit: "",
+    values: seriesValues(item),
+  })),
 ];
 
 function path(
@@ -84,7 +105,7 @@ export default function TimeSeriesAnomalyDetectionApprovedPage() {
       null,
     );
   const [tab, setTab] = useState("Visualize"),
-    [model, setModel] = useState("Adaptive STL + IQR"),
+    [model, setModel] = useState("Rolling Z-score"),
     [sensitivity, setSensitivity] = useState(2.5);
   const [windowSize, setWindowSize] = useState(6),
     [cooldown, setCooldown] = useState("5 min"),
@@ -94,14 +115,18 @@ export default function TimeSeriesAnomalyDetectionApprovedPage() {
     [status, setStatus] = useState("Healthy"),
     [selected, setSelected] = useState<number | null>(null),
     [collapsed, setCollapsed] = useState(false);
+  const go = useLabNavigate();
+  const handoff = useActiveTimeSeries("/ml/time-series/anomaly-detection");
   const fileRef = useRef<HTMLInputElement>(null),
     source = DATASETS[dataset],
-    values = custom?.values ?? source.values;
-  const points = useMemo(
-    () =>
-      detectAdaptiveAnomalies(values, windowSize * 2, sensitivity, contextual),
-    [values, windowSize, sensitivity, contextual],
-  );
+    values = custom?.values ?? handoff?.points.map((point) => point.value) ?? source.values;
+  const points = useMemo(() => {
+    const window = Math.max(8, windowSize * 2);
+    if (model.startsWith("Global")) return detectGlobalZScoreAnomalies(values, sensitivity);
+    if (model.startsWith("IQR")) return detectIqrAnomalies(values);
+    if (model.startsWith("Residual")) return detectResidualAnomalies(values, window, sensitivity);
+    return detectRollingZScoreAnomalies(values, window, sensitivity);
+  }, [values, windowSize, sensitivity, model]);
   const anomalies = points
       .map((point, index) => ({ ...point, index }))
       .filter((point) => point.anomaly),
@@ -113,18 +138,31 @@ export default function TimeSeriesAnomalyDetectionApprovedPage() {
       : points[selected]
         ? { ...points[selected], index: selected }
         : (highs[0] ?? anomalies[0]);
-  const lo = Math.min(...points.map((point) => point.lower), ...values),
-    hi = Math.max(...points.map((point) => point.upper), ...values);
+  const lo = Math.min(...values, ...points.map((point) => point.lower).filter(Number.isFinite)),
+    hi = Math.max(...values, ...points.map((point) => point.upper).filter(Number.isFinite));
   const upper = path(
-      points.map((point) => point.upper),
+      points.map((point, index) =>
+        Number.isFinite(point.upper) ? point.upper : values[index],
+      ),
       960,
       226,
       lo,
       hi,
     ),
-    lowerValues = points.map((point) => point.lower),
+    lowerValues = points.map((point, index) =>
+      Number.isFinite(point.lower) ? point.lower : values[index],
+    ),
     lower = path(lowerValues, 960, 226, lo, hi),
     band = `${upper} ${lower.split(" ").reverse().join(" ")} Z`;
+  const labelled = source.name.includes("Known spike")
+    ? (getTimeSeriesDataset("spike-anomalies").knownAnomalyIndexes ?? [])
+    : [];
+  const bench = labelled.length
+    ? anomalyBenchmark(
+        points.map((point) => point.anomaly),
+        labelled,
+      )
+    : null;
   const tabs = [
     "Learn",
     "Visualize",
@@ -185,7 +223,7 @@ export default function TimeSeriesAnomalyDetectionApprovedPage() {
           <button
             key={item}
             className={index === 1 ? "active" : ""}
-            onClick={() => setStatus(`${item.slice(2)} opened`)}
+            onClick={() => go(item)}
           >
             {item.slice(0, 1)}
             <span>{item.slice(2)}</span>
@@ -241,7 +279,7 @@ export default function TimeSeriesAnomalyDetectionApprovedPage() {
           <b>● Live</b>
           <small>Streaming 1.2 pts/sec</small>
         </section>
-        <button onClick={() => setStatus("Documentation opened")}>▣</button>
+        <button onClick={() => go("Documentation")}>▣</button>
         <button onClick={() => setStatus("Notifications opened")}>♧</button>
         <button onClick={() => setStatus("Profile opened")}>●</button>
       </header>
@@ -561,6 +599,13 @@ export default function TimeSeriesAnomalyDetectionApprovedPage() {
       <aside className="ad-controls">
         <section className="card">
           <h2>Detection Controls ⓘ</h2>
+          {bench ? (
+            <p>
+              Known-anomaly benchmark (synthetic labels only): TP {bench.tp} FP{" "}
+              {bench.fp} FN {bench.fn} · precision {bench.precision.toFixed(2)} ·
+              recall {bench.recall.toFixed(2)} · F1 {bench.f1.toFixed(2)}
+            </p>
+          ) : null}
           <label>
             Model
             <select
@@ -568,9 +613,10 @@ export default function TimeSeriesAnomalyDetectionApprovedPage() {
               value={model}
               onChange={(event) => setModel(event.target.value)}
             >
-              <option>Adaptive STL + IQR</option>
-              <option>Rolling Z-Score</option>
-              <option>Median Absolute Deviation</option>
+              <option>Rolling Z-score</option>
+              <option>Global Z-score</option>
+              <option>IQR</option>
+              <option>Residual MA</option>
             </select>
           </label>
           <label>

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import {
   evaluateNetwork,
+  MAX_NETWORK_LAYERS,
   type NetworkLayer,
 } from "../../../lib/algorithms/neural/networkBuilder";
 import NetworkBuilderTensorFlowLab from "./NetworkBuilderTensorFlowLab";
@@ -59,22 +60,22 @@ const defaults: NetworkLayer[] = [
 ];
 const datasets = [
   {
-    name: "CIFAR-10",
-    shape: [32, 32, 3] as [number, number, number],
-    classes: 10,
-    count: "60,000 images",
+    name: "8×8 pattern images (TF lab)",
+    shape: [8, 8, 1] as [number, number, number],
+    classes: 2,
+    count: "synthetic bars",
   },
   {
-    name: "Fashion-MNIST",
-    shape: [28, 28, 1] as [number, number, number],
-    classes: 10,
-    count: "70,000 images",
+    name: "2D moons / XOR (dense sketch)",
+    shape: [1, 1, 2] as [number, number, number],
+    classes: 2,
+    count: "tabular points",
   },
   {
-    name: "Tiny Objects",
+    name: "Tiny 24×24 RGB sketch",
     shape: [24, 24, 3] as [number, number, number],
     classes: 5,
-    count: "12,000 images",
+    count: "shape calculator only",
   },
 ];
 const labels = ["✈", "🐦", "🚙", "🦌", "🐶", "🐸", "🐴", "⛵"];
@@ -119,6 +120,10 @@ export default function NetworkBuilderPage() {
     setToast(`${datasets[i].name} loaded`);
   };
   const add = (type: "conv" | "pool" | "dropout" | "dense") => {
+    if (layers.length >= MAX_NETWORK_LAYERS) {
+      setToast(`Layer cap ${MAX_NETWORK_LAYERS} reached`);
+      return;
+    }
     const id = `${type}-${Date.now()}`;
     const next: NetworkLayer =
       type === "conv"
@@ -185,7 +190,13 @@ export default function NetworkBuilderPage() {
           <button onClick={() => setToast("Share link copied")}>
             <Share2 /> Share
           </button>
-          <button onClick={() => setToast("Model exported")}>
+          <button
+            onClick={() =>
+              setToast(
+                "In-memory architecture only — use the TF.js lab to export weights.",
+              )
+            }
+          >
             <Save /> Export Model
           </button>
         </div>
@@ -391,18 +402,13 @@ export default function NetworkBuilderPage() {
           </article>
           <article className="panel inference">
             <h3>Preview</h3>
-            <div>
-              <span>{labels[3]}</span>
-              <p>
-                Deer <b>0.97</b>
-                <br />
-                Horse <b>0.02</b>
-                <br />
-                Car <b>0.01</b>
-              </p>
-            </div>
-            <button onClick={() => setToast("Inference preview complete")}>
-              Run Inference
+            <p>
+              This canvas counts shapes and parameters. Class scores appear
+              only after you train in the TensorFlow.js lab (not a placeholder
+              softmax).
+            </p>
+            <button onClick={() => setAdvanced(true)}>
+              Open TensorFlow.js Training Lab
             </button>
           </article>
         </section>

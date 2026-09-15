@@ -26,10 +26,17 @@ import {
   Target,
   Upload,
 } from "lucide-react";
-import { knnPredict } from "../../../../lib/algorithms/classification/knn";
+import {
+  datasetCXor,
+  datasetDTwoMoons,
+  datasetECircles,
+  datasetFThreeBlobs,
+  irisPetalPoints,
+  datasetHImbalanced,
+} from "../../../../lib/classification/classificationDatasets";
+import { knnPredict, type DistanceMetric, type KnnWeight } from "../../../../lib/algorithms/classification/knn";
 import "./KNNClassificationPage.css";
 
-type DistanceMetric = "euclidean" | "manhattan" | "cosine";
 type TabId =
   | "learn"
   | "visualize"
@@ -38,7 +45,7 @@ type TabId =
   | "metrics"
   | "compare"
   | "explain";
-type DatasetId = "iris" | "blobs" | "wine" | "moons" | "imported";
+type DatasetId = "iris" | "blobs" | "xor" | "moons" | "circles" | "imbalanced" | "imported";
 type Point = { x: number; y: number; label: number };
 
 const COLORS = ["#3b82f6", "#ec4899", "#22c55e"];
@@ -114,10 +121,12 @@ function moonData(): Point[] {
   });
 }
 const BUILT_INS: Record<Exclude<DatasetId, "imported">, Point[]> = {
-  iris: irisData(),
-  blobs: blobData(),
-  wine: wineData(),
-  moons: moonData(),
+  iris: irisPetalPoints(),
+  blobs: datasetFThreeBlobs(),
+  xor: datasetCXor(),
+  moons: datasetDTwoMoons(),
+  circles: datasetECircles(),
+  imbalanced: datasetHImbalanced(),
 };
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   { id: "learn", label: "Learn", icon: <Lightbulb /> },
@@ -128,10 +137,8 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   { id: "compare", label: "Compare", icon: <Network /> },
   { id: "explain", label: "Explain", icon: <FileText /> },
 ];
-const clampOddK = (value: number, limit: number) => {
-  const bounded = Math.max(1, Math.min(Math.min(15, limit), Math.round(value)));
-  return bounded % 2 === 0 ? Math.max(1, bounded - 1) : bounded;
-};
+const clampK = (value: number, limit: number) =>
+  Math.max(1, Math.min(Math.max(1, limit), Math.round(value) || 1));
 const pct = (value: number) => `${Math.round(value * 100)}%`;
 
 export default function KNNClassificationPage() {
@@ -143,6 +150,7 @@ export default function KNNClassificationPage() {
   const [imported, setImported] = useState<Point[]>([]);
   const [k, setK] = useState(5);
   const [metric, setMetric] = useState<DistanceMetric>("euclidean");
+  const [weight, setWeight] = useState<KnnWeight>("uniform");
   const [query, setQuery] = useState({ x: 4.4, y: 1.6 });
   const [radius, setRadius] = useState(1.3);
   const [showBoundary, setShowBoundary] = useState(true);
@@ -162,9 +170,9 @@ export default function KNNClassificationPage() {
   const prediction = useMemo(
     () =>
       points.length
-        ? knnPredict(trainX, trainY, [query.x, query.y], safeK, metric)
+        ? knnPredict(trainX, trainY, [query.x, query.y], safeK, metric, weight)
         : null,
-    [metric, points.length, query.x, query.y, safeK, trainX, trainY],
+    [metric, points.length, query.x, query.y, safeK, trainX, trainY, weight],
   );
   const names = datasetId === "iris" ? IRIS_NAMES : GENERIC_NAMES;
   const domain = useMemo(() => {
@@ -197,12 +205,12 @@ export default function KNNClassificationPage() {
         cells.push({
           x: column,
           y: row,
-          label: knnPredict(trainX, trainY, [x, y], safeK, metric)
+          label: knnPredict(trainX, trainY, [x, y], safeK, metric, weight)
             .predictedClass,
         });
       }
     return cells;
-  }, [domain, metric, safeK, showBoundary, points.length, trainX, trainY]);
+  }, [domain, metric, safeK, showBoundary, points.length, trainX, trainY, weight]);
   const looAccuracy = useMemo(() => {
     if (points.length < 2) return 0;
     let correct = 0;
@@ -214,16 +222,18 @@ export default function KNNClassificationPage() {
         [point.x, point.y],
         Math.min(safeK, other.length),
         metric,
+        weight,
       );
       if (result.predictedClass === point.label) correct += 1;
     });
     return correct / points.length;
-  }, [metric, points, safeK]);
+  }, [metric, points, safeK, weight]);
   const votes = [0, 1, 2].map((label) => prediction?.votes[label] ?? 0);
   const winningVotes = prediction
     ? (prediction.votes[prediction.predictedClass] ?? 0)
     : 0;
-  const confidence = prediction ? winningVotes / safeK : 0;
+  const voteTotal = votes.reduce((sum, value) => sum + value, 0) || 1;
+  const confidence = prediction ? winningVotes / voteTotal : 0;
   const kthDistance = prediction?.neighbors.at(-1)?.distance ?? 0;
   const setDataset = (next: DatasetId) => {
     const source = next === "imported" ? imported : BUILT_INS[next];
@@ -281,7 +291,7 @@ export default function KNNClassificationPage() {
     setImported(parsed);
     setDatasetId("imported");
     setPoints(parsed);
-    setK(clampOddK(k, parsed.length));
+    setK(clampK(k, parsed.length));
     setQuery({
       x: parsed.reduce((sum, point) => sum + point.x, 0) / parsed.length,
       y: parsed.reduce((sum, point) => sum + point.y, 0) / parsed.length,
@@ -637,7 +647,7 @@ export default function KNNClassificationPage() {
             </article>
             <article>
               <strong>{pct(confidence)}</strong>
-              <span>Query vote confidence</span>
+              <span>Query vote proportion</span>
             </article>
             <article>
               <strong>{kthDistance.toFixed(3)}</strong>
@@ -680,7 +690,7 @@ export default function KNNClassificationPage() {
             </span>
           </div>
           <div className="knn-compare-grid">
-            {(["euclidean", "manhattan", "cosine"] as DistanceMetric[]).map(
+            {(["euclidean", "manhattan", "cosine", "minkowski"] as DistanceMetric[]).map(
               (option) => {
                 const result = knnPredict(
                     trainX,
@@ -688,6 +698,7 @@ export default function KNNClassificationPage() {
                     [query.x, query.y],
                     safeK,
                     option,
+                    weight,
                   ),
                   vote = result.votes[result.predictedClass] ?? 0;
                 return (
@@ -743,8 +754,8 @@ export default function KNNClassificationPage() {
               <h3>Majority vote</h3>
               <p>
                 {names[prediction?.predictedClass ?? 0]} wins with{" "}
-                {winningVotes} of {safeK} votes, producing {pct(confidence)}{" "}
-                confidence.
+                {winningVotes.toFixed(2)} vote weight of {voteTotal.toFixed(2)}, producing a{" "}
+                {pct(confidence)} vote proportion. Ties use the lowest class id.
               </p>
             </article>
           </div>
@@ -887,10 +898,12 @@ export default function KNNClassificationPage() {
               value={datasetId}
               onChange={(event) => setDataset(event.target.value as DatasetId)}
             >
-              <option value="iris">Iris (2 Features)</option>
-              <option value="blobs">Synthetic Blobs</option>
-              <option value="wine">Wine Chemistry</option>
-              <option value="moons">Three Moons</option>
+              <option value="iris">Iris petals (real + draws)</option>
+              <option value="blobs">Three-class blobs</option>
+              <option value="xor">XOR</option>
+              <option value="moons">Two moons</option>
+              <option value="circles">Concentric circles</option>
+              <option value="imbalanced">Imbalanced binary</option>
               {imported.length > 0 && (
                 <option value="imported">Imported CSV</option>
               )}
@@ -933,7 +946,10 @@ export default function KNNClassificationPage() {
                     </span>
                     <em>{neighbor.distance.toFixed(3)}</em>
                     <strong>
-                      {(1 / (neighbor.distance + 0.01)).toFixed(2)}
+                      {(weight === "distance"
+                        ? 1 / Math.max(neighbor.distance, 1e-12)
+                        : 1
+                      ).toFixed(2)}
                     </strong>
                   </div>
                 ))}
@@ -945,13 +961,13 @@ export default function KNNClassificationPage() {
                 <div
                   className="knn-donut"
                   style={{
-                    background: `conic-gradient(${COLORS[0]} 0 ${(votes[0] / safeK) * 100}%, ${COLORS[1]} ${(votes[0] / safeK) * 100}% ${((votes[0] + votes[1]) / safeK) * 100}%, ${COLORS[2]} ${((votes[0] + votes[1]) / safeK) * 100}% 100%)`,
+                    background: `conic-gradient(${COLORS[0]} 0 ${(votes[0] / voteTotal) * 100}%, ${COLORS[1]} ${(votes[0] / voteTotal) * 100}% ${((votes[0] + votes[1]) / voteTotal) * 100}%, ${COLORS[2]} ${((votes[0] + votes[1]) / voteTotal) * 100}% 100%)`,
                   }}
                 >
                   <span>
                     <b>{names[prediction?.predictedClass ?? 0]}</b>
                     <small>
-                      {winningVotes} / {safeK} votes
+                      {winningVotes.toFixed(2)} / {voteTotal.toFixed(2)} vote weight
                     </small>
                   </span>
                 </div>
@@ -1071,7 +1087,7 @@ export default function KNNClassificationPage() {
                 <button
                   aria-label="Decrease K"
                   onClick={() =>
-                    setK((value) => clampOddK(value - 2, points.length))
+                    setK((value) => clampK(value - 2, points.length))
                   }
                 >
                   <Minus />
@@ -1084,13 +1100,13 @@ export default function KNNClassificationPage() {
                   step="2"
                   value={safeK}
                   onChange={(event) =>
-                    setK(clampOddK(Number(event.target.value), points.length))
+                    setK(clampK(Number(event.target.value), points.length))
                   }
                 />
                 <button
                   aria-label="Increase K"
                   onClick={() =>
-                    setK((value) => clampOddK(value + 2, points.length))
+                    setK((value) => clampK(value + 2, points.length))
                   }
                 >
                   <Plus />
@@ -1104,19 +1120,19 @@ export default function KNNClassificationPage() {
                 step="2"
                 value={safeK}
                 onChange={(event) =>
-                  setK(clampOddK(Number(event.target.value), points.length))
+                  setK(clampK(Number(event.target.value), points.length))
                 }
               />
               <div className="knn-range-label">
                 <span>1</span>
                 <b>K = {safeK}</b>
-                <span>{Math.min(15, points.length)}</span>
+                <span>{points.length}</span>
               </div>
             </section>
             <section>
               <h3>DISTANCE METRIC</h3>
               <div className="knn-metric-options">
-                {(["euclidean", "manhattan", "cosine"] as DistanceMetric[]).map(
+                {(["euclidean", "manhattan", "cosine", "minkowski"] as DistanceMetric[]).map(
                   (option) => (
                     <button
                       key={option}
@@ -1131,12 +1147,36 @@ export default function KNNClassificationPage() {
                             ? "Straight-line distance"
                             : option === "manhattan"
                               ? "Grid-based distance"
-                              : "Angular similarity"}
+                              : option === "minkowski"
+                                ? "p-norm distance (p=3)"
+                                : "Angular similarity"}
                         </small>
                       </span>
                     </button>
                   ),
                 )}
+              </div>
+            </section>
+            <section>
+              <h3>VOTE WEIGHTS</h3>
+              <div className="knn-metric-options">
+                {(["uniform", "distance"] as KnnWeight[]).map((option) => (
+                  <button
+                    key={option}
+                    className={weight === option ? "active" : ""}
+                    onClick={() => setWeight(option)}
+                  >
+                    <i>{weight === option && <Check />}</i>
+                    <span>
+                      <b>{option}</b>
+                      <small>
+                        {option === "uniform"
+                          ? "Each neighbor casts one vote"
+                          : "Closer neighbors vote more strongly"}
+                      </small>
+                    </span>
+                  </button>
+                ))}
               </div>
             </section>
             <section>
@@ -1176,7 +1216,7 @@ export default function KNNClassificationPage() {
                 <p>
                   <b>{names[prediction?.predictedClass ?? 0]}</b>
                   <small>
-                    {pct(confidence)} confidence • {winningVotes}/{safeK} votes
+                    {pct(confidence)} vote proportion • K={safeK}
                   </small>
                 </p>
               </div>

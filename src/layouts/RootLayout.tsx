@@ -852,8 +852,8 @@ export const RootLayout: React.FC = () => {
       ? implementedCommandButtons
       : conceptCommandButtons;
 
-  // Approved lesson screens use a focused, self-contained workbench. Keep the
-  // suite chrome unchanged for every other route while each lesson is migrated.
+  // Home and a few platform screens have their own full-page chrome.
+  // Every /ml/ algorithm lab uses the shared sidebar + top menu.
   if (
     [
       "/",
@@ -861,79 +861,10 @@ export const RootLayout: React.FC = () => {
       "/dataset-library",
       "/sitemap",
       "/implementation-matrix",
-      "/ml/reinforcement-learning/q-learning-grid-world",
-      "/ml/supervised/simple-linear-regression",
-      "/ml/supervised/multiple-linear-regression",
-      "/ml/supervised/polynomial-regression",
-      "/ml/supervised/ridge-regression",
-      "/ml/supervised/lasso-regression",
-      "/ml/supervised/elastic-net-regression",
-      "/ml/supervised/decision-tree-regression",
-      "/ml/supervised/random-forest-regression",
-      "/ml/supervised/gradient-boosting-regression",
-      "/ml/supervised/support-vector-regression",
-      "/ml/supervised/logistic-regression",
-      "/ml/supervised/multinomial-logistic-regression",
-      "/ml/supervised/knn-classification",
-      "/ml/supervised/naive-bayes",
-      "/ml/supervised/decision-tree-classification",
-      "/ml/supervised/random-forest-classification",
-      "/ml/supervised/svm-classification",
-      "/ml/supervised/gradient-boosting-classification",
-      "/ml/supervised/adaboost-classification",
-      "/ml/supervised/xgboost-concept",
-      "/ml/clustering/k-means",
-      "/ml/clustering/k-medoids",
-      "/ml/clustering/hierarchical-clustering",
-      "/ml/clustering/dbscan",
-      "/ml/clustering/mean-shift",
-      "/ml/clustering/gaussian-mixture-model",
-      "/ml/clustering/spectral-clustering",
-      "/ml/clustering/optics",
-      "/ml/dimensionality-reduction/kernel-pca",
-      "/ml/dimensionality-reduction/tsne",
-      "/ml/dimensionality-reduction/umap-concept",
-      "/ml/dimensionality-reduction/lda",
-      "/ml/dimensionality-reduction/autoencoder",
-      "/ml/deep-learning/perceptron",
-      "/ml/deep-learning/mlp",
-      "/ml/deep-learning/nn-playground",
-      "/ml/deep-learning/cnn",
-      "/ml/deep-learning/convolution-visualizer",
-      "/ml/deep-learning/rnn",
-      "/ml/deep-learning/lstm",
-      "/ml/deep-learning/gru",
-      "/ml/deep-learning/transformer-attention",
-      "/ml/deep-learning/multi-head-attention",
-      "/ml/deep-learning/backpropagation-visualizer",
-      "/ml/deep-learning/few-shot-learning",
-      "/ml/deep-learning/network-builder",
-      "/ml/deep-learning/transfer-learning",
-      "/ml/evaluation/train-test-split",
-      "/ml/evaluation/cross-validation",
-      "/ml/evaluation/confusion-matrix",
-      "/ml/evaluation/roc-auc",
-      "/ml/evaluation/precision-recall-curve",
-      "/ml/evaluation/regression-metrics",
-      "/ml/evaluation/bias-variance-tradeoff",
-      "/ml/preprocessing/missing-values",
-      "/ml/preprocessing/scaling-normalization",
-      "/ml/preprocessing/categorical-encoding",
-      "/ml/preprocessing/outlier-detection",
-      "/ml/preprocessing/feature-selection",
-      "/ml/preprocessing/polynomial-features",
-      "/ml/time-series/moving-average",
-      "/ml/time-series/exponential-smoothing",
-      "/ml/time-series/holt-winters",
-      "/ml/time-series/arima-concept",
-      "/ml/time-series/anomaly-detection",
-      "/ml/time-series/rnn-forecasting",
-      "/ml/time-series/lstm-forecasting",
-      "/ml/time-series/gru-forecasting",
     ].includes(location.pathname)
   ) {
     return (
-      <div className="h-screen w-full overflow-hidden bg-[#050d1c] text-white">
+      <div className="h-screen min-h-0 w-full overflow-x-hidden overflow-y-auto bg-[#050d1c] text-white">
         <RouteErrorBoundary key={location.pathname}>
           <Suspense fallback={<PageFallback />}>
             <Outlet />
@@ -1271,7 +1202,7 @@ export const RootLayout: React.FC = () => {
         <main
           id="main-content"
           tabIndex={-1}
-          className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin"
+          className="relative isolate flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin [transform:translateZ(0)]"
         >
           <AnimatePresence mode="wait" initial={false}>
             <motion.div

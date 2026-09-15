@@ -20,12 +20,20 @@ import {
   Upload,
   UserCircle,
 } from "lucide-react";
-import { binaryMetrics } from "../../../../lib/math/metrics";
+import {
+  datasetAPerfectBinary,
+  datasetBOverlappingBinary,
+  datasetCXor,
+  datasetDTwoMoons,
+  datasetECircles,
+} from "../../../../lib/classification/classificationDatasets";
+import { binaryMetrics, logLoss } from "../../../../lib/math/metrics";
+import { classificationSplit } from "../../../../lib/classification/classificationEval";
 import { trainGradientBoostingClassification } from "../../../../lib/algorithms/classification/gradientBoostingClassification";
 import "./GradientBoostingClassificationPage.css";
 
 type Point = { x: number; y: number; label: number };
-type Dataset = "moons" | "circles" | "blobs" | "linear" | "imported";
+type Dataset = "moons" | "circles" | "blobs" | "linear" | "xor" | "imported";
 type Tab =
   | "learn"
   | "visualize"
@@ -48,48 +56,23 @@ const LABELS: Record<Dataset, string> = {
   circles: "Concentric Circles",
   blobs: "Gaussian Blobs",
   linear: "Linear Separation",
+  xor: "XOR regions",
   imported: "Imported Dataset",
 };
 const jitter = (i: number, k = 1) => Math.sin(i * 73.13 * k) * 0.5 + 0.5;
-function makeData(kind: Exclude<Dataset, "imported">, n = 1000): Point[] {
-  return Array.from({ length: n }, (_, i) => {
-    const label = i % 2,
-      t = (i / 2 / (n / 2 - 1)) * Math.PI * 2,
-      noise = (jitter(i, 1.7) - 0.5) * 0.24;
-    if (kind === "moons")
-      return label
-        ? {
-            x: Math.cos(t / 2) - 0.45 + noise,
-            y: Math.sin(t / 2) + 0.25 + (jitter(i, 2.1) - 0.5) * 0.18,
-            label,
-          }
-        : {
-            x: 1 - Math.cos(t / 2) - 0.45 + noise,
-            y: -Math.sin(t / 2) - 0.2 + (jitter(i, 2.7) - 0.5) * 0.18,
-            label,
-          };
-    if (kind === "circles") {
-      const r = label ? 1.05 : 0.5;
-      return { x: Math.cos(t) * r + noise, y: Math.sin(t) * r + noise, label };
-    }
-    if (kind === "linear")
-      return {
-        x: (jitter(i, 2.3) - 0.5) * 3 + (label ? 0.75 : -0.75),
-        y: (jitter(i, 3.1) - 0.5) * 1.5 + (label ? 0.55 : -0.55),
-        label,
-      };
-    return {
-      x: (jitter(i, 3.7) - 0.5) * 1.1 + (label ? 0.8 : -0.8),
-      y: (jitter(i, 4.3) - 0.5) * 1.1 + (label ? 0.7 : -0.7),
-      label,
-    };
-  });
+function makeData(kind: Exclude<Dataset, "imported">): Point[] {
+  if (kind === "moons") return datasetDTwoMoons(90, 9);
+  if (kind === "circles") return datasetECircles(90, 13);
+  if (kind === "linear") return datasetAPerfectBinary();
+  if (kind === "xor") return datasetCXor();
+  return datasetBOverlappingBinary();
 }
 const BUILT = {
   moons: makeData("moons"),
   circles: makeData("circles"),
   blobs: makeData("blobs"),
   linear: makeData("linear"),
+  xor: makeData("xor"),
 };
 const C0 = "#18cdb6",
   C1 = "#ff626d";
@@ -159,9 +142,16 @@ export default function GradientBoostingClassificationLesson() {
   const uploadRef = useRef<HTMLInputElement>(null);
   const X = useMemo(() => points.map((p) => [p.x, p.y]), [points]),
     y = useMemo(() => points.map((p) => p.label), [points]);
+  const split = useMemo(() => {
+    try {
+      return classificationSplit(X, y, 0.2, 42);
+    } catch {
+      return null;
+    }
+  }, [X, y]);
   const model = useMemo(
     () =>
-      trainGradientBoostingClassification(X, y, {
+      trainGradientBoostingClassification(split?.trainX ?? X, split?.trainY ?? y, {
         estimators,
         learningRate: rate,
         maxDepth: depth,
@@ -169,12 +159,24 @@ export default function GradientBoostingClassificationLesson() {
         minSamplesLeaf: 5,
         seed: 2026,
       }),
-    [X, y, estimators, rate, depth, subsample],
+    [X, y, split, estimators, rate, depth, subsample],
   );
   const current = Math.min(stage, model.stages.length),
     last = model.stages.at(-1)!,
-    predictions = X.map((row) => model.predictAtStage(row, current)),
-    metrics = binaryMetrics(y, predictions);
+    trainPred = (split?.trainX ?? X).map((row) => model.predictAtStage(row, current)),
+    testPred = (split?.testX ?? X).map((row) => model.predictAtStage(row, current)),
+    metrics = binaryMetrics(split?.testY ?? y, testPred);
+  const trainLogLoss = logLoss(
+    split?.trainY ?? y,
+    (split?.trainX ?? X).map((row) => model.probabilityAtStage(row, current)),
+  );
+  const testLogLoss = logLoss(
+    split?.testY ?? y,
+    (split?.testX ?? X).map((row) => model.probabilityAtStage(row, current)),
+  );
+  const trainAcc =
+    trainPred.filter((value, index) => value === (split?.trainY ?? y)[index]).length /
+    trainPred.length;
   const choose = (next: Dataset) => {
     const source = next === "imported" ? imported : BUILT[next];
     if (!source.length) return;
@@ -241,7 +243,9 @@ export default function GradientBoostingClassificationLesson() {
       <p>
         Weighted Error{" "}
         <b>
-          {index ? model.stages[index - 1]?.weightedError.toFixed(3) : "0.352"}
+          {index
+            ? (model.stages[index - 1]?.weightedError ?? 0).toFixed(3)
+            : (model.stages[0]?.weightedError ?? 0).toFixed(3)}
         </b>
       </p>
       <hr />
@@ -319,12 +323,20 @@ export default function GradientBoostingClassificationLesson() {
             />
             <dl>
               <div>
-                <dt>Training Accuracy</dt>
-                <dd>{last.accuracy.toFixed(3)}</dd>
+                <dt>Train accuracy</dt>
+                <dd>{trainAcc.toFixed(3)}</dd>
               </div>
               <div>
-                <dt>Log Loss</dt>
-                <dd>{last.logLoss.toFixed(3)}</dd>
+                <dt>Test accuracy</dt>
+                <dd>{metrics.accuracy.toFixed(3)}</dd>
+              </div>
+              <div>
+                <dt>Train log loss</dt>
+                <dd>{trainLogLoss.toFixed(3)}</dd>
+              </div>
+              <div>
+                <dt>Test log loss</dt>
+                <dd>{testLogLoss.toFixed(3)}</dd>
               </div>
               <div>
                 <dt>Total Estimators</dt>
@@ -558,15 +570,15 @@ export default function GradientBoostingClassificationLesson() {
           <h2>Ensemble Metrics</h2>
           <div className="gbc-metrics">
             {[
-              ["Accuracy", metrics.accuracy],
+              ["Test accuracy", metrics.accuracy],
               ["Precision", metrics.precision],
               ["Recall", metrics.recall],
               ["F1", metrics.f1],
-              ["Log Loss", last.logLoss],
+              ["Test log loss", testLogLoss],
             ].map(([name, value]) => (
               <article key={name as string}>
                 <b>
-                  {name === "Log Loss"
+                  {String(name).includes("log loss")
                     ? (value as number).toFixed(3)
                     : `${((value as number) * 100).toFixed(1)}%`}
                 </b>

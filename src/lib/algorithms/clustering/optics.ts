@@ -63,6 +63,10 @@ export function optics(
 ): OpticsResult {
   const n = X.length;
   if (!n) throw new Error("OPTICS requires at least one sample.");
+  if (n > 800)
+    throw new Error(
+      "OPTICS is capped at 800 samples in the browser lab because of the all-pairs neighbor search.",
+    );
   if (minPts < 2 || minPts > n)
     throw new Error("minPts must be between 2 and the sample count.");
   const distances = Array.from({ length: n }, () => Array(n).fill(0));

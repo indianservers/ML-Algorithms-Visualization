@@ -1,5 +1,9 @@
 import { useMemo, useRef, useState } from "react";
-import { autocorrelation, fitArima } from "../../../lib/timeSeries/arima";
+import { useLabNavigate } from "../../../lib/labNavigation";
+import { autocorrelation, fitArima, inspectDifference } from "../../../lib/timeSeries/arima";
+import { TIME_SERIES_CATALOG, seriesValues } from "../../../lib/timeSeries/timeSeriesDatasets";
+import { chronologicalSplit } from "../../../lib/timeSeries/timeSeriesSplit";
+import { useActiveTimeSeries } from "../../../lib/timeSeries/useActiveTimeSeries";
 import "./ARIMAConceptApprovedPage.css";
 
 const AIR = [
@@ -51,6 +55,17 @@ const DATASETS = [
         11 * Math.cos(i * 0.73),
     ),
   },
+  ...TIME_SERIES_CATALOG.filter((item) =>
+    ["linear-trend", "nonstationary-trend", "autoregressive", "integer-trend", "constant"].includes(
+      item.id,
+    ),
+  ).map((item) => ({
+    name: item.name,
+    target: "value",
+    frequency: item.frequency,
+    period: item.points.length,
+    values: seriesValues(item),
+  })),
 ];
 
 function line(
@@ -149,9 +164,17 @@ function SeriesChart({
   );
 }
 
-function Correlation({ values, title }: { values: number[]; title: string }) {
-  const max = Math.max(1, ...values.map(Math.abs)),
-    conf = Math.min(0.9, 1.96 / Math.sqrt(Math.max(12, values.length * 4)));
+function Correlation({
+  values,
+  title,
+  n,
+}: {
+  values: number[];
+  title: string;
+  n: number;
+}) {
+  const bound = 1.96 / Math.sqrt(Math.max(1, n));
+  const max = 1;
   return (
     <div className="ar-corr">
       <b>{title}</b>
@@ -164,15 +187,15 @@ function Correlation({ values, title }: { values: number[]; title: string }) {
         <line
           x1="22"
           x2="414"
-          y1={31 - conf * 28}
-          y2={31 - conf * 28}
+          y1={31 - bound * 28}
+          y2={31 - bound * 28}
           className="ar-conf"
         />
         <line
           x1="22"
           x2="414"
-          y1={31 + conf * 28}
-          y2={31 + conf * 28}
+          y1={31 + bound * 28}
+          y2={31 + bound * 28}
           className="ar-conf"
         />
         {values.slice(0, 37).map((v, i) => {
@@ -189,6 +212,7 @@ function Correlation({ values, title }: { values: number[]; title: string }) {
           );
         })}
       </svg>
+      <small>Approximate ±1.96/√N bounds (N={n}). Not a formal test.</small>
     </div>
   );
 }
@@ -220,15 +244,20 @@ export default function ARIMAConceptApprovedPage() {
     [status, setStatus] = useState("Ready"),
     [diffView, setDiffView] = useState(1),
     [collapsed, setCollapsed] = useState(false);
+  const go = useLabNavigate();
+  const handoff = useActiveTimeSeries("/ml/time-series/arima-concept");
   const fileRef = useRef<HTMLInputElement>(null);
   const selected = DATASETS[dataset],
-    values = custom?.values ?? selected.values,
+    values = custom?.values ?? handoff?.points.map((point) => point.value) ?? selected.values,
     _name = custom?.name ?? selected.name;
   const z = interval === "99" ? 2.576 : interval === "90" ? 1.645 : 1.96;
-  const fit = useMemo(
-    () => fitArima(values, p + sp, d, q + sq + sd, horizon, z),
-    [values, p, d, q, sp, sd, sq, horizon, z],
-  );
+  const split = chronologicalSplit(values);
+  const fitSource = split.train.length > 8 ? split.train : values;
+  const fit = useMemo(() => {
+    const parts = chronologicalSplit(values);
+    const source = parts.train.length > 8 ? parts.train : values;
+    return fitArima(source, p, d, q, horizon, z);
+  }, [values, p, d, q, horizon, z]);
   const originalAcf = useMemo(() => autocorrelation(values, 36), [values]);
   const diffFit = useMemo(
     () => fitArima(values, p, diffView, q, Math.min(12, horizon), z),
@@ -238,7 +267,8 @@ export default function ARIMAConceptApprovedPage() {
   const seasonal = values.map((v, i) => v - trend[i]);
   const seasonalOffsets = Array.from(
     { length: Math.max(1, season) },
-    (_, index) => seasonal[values.length - season + index] ?? 0,
+    (_, index) =>
+      seasonal[fitSource.length - season + index] ?? 0,
   );
   const seasonalForecast = fit.forecast.map(
     (value, index) => value + seasonalOffsets[index % seasonalOffsets.length],
@@ -250,6 +280,7 @@ export default function ARIMAConceptApprovedPage() {
     (value, index) => value + seasonalOffsets[index % seasonalOffsets.length],
   );
   const residualDisplay = fit.residuals.slice(-values.length);
+  const differenceInspect = inspectDifference(values, Math.min(values.length - 1, 3));
   const side = [
     "⌂  Home",
     "▣  Projects",
@@ -300,12 +331,12 @@ export default function ARIMAConceptApprovedPage() {
             <small>AI Observatory</small>
           </span>
         </a>
-        <button className="ar-home" onClick={() => setStatus("Home opened")}>
+        <button className="ar-home" onClick={() => go("Home")}>
           ⌂ <span>Home</span>
         </button>
         <p>OBSERVATORY</p>
         {side.slice(1, 6).map((x) => (
-          <button key={x} onClick={() => setStatus(`${x.slice(3)} opened`)}>
+          <button key={x} onClick={() => go(x)}>
             {x.slice(0, 2)}
             <span>{x.slice(3)}</span>
           </button>
@@ -315,17 +346,17 @@ export default function ARIMAConceptApprovedPage() {
           <button
             className={i === 0 ? "active" : ""}
             key={x}
-            onClick={() => setStatus(`${x.slice(3)} opened`)}
+            onClick={() => go(x)}
           >
             {x.slice(0, 2)}
             <span>{x.slice(3)}</span>
           </button>
         ))}
         <p>BOOKMARKS</p>
-        <button onClick={() => setStatus("ARIMA Lab opened")}>
+        <button onClick={() => go("ARIMA Lab")}>
           ▢ <span>ARIMA Lab</span>
         </button>
-        <button onClick={() => setStatus("Demand Forecasting opened")}>
+        <button onClick={() => go("Demand Forecasting")}>
           ▢ <span>Demand Forecasting</span>
         </button>
         <button onClick={() => setStatus("New bookmark")}>
@@ -361,7 +392,7 @@ export default function ARIMAConceptApprovedPage() {
           <progress value="3" max="6" />
         </section>
         <section className="ar-tools">
-          <button onClick={() => setStatus("Help opened")}>?</button>
+          <button onClick={() => go("Help")}>?</button>
           <button onClick={() => setStatus("Notifications opened")}>♧</button>
           <button onClick={() => setStatus("Profile opened")}>MM</button>
         </section>
@@ -498,19 +529,20 @@ export default function ARIMAConceptApprovedPage() {
             <b>Original (d = 0)</b>
             <em>Non-stationary</em>
           </header>
-          <Correlation title="ACF" values={originalAcf} />
+          <Correlation title="ACF" values={originalAcf} n={values.length} />
           <Correlation
             title="PACF"
             values={fitArima(values, p, 0, q, 1, z).pacf}
+            n={values.length}
           />
         </section>
         <section className="ar-correlation ar-diff-corr card">
           <header>
             <b>Differenced (d = {diffView})</b>
-            <em>Stationary</em>
+            <em>Visual diagnostic only — not an ADF test</em>
           </header>
-          <Correlation title="ACF" values={diffFit.acf} />
-          <Correlation title="PACF" values={diffFit.pacf} />
+          <Correlation title="ACF" values={diffFit.acf} n={diffFit.differenced.length} />
+          <Correlation title="PACF" values={diffFit.pacf} n={diffFit.differenced.length} />
         </section>
         <section className="ar-forecast-panel card">
           <header>
@@ -551,18 +583,24 @@ export default function ARIMAConceptApprovedPage() {
             <div>
               <b>Stationarity</b>
               <p>
-                d = {diffView} removes trend and stabilizes mean, as confirmed
-                by ACF/PACF decay.
+                Differencing d={diffView} is shown as a visual diagnostic.
+                This is not a formal ADF test. ARIMA(0,1,0) without drift
+                repeats the last level.
               </p>
             </div>
           </article>
           <article>
             <i>♨</i>
             <div>
-              <b>ACF Insight</b>
+              <b>Difference inspector</b>
               <p>
-                Post-differencing ACF shows a small spike at lag {season} →
-                seasonal MA component.
+                t={Math.min(values.length - 1, 3)}: Δy ={" "}
+                {differenceInspect.firstDifference.toFixed(3)} (y_t − y_(t−1)).
+                Second difference{" "}
+                {Number.isFinite(differenceInspect.secondDifference)
+                  ? differenceInspect.secondDifference.toFixed(3)
+                  : "n/a"}
+                .
               </p>
             </div>
           </article>

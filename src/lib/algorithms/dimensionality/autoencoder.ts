@@ -1,6 +1,8 @@
 import * as tf from "@tensorflow/tfjs";
+import { reconstructionMse } from "../../dimensionality/dimensionalityPrep";
 
 export type AutoencoderArchitecture = "dense" | "shallow";
+export type AutoencoderOutput = "sigmoid" | "linear";
 export interface AutoencoderResult {
   latent: number[][];
   reconstructions: number[][];
@@ -8,6 +10,31 @@ export interface AutoencoderResult {
   losses: number[];
   mse: number;
   parameterCount: number;
+  encoderWeights: { kernel: number[][]; bias: number[] }[];
+  sampleErrors: number[];
+}
+
+function denseForward(input: number[], kernel: number[][], bias: number[], activation: "relu" | "linear" | "sigmoid") {
+  const units = bias.length;
+  const out = Array.from({ length: units }, (_, u) => {
+    let sum = bias[u];
+    for (let i = 0; i < input.length; i += 1) sum += input[i] * kernel[i][u];
+    if (activation === "relu") return Math.max(0, sum);
+    if (activation === "sigmoid") return 1 / (1 + Math.exp(-sum));
+    return sum;
+  });
+  return out;
+}
+
+export function encodeWithWeights(samples: number[][], weights: AutoencoderResult["encoderWeights"]) {
+  return samples.map((row) => {
+    let current = row;
+    weights.forEach((layer, index) => {
+      const last = index === weights.length - 1;
+      current = denseForward(current, layer.kernel, layer.bias, last ? "linear" : "relu");
+    });
+    return current;
+  });
 }
 
 export async function trainAutoencoder(
@@ -19,10 +46,15 @@ export async function trainAutoencoder(
   batchSize = 32,
   epochs = 12,
   onEpoch?: (epoch: number, loss: number) => void,
+  options?: {
+    outputActivation?: AutoencoderOutput;
+    shouldStop?: () => boolean;
+  },
 ): Promise<AutoencoderResult> {
   if (samples.length < 2 || !samples[0]?.length)
     throw new Error("Autoencoder training requires a non-empty sample matrix.");
   await tf.ready();
+  const outputActivation = options?.outputActivation ?? "sigmoid";
   const inputDimension = samples[0].length,
     input = tf.input({ shape: [inputDimension] }),
     hiddenUnits =
@@ -41,7 +73,7 @@ export async function trainAutoencoder(
     output = tf.layers
       .dense({
         units: inputDimension,
-        activation: "sigmoid",
+        activation: outputActivation,
         name: "reconstruction",
       })
       .apply(decoderHidden) as tf.SymbolicTensor,
@@ -54,11 +86,10 @@ export async function trainAutoencoder(
   const clean = tf.tensor2d(samples),
     noisy =
       noiseStd > 0
-        ? tf.tidy(() =>
-            clean
-              .add(tf.randomNormal(clean.shape, 0, noiseStd))
-              .clipByValue(0, 1),
-          )
+        ? tf.tidy(() => {
+            const jittered = clean.add(tf.randomNormal(clean.shape, 0, noiseStd));
+            return outputActivation === "sigmoid" ? jittered.clipByValue(0, 1) : jittered;
+          })
         : clean.clone(),
     losses: number[] = [];
   await model.fit(noisy, clean, {
@@ -67,6 +98,10 @@ export async function trainAutoencoder(
     shuffle: true,
     callbacks: {
       onEpochEnd: async (epoch, logs) => {
+        if (options?.shouldStop?.()) {
+          model.stopTraining = true;
+          return;
+        }
         const loss = Number(logs?.loss || 0);
         losses.push(loss);
         onEpoch?.(epoch + 1, loss);
@@ -78,44 +113,43 @@ export async function trainAutoencoder(
     latentTensor = encoder.predict(clean) as tf.Tensor,
     reconstructions = (await reconstructionTensor.array()) as number[][],
     latent = (await latentTensor.array()) as number[][];
-  const latentInput = tf.input({ shape: [latentDimension] }),
-    decodedHidden = model
-      .getLayer("decoder_hidden")
-      .apply(latentInput) as tf.SymbolicTensor,
-    decodedOutput = model
-      .getLayer("reconstruction")
-      .apply(decodedHidden) as tf.SymbolicTensor,
-    decoder = tf.model({ inputs: latentInput, outputs: decodedOutput }),
-    minimum = Math.min(...latent.map((row) => row[0])),
-    maximum = Math.max(...latent.map((row) => row[0])),
-    traversalCodes = Array.from({ length: 7 }, (_, i) =>
-      latent[0].map((value, dimension) =>
-        dimension === 0 ? minimum + ((maximum - minimum) * i) / 6 : value,
-      ),
+  const hiddenLayer = model.getLayer("encoder_hidden") as tf.layers.Layer;
+  const latentLayer = model.getLayer("latent") as tf.layers.Layer;
+  const hiddenWeights = hiddenLayer.getWeights();
+  const latentWeights = latentLayer.getWeights();
+  const encoderWeights = [
+    {
+      kernel: (await hiddenWeights[0].array()) as number[][],
+      bias: (await hiddenWeights[1].array()) as number[],
+    },
+    {
+      kernel: (await latentWeights[0].array()) as number[][],
+      bias: (await latentWeights[1].array()) as number[],
+    },
+  ];
+  const minimum = Math.min(...latent.map((row) => row[0]));
+  const maximum = Math.max(...latent.map((row) => row[0]));
+  const traversalCodes = Array.from({ length: 7 }, (_, i) =>
+    latent[0].map((value, dimension) =>
+      dimension === 0 ? minimum + ((maximum - minimum) * i) / 6 : value,
     ),
-    traversalInput = tf.tensor2d(traversalCodes),
-    traversalTensor = decoder.predict(traversalInput) as tf.Tensor,
-    traversal = (await traversalTensor.array()) as number[][];
-  const mse =
-      samples.reduce(
-        (sum, row, i) =>
-          sum +
-          row.reduce(
-            (inner, value, j) => inner + (value - reconstructions[i][j]) ** 2,
-            0,
-          ),
-        0,
-      ) /
-      (samples.length * inputDimension),
-    parameterCount = model.countParams();
-  clean.dispose();
-  noisy.dispose();
+  );
+  const traversalInput = tf.tensor2d(traversalCodes);
+  const traversalHidden = model.getLayer("decoder_hidden").apply(traversalInput) as tf.Tensor;
+  const traversalTensor = model.getLayer("reconstruction").apply(traversalHidden) as tf.Tensor;
+  const traversal = (await traversalTensor.array()) as number[][];
+  const mse = reconstructionMse(samples, reconstructions);
+  const sampleErrors = samples.map((row, i) =>
+    row.reduce((sum, value, j) => sum + (value - reconstructions[i][j]) ** 2, 0) / row.length,
+  );
+  const parameterCount = model.countParams();
   reconstructionTensor.dispose();
   latentTensor.dispose();
   traversalInput.dispose();
+  traversalHidden.dispose();
   traversalTensor.dispose();
-  // Encoder and decoder reuse layers owned by `model`; disposing all three
-  // attempts to dispose the same shared layers more than once in TensorFlow.js.
+  clean.dispose();
+  noisy.dispose();
   model.dispose();
-  return { latent, reconstructions, traversal, losses, mse, parameterCount };
+  return { latent, reconstructions, traversal, losses, mse, parameterCount, encoderWeights, sampleErrors };
 }

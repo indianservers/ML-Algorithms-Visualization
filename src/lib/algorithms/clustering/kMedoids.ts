@@ -93,6 +93,10 @@ export function trainKMedoids(
 ): KMedoidsResult {
   if (!X.length || options.k < 1 || options.k > X.length)
     throw new Error("K-Medoids requires non-empty data and a valid K.");
+  if (X.length > 500)
+    throw new Error(
+      "K-Medoids is capped at 500 samples in the browser lab because of the O(n²) distance matrix.",
+    );
   const matrix = X.map((row) =>
     X.map((other) => kMedoidsDistance(row, other, options.metric)),
   );

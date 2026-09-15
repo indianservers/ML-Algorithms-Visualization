@@ -1,5 +1,8 @@
 import { useMemo, useRef, useState } from "react";
+import { useLabNavigate } from "../../../lib/labNavigation";
 import { recurrentForecast } from "../../../lib/timeSeries/recurrentForecast";
+import { TIME_SERIES_CATALOG, seriesValues } from "../../../lib/timeSeries/timeSeriesDatasets";
+import { useActiveTimeSeries } from "../../../lib/timeSeries/useActiveTimeSeries";
 import "./GRUForecastingApprovedPage.css";
 
 const DATA = [
@@ -39,6 +42,11 @@ const DATA = [
         9 * Math.cos(i * 0.47),
     ),
   },
+  ...TIME_SERIES_CATALOG.map((item) => ({
+    name: item.name,
+    meta: `${item.frequency} · ${item.points.length} observations`,
+    values: seriesValues(item),
+  })),
 ];
 const line = (v: number[], w: number, h: number, lo: number, hi: number) =>
   v
@@ -95,9 +103,10 @@ export default function GRUForecastingApprovedPage() {
       "Dataset: Electricity Transformer Load | Freq: 15 min | Last updated: 2 min ago",
     ),
     [collapsed, setCollapsed] = useState(false);
+  const handoff = useActiveTimeSeries("/ml/time-series/gru-forecasting");
   const fileRef = useRef<HTMLInputElement>(null),
     source = DATA[dataset],
-    values = custom?.values ?? source.values,
+    values = custom?.values ?? handoff?.points.map((point) => point.value) ?? source.values,
     result = useMemo(
       () =>
         recurrentForecast(
@@ -110,7 +119,7 @@ export default function GRUForecastingApprovedPage() {
       [values, lookback, horizon, units],
     );
   const recent = values.slice(-240),
-    all = [...recent, ...result.predictions, ...result.lower, ...result.upper],
+    all = [...recent, ...result.predictions],
     lo = Math.min(...all),
     hi = Math.max(...all),
     gates = result.gateHistory.slice(-180),
@@ -144,7 +153,7 @@ export default function GRUForecastingApprovedPage() {
     };
     reader.readAsText(file);
   };
-  const act = (x: string) => setStatus(`${x} opened`);
+  const act = useLabNavigate();
   return (
     <div className={`gf-page ${collapsed ? "gf-collapsed" : ""}`}>
       <aside className="gf-side">
@@ -351,16 +360,20 @@ export default function GRUForecastingApprovedPage() {
               d={line(result.predictions, 270, 230, lo, hi)}
               transform="translate(425 0)"
             />
-            <path
-              className="band"
-              d={`${line(result.upper, 270, 230, lo, hi)} L270,220 ${line([...result.lower].reverse(), 270, 230, lo, hi)} Z`}
-              transform="translate(425 0)"
-            />
+            {result.lower.length ? (
+              <path
+                className="band"
+                d={`${line(result.upper, 270, 230, lo, hi)} L270,220 ${line([...result.lower].reverse(), 270, 230, lo, hi)} Z`}
+                transform="translate(425 0)"
+              />
+            ) : null}
           </svg>
           <footer>May 12 May 14 May 16 May 18 May 20 May 21</footer>
         </section>
         <section className="gf-gates card">
           <h3>Gate Activity Over Time ⓘ</h3>
+          <p>{result.architecture}</p>
+          {result.dataWarning ? <p>{result.dataWarning}</p> : null}
           <p>
             ■ Update Gate (zₜ) <b>■ Reset Gate (rₜ)</b>
           </p>

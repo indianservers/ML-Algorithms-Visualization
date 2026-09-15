@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useLabNavigate } from "../../../lib/labNavigation";
 import {
   BookOpen,
   CircleHelp,
@@ -13,6 +14,12 @@ import {
   type SpectralKernel,
   type SpectralMetric,
 } from "../../../lib/algorithms/clustering/spectralClustering";
+import {
+  datasetAWellSeparatedBlobs,
+  datasetETwoMoons,
+  datasetFConcentricCircles,
+  datasetIElongated,
+} from "../../../lib/clustering/clusteringDatasets";
 import "./SpectralClusteringPage.css";
 type Point = { x: number; y: number };
 type Dataset =
@@ -36,64 +43,39 @@ const rand = (i: number, s: number) => {
   const v = Math.sin((i + 3) * 12.9898 + s * 78.233) * 43758.5453;
   return v - Math.floor(v);
 };
-function makeData(kind: Exclude<Dataset, "imported">, count = 300): Point[] {
+function makeManifold(kind: "spirals" | "swiss" | "scurve", count = 90): Point[] {
   return Array.from({ length: count }, (_, i) => {
-    const k = i % 3,
-      t = rand(i, 1) * Math.PI * 2,
-      r = Math.sqrt(rand(i, 2));
-    if (kind === "circles") {
-      const radius = k === 0 ? 0.8 : k === 1 ? 1.7 : 2.7;
-      return { x: Math.cos(t) * radius, y: Math.sin(t) * radius };
-    }
+    const k = i % 3;
     if (kind === "spirals") {
-      const radius = rand(i, 2) * 3.5;
+      const radius = rand(i, 2) * 3.2;
       return {
         x: Math.cos(radius * 2 + k * 2.1) * radius,
         y: Math.sin(radius * 2 + k * 2.1) * radius,
       };
     }
-    if (kind === "scurve" || kind === "swiss")
-      return {
-        x: (rand(i, 2) - 0.5) * 6,
-        y: Math.sin((rand(i, 2) - 0.5) * Math.PI * 2) * 2 + k * 0.15,
-      };
-    const centers =
-      kind === "anisotropic"
-        ? [
-            [-2.2, 0.3],
-            [0.3, 2],
-            [2.4, -0.6],
-          ]
-        : [
-            [-2.4, -0.4],
-            [0, 2.2],
-            [2.4, -0.5],
-          ];
     return {
-      x:
-        centers[k][0] + Math.cos(t) * r * (kind === "anisotropic" ? 1.3 : 0.75),
-      y:
-        centers[k][1] + Math.sin(t) * r * (kind === "anisotropic" ? 0.4 : 0.75),
+      x: (rand(i, 2) - 0.5) * 6,
+      y: Math.sin((rand(i, 2) - 0.5) * Math.PI * 2) * 2 + k * 0.15,
     };
   });
 }
 const BUILT = {
-  moons: makeData("moons"),
-  spirals: makeData("spirals"),
-  swiss: makeData("swiss"),
-  scurve: makeData("scurve"),
-  circles: makeData("circles"),
-  blobs: makeData("blobs"),
-  anisotropic: makeData("anisotropic"),
+  moons: datasetETwoMoons(),
+  spirals: makeManifold("spirals"),
+  swiss: makeManifold("swiss"),
+  scurve: makeManifold("scurve"),
+  circles: datasetFConcentricCircles(),
+  blobs: datasetAWellSeparatedBlobs(),
+  anisotropic: datasetIElongated(),
 };
 const LABELS: Record<Dataset, string> = {
-  moons: "Two Moons",
-  spirals: "Three Spirals",
-  swiss: "Swiss Roll",
-  scurve: "S-Curve",
-  circles: "Two Circles",
-  blobs: "Blobs (4)",
-  anisotropic: "Anisotropic",
+  moons: "Two moons",
+  spirals: "Three spirals",
+  swiss: "Swiss-like 2D fold",
+  scurve: "S-curve fold",
+  circles: "Concentric circles",
+  blobs: "Well-separated blobs",
+  anisotropic: "Elongated clusters",
   imported: "Imported Data",
 };
 export default function SpectralClusteringPage() {
@@ -101,7 +83,7 @@ export default function SpectralClusteringPage() {
     [dataset, setDataset] = useState<Dataset>("moons"),
     [points, setPoints] = useState<Point[]>(BUILT.moons),
     [imported, setImported] = useState<Point[]>([]),
-    [clusters, setClusters] = useState(3),
+    [clusters, setClusters] = useState(2),
     [sigma, setSigma] = useState(1.2),
     [neighbors, setNeighbors] = useState(15),
     [metric, setMetric] = useState<SpectralMetric>("euclidean"),
@@ -113,22 +95,33 @@ export default function SpectralClusteringPage() {
     [pointSize, setPointSize] = useState(4),
     [edgeOpacity, setEdgeOpacity] = useState(0.15),
     [toast, setToast] = useState("");
+  const go = useLabNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
   const X = useMemo(() => points.map((p) => [p.x, p.y]), [points]);
-  const result = useMemo(
-    () =>
-      spectralClustering(
-        X,
-        clusters,
-        sigma,
-        neighbors,
-        metric,
-        kernel,
-        symmetrize,
-        seed,
-      ),
-    [X, clusters, sigma, neighbors, metric, kernel, symmetrize, seed],
-  );
+  const safeK = Math.max(2, Math.min(clusters, Math.max(2, X.length)));
+  const fitted = useMemo(() => {
+    try {
+      return {
+        result: spectralClustering(
+          X,
+          safeK,
+          Math.max(1e-3, sigma),
+          Math.max(1, Math.min(neighbors, X.length - 1)),
+          metric,
+          kernel,
+          symmetrize,
+          seed,
+        ),
+        error: "",
+      };
+    } catch (error) {
+      return {
+        result: null as ReturnType<typeof spectralClustering> | null,
+        error: error instanceof Error ? error.message : "Spectral clustering failed",
+      };
+    }
+  }, [X, safeK, sigma, neighbors, metric, kernel, symmetrize, seed]);
+  const result = fitted.result;
   const choose = (value: Dataset) => {
     const next = value === "imported" ? imported : BUILT[value];
     if (!next.length) return;
@@ -168,6 +161,17 @@ export default function SpectralClusteringPage() {
     setEdgeOpacity(0.15);
   };
   const pct = (v: number) => ((v + 4) / 8) * 100;
+  if (!result) {
+    return (
+      <div className="sp-page">
+        <main>
+          <h1>Spectral Clustering</h1>
+          <p role="alert">{fitted.error}</p>
+          <button onClick={reset}>Reset</button>
+        </main>
+      </div>
+    );
+  }
   const sizes = Array.from(
     { length: clusters },
     (_, k) => result.labels.filter((v) => v === k).length,
@@ -216,10 +220,10 @@ export default function SpectralClusteringPage() {
             </button>
           ))}
         </nav>
-        <button onClick={() => setToast("Help opened")}>
+        <button onClick={() => go("Help")}>
           <CircleHelp />
         </button>
-        <button onClick={() => setToast("Guide opened")}>
+        <button onClick={() => go("Guide")}>
           <BookOpen />
         </button>
         <button onClick={() => setToast("Theme changed")}>
@@ -242,7 +246,7 @@ export default function SpectralClusteringPage() {
         <hr />
         <h3>⌄ WORKSPACE</h3>
         {["⊕ New Session", "□ Open Session", "▣ Save Session"].map((n) => (
-          <button onClick={() => setToast(n)} key={n}>
+          <button onClick={() => go(n)} key={n}>
             {n}
           </button>
         ))}
@@ -439,6 +443,12 @@ export default function SpectralClusteringPage() {
             <p>
               Silhouette (embedded) <b>{result.silhouette.toFixed(3)}</b>
             </p>
+            <p>{result.laplacianForm}</p>
+            <p>
+              Affinity {result.affinity.length}×{result.affinity[0]?.length ?? 0};
+              degree[0]={result.degree[0]?.toFixed(3)} ; L=D−A stored for
+              inspection.
+            </p>
           </article>
           <article>
             <h3>Eigen Spectrum (Smallest 10)</h3>
@@ -558,19 +568,13 @@ export default function SpectralClusteringPage() {
             </button>
           </div>
           <label>Laplacian</label>
-          <select>
-            <option>Normalized (Symmetric)</option>
-            <option>Random Walk</option>
-            <option>Unnormalized</option>
-          </select>
+          <p>
+            Embedding uses the symmetric normalized affinity D^{-1/2} A D^{-1/2}.
+            Unnormalized L = D − A is stored for inspection. Other Laplacian
+            forms are not implemented in this lab.
+          </p>
           <label>Eigen Solver</label>
-          <select>
-            <option>Orthogonal Iteration</option>
-            <option>ARPACK</option>
-          </select>
-          <label>
-            Use Nyström Approx. <input type="checkbox" />
-          </label>
+          <p>Orthogonal iteration in the browser (ARPACK/Nyström are not used).</p>
           <label>
             Random Seed
             <input
@@ -623,7 +627,7 @@ export default function SpectralClusteringPage() {
       </aside>
       <footer className="sp-footer">
         DATASET: <b>{LABELS[dataset]}</b> · {points.length} samples, 2 features{" "}
-        <button onClick={() => setToast("Dataset chooser opened")}>
+        <button onClick={() => go("Dataset Library")}>
           Change
         </button>
         <span>SESSION: Spectral Clustering Demo · Autosaved ✓ · ⋮</span>

@@ -1,9 +1,15 @@
 /* eslint-disable no-irregular-whitespace */
 import { useRef, useState } from "react";
+import { useLabNavigate } from "../../../lib/labNavigation";
 import {
   holtWinters,
   type SeasonalityMode,
 } from "../../../lib/timeSeries/holtWinters";
+import { chronologicalSplit } from "../../../lib/timeSeries/timeSeriesSplit";
+import { forecastMetrics, seasonalNaiveForecast } from "../../../lib/timeSeries/forecastMetrics";
+import { TIME_SERIES_CATALOG } from "../../../lib/timeSeries/timeSeriesDatasets";
+import { splitRangeLabels } from "../../../lib/timeSeries/forecastDiagnostics";
+import { useActiveTimeSeries } from "../../../lib/timeSeries/useActiveTimeSeries";
 import "./HoltWintersApprovedPage.css";
 type Point = { date: string; value: number };
 const TABS = [
@@ -36,6 +42,16 @@ const DATA = [
     period: "24 (Daily)",
   },
   { name: "Web Traffic – Daily", points: make(129, 140), period: "7 (Weekly)" },
+  ...TIME_SERIES_CATALOG.map((item) => ({
+    name: item.name,
+    points: item.points.map((point) => ({ date: point.date, value: point.value })),
+    period:
+      item.frequency === "monthly"
+        ? "12 (Monthly)"
+        : item.frequency === "daily"
+          ? "7 (Weekly seasonality)"
+          : String(item.frequency),
+  })),
 ];
 function line(
   v: number[],
@@ -68,10 +84,43 @@ export default function HoltWintersApprovedPage() {
     [zoom, setZoom] = useState("3M"),
     [status, setStatus] = useState("Ready"),
     [collapsed, setCollapsed] = useState(false);
+  const go = useLabNavigate();
+  const handoff = useActiveTimeSeries("/ml/time-series/holt-winters");
   const fileRef = useRef<HTMLInputElement>(null),
-    points = uploaded?.points ?? DATA[dataset].points,
+    points =
+      uploaded?.points ??
+      (handoff
+        ? handoff.points.map((point) => ({ date: point.date, value: point.value }))
+        : DATA[dataset].points),
     values = points.map((x) => x.value),
-    r = holtWinters(values, season, alpha, beta, gamma, steps, mode),
+    split = chronologicalSplit(values),
+    ranges = splitRangeLabels(
+      points.map((point) => point.date),
+      split.trainEnd,
+      split.validationEnd,
+    ),
+    r = holtWinters(
+      split.train.length >= Math.max(4, season * 2) ? split.train : values,
+      season,
+      alpha,
+      beta,
+      gamma,
+      steps,
+      mode,
+    ),
+    holdout = [...split.validation, ...split.test],
+    seasonalNaive = seasonalNaiveForecast(
+      split.train.length ? split.train : values,
+      holdout.length || steps,
+      season,
+    ),
+    holdoutMetrics = forecastMetrics(
+      holdout,
+      r.forecast.slice(0, holdout.length),
+      split.train,
+      season,
+    ),
+    baselineMetrics = forecastMetrics(holdout, seasonalNaive.slice(0, holdout.length), split.train, season),
     all = [...values, ...r.forecast],
     min = Math.min(...all) * 0.85,
     max = Math.max(...all) * 1.08,
@@ -130,7 +179,7 @@ export default function HoltWintersApprovedPage() {
           <button
             className={i === 0 ? "active" : ""}
             key={x}
-            onClick={() => setStatus(`${x.slice(2)} opened`)}
+            onClick={() => go(x)}
           >
             {x}
           </button>
@@ -144,6 +193,10 @@ export default function HoltWintersApprovedPage() {
       <header className="hw-head">
         <h1>Holt–Winters　ⓘ</h1>
         <p>Exponential smoothing for time series with trend and seasonality.</p>
+        <p>
+          Train: {ranges.train} · Validation: {ranges.validation} · Test:{" "}
+          {ranges.test} · Forecast: {ranges.forecast}
+        </p>
         <label>
           <small>Dataset</small>
           <select
@@ -268,6 +321,10 @@ export default function HoltWintersApprovedPage() {
       </main>
       <aside className="hw-controls">
         <h2>MODEL CONTROLS</h2>
+        <p>
+          {r.initialization} Fitted on the chronological train split. Hold-out
+          RMSE is compared with seasonal naive on the same later window.
+        </p>
         <label>
           Seasonality
           <div>
@@ -356,13 +413,17 @@ export default function HoltWintersApprovedPage() {
         <article>
           <h2>KEY INSIGHTS</h2>
           <p>
-            ↗　Clear {season === 7 ? "weekly" : season + "-step"} seasonality
-            detected with strong, stable pattern.
+            Seasonal period is set to {season}. Retrain after changing it; the
+            seasonal component is the Holt-Winters state, not a decorative sine.
           </p>
-          <p>⌁　Trend is mildly increasing over the selected period.</p>
           <p>
-            ⚠　Residuals appear randomly distributed with no remaining
-            structure.
+            Hold-out RMSE is compared with seasonal naive on the same later
+            window. A model that loses to seasonal naive is not automatically
+            successful.
+          </p>
+          <p>
+            Prediction interval is not shown: this implementation does not
+            derive forecast variance bands.
           </p>
         </article>
         <article>
@@ -379,14 +440,29 @@ export default function HoltWintersApprovedPage() {
               <b>{(forecastTotal / steps / 1000).toFixed(1)}K</b>
             </span>
             <span>
-              Upper (80%)
+              Forecast min
+              <br />
+              <b>{(Math.min(...r.forecast) / 1000).toFixed(1)}K</b>
+            </span>
+            <span>
+              Forecast max
               <br />
               <b>{(Math.max(...r.forecast) / 1000).toFixed(1)}K</b>
             </span>
+          </div>
+        </article>
+        <article>
+          <h2>HOLD-OUT VS SEASONAL NAIVE</h2>
+          <div>
             <span>
-              Lower (80%)
+              Model RMSE
               <br />
-              <b>{(Math.min(...r.forecast) / 1000).toFixed(1)}K</b>
+              <b>{Number.isFinite(holdoutMetrics.rmse) ? holdoutMetrics.rmse.toFixed(1) : "n/a"}</b>
+            </span>
+            <span>
+              Seasonal naive RMSE
+              <br />
+              <b>{Number.isFinite(baselineMetrics.rmse) ? baselineMetrics.rmse.toFixed(1) : "n/a"}</b>
             </span>
           </div>
         </article>
@@ -406,7 +482,7 @@ export default function HoltWintersApprovedPage() {
             <span>
               MAPE
               <br />
-              <b>{r.metrics.mape.toFixed(2)}%</b>
+              <b>{Number.isFinite(r.metrics.mape) ? `${r.metrics.mape.toFixed(2)}%` : "n/a"}</b>
             </span>
             <span>
               sMAPE

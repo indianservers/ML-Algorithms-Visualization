@@ -31,14 +31,14 @@ const colors = [
   "#48dfba",
 ];
 const focuses = [
-  "Local Dependencies",
-  "Object Relations",
-  "Long Range",
-  "Syntactic Structure",
-  "Position",
-  "Semantic",
-  "Global Context",
-  "Delimiter",
+  "Independent projection 1",
+  "Independent projection 2",
+  "Independent projection 3",
+  "Independent projection 4",
+  "Independent projection 5",
+  "Independent projection 6",
+  "Independent projection 7",
+  "Independent projection 8",
 ];
 
 export default function MultiHeadAttentionPage() {
@@ -52,7 +52,10 @@ export default function MultiHeadAttentionPage() {
     [causal, setCausal] = useState(false),
     [view, setView] = useState("All Heads"),
     [toast, setToast] = useState("All changes saved");
-  const tokens = rows[rowIndex].split(/\s+/).filter(Boolean).slice(0, 10),
+  const tokens = rows[rowIndex].split(/\s+/).filter(Boolean).slice(0, 10);
+  let result: ReturnType<typeof runMultiHeadAttention>;
+  let architectureError = "";
+  try {
     result = runMultiHeadAttention(
       tokens,
       headCount,
@@ -61,19 +64,33 @@ export default function MultiHeadAttentionPage() {
       attentionDropout,
       bias,
       modelDim,
-    ),
-    visibleHeads =
-      view === "All Heads"
-        ? result.heads.slice(0, 4)
-        : [
-            result.heads[
-              Math.min(headCount - 1, Number(view.split(" ")[1]) - 1)
-            ],
-          ],
-    headDim = Math.floor(modelDim / headCount),
-    outputNorm = Math.hypot(
-      ...result.concatenated[0].map((value) => value * (1 - dropout)),
+      dropout,
     );
+  } catch (error) {
+    architectureError =
+      error instanceof Error
+        ? error.message
+        : "Embedding dimension must be divisible by heads.";
+    result = {
+      heads: [],
+      averageWeights: [],
+      concatenated: tokens.map(() => []),
+      projected: tokens.map(() => []),
+      headDim: 0,
+    };
+  }
+  const visibleHeads =
+      view === "All Heads"
+        ? result.heads
+        : result.heads.length
+          ? [
+              result.heads[
+                Math.min(result.heads.length - 1, Math.max(0, Number(view.split(" ")[1]) - 1))
+              ],
+            ]
+          : [];
+  const headDim = result.headDim || Math.floor(modelDim / Math.max(1, headCount));
+  const outputNorm = Math.hypot(...(result.projected[0] ?? []));
   const reset = () => {
     setRows(initialRows);
     setRowIndex(0);
@@ -173,8 +190,9 @@ export default function MultiHeadAttentionPage() {
           Multi-Head Attention <Bookmark />
         </h1>
         <p>
-          See how attention heads focus on different relationships and work
-          together.
+          See independent attention heads (separate Q/K/V slices) and the
+          concatenated projection. Heads are not guaranteed to specialize as
+          “syntax vs semantics.”
         </p>
         <nav>
           {[
@@ -387,7 +405,7 @@ export default function MultiHeadAttentionPage() {
                 setView("All Heads");
               }}
             >
-              {[2, 4, 8].map((n) => (
+              {[2, 3, 4, 6, 8].map((n) => (
                 <option key={n}>{n}</option>
               ))}
             </select>
@@ -485,7 +503,7 @@ export default function MultiHeadAttentionPage() {
           Multi-Head Attention allows the model to attend to information from
           different representation subspaces.
         </em>
-        <span>✓ {toast}</span>
+        <span>{architectureError ? `Error: ${architectureError}` : toast}</span>
         <button onClick={() => setToast("Experiment saved")}>
           <Save /> Save
         </button>

@@ -2,60 +2,72 @@ import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { BookOpen, CircleHelp, Settings, Star, Upload } from "lucide-react";
 import {
+  KERNEL_PCA_MAX_SAMPLES,
   kernelPCA,
   type KernelPCAKernel,
 } from "../../../lib/algorithms/dimensionality/kernelPCA";
+import { kernelCenteredMeans, kernelIsSymmetric } from "../../../lib/dimensionality/dimensionalityDiagnostics";
+import { getDimensionalityDataset } from "../../../lib/dimensionality/dimensionalityDatasets";
+import { applyFeatureScale, fitFeatureScale, type FeatureScaleMode } from "../../../lib/dimensionality/dimensionalityPrep";
 import "./KernelPCAPage.css";
-type Point = { x: number; y: number; label: number };
-type Dataset = "rings" | "moons" | "spiral" | "blobs" | "imported";
+type Point = { values: number[]; label: number };
+type Dataset = "rings" | "moons" | "spiral" | "blobs" | "swiss" | "imported";
 const rand = (i: number, s: number) => {
   const v = Math.sin((i + 5) * 12.9898 + s * 78.233) * 43758.5453;
   return v - Math.floor(v);
 };
-function makeData(kind: Exclude<Dataset, "imported">, n = 240): Point[] {
+function makeData(kind: Exclude<Dataset, "imported" | "swiss">, n = 240): Point[] {
   return Array.from({ length: n }, (_, i) => {
     const label = i % 2,
       t = rand(i, 1) * Math.PI * 2;
     if (kind === "rings") {
       const r = label ? 1 : 2;
       return {
-        x: Math.cos(t) * r + (rand(i, 2) - 0.5) * 0.12,
-        y: Math.sin(t) * r + (rand(i, 3) - 0.5) * 0.12,
+        values: [
+          Math.cos(t) * r + (rand(i, 2) - 0.5) * 0.12,
+          Math.sin(t) * r + (rand(i, 3) - 0.5) * 0.12,
+        ],
         label,
       };
     }
     if (kind === "moons")
       return {
-        x: Math.cos(t / 2 + label * Math.PI) * 1.5 + label,
-        y: Math.sin(t / 2 + label * Math.PI) * 1.5 + label * 0.5,
+        values: [
+          Math.cos(t / 2 + label * Math.PI) * 1.5 + label,
+          Math.sin(t / 2 + label * Math.PI) * 1.5 + label * 0.5,
+        ],
         label,
       };
     if (kind === "spiral") {
       const r = rand(i, 2) * 2;
       return {
-        x: Math.cos(r * 3 + label * Math.PI) * r,
-        y: Math.sin(r * 3 + label * Math.PI) * r,
+        values: [
+          Math.cos(r * 3 + label * Math.PI) * r,
+          Math.sin(r * 3 + label * Math.PI) * r,
+        ],
         label,
       };
     }
     return {
-      x: (label ? 1 : -1) * 1.1 + (rand(i, 2) - 0.5),
-      y: (rand(i, 3) - 0.5) * 1.4,
+      values: [(label ? 1 : -1) * 1.1 + (rand(i, 2) - 0.5), (rand(i, 3) - 0.5) * 1.4],
       label,
     };
   });
 }
-const BUILT = {
+const swissRoll = getDimensionalityDataset("f-swiss-roll");
+const BUILT: Record<Exclude<Dataset, "imported">, Point[]> = {
   rings: makeData("rings"),
   moons: makeData("moons"),
   spiral: makeData("spiral"),
   blobs: makeData("blobs"),
+  swiss: swissRoll.X.map((values, i) => ({ values, label: swissRoll.y?.[i] ?? 0 })),
 };
 const NAMES: Record<Dataset, string> = {
   rings: "Concentric Rings",
   moons: "Two Moons",
   spiral: "Interlocking Spirals",
   blobs: "Gaussian Blobs",
+  swiss: "Swiss roll (3D manifold)",
   imported: "Imported Data",
 };
 const COLORS = ["#18cad8", "#ff6134"];
@@ -69,19 +81,54 @@ export default function KernelPCAPage() {
     [degree, setDegree] = useState(3),
     [coef0, setCoef0] = useState(0),
     [center, setCenter] = useState(true),
-    [normalize, setNormalize] = useState(true),
     [components, setComponents] = useState(6),
     [pointSize, setPointSize] = useState(5),
     [opacity, setOpacity] = useState(0.85),
     [colorBy, setColorBy] = useState("class"),
+    [scale, setScale] = useState<FeatureScaleMode>("standard"),
+    [cellI, setCellI] = useState(0),
+    [cellJ, setCellJ] = useState(1),
     [toast, setToast] = useState("");
   const fileRef = useRef<HTMLInputElement>(null),
-    X = useMemo(() => points.map((p) => [p.x, p.y]), [points]);
-  const result = useMemo(
-    () =>
-      kernelPCA(X, components, kernel, gamma, degree, coef0, center, normalize),
-    [X, components, kernel, gamma, degree, coef0, center, normalize],
-  );
+    X = useMemo(() => {
+      const raw = points.map((p) => p.values);
+      if (scale === "minmax") {
+        return applyFeatureScale(raw, fitFeatureScale(raw, "minmax"));
+      }
+      return raw;
+    }, [points, scale]);
+  const kpRun = useMemo(() => {
+    const capped = X.slice(0, Math.min(X.length, KERNEL_PCA_MAX_SAMPLES));
+    try {
+      return { value: kernelPCA(capped, components, kernel, gamma, degree, coef0, center, scale === "standard"), error: null as string | null, n: capped.length };
+    } catch (cause) {
+      return { value: null, error: cause instanceof Error ? cause.message : "Kernel PCA failed", n: capped.length };
+    }
+  }, [X, components, kernel, gamma, degree, coef0, center, scale]);
+  const result = kpRun.value ?? {
+    kernel: [[1]],
+    centeredKernel: [[0]],
+    projection: X.map(() => [0, 0]),
+    eigenvalues: [0],
+    explainedVariance: [0],
+    transformedInput: X,
+    vectors: [],
+    trainX: X,
+    kernelName: kernel,
+    gamma,
+    degree,
+    coef0,
+    center,
+    rowMeans: [0],
+    grandMean: 0,
+    inputMeans: [],
+    inputScales: [],
+    normalize: scale === "standard",
+  };
+  const kernelChecks = {
+    symmetric: kernelIsSymmetric(result.kernel),
+    ...kernelCenteredMeans(result.centeredKernel),
+  };
   const choose = (kind: Dataset) => {
     const next = kind === "imported" ? imported : BUILT[kind];
     if (!next.length) return;
@@ -101,9 +148,8 @@ export default function KernelPCAPage() {
         (row) => row.length >= 2 && row.slice(0, 2).every(Number.isFinite),
       )
       .map((row, i) => ({
-        x: row[0],
-        y: row[1],
-        label: Number.isFinite(row[2]) ? row[2] : i % 2,
+        values: row.slice(0, -1).length ? row.slice(0, -1) : row.slice(0, 2),
+        label: Number.isFinite(row.at(-1)) && row.length > 2 ? row.at(-1)! : i % 2,
       }));
     if (rows.length < 2)
       return setToast("File needs two numeric feature columns");
@@ -223,18 +269,25 @@ export default function KernelPCAPage() {
             <Upload /> Upload / Switch Dataset
           </button>
           <input ref={fileRef} type="file" accept=".csv" onChange={upload} />
-          <span>● {points.length} samples · 2 features</span>
+          <span>● {points.length} samples · {points[0]?.values.length ?? 0} features · scaling {scale} · labels for color only
+            {X.length > KERNEL_PCA_MAX_SAMPLES ? ` · kernel uses first ${KERNEL_PCA_MAX_SAMPLES} rows` : ""}
+          </span>
+          {kpRun.error && <p>{kpRun.error}</p>}
+          <p>
+            K≈Kᵀ: {kernelChecks.symmetric ? "yes" : "no"} · max |row mean| after centering {kernelChecks.maxAbsRowMean.toExponential(2)}
+            · Gamma controls RBF locality. Linear kernel relates to PCA subspace after centering (orientation/sign may differ).
+          </p>
         </section>
         <section className="kp-panels">
           <article>
-            <h3>1. Original Space (R²)</h3>
+            <h3>1. Original features (first 2 shown — not the full geometry if dim&gt;2)</h3>
             <div className="kp-scatter axes">
               {points.map((p, i) => (
                 <i
                   key={i}
                   style={{
-                    left: `${pct(p.x)}%`,
-                    top: `${100 - pct(p.y)}%`,
+                    left: `${pct(p.values[0] ?? 0)}%`,
+                    top: `${100 - pct(p.values[1] ?? 0)}%`,
                     width: pointSize,
                     height: pointSize,
                     opacity,
@@ -249,15 +302,15 @@ export default function KernelPCAPage() {
           </article>
           <strong>→</strong>
           <article>
-            <h3>2. Nonlinear Mapping (ϕ)</h3>
+            <h3>2. Kernel feature map (schematic only — not ϕ itself)</h3>
             <div className="kp-bowl">
               <i></i>
               {points.slice(0, 160).map((p, i) => (
                 <span
                   key={i}
                   style={{
-                    left: `${pct(p.x)}%`,
-                    top: `${62 - (p.x * p.x + p.y * p.y) * 7 + p.y * 7}%`,
+                    left: `${pct(p.values[0] ?? 0)}%`,
+                    top: `${62 - ((p.values[0] ?? 0) ** 2 + (p.values[1] ?? 0) ** 2) * 7 + (p.values[1] ?? 0) * 7}%`,
                     background: COLORS[p.label % 2],
                   }}
                 />
@@ -381,6 +434,27 @@ export default function KernelPCAPage() {
         </div>
         <hr />
         <label>
+          Scaling
+          <select value={scale} onChange={(e) => setScale(e.target.value as FeatureScaleMode)}>
+            <option value="none">No scaling</option>
+            <option value="standard">Standardization</option>
+            <option value="minmax">Min-max</option>
+          </select>
+        </label>
+        <p>
+          K(x<sub>{cellI}</sub>, x<sub>{cellJ}</sub>) ={" "}
+          <b>{(result.kernel[cellI]?.[cellJ] ?? 0).toFixed(4)}</b>
+        </p>
+        <label>
+          Kernel cell i
+          <input type="number" min={0} max={points.length - 1} value={cellI} onChange={(e) => setCellI(Number(e.target.value))} />
+        </label>
+        <label>
+          Kernel cell j
+          <input type="number" min={0} max={points.length - 1} value={cellJ} onChange={(e) => setCellJ(Number(e.target.value))} />
+        </label>
+        <p>Kernel PCA uses a centered kernel matrix. Reconstruction in input space is not claimed. Large N makes K an N×N matrix.</p>
+        <label>
           Gamma (γ) ⓘ{" "}
           <input
             aria-label="Gamma numeric"
@@ -445,14 +519,6 @@ export default function KernelPCAPage() {
             type="checkbox"
             checked={center}
             onChange={(e) => setCenter(e.target.checked)}
-          />
-        </label>
-        <label>
-          Normalize Features{" "}
-          <input
-            type="checkbox"
-            checked={normalize}
-            onChange={(e) => setNormalize(e.target.checked)}
           />
         </label>
         <label>

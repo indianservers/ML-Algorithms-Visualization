@@ -22,13 +22,13 @@ const phases = [
   "Compute hidden pre-activations",
   "Apply hidden activation",
   "Compute outputs",
-  "Update W₂ (output layer weights)",
+  "Measure loss",
   "Compute output deltas",
   "Backpropagate hidden deltas",
-  "Compute W₁ gradients",
-  "Update W₁ weights",
+  "Compute W₁ and W₂ gradients",
+  "Hold gradients (no update yet)",
+  "Update weights with learning rate",
   "Recompute output",
-  "Measure new loss",
   "Step complete",
 ];
 
@@ -462,7 +462,10 @@ export default function BackpropagationVisualizerPage() {
                 Weight <b>{result.weights2[1][0].toFixed(4)}</b>
               </p>
               <p>
-                Updated Weight <b>{updated.toFixed(4)}</b>
+                Updated Weight{" "}
+                <b>
+                  {step >= 9 ? updated.toFixed(4) : "held until Update step"}
+                </b>
               </p>
               <label>
                 Learning Rate (η)

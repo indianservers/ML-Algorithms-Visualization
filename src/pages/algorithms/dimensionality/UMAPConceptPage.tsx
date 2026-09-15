@@ -1,10 +1,11 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { CircleHelp, Moon, Upload } from "lucide-react";
 import {
   umap,
   type UMAPMetric,
 } from "../../../lib/algorithms/dimensionality/umap";
+import { getDimensionalityDataset } from "../../../lib/dimensionality/dimensionalityDatasets";
 import "./UMAPConceptPage.css";
 type Sample = { values: number[]; label: number };
 type Dataset =
@@ -21,40 +22,27 @@ const COLORS = [
     "#ef4a85",
     "#2d70eb",
   ],
-  rand = (i: number, s: number) => {
-    const v = Math.sin((i + 13) * 12.9898 + s * 78.233) * 43758.5453;
-    return v - Math.floor(v);
-  };
-function makeData(kind: Exclude<Dataset, "imported">, n = 180): Sample[] {
-  const classes = kind === "iris" ? 3 : kind === "news" ? 6 : 10;
-  return Array.from({ length: kind === "iris" ? 150 : n }, (_, i) => {
-    const label = i % classes,
-      angle = (label / classes) * Math.PI * 2;
-    return {
-      label,
-      values: Array.from(
-        { length: kind === "iris" ? 4 : 8 },
-        (_, d) =>
-          Math.cos(angle + d * 0.65) * 2 +
-          (rand(i, d + 1) - 0.5) * (kind === "cells" ? 1.1 : 0.55),
-      ),
-    };
-  });
-}
+  digits = getDimensionalityDataset("e-digit-glyphs"),
+  blobs = getDimensionalityDataset("c-hd-blobs"),
+  iris = getDimensionalityDataset("d-iris"),
+  swiss = getDimensionalityDataset("f-swiss-roll"),
+  circles = getDimensionalityDataset("g-concentric");
+const toSamples = (item: ReturnType<typeof getDimensionalityDataset>): Sample[] =>
+  item.X.map((values, i) => ({ values, label: item.y?.[i] ?? 0 }));
 const BUILT = {
-    digits: makeData("digits"),
-    fashion: makeData("fashion"),
-    objects: makeData("objects"),
-    news: makeData("news"),
-    cells: makeData("cells"),
-    iris: makeData("iris"),
+    digits: toSamples(digits),
+    fashion: toSamples(blobs),
+    objects: toSamples(swiss),
+    news: toSamples(circles),
+    cells: toSamples(blobs),
+    iris: toSamples(iris),
   },
   NAMES: Record<Dataset, string> = {
-    digits: "Digit Embeddings",
-    fashion: "Fashion Images",
-    objects: "COIL-20 Objects",
-    news: "20 Newsgroups",
-    cells: "Single Cell (PBMC)",
+    digits: "Digit glyphs (8×8)",
+    fashion: "High-D blobs",
+    objects: "Swiss roll",
+    news: "Concentric circles",
+    cells: "High-D blobs (copy)",
     iris: "Iris",
     imported: "Imported Data",
   };
@@ -70,21 +58,58 @@ export default function UMAPConceptPage() {
     [spread, setSpread] = useState(1),
     [densmap, setDensmap] = useState(false),
     [angular, setAngular] = useState(false),
-    [toast, setToast] = useState("");
-  const fileRef = useRef<HTMLInputElement>(null),
-    result = useMemo(
-      () =>
-        umap(
-          samples.map((sample) => sample.values),
-          Math.min(neighbors, samples.length - 1),
-          minDist,
-          metric,
-          seed,
-          spread,
-          180,
-        ),
-      [samples, neighbors, minDist, metric, seed, spread],
-    );
+    [toast, setToast] = useState(""),
+    [status, setStatus] = useState<"NOT RUN" | "RUNNING" | "COMPLETED" | "STALE" | "ERROR">("NOT RUN"),
+    [umapResult, setUmapResult] = useState<ReturnType<typeof umap> | null>(null),
+    [inspectIndex, setInspectIndex] = useState(0);
+  const abortRef = useRef(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const runUmap = () => {
+    abortRef.current = false;
+    setStatus("RUNNING");
+    try {
+      const n = samples.length;
+      const k = Math.min(Math.max(2, neighbors), n - 1);
+      const usedMetric: UMAPMetric = angular ? "cosine" : metric;
+      const computed = umap(
+        samples.map((sample) => sample.values),
+        k,
+        minDist,
+        usedMetric,
+        seed,
+        spread,
+        180,
+        () => abortRef.current,
+      );
+      if (abortRef.current) {
+        setStatus("NOT RUN");
+        setUmapResult(null);
+        return;
+      }
+      setUmapResult(computed);
+      setStatus("COMPLETED");
+      setToast("UMAP-like embedding computed");
+    } catch (cause) {
+      setUmapResult(null);
+      setStatus("ERROR");
+      setToast(cause instanceof Error ? cause.message : "UMAP failed");
+    }
+  };
+  useEffect(() => () => {
+    abortRef.current = true;
+  }, []);
+  useEffect(() => {
+    setStatus((current) => (current === "NOT RUN" || current === "ERROR" ? current : "STALE"));
+  }, [samples, neighbors, minDist, metric, seed, spread, angular]);
+  const result = umapResult ?? {
+    embedding: [] as number[][],
+    edges: [],
+    neighbors: [] as ReturnType<typeof umap>["neighbors"],
+    trustworthiness: 0,
+    continuity: 0,
+    distanceCorrelation: 0,
+    incomplete: false,
+  };
   const choose = (kind: Dataset) => {
       const next = kind === "imported" ? imported : BUILT[kind];
       if (!next.length) return;
@@ -111,6 +136,7 @@ export default function UMAPConceptPage() {
       e.target.value = "";
     },
     reset = () => {
+      abortRef.current = true;
       setNeighbors(15);
       setMinDist(0.1);
       setMetric("euclidean");
@@ -118,6 +144,8 @@ export default function UMAPConceptPage() {
       setSpread(1);
       setDensmap(false);
       setAngular(false);
+      setUmapResult(null);
+      setStatus("NOT RUN");
     };
   const coords = result.embedding
       .flat()
@@ -126,13 +154,7 @@ export default function UMAPConceptPage() {
     scale = coords[Math.floor(coords.length * 0.92)] || 1,
     plot = (v: number) => Math.max(4, Math.min(96, 50 + (v / scale) * 42)),
     classes = Array.from(new Set(samples.map((s) => s.label))),
-    silhouettes = classes.map((label) => {
-      const members = result.embedding.filter(
-        (_, i) => samples[i].label === label,
-      );
-      if (members.length < 2) return 0;
-      return Math.min(0.95, 0.55 + members.length / samples.length);
-    });
+    silhouettes = classes.map(() => result.trustworthiness);
   return (
     <div className="um-page">
       <aside className="um-side">
@@ -335,10 +357,10 @@ export default function UMAPConceptPage() {
                 />
               ))}
             </div>
-            <p>Spearman ρ = {result.distanceCorrelation.toFixed(3)}</p>
+            <p>Sampled pair distance correlation = {result.distanceCorrelation.toFixed(3)}</p>
           </article>
           <article>
-            <h3>Cluster Compactness (Silhouette)</h3>
+            <h3>Neighborhood trustworthiness (same value per class; not silhouette)</h3>
             {silhouettes.map((v, i) => (
               <p key={i}>
                 {classes[i]}{" "}
@@ -443,15 +465,11 @@ export default function UMAPConceptPage() {
           />
         </label>
         <label>
-          densmap ⓘ{" "}
-          <input
-            type="checkbox"
-            checked={densmap}
-            onChange={(e) => setDensmap(e.target.checked)}
-          />
+          densmap ⓘ (not implemented in this browser UMAP-like optimizer)
+          <input type="checkbox" checked={densmap} disabled />
         </label>
         <label>
-          angular_rp_forest ⓘ{" "}
+          angular_rp_forest ⓘ (switches neighbor metric to cosine)
           <input
             type="checkbox"
             checked={angular}
@@ -460,10 +478,36 @@ export default function UMAPConceptPage() {
         </label>
         <button
           className="primary"
-          onClick={() => setToast("Embedding recomputed")}
+          onClick={runUmap}
         >
           Recompute Embedding ▶
         </button>
+        <p>State: {status}. New-sample UMAP transform is not supported (no official UMAP transform API here). Do not approximate by nearest plotted point.</p>
+        {result.incomplete && <p>Optimization incomplete.</p>}
+        <label>
+          Neighbor inspect sample
+          <input
+            type="number"
+            min={0}
+            max={Math.max(0, samples.length - 1)}
+            value={inspectIndex}
+            onChange={(e) => setInspectIndex(Number(e.target.value))}
+          />
+        </label>
+        <table>
+          <thead>
+            <tr><th>Rank</th><th>ID</th><th>Distance</th></tr>
+          </thead>
+          <tbody>
+            {(result.neighbors[inspectIndex] ?? []).slice(0, 8).map((row) => (
+              <tr key={row.id}>
+                <td>{row.rank}</td>
+                <td>{row.id}</td>
+                <td>{row.distance.toFixed(3)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
         <section>
           <h3>Embedding Info</h3>
           <p>
@@ -476,7 +520,13 @@ export default function UMAPConceptPage() {
             Dimensions (out) <b>2</b>
           </p>
           <p>
-            Iterations <b>180</b>
+            Trustworthiness <b>{result.trustworthiness.toFixed(3)}</b>
+          </p>
+          <p>
+            Continuity <b>{result.continuity.toFixed(3)}</b>
+          </p>
+          <p>
+            This page runs a real neighbor-graph + attraction/repulsion optimizer in the browser. It is UMAP-like, not the official umap-js package. Out-of-sample transform is not supported.
           </p>
         </section>
         <footer>

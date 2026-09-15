@@ -39,7 +39,8 @@ export default function FewShotLearningPage() {
     [kShot, setKShot] = useState(5),
     [batch, setBatch] = useState(false),
     [metric, setMetric] = useState<FewShotMetric>("euclidean"),
-    [embedding, setEmbedding] = useState("ResNet-18 (pretrained)"),
+    [embedding, setEmbedding] = useState("hash-a"),
+    [datasetFamily, setDatasetFamily] = useState(3),
     [boundaries, setBoundaries] = useState(true),
     [distances, setDistances] = useState(true),
     [seed, setSeed] = useState(3),
@@ -49,7 +50,9 @@ export default function FewShotLearningPage() {
       kShot,
       batch ? 5 : 1,
       metric,
-      seed,
+      seed +
+        datasetFamily +
+        (embedding === "hash-b" ? 17 : embedding === "hash-c" ? 29 : 0),
     ),
     query = episode.queries[0],
     prediction = episode.predictions[0],
@@ -60,9 +63,10 @@ export default function FewShotLearningPage() {
     setKShot(5);
     setBatch(false);
     setMetric("euclidean");
-    setEmbedding("ResNet-18 (pretrained)");
+    setEmbedding("hash-a");
     setBoundaries(true);
     setDistances(true);
+    setDatasetFamily(3);
     setSeed(3);
     setToast("Parameters reset");
   };
@@ -170,9 +174,12 @@ export default function FewShotLearningPage() {
           </p>
           <label>
             DATASET
-            <select>
-              <option>miniImageNet (sample)</option>
-              <option>Omniglot (sample)</option>
+            <select
+              value={datasetFamily}
+              onChange={(e) => setDatasetFamily(Number(e.target.value))}
+            >
+              <option value={3}>Synthetic 2-D class blobs A</option>
+              <option value={9}>Synthetic 2-D class blobs B</option>
             </select>
           </label>
           <button onClick={() => setAdvanced(true)}>
@@ -181,7 +188,7 @@ export default function FewShotLearningPage() {
         </section>
         <section className="few-plot panel">
           <header>
-            <h3>EMBEDDING SPACE (t-SNE)</h3>
+            <h3>EMBEDDING SPACE (first 2 dimensions)</h3>
             <span>
               <i /> Support (K-shot) — ○ Query — × Prototype —
               {boundaries ? "--- Decision Boundary" : ""}
@@ -280,9 +287,9 @@ export default function FewShotLearningPage() {
               <b style={{ color: colors[prediction.classIndex] }}>
                 ★ {names[prediction.classIndex]}
               </b>
-              <p>Confidence</p>
-              <strong>{prediction.confidence.toFixed(2)}</strong>
-              <meter min="0" max="1" value={prediction.confidence} />
+              <p>Softmax of exp(−distance)</p>
+              <strong>{prediction.probability.toFixed(2)}</strong>
+              <meter min="0" max="1" value={prediction.probability} />
             </article>
             <article>
               <small>Nearest Prototype</small>
@@ -395,11 +402,14 @@ export default function FewShotLearningPage() {
             EMBEDDING
             <select
               value={embedding}
-              onChange={(e) => setEmbedding(e.target.value)}
+              onChange={(e) => {
+                setEmbedding(e.target.value);
+                setToast("Embedding seed family changed");
+              }}
             >
-              <option>ResNet-18 (pretrained)</option>
-              <option>MobileNetV2 (pretrained)</option>
-              <option>Conv-4 (episodic)</option>
+              <option value="hash-a">Hashed 2-D features A</option>
+              <option value="hash-b">Hashed 2-D features B</option>
+              <option value="hash-c">Hashed 2-D features C</option>
             </select>
           </label>
           <label className="toggle">

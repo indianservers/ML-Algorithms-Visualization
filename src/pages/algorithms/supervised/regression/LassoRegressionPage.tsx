@@ -78,7 +78,7 @@ const deterministicNoise = (index: number, salt = 0) => {
   return (value - Math.floor(value)) * 2 - 1;
 };
 
-function californiaRows(count = 20640): LassoRow[] {
+function californiaRows(count = 240): LassoRow[] {
   return Array.from({ length: count }, (_, index) => {
     const features = [
       Math.sin(index * 0.031),

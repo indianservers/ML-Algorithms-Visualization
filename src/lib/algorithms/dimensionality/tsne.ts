@@ -1,4 +1,5 @@
 import { neighborhoodQuality } from "../../math/neighborhoodQuality";
+import { pca } from "./pca";
 
 export type TSNEMetric = "euclidean" | "manhattan";
 export type TSNEInitialization = "pca" | "random";
@@ -8,6 +9,8 @@ export interface TSNEResult {
   klHistory: number[];
   trustworthiness: number;
   continuity: number;
+  incomplete: boolean;
+  iterationsCompleted: number;
 }
 const distance = (a: number[], b: number[], metric: TSNEMetric) =>
   metric === "manhattan"
@@ -53,17 +56,23 @@ export function tsne(
   metric: TSNEMetric = "euclidean",
   initialization: TSNEInitialization = "pca",
   seed = 42,
+  shouldStop?: () => boolean,
 ): TSNEResult {
   const n = X.length;
   if (n < 3) throw new Error("t-SNE requires at least three samples.");
   const width = X[0]?.length;
   if (!width || !X.every((row) => row.length === width && row.every(Number.isFinite)))
     throw new Error("t-SNE requires a finite rectangular feature matrix.");
-  if (!Number.isFinite(perplexity) || perplexity <= 0 || perplexity >= n ||
-      !Number.isFinite(learningRate) || learningRate <= 0 ||
+  if (!Number.isFinite(perplexity) || perplexity <= 0)
+    throw new Error("t-SNE perplexity must be a positive number.");
+  if (perplexity >= n)
+    throw new Error(`t-SNE perplexity must be less than the number of samples (N=${n}).`);
+  if (!Number.isFinite(learningRate) || learningRate <= 0 ||
       !Number.isFinite(earlyExaggeration) || earlyExaggeration <= 0 ||
       !Number.isInteger(iterations) || iterations < 1)
     throw new Error("Invalid t-SNE hyperparameters.");
+  if (n > 800)
+    throw new Error("t-SNE in this browser lab is limited to 800 samples. Subsample first.");
   const distances = X.map((row) =>
       X.map((other) => distance(row, other, metric)),
     ),
@@ -73,23 +82,23 @@ export function tsne(
         Math.max(1e-12, (value + conditional[j][i]) / (2 * n)),
       ),
     );
-  const random = rng(seed),
-    means = Array.from(
-      { length: X[0].length },
-      (_, d) => X.reduce((s, row) => s + row[d], 0) / n,
-    );
-  let Y = X.map((row) =>
+  const random = rng(seed);
+  const pcaInit =
     initialization === "pca"
-      ? [
-          (row[0] - means[0]) * 0.01,
-          ((row[1] ?? row[0]) - (means[1] ?? means[0])) * 0.01,
-        ]
-      : [(random() - 0.5) * 0.02, (random() - 0.5) * 0.02],
+      ? pca(X, 2, "none").projections.map((row) => [row[0] * 0.0001, (row[1] ?? 0) * 0.0001])
+      : null;
+  let Y = X.map((_, i) =>
+    pcaInit ? pcaInit[i] : [(random() - 0.5) * 0.02, (random() - 0.5) * 0.02],
   );
   const velocity = Y.map(() => [0, 0]);
   const snapshots: number[][][] = [Y.map((row) => [...row])],
     klHistory: number[] = [];
+  let incomplete = false;
   for (let iteration = 0; iteration < iterations; iteration += 1) {
+    if (shouldStop?.()) {
+      incomplete = true;
+      break;
+    }
     const numerator = Array.from({ length: n }, () => Array(n).fill(0));
     let total = 0;
     for (let i = 0; i < n; i += 1)
@@ -137,5 +146,13 @@ export function tsne(
       snapshots.push(Y.map((row) => [...row]));
   }
   const { trustworthiness, continuity } = neighborhoodQuality(X, Y, 10);
-  return { embedding: Y, snapshots, klHistory, trustworthiness, continuity };
+  return {
+    embedding: Y,
+    snapshots,
+    klHistory,
+    trustworthiness,
+    continuity,
+    incomplete: incomplete || iterations < 250,
+    iterationsCompleted: klHistory.length,
+  };
 }

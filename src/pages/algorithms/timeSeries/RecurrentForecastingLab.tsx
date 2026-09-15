@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as tf from "@tensorflow/tfjs";
 import { BrainCircuit, Database, Play, RotateCcw } from "lucide-react";
 import {
@@ -29,6 +29,11 @@ import {
   weatherDailyDataset,
 } from "../../../data/sampleDatasets";
 import type { Dataset } from "../../../data/sampleDatasets";
+import {
+  chronologicalSplit,
+  futureTimestamps,
+  trainOnlyScaler,
+} from "../../../lib/timeSeries/timeSeriesSplit";
 
 type RecurrentMode = "rnn" | "lstm" | "gru";
 
@@ -118,15 +123,12 @@ function seriesFromDataset(dataset: Dataset, targetColumn: string) {
     .filter((point) => Number.isFinite(point.value));
 }
 
-function normalize(values: number[]) {
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const span = Math.max(max - min, 1e-6);
+function normalizeTrainOnly(train: number[]) {
+  const scaler = trainOnlyScaler(train);
   return {
-    min,
-    max,
-    values: values.map((value) => (value - min) / span),
-    denormalize: (value: number) => value * span + min,
+    ...scaler,
+    values: (series: number[]) => series.map(scaler.encode),
+    denormalize: scaler.decode,
   };
 }
 
@@ -210,10 +212,17 @@ function RecurrentForecastingLab({ mode }: { mode: RecurrentMode }) {
     "Ready to train a browser recurrent model.",
   );
   const [history, setHistory] = useState<
-    Array<{ epoch: number; loss: number }>
+    Array<{ epoch: number; loss: number; valLoss?: number }>
   >([]);
   const [chart, setChart] = useState<SeriesPoint[]>([]);
   const [lastPrediction, setLastPrediction] = useState<number | null>(null);
+  const abortRef = useRef(false);
+  useEffect(() => {
+    abortRef.current = false;
+    return () => {
+      abortRef.current = true;
+    };
+  }, []);
 
   const resolvedTarget = availableTargets.includes(targetColumn)
     ? targetColumn
@@ -235,15 +244,18 @@ function RecurrentForecastingLab({ mode }: { mode: RecurrentMode }) {
   const lastObservedPeriod = datasetSeries.at(-1)?.period ?? "latest";
 
   const reset = () => {
+    abortRef.current = true;
     setHistory([]);
     setChart([]);
     setLastPrediction(null);
+    setTraining(false);
     setStatus(
       "Controls changed. Train again to compute fitted values and forecast horizon.",
     );
   };
 
   const train = async () => {
+    abortRef.current = false;
     setTraining(true);
     setHistory([]);
     setChart([]);
@@ -255,8 +267,14 @@ function RecurrentForecastingLab({ mode }: { mode: RecurrentMode }) {
       await tf.setBackend("cpu");
       await tf.ready();
     }
-    const normalized = normalize(rawSeries);
-    const data = buildWindows(normalized.values, lookback);
+    const split = chronologicalSplit(rawSeries);
+    const trainSeries = split.train.length > lookback + 1 ? split.train : rawSeries;
+    const scaler = normalizeTrainOnly(trainSeries);
+    const trainNorm = scaler.values(trainSeries);
+    const valNorm = scaler.values([...trainSeries, ...split.validation]);
+    const data = buildWindows(trainNorm, lookback);
+    const valData =
+      valNorm.length > lookback + 1 ? buildWindows(valNorm, lookback) : null;
     const model = buildModel(mode, lookback, units, learningRate);
 
     try {
@@ -266,11 +284,25 @@ function RecurrentForecastingLab({ mode }: { mode: RecurrentMode }) {
         shuffle: true,
         callbacks: {
           onEpochEnd: async (epoch, logs) => {
+            if (abortRef.current) {
+              model.stopTraining = true;
+              return;
+            }
+            let valLoss: number | undefined;
+            if (valData) {
+              const evaluated = model.evaluate(valData.xs, valData.ys, {
+                verbose: 0,
+              });
+              const tensor = Array.isArray(evaluated) ? evaluated[0] : evaluated;
+              valLoss = Number((await tensor.data())[0] ?? 0);
+              tensor.dispose();
+            }
             setHistory((current) => [
               ...current,
               {
                 epoch: epoch + 1,
                 loss: Number(((logs?.loss as number) ?? 0).toFixed(5)),
+                valLoss,
               },
             ]);
             await tf.nextFrame();
@@ -278,18 +310,21 @@ function RecurrentForecastingLab({ mode }: { mode: RecurrentMode }) {
         },
       });
 
-      const fittedWindows = buildWindows(normalized.values, lookback);
+      if (abortRef.current) return;
+
+      const fittedWindows = buildWindows(trainNorm, lookback);
       const fittedTensor = model.predict(fittedWindows.xs) as tf.Tensor;
       const fittedValues = Array.from(await fittedTensor.data()).map((value) =>
-        normalized.denormalize(value),
+        scaler.denormalize(value),
       );
       fittedTensor.dispose();
       fittedWindows.xs.dispose();
       fittedWindows.ys.dispose();
 
       const nextValues: number[] = [];
-      const rollingWindow = normalized.values.slice(-lookback);
+      const rollingWindow = trainNorm.slice(-lookback);
       for (let index = 0; index < horizon; index += 1) {
+        if (abortRef.current) break;
         const input = tf.tensor3d(rollingWindow, [1, lookback, 1]);
         const output = model.predict(input) as tf.Tensor;
         const [nextNormalized] = Array.from(await output.data());
@@ -297,31 +332,47 @@ function RecurrentForecastingLab({ mode }: { mode: RecurrentMode }) {
         output.dispose();
         rollingWindow.push(nextNormalized);
         rollingWindow.shift();
-        nextValues.push(normalized.denormalize(nextNormalized));
+        nextValues.push(scaler.denormalize(nextNormalized));
         await tf.nextFrame();
+      }
+
+      let forecastPeriods: string[] = [];
+      try {
+        forecastPeriods = futureTimestamps(
+          datasetSeries.at(-1)?.period ?? new Date().toISOString(),
+          nextValues.length,
+          "daily",
+        ).map((date) => date.toISOString().slice(0, 10));
+      } catch {
+        forecastPeriods = nextValues.map((_, index) => `T+${index + 1}`);
       }
 
       const fittedChart = rawSeries.map((actual, index) => ({
         step: index + 1,
         period: datasetSeries[index]?.period ?? String(index + 1),
         actual,
-        fitted: index >= lookback ? fittedValues[index - lookback] : undefined,
-        train: actual,
+        fitted:
+          index >= lookback && index < trainSeries.length
+            ? fittedValues[index - lookback]
+            : undefined,
+        train: index < trainSeries.length ? actual : undefined,
       }));
       const forecastChart = nextValues.map((forecast, index) => ({
         step: rawSeries.length + index + 1,
-        period: `T+${index + 1}`,
+        period: forecastPeriods[index] ?? `T+${index + 1}`,
         forecast,
         prediction: forecast,
       }));
       setChart([...fittedChart, ...forecastChart]);
       setLastPrediction(nextValues[0] ?? null);
       setStatus(
-        "Training complete. Forecast horizon was generated recursively from the latest observed window.",
+        "Training used chronological train windows only. Scaler fit on train. Forecast is recursive (predicted values feed later steps). Validation loss is evaluated, not a random split of shuffled time.",
       );
     } finally {
       data.xs.dispose();
       data.ys.dispose();
+      valData?.xs.dispose();
+      valData?.ys.dispose();
       model.dispose();
       setTraining(false);
     }

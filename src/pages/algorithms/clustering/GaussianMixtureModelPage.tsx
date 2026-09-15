@@ -1,7 +1,19 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useLabNavigate } from "../../../lib/labNavigation";
 import { Check, Settings, Upload } from "lucide-react";
 import { fitGaussianMixture } from "../../../lib/algorithms/clustering/gaussianMixture";
+import {
+  datasetAWellSeparatedBlobs,
+  datasetETwoMoons,
+  datasetIElongated,
+  datasetLHighDimensional,
+  overlappingBlobs,
+} from "../../../lib/clustering/clusteringDatasets";
+import {
+  gmmInformationCriteria,
+  projectPca2d,
+} from "../../../lib/clustering/clusteringEval";
 import "./GaussianMixtureModelPage.css";
 
 type Point = { x: number; y: number };
@@ -25,60 +37,44 @@ const rand = (i: number, salt: number) => {
   const v = Math.sin((i + 11) * 12.9898 + salt * 78.233) * 43758.5453;
   return Math.max(1e-8, v - Math.floor(v));
 };
-const gaussian = (i: number, salt: number) =>
-  Math.sqrt(-2 * Math.log(rand(i, salt))) *
-  Math.cos(2 * Math.PI * rand(i, salt + 9));
-function makeData(kind: Exclude<Dataset, "imported">, count = 800): Point[] {
-  const centers = [
-    [-3.5, -1.3],
-    [-2.1, 2.7],
-    [3.2, 2.7],
-    [2.4, -1.7],
-  ];
+function spirals(count = 120): Point[] {
   return Array.from({ length: count }, (_, i) => {
-    const k = i % 4,
-      a = gaussian(i, 1),
-      b = gaussian(i, 2);
-    if (kind === "moons") {
-      const t = rand(i, 4) * Math.PI,
-        upper = i % 2 === 0;
-      return {
-        x: Math.cos(t) * 3 + (upper ? -1 : 1),
-        y: (upper ? Math.sin(t) : -Math.sin(t)) * 2 + (upper ? 1 : -1),
-      };
-    }
-    if (kind === "spirals") {
-      const t = rand(i, 4) * Math.PI * 4,
-        r = 0.25 * t;
-      return {
-        x: Math.cos(t + (k * Math.PI) / 2) * r,
-        y: Math.sin(t + (k * Math.PI) / 2) * r,
-      };
-    }
-    if (kind === "banana") return { x: a * 2, y: 0.4 * (a * a - 2) + b * 0.55 };
-    const scale =
-      kind === "isotropic" ? [1, 0, 1] : [1.35, k % 2 ? -0.35 : 0.42, 0.78];
+    const k = i % 2;
+    const t = rand(i, 4) * Math.PI * 3;
+    const r = 0.28 * t;
     return {
-      x: centers[k][0] + a * scale[0] + b * scale[1],
-      y: centers[k][1] + b * scale[2],
+      x: Math.cos(t + k * Math.PI) * r,
+      y: Math.sin(t + k * Math.PI) * r,
     };
   });
 }
+function banana(count = 120): Point[] {
+  return Array.from({ length: count }, (_, i) => {
+    const a = Math.sqrt(-2 * Math.log(rand(i, 1))) * Math.cos(2 * Math.PI * rand(i, 9));
+    const b = Math.sqrt(-2 * Math.log(rand(i, 2))) * Math.cos(2 * Math.PI * rand(i, 11));
+    return { x: a * 2, y: 0.4 * (a * a - 2) + b * 0.55 };
+  });
+}
+function highDimProjected(): Point[] {
+  const source = datasetLHighDimensional();
+  const projected = projectPca2d(source.map((point) => point.features!));
+  return projected.map(([x, y]) => ({ x, y }));
+}
 const BUILT = {
-  anisotropic: makeData("anisotropic"),
-  isotropic: makeData("isotropic"),
-  moons: makeData("moons"),
-  spirals: makeData("spirals"),
-  banana: makeData("banana"),
-  digits: makeData("isotropic"),
+  anisotropic: datasetIElongated(),
+  isotropic: datasetAWellSeparatedBlobs(),
+  moons: datasetETwoMoons(),
+  spirals: spirals(),
+  banana: overlappingBlobs().concat(banana(40)),
+  digits: highDimProjected(),
 };
 const LABELS: Record<Dataset, string> = {
-  anisotropic: "Blobs (Anisotropic)",
-  isotropic: "Blobs (Isotropic)",
-  moons: "Noisy Moons",
-  spirals: "Two Spirals",
-  banana: "Banana",
-  digits: "Digits (PCA 2D)",
+  anisotropic: "Elongated Gaussians",
+  isotropic: "Well-separated blobs",
+  moons: "Two moons",
+  spirals: "Two spirals",
+  banana: "Overlapping + banana",
+  digits: "4D blobs (PCA 2D, then GMM)",
   imported: "Imported CSV",
 };
 
@@ -88,25 +84,69 @@ export default function GaussianMixtureModelPage() {
     [dataset, setDataset] = useState<Dataset>("anisotropic"),
     [points, setPoints] = useState<Point[]>(BUILT.anisotropic),
     [imported, setImported] = useState<Point[]>([]),
-    [components, setComponents] = useState(4),
+    [components, setComponents] = useState(3),
     [maxIterations, setMaxIterations] = useState(24),
     [tolerance, setTolerance] = useState(0.0001),
     [regularization, setRegularization] = useState(0.001),
     [iteration, setIteration] = useState(6),
     [playing, setPlaying] = useState(false),
+    [seed, setSeed] = useState(42),
+    [selected, setSelected] = useState(0),
     [toast, setToast] = useState("");
+  const go = useLabNavigate();
   const fileRef = useRef<HTMLInputElement>(null),
     X = useMemo(() => points.map((p) => [p.x, p.y]), [points]);
+  const safeK = Math.max(1, Math.min(components, Math.max(1, X.length)));
   const model = useMemo(
     () =>
       fitGaussianMixture(
         X,
-        components,
+        safeK,
         maxIterations,
         tolerance,
         regularization,
+        seed,
       ),
-    [X, components, maxIterations, tolerance, regularization],
+    [X, safeK, maxIterations, tolerance, regularization, seed],
+  );
+  useEffect(() => {
+    if (!playing) return;
+    const timer = window.setInterval(() => {
+      setIteration((current) => {
+        if (current >= model.iteration) {
+          setPlaying(false);
+          return model.iteration;
+        }
+        return current + 1;
+      });
+    }, 380);
+    return () => window.clearInterval(timer);
+  }, [playing, model.iteration]);
+  const criteria = gmmInformationCriteria(
+    model.logLikelihood,
+    X.length,
+    safeK,
+  );
+  const modelSweep = useMemo(
+    () =>
+      [1, 2, 3, 4, 5, 6]
+        .filter((k) => k <= X.length)
+        .map((k) => {
+          const fitted = fitGaussianMixture(
+            X,
+            k,
+            Math.min(12, maxIterations),
+            tolerance,
+            regularization,
+            seed,
+          );
+          return {
+            k,
+            logLikelihood: fitted.logLikelihood,
+            ...gmmInformationCriteria(fitted.logLikelihood, X.length, k),
+          };
+        }),
+    [X, maxIterations, tolerance, regularization, seed],
   );
   const state =
       model.history[Math.min(iteration, model.history.length) - 1] || model,
@@ -119,6 +159,7 @@ export default function GaussianMixtureModelPage() {
     setDataset(value);
     setPoints(next);
     setIteration(1);
+    setPlaying(false);
     setToast(`${LABELS[value]} loaded`);
   };
   const upload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -141,7 +182,9 @@ export default function GaussianMixtureModelPage() {
     event.target.value = "";
   };
   const reset = () => {
-    setComponents(4);
+    setComponents(3);
+    setSeed(42);
+    setSelected(0);
     setMaxIterations(24);
     setTolerance(0.0001);
     setRegularization(0.001);
@@ -200,7 +243,7 @@ export default function GaussianMixtureModelPage() {
           <p>
             Review prerequisites: probability, multivariate Gaussians, and EM.
           </p>
-          <button onClick={() => setToast("Prerequisites opened")}>
+          <button onClick={() => go("Prerequisites")}>
             Open Prerequisites
           </button>
         </article>
@@ -282,11 +325,13 @@ export default function GaussianMixtureModelPage() {
               return (
                 <i
                   key={index}
+                  onClick={() => setSelected(index)}
                   style={{
                     left: `${xPct(point.x)}%`,
                     top: `${yPct(point.y)}%`,
                     background: COLORS[k],
                     opacity: 0.2 + confidence * 0.8,
+                    outline: selected === index ? "2px solid #fff" : undefined,
                   }}
                 />
               );
@@ -362,17 +407,66 @@ export default function GaussianMixtureModelPage() {
               <br />
               Data Points (n)<b>{points.length}</b>
               <br />
-              Parameters<b>{components * 6 - 1}</b>
+              Parameters<b>{criteria.parameters}</b>
+              <br />
+              AIC<b>{criteria.aic.toFixed(1)}</b>
+              <br />
+              BIC<b>{criteria.bic.toFixed(1)}</b>
               <br />
               Covariance Type<b>Full</b>
               <br />
-              Initialization<b>K-means++</b>
+              Initialization<b>Seeded farthest-point</b>
               <br />
               Converged<b>{model.converged ? "Yes" : "Iterating"}</b>
               <br />
               Iterations<b>{model.iteration}</b>
               <br />
               Final Log Likelihood<b>{model.logLikelihood.toFixed(2)}</b>
+            </p>
+            <table>
+              <caption>Component sweep (same data; BIC/AIC penalize complexity)</caption>
+              <thead>
+                <tr>
+                  <th>K</th>
+                  <th>LL</th>
+                  <th>AIC</th>
+                  <th>BIC</th>
+                </tr>
+              </thead>
+              <tbody>
+                {modelSweep.map((row) => (
+                  <tr key={row.k}>
+                    <td>{row.k}</td>
+                    <td>{row.logLikelihood.toFixed(1)}</td>
+                    <td>{row.aic.toFixed(1)}</td>
+                    <td>{row.bic.toFixed(1)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p>
+              Point {selected} P(k)
+              <b>
+                {(state.responsibilities[selected] || [])
+                  .map((value, k) => `${k + 1}:${value.toFixed(2)}`)
+                  .join(" ")}
+              </b>
+              <br />
+              Hard assignment{" "}
+              <b>
+                argmax ={" "}
+                {(state.responsibilities[selected] || []).reduce(
+                  (best, value, index, row) =>
+                    value > row[best] ? index : best,
+                  0,
+                ) + 1}
+              </b>
+              · sum{" "}
+              <b>
+                {(state.responsibilities[selected] || [])
+                  .reduce((sum, value) => sum + value, 0)
+                  .toFixed(3)}
+              </b>
             </p>
           </article>
           <article>
@@ -469,7 +563,7 @@ export default function GaussianMixtureModelPage() {
               <em>{model.converged ? "Converged" : "Converging"}</em>
             </h3>
             <p>
-              Δ Log Likelihood (last 5 iters)
+              Δ Log Likelihood
               <b>
                 {Math.abs(
                   model.logLikelihood -
@@ -477,6 +571,42 @@ export default function GaussianMixtureModelPage() {
                       model.logLikelihood),
                 ).toFixed(3)}
               </b>
+            </p>
+            <table>
+              <caption>EM history (actual fitted states)</caption>
+              <thead>
+                <tr>
+                  <th>Iter</th>
+                  <th>LL</th>
+                  <th>ΔLL</th>
+                </tr>
+              </thead>
+              <tbody>
+                {model.history.slice(-6).map((step, index, rows) => {
+                  const previous =
+                    index === 0
+                      ? model.history[
+                          Math.max(0, model.history.length - 7)
+                        ]?.logLikelihood
+                      : rows[index - 1].logLikelihood;
+                  const delta =
+                    previous === undefined
+                      ? 0
+                      : step.logLikelihood - previous;
+                  return (
+                    <tr key={step.iteration}>
+                      <td>{step.iteration}</td>
+                      <td>{step.logLikelihood.toFixed(2)}</td>
+                      <td>{delta.toFixed(3)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <p>
+              Stop when |ΔLL| ≤ tolerance·n, or max iterations. Covariance is
+              full 2×2 with diagonal regularization (diag/tied/spherical are not
+              implemented).
             </p>
             <p>
               Tolerance<b>{tolerance}</b>
@@ -492,7 +622,16 @@ export default function GaussianMixtureModelPage() {
                 min="2"
                 max="6"
                 value={components}
-                onChange={(event) => setComponents(Number(event.target.value))}
+                onChange={(event) => setComponents(Number(event.target.value) || 1)}
+              />
+            </label>
+            <label>
+              Seed
+              <input
+                aria-label="GMM seed"
+                type="number"
+                value={seed}
+                onChange={(event) => setSeed(Number(event.target.value) || 0)}
               />
             </label>
             <label>
@@ -546,7 +685,10 @@ export default function GaussianMixtureModelPage() {
             {LABELS[dataset]} <em>Sample</em>
           </b>
           <p>
-            {components} clusters, 2D
+            {components} mixture components; GMM uses the plotted 2D coordinates
+            {dataset === "digits"
+              ? " after PCA (high-D clustering is not run in original 4D)."
+              : "."}
             <br />n = {points.length}
           </p>
         </article>

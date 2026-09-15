@@ -10,11 +10,13 @@ import {
 } from "../../../lib/algorithms/neural/mlp";
 import "./NeuralNetworkPlaygroundPage.css";
 type Point = { x: number; y: number; label: number };
-type Dataset = "moons" | "circles" | "xor" | "imported";
+type Dataset = "moons" | "circles" | "xor" | "spiral" | "blobs" | "imported";
 const names: Record<Dataset, string> = {
     moons: "Two Moons",
     circles: "Concentric Circles",
     xor: "XOR",
+    spiral: "Two Spirals",
+    blobs: "Two Blobs",
     imported: "Imported Dataset",
   },
   rnd = (i: number, s: number) => {
@@ -44,11 +46,21 @@ function data(
     }
     const sx = j % 2 ? 1 : -1,
       sy = Math.floor(j / 2) % 2 ? 1 : -1;
-    return {
-      x: sx + (rnd(i, seed + 4) - 0.5) * 1.1,
-      y: sy + (rnd(i, seed + 7) - 0.5) * 1.1,
-      label: sx === sy ? 1 : 0,
-    };
+    if (kind === "xor")
+      return {
+        x: sx + (rnd(i, seed + 4) - 0.5) * 1.1,
+        y: sy + (rnd(i, seed + 7) - 0.5) * 1.1,
+        label: sx === sy ? 1 : 0,
+      };
+    if (kind === "blobs")
+      return {
+        x: (label ? 1.1 : -1.1) + e,
+        y: (label ? 0.4 : -0.35) + (rnd(i, seed + 9) - 0.5) * noise,
+        label,
+      };
+    const r = 0.2 + (j / (n / 2)) * 1.3;
+    const a = (j / (n / 2)) * Math.PI * 3 + label * Math.PI;
+    return { x: Math.cos(a) * r + e, y: Math.sin(a) * r + e, label };
   });
 }
 const fit = (
@@ -484,10 +496,14 @@ export default function NeuralNetworkPlaygroundPage() {
             <p>
               Epoch{" "}
               <b>
-                {epochs}/{epochs}
+                {model.trainLoss.length}/{epochs}
               </b>
               {" · "}Loss <b>{loss.toFixed(4)}</b> · Accuracy{" "}
               <b>{(accuracy * 100).toFixed(1)}%</b>
+            </p>
+            <p>
+              One Train click runs every requested epoch in one session (not a
+              fake timer). Pause only cancels a start that has not begun.
             </p>
             <Loss model={model} />
           </article>

@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useLabNavigate } from "../../../lib/labNavigation";
 import { Upload } from "lucide-react";
 import { rocCurve } from "../../../lib/math/metrics";
 import "./ROCAUCApprovedPage.css";
@@ -74,6 +75,7 @@ export default function ROCAUCApprovedPage() {
     [model, setModel] = useState("Logistic Regression"),
     [tab, setTab] = useState("Visualize"),
     [message, setMessage] = useState("Trained");
+  const go = useLabNavigate();
   const fileRef = useRef<HTMLInputElement>(null),
     dataset = custom ?? datasets[datasetIndex];
   const roc = rocCurve(dataset.actual, dataset.scores),
@@ -126,7 +128,7 @@ export default function ROCAUCApprovedPage() {
           "▣ Reports",
           "⚙ Settings",
         ].map((x) => (
-          <button onClick={() => setMessage(`${x} opened`)} key={x}>
+          <button onClick={() => go(x)} key={x}>
             {x}
           </button>
         ))}
@@ -141,7 +143,9 @@ export default function ROCAUCApprovedPage() {
             <br />○ Challenge
           </small>
         </section>
-        <button className="help">? Help & Docs</button>
+        <button className="help" onClick={() => go("Help")}>
+          ? Help & Docs
+        </button>
       </aside>
       <header className="roc-head">
         <h1>

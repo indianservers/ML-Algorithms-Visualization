@@ -27,6 +27,7 @@ import {
 } from "../../../../lib/algorithms/regression/randomForestRegression";
 import { parseRegressionCsv } from "../../../../lib/algorithms/regression/decisionTreeRegression";
 import { mae, rSquared, rmse } from "../../../../lib/math/metrics";
+import { splitRegressionData } from "../../../../lib/regression/regressionEval";
 import "./RandomForestRegressionPage.css";
 
 type ForestRow = { features: number[]; target: number };
@@ -61,7 +62,7 @@ const californiaNames = [
 ];
 
 function californiaRows() {
-  return Array.from({ length: 20640 }, (_, index) => {
+  return Array.from({ length: 240 }, (_, index) => {
     const medInc = 0.55 + ((index * 37) % 1450) / 100;
     const houseAge = 1 + ((index * 19) % 52);
     const aveRooms = 2.1 + ((index * 23) % 770) / 100;
@@ -216,37 +217,44 @@ function maxFeatureCount(mode: MaxFeatureMode, count: number) {
 }
 
 function fitForest(rows: ForestRow[], options: RandomForestRegressionOptions) {
-  const sampled = evenSample(rows, 1250),
-    split = Math.max(4, Math.floor(sampled.length * 0.8));
-  const training = sampled.slice(0, split),
-    test = sampled.slice(split);
+  const sampled = evenSample(rows, 1250);
+  const split = splitRegressionData(
+    sampled,
+    sampled.map((row) => row.target),
+    0.2,
+    options.seed,
+    true,
+  );
   const model = trainRandomForestRegression(
-    training.map((row) => row.features),
-    training.map((row) => row.target),
+    split.trainX.map((row) => row.features),
+    split.trainY,
     options,
   );
-  const testActual = test.map((row) => row.target),
-    testPredicted = test.map((row) => model.predict(row.features));
-  const oobActual: number[] = [],
-    oobPredicted: number[] = [];
+  const trainPredicted = split.trainX.map((row) => model.predict(row.features));
+  const testPredicted = split.testX.map((row) => model.predict(row.features));
+  const oobActual: number[] = [];
+  const oobPredicted: number[] = [];
   model.oobPredictions.forEach((prediction, index) => {
     if (prediction !== null) {
-      oobActual.push(training[index].target);
+      oobActual.push(split.trainY[index]);
       oobPredicted.push(prediction);
     }
   });
+  const oobAvailable = oobActual.length > 0;
   return {
     model,
-    training,
-    test,
-    testActual,
+    training: split.trainX,
+    test: split.testX,
+    testActual: split.testY,
     testPredicted,
-    r2: rSquared(testActual, testPredicted),
-    rmse: rmse(testActual, testPredicted),
-    mae: mae(testActual, testPredicted),
-    oobR2: oobActual.length ? rSquared(oobActual, oobPredicted) : 0,
-    oobRmse: oobActual.length ? rmse(oobActual, oobPredicted) : 0,
-    oobMae: oobActual.length ? mae(oobActual, oobPredicted) : 0,
+    trainRmse: rmse(split.trainY, trainPredicted),
+    r2: rSquared(split.testY, testPredicted),
+    rmse: rmse(split.testY, testPredicted),
+    mae: mae(split.testY, testPredicted),
+    oobAvailable,
+    oobR2: oobAvailable ? rSquared(oobActual, oobPredicted) : Number.NaN,
+    oobRmse: oobAvailable ? rmse(oobActual, oobPredicted) : Number.NaN,
+    oobMae: oobAvailable ? mae(oobActual, oobPredicted) : Number.NaN,
   };
 }
 
@@ -710,11 +718,11 @@ function Diagnostics({ result }: { result: ReturnType<typeof fitForest> }) {
         <h3>OOB PERFORMANCE</h3>
         <dl>
           <dt>R² (OOB)</dt>
-          <dd>{result.oobR2.toFixed(3)}</dd>
+          <dd>{result.oobAvailable ? result.oobR2.toFixed(3) : "N/A — no OOB votes (bootstrap off or unused)"}</dd>
           <dt>RMSE (OOB)</dt>
-          <dd>{result.oobRmse.toFixed(3)}</dd>
+          <dd>{result.oobAvailable ? result.oobRmse.toFixed(3) : "N/A"}</dd>
           <dt>MAE (OOB)</dt>
-          <dd>{result.oobMae.toFixed(3)}</dd>
+          <dd>{result.oobAvailable ? result.oobMae.toFixed(3) : "N/A"}</dd>
         </dl>
         <p>OOB = Out-of-Bag (built-in cross-validation)</p>
       </section>
@@ -828,7 +836,7 @@ function GenericPanel({
             <Diagnostics result={result} />
           </div>
           <aside>
-            <h3>FEATURE IMPORTANCE</h3>
+            <h3 title="Normalized impurity decrease (split gain × node samples) across trees. Not permutation importance.">IMPURITY-BASED IMPORTANCE</h3>
             {result.model.featureImportance.map((value, index) => (
               <label key={names[index]}>
                 <span>{names[index]}</span>

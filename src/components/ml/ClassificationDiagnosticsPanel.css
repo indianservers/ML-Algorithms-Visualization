@@ -1,0 +1,66 @@
+.cdp {
+  margin: 1rem 0;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--border, #2a3344);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface, #121826) 92%, transparent);
+}
+.cdp header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: baseline;
+  margin-bottom: 0.75rem;
+}
+.cdp header p {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+.cdp-state {
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.cdp-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: 0.5rem 1rem;
+  margin: 0 0 0.75rem;
+}
+.cdp-meta dt {
+  font-size: 0.7rem;
+  opacity: 0.65;
+}
+.cdp-meta dd {
+  margin: 0;
+  font-size: 0.9rem;
+}
+.cdp-note {
+  margin: 0.4rem 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+.cdp-metrics {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  margin: 0.6rem 0;
+}
+.cdp-metrics caption {
+  caption-side: top;
+  text-align: left;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+.cdp-metrics th,
+.cdp-metrics td {
+  padding: 0.28rem 0.4rem;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+  text-align: right;
+}
+.cdp-metrics th:first-child,
+.cdp-metrics td:first-child {
+  text-align: left;
+}

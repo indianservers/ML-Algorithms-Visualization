@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   Legend, ResponsiveContainer, Cell,
@@ -8,6 +8,10 @@ import { PageHeader } from '../../../components/common/PageHeader';
 import { Card, InfoBox } from '../../../components/common/Card';
 import { Tabs } from '../../../components/common/Tabs';
 import { computeTFIDF, tokenize } from '../../../lib/algorithms/nlp/tfidf';
+import { bagOfWordsMatrix, cosineSimilarity, inspectTerm, tfidfMatrix, transformTfIdf, vectorNorm } from '../../../lib/nlp/vectorize';
+import { nlpCatalog, textsFromTable } from '../../../lib/nlp/nlpDatasets';
+import { matrixToLoadedDataset } from '../../../lib/nlp/nlpExport';
+import { useActiveLoadedDataset } from '../../../lib/timeSeries/useActiveTimeSeries';
 
 // ─── Default documents ────────────────────────────────────────────────────────
 const DEFAULT_DOCS = [
@@ -41,15 +45,21 @@ function matrixToCSV(
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function TFIDFPage() {
   const [docs, setDocs]       = useState<string[]>(DEFAULT_DOCS);
-  const [computed, setComputed] = useState(false);
+  const [normMode, setNormMode] = useState<"none" | "l1" | "l2">("none");
+  const [inspectDoc, setInspectDoc] = useState(0);
+  const [inspectTermName, setInspectTermName] = useState('learning');
+  const [query, setQuery] = useState('machine learning');
+  const handoff = useActiveLoadedDataset('/ml/nlp/tf-idf');
+  useEffect(() => {
+    if (!handoff?.data?.length) return;
+    const rows = textsFromTable(handoff.columns, handoff.data, handoff.target);
+    if (rows.length) setDocs(rows.map((row) => row.text));
+  }, [handoff]);
 
-  // ── Compute TF-IDF ──────────────────────────────────────────────────────────
-  const result = useMemo(() => {
-    if (!computed) return null;
-    const nonEmpty = docs.filter(d => d.trim().length > 0);
-    if (nonEmpty.length === 0) return null;
-    return computeTFIDF(nonEmpty);
-  }, [docs, computed]);
+  const activeDocs = docs.filter(d => d.trim().length > 0);
+  const fitted = useMemo(() => tfidfMatrix(activeDocs, { lowercase: true, stripPunctuation: true, l1: normMode === "l1", l2: normMode === "l2" }), [docs, normMode]);
+  const result = useMemo(() => (activeDocs.length ? computeTFIDF(activeDocs) : null), [docs]);
+
 
   // Document labels
   const docLabels = useMemo(() => docs.filter(d => d.trim()).map((_, i) => `Doc ${i + 1}`), [docs]);
@@ -91,21 +101,16 @@ export default function TFIDFPage() {
   }, [result]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
-  const handleCompute = () => setComputed(true);
-
   const handleAddDoc = () => {
     setDocs(d => [...d, '']);
-    setComputed(false);
   };
 
   const handleRemoveDoc = (i: number) => {
     setDocs(d => d.filter((_, idx) => idx !== i));
-    setComputed(false);
   };
 
   const handleChange = (i: number, val: string) => {
     setDocs(d => d.map((doc, idx) => idx === i ? val : doc));
-    setComputed(false);
   };
 
   const handleDownload = useCallback(() => {
@@ -132,7 +137,7 @@ export default function TFIDFPage() {
       <Card title="Formulas">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
-            { label: 'Term Frequency',         formula: 'TF(t, d) = count(t in d) / |d|' },
+            { label: 'Term Frequency',         formula: 'TF(t, d) = count(t in d)' },
             { label: 'Inverse Document Freq.', formula: 'IDF(t)   = log((N+1) / (df(t)+1)) + 1' },
             { label: 'TF-IDF Score',           formula: 'TF-IDF   = TF(t, d) × IDF(t)' },
           ].map(({ label, formula }) => (
@@ -143,8 +148,7 @@ export default function TFIDFPage() {
           ))}
         </div>
         <p className="text-xs text-gray-500 mt-2">
-          N = total documents, df(t) = number of documents containing term t, |d| = total words in document d.
-          Smoothing (+1) prevents division by zero.
+          N = total documents, df(t) = documents containing t. TF is the raw count in this lab (not divided by document length). Optional L2 is off unless you enable it.
         </p>
       </Card>
 
@@ -180,17 +184,42 @@ export default function TFIDFPage() {
             </div>
           ))}
         </div>
-        <div className="flex gap-3 mt-4">
-          <button onClick={handleCompute}
-            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
-            Compute TF-IDF
-          </button>
+        <div className="flex flex-wrap gap-3 mt-4 items-center">
+          <label className="text-xs flex items-center gap-2">Normalization
+            <select value={normMode} onChange={(e) => setNormMode(e.target.value as "none" | "l1" | "l2")} className="rounded border px-2 py-1">
+              <option value="none">None (raw TF×IDF)</option>
+              <option value="l1">L1</option>
+              <option value="l2">L2 (unit length)</option>
+            </select>
+          </label>
+          <select className="rounded border px-2 py-1 text-xs" onChange={(event) => {
+            const item = nlpCatalog.find((entry) => entry.id === event.target.value);
+            if (item) setDocs(item.documents.map((row) => row.text));
+          }} defaultValue="">
+            <option value="">Load catalog corpus…</option>
+            {nlpCatalog.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+          <button onClick={() => setDocs(DEFAULT_DOCS)} className="px-4 py-2 border text-sm rounded-lg">Reset</button>
           {result && (
             <button onClick={handleDownload}
               className="flex items-center gap-1.5 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors">
               <Download size={14} /> Export Matrix CSV
             </button>
           )}
+          <button
+            type="button"
+            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg"
+            onClick={() => matrixToLoadedDataset({
+              id: 'tfidf-matrix',
+              name: 'TF-IDF features',
+              history: `TF-IDF · TF=count · IDF=log((1+N)/(1+df))+1 · norm=${normMode}`,
+              vocabulary: fitted.model.vocabulary,
+              matrix: fitted.rows.map((row) => row.normalized),
+              sendRoute: '/ml/supervised/logistic-regression',
+            })}
+          >
+            Send numeric TF-IDF to logistic regression
+          </button>
         </div>
       </Card>
 
@@ -317,7 +346,7 @@ export default function TFIDFPage() {
               {/* ── TF Table ── */}
               {tab === 'tf' && (
                 <Card title="Term Frequency (TF) per Document"
-                  subtitle={`Showing top ${displayTerms.length} terms. TF = count(t,d) / |d|`}
+                  subtitle={`Showing top ${displayTerms.length} terms. TF = count(t, d) (raw count, matching the formula card).`}
                 >
                   <div className="overflow-x-auto">
                     <table className="text-xs border-collapse w-full">
@@ -423,10 +452,79 @@ export default function TFIDFPage() {
           )}
         </Tabs>
       ) : (
-        <InfoBox type="info" title="Ready to Compute">
-          Enter or edit your documents above and click <strong>Compute TF-IDF</strong> to see the vocabulary,
-          TF table, IDF values, TF-IDF matrix heatmap, and top keywords per document.
+        <InfoBox type="info" title="Empty corpus">
+          Enter at least one non-empty document. TF-IDF updates as you type.
         </InfoBox>
+      )}
+
+      {fitted.model.vocabulary.length > 0 && (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card title="Term inspector (real TF / DF / IDF)">
+            <label className="text-xs">Document
+              <select value={inspectDoc} onChange={(e) => setInspectDoc(Number(e.target.value))} className="mt-1 w-full rounded border px-2 py-1">
+                {activeDocs.map((_, i) => <option key={i} value={i}>Doc {i + 1}</option>)}
+              </select>
+            </label>
+            <label className="mt-2 block text-xs">Term
+              <input value={inspectTermName} onChange={(e) => setInspectTermName(e.target.value)} className="mt-1 w-full rounded border px-2 py-1 font-mono" />
+            </label>
+            {(() => {
+              const info = inspectTerm(activeDocs, fitted.model, inspectDoc, inspectTermName.toLowerCase());
+              const displayed = fitted.rows[inspectDoc]?.normalized ?? [];
+              const idx = fitted.model.vocabulary.indexOf(inspectTermName.toLowerCase());
+              const l2n = vectorNorm(displayed, "l2");
+              const l1n = vectorNorm(displayed, "l1");
+              return (
+                <ul className="mt-2 text-xs space-y-1">
+                  <li>In vocabulary: {info.inVocab ? 'yes' : 'no (OOV for this corpus)'}</li>
+                  <li>TF count: {info.tf}</li>
+                  <li>DF: {info.df} / N={info.n}</li>
+                  <li>IDF: {info.idf.toFixed(4)}</li>
+                  <li>Raw TF-IDF: {info.raw.toFixed(4)}</li>
+                  <li>Displayed vector value: {idx >= 0 ? (displayed[idx] ?? 0).toFixed(4) : 'n/a'}</li>
+                  <li>Displayed ‖v‖₂={l2n.toFixed(4)} · ‖v‖₁={l1n.toFixed(4)} {normMode === "l2" && l2n > 0 ? "(L2 target ≈ 1)" : ""}</li>
+                </ul>
+              );
+            })()}
+          </Card>
+          <Card title="BoW vs TF-IDF (same corpus)">
+            {(() => {
+              const bow = bagOfWordsMatrix(activeDocs, { lowercase: true, stripPunctuation: true });
+              const a = fitted.rows[0]?.normalized ?? [];
+              const b = fitted.rows[1]?.normalized ?? [];
+              const simDocs = a.length && b.length ? cosineSimilarity(a, b) : 0;
+              const rare = [...fitted.model.vocabulary].sort((x, y) => (fitted.model.documentFrequency[x] ?? 0) - (fitted.model.documentFrequency[y] ?? 0))[0];
+              const common = [...fitted.model.vocabulary].sort((x, y) => (fitted.model.documentFrequency[y] ?? 0) - (fitted.model.documentFrequency[x] ?? 0))[0];
+              return (
+                <p className="text-xs">
+                  BoW dims {bow.vocabulary.length}. TF-IDF dims {fitted.model.vocabulary.length}.
+                  Cosine(D1,D2) on {normMode} TF-IDF = {simDocs.toFixed(4)}.
+                  Rarest term in this corpus: {rare} (df={fitted.model.documentFrequency[rare]}).
+                  Most common: {common} (df={fitted.model.documentFrequency[common]}).
+                  Higher DF yields lower IDF under the displayed formula.
+                </p>
+              );
+            })()}
+          </Card>
+          <Card title="Search corpus by TF-IDF cosine">
+            <input value={query} onChange={(e) => setQuery(e.target.value)} className="w-full rounded border px-2 py-1 text-sm" />
+            {(() => {
+              const q = transformTfIdf([query], fitted.model)[0];
+              const ranked = fitted.rows
+                .map((row, i) => ({ i, sim: cosineSimilarity(q.normalized, row.normalized), oov: q.oov }))
+                .sort((a, b) => b.sim - a.sim)
+                .slice(0, 5);
+              return (
+                <ul className="mt-2 text-xs">
+                  {ranked.map((item) => (
+                    <li key={item.i}>Doc {item.i + 1}: {item.sim.toFixed(4)} — {activeDocs[item.i]?.slice(0, 80)}</li>
+                  ))}
+                  {ranked[0]?.oov.length ? <li>Query OOV ignored: {ranked[0].oov.join(', ')}</li> : null}
+                </ul>
+              );
+            })()}
+          </Card>
+        </div>
       )}
 
       {/* Interpretation */}

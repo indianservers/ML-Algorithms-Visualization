@@ -1,5 +1,8 @@
 import { useMemo, useRef, useState } from "react";
+import { useLabNavigate } from "../../../lib/labNavigation";
 import { recurrentForecast } from "../../../lib/timeSeries/recurrentForecast";
+import { TIME_SERIES_CATALOG, seriesValues } from "../../../lib/timeSeries/timeSeriesDatasets";
+import { useActiveTimeSeries } from "../../../lib/timeSeries/useActiveTimeSeries";
 import "./LSTMForecastingApprovedPage.css";
 
 const SETS = [
@@ -39,6 +42,11 @@ const SETS = [
       ),
     ),
   },
+  ...TIME_SERIES_CATALOG.map((item) => ({
+    name: item.name,
+    meta: `${item.frequency} · ${item.points.length} observations`,
+    values: seriesValues(item),
+  })),
 ];
 const path = (v: number[], w: number, h: number, lo: number, hi: number) =>
   v
@@ -67,9 +75,10 @@ export default function LSTMForecastingApprovedPage() {
     ),
     [status, setStatus] = useState("Ready"),
     [collapsed, setCollapsed] = useState(false);
+  const handoff = useActiveTimeSeries("/ml/time-series/lstm-forecasting");
   const fileRef = useRef<HTMLInputElement>(null),
     source = SETS[dataset],
-    values = custom?.values ?? source.values;
+    values = custom?.values ?? handoff?.points.map((point) => point.value) ?? source.values;
   const result = useMemo(
     () =>
       recurrentForecast(
@@ -83,7 +92,7 @@ export default function LSTMForecastingApprovedPage() {
   );
   const observed = values.slice(-168),
     forecast = result.predictions,
-    all = [...observed, ...forecast, ...result.lower, ...result.upper],
+    all = [...observed, ...forecast],
     lo = Math.min(...all),
     hi = Math.max(...all),
     gates = result.gateHistory.at(-1) ?? {
@@ -111,7 +120,7 @@ export default function LSTMForecastingApprovedPage() {
     };
     reader.readAsText(file);
   };
-  const act = (name: string) => setStatus(`${name} opened`),
+  const act = useLabNavigate(),
     tabs = [
       "Learn",
       "Visualize",
@@ -274,7 +283,7 @@ export default function LSTMForecastingApprovedPage() {
                 <i>3</i> Multi-step Forecast (Future)
               </h3>
               <svg viewBox="0 0 360 150" preserveAspectRatio="none">
-                {uncertainty && (
+                {uncertainty && result.intervalAvailable && (
                   <path
                     className="band"
                     d={`${path(result.upper, 360, 150, lo, hi)} L360,145 ${path([...result.lower].reverse(), 360, 150, lo, hi)} Z`}
@@ -286,6 +295,8 @@ export default function LSTMForecastingApprovedPage() {
                 />
               </svg>
               <p>Next 7 Days ({horizon} hours)</p>
+              <p>{result.architecture}</p>
+              {result.dataWarning ? <p>{result.dataWarning}</p> : null}
             </article>
           </div>
           <footer>

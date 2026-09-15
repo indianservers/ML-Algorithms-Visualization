@@ -1,5 +1,6 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useLabNavigate } from "../../../lib/labNavigation";
 import {
   CircleHelp,
   Lightbulb,
@@ -8,11 +9,33 @@ import {
   Sun,
   Upload,
 } from "lucide-react";
-import { dbscan } from "../../../lib/algorithms/clustering/dbscan";
+import { dbscan, dbscanNeighbors } from "../../../lib/algorithms/clustering/dbscan";
+import {
+  datasetAWellSeparatedBlobs,
+  datasetETwoMoons,
+  datasetFConcentricCircles,
+  datasetGNoisyBlobs,
+  datasetJSinglePlusOutliers,
+  datasetKVariableDensity,
+  datasetScaleMismatch,
+} from "../../../lib/clustering/clusteringDatasets";
+import {
+  fitClusterScaler,
+  kDistanceCurve,
+  scatterPercents,
+  silhouetteScore,
+} from "../../../lib/clustering/clusteringEval";
 import "./DBSCANPage.css";
 
 type Point = { x: number; y: number };
-type Dataset = "moons" | "blobs" | "rings" | "imported";
+type Dataset =
+  | "moons"
+  | "blobs"
+  | "rings"
+  | "density"
+  | "outliers"
+  | "scale"
+  | "imported";
 const COLORS = ["#3bd47e", "#ffb42b", "#5591ff", "#a77bff"];
 const TABS = [
   "Learn",
@@ -23,55 +46,21 @@ const TABS = [
   "Compare",
   "Explain",
 ];
-const rand = (i: number, salt: number) => {
-  const value = Math.sin((i + 7) * 12.9898 + salt * 78.233) * 43758.5453;
-  return value - Math.floor(value);
-};
-function makeData(kind: Exclude<Dataset, "imported">, count = 1000): Point[] {
-  return Array.from({ length: count }, (_, index) => {
-    if (rand(index, 9) < 0.058)
-      return { x: rand(index, 4) * 5 - 2.5, y: rand(index, 5) * 3.6 - 1.8 };
-    const angle = rand(index, 1) * Math.PI;
-    if (kind === "rings") {
-      const radius = index % 2 ? 1.48 : 0.72;
-      return {
-        x: Math.cos(angle * 2) * radius + (rand(index, 2) - 0.5) * 0.13,
-        y: Math.sin(angle * 2) * radius + (rand(index, 3) - 0.5) * 0.13,
-      };
-    }
-    if (kind === "blobs") {
-      const center = [
-        [-1.25, 0.7],
-        [0.2, -0.9],
-        [1.45, 0.75],
-      ][index % 3];
-      return {
-        x: center[0] + (rand(index, 2) - 0.5) * 0.8,
-        y: center[1] + (rand(index, 3) - 0.5) * 0.8,
-      };
-    }
-    const upper = index % 2 === 0;
-    return {
-      x:
-        Math.cos(angle) +
-        (upper ? -0.45 : 0.55) +
-        (rand(index, 2) - 0.5) * 0.18,
-      y:
-        (upper ? Math.sin(angle) : -Math.sin(angle)) +
-        (upper ? 0.12 : -0.12) +
-        (rand(index, 3) - 0.5) * 0.18,
-    };
-  });
-}
 const BUILT = {
-  moons: makeData("moons"),
-  blobs: makeData("blobs"),
-  rings: makeData("rings"),
+  moons: datasetETwoMoons(),
+  blobs: datasetAWellSeparatedBlobs(),
+  rings: [...datasetFConcentricCircles(), ...datasetGNoisyBlobs().slice(-8)],
+  density: datasetKVariableDensity(),
+  outliers: datasetJSinglePlusOutliers(),
+  scale: datasetScaleMismatch(),
 };
 const LABELS: Record<Dataset, string> = {
-  moons: "Moons (Noisy)",
-  blobs: "Gaussian Blobs",
-  rings: "Concentric Rings",
+  moons: "Two moons",
+  blobs: "Well-separated blobs",
+  rings: "Concentric circles + noise",
+  density: "Variable-density clusters",
+  outliers: "One cluster + outliers",
+  scale: "Unequal units (0–1 vs ~1e6)",
   imported: "Imported CSV",
 };
 
@@ -86,22 +75,57 @@ export default function DBSCANPage() {
     [playing, setPlaying] = useState(false),
     [autoPlay, setAutoPlay] = useState(false),
     [speed, setSpeed] = useState(1),
-    [toast, setToast] = useState("");
+    [toast, setToast] = useState(""),
+    [selected, setSelected] = useState(0),
+    [standardize, setStandardize] = useState(false);
+  const go = useLabNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
+  const X = useMemo(() => {
+    const raw = points.map((point) => [point.x, point.y]);
+    return standardize ? fitClusterScaler(raw).transformAll(raw) : raw;
+  }, [points, standardize]);
+  const safeMinPts = Math.max(1, Math.min(minimumPoints, Math.max(1, points.length)));
+  const safeEps = epsilon > 0 && Number.isFinite(epsilon) ? epsilon : 0.35;
   const result = useMemo(
-    () =>
-      dbscan(
-        points.map((point) => [point.x * 5, point.y * 5]),
-        epsilon,
-        minimumPoints,
-      ),
-    [points, epsilon, minimumPoints],
+    () => dbscan(X, safeEps, safeMinPts),
+    [X, safeEps, safeMinPts],
   );
   const clusterSizes = result.labels.reduce<number[]>((sizes, label) => {
     if (label >= 0) sizes[label] = (sizes[label] || 0) + 1;
     return sizes;
   }, []);
-  const visibleCount = Math.max(1, Math.round((points.length * step) / 18));
+  const expansion = result.expansionOrder.length
+    ? result.expansionOrder
+    : points.map((_, i) => i);
+  const visibleCount = Math.max(
+    1,
+    Math.min(points.length, Math.round((expansion.length * step) / 18) || 1),
+  );
+  const visible = new Set(expansion.slice(0, visibleCount));
+  const neighbors = dbscanNeighbors(X, selected, safeEps);
+  const kDistances = useMemo(
+    () => kDistanceCurve(X, safeMinPts),
+    [X, safeMinPts],
+  );
+  const sil = useMemo(
+    () => silhouetteScore(X, result.labels),
+    [X, result.labels],
+  );
+  useEffect(() => {
+    if (!playing && !autoPlay) return;
+    const timer = window.setInterval(
+      () =>
+        setStep((current) => {
+          if (current >= 18) {
+            setPlaying(false);
+            return 18;
+          }
+          return current + 1;
+        }),
+      Math.max(120, 700 / speed),
+    );
+    return () => window.clearInterval(timer);
+  }, [playing, autoPlay, speed]);
   const choose = (value: Dataset) => {
     const next = value === "imported" ? imported : BUILT[value];
     if (!next.length) return;
@@ -214,7 +238,7 @@ export default function DBSCANPage() {
             clusters of arbitrary shape.
           </p>
         </section>
-        <button onClick={() => setToast("Help opened")}>
+        <button onClick={() => go("Help")}>
           <CircleHelp />
         </button>
         <button onClick={() => setToast("Share link copied")}>
@@ -279,27 +303,32 @@ export default function DBSCANPage() {
             Current point
           </aside>
           <div className="db-plot">
-            {points.slice(0, visibleCount).map((point, index) => {
+            {points.map((point, index) => {
               const type = result.pointTypes[index],
                 label = result.labels[index],
                 color = label < 0 ? "#ff7183" : COLORS[label % COLORS.length];
+              const pos = scatterPercents(point.x, point.y, points);
+              const current = expansion[Math.min(visibleCount - 1, expansion.length - 1)] === index;
               return (
                 <i
                   className={type}
                   key={index}
+                  onClick={() => setSelected(index)}
                   style={{
-                    left: `${((point.x + 2.6) / 5.2) * 100}%`,
-                    top: `${((1.9 - point.y) / 3.8) * 100}%`,
+                    left: `${pos.left}%`,
+                    top: `${pos.top}%`,
                     borderColor: color,
                     background: type === "core" ? color : "transparent",
+                    boxShadow: current || selected === index ? `0 0 0 6px ${color}55` : undefined,
+                    opacity: visible.has(index) || type === "noise" ? 1 : 0.25,
                   }}
                 />
               );
             })}
             <span>
-              ε-neighborhood
+              ε-neighborhood of point {selected}: {neighbors.length} neighbors
               <br />
-              (ε)
+              {result.pointTypes[selected] ?? "—"}
             </span>
           </div>
           <footer>
@@ -402,6 +431,18 @@ export default function DBSCANPage() {
               <i className="noise" />
               Noise<b>{result.noisePoints.length}</b>
             </p>
+            <p>
+              Silhouette (noise excluded){" "}
+              <b>{sil == null ? "N/A" : sil.toFixed(3)}</b>
+            </p>
+            <p>
+              k-distance (MinPts={safeMinPts}) median{" "}
+              <b>
+                {kDistances.length
+                  ? kDistances[Math.floor(kDistances.length / 2)].toFixed(3)
+                  : "—"}
+              </b>
+            </p>
           </article>
           <article>
             <h3>Algorithm Status</h3>
@@ -438,6 +479,20 @@ export default function DBSCANPage() {
       <aside className="db-controls">
         <article>
           <h2>DBSCAN Parameters ⓘ</h2>
+          <label>
+            Standardize features
+            <input
+              aria-label="Standardize features"
+              type="checkbox"
+              checked={standardize}
+              onChange={(event) => setStandardize(event.target.checked)}
+            />
+          </label>
+          <p>
+            {standardize
+              ? "Clustering uses z-scored features. Scatter still shows original coordinates."
+              : "Clustering uses raw coordinates. Unequal units can collapse neighborhoods onto the large-scale axis."}
+          </p>
           <label>
             ε (epsilon)
             <input

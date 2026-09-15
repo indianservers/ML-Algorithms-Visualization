@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { resolveNavRoute } from "../../../lib/labNavigation";
 import {
   ArrowRight,
   BarChart3,
@@ -22,10 +23,18 @@ import {
   Sun,
   Trash2,
 } from "lucide-react";
-import { kmeans } from "../../../lib/algorithms/clustering/kmeans";
+import { kmeans, kmeansWithRestarts } from "../../../lib/algorithms/clustering/kmeans";
+import {
+  datasetAWellSeparatedBlobs,
+  datasetBFourBlobs,
+  datasetETwoMoons,
+  datasetFConcentricCircles,
+  datasetGNoisyBlobs,
+  datasetIElongated,
+} from "../../../lib/clustering/clusteringDatasets";
 import "./KMeansReferenceLesson.css";
 
-type Shape = "blobs" | "rings" | "mixed";
+type Shape = "blobs" | "rings" | "mixed" | "elongated" | "four";
 type Tool = "select" | "add" | "remove";
 type Props = { onAdvanced: () => void };
 const COLORS = [
@@ -36,32 +45,18 @@ const COLORS = [
   "#2bde8c",
   "#ff6b6b",
 ];
-const rand = (i: number, k: number) =>
-  Math.sin((i + 3) * 73.17 * k) * 0.5 + 0.5;
 function makePoints(shape: Shape) {
-  return Array.from({ length: 150 }, (_, i) => {
-    const group = i % 3,
-      n = Math.floor(i / 3),
-      angle = (n / 50) * Math.PI * 2;
-    if (shape === "rings") {
-      const radius = 1.7 + group * 2.2 + (rand(i, 2.2) - 0.5) * 0.5;
-      return [Math.cos(angle) * radius, Math.sin(angle) * radius];
-    }
-    if (shape === "mixed" && group === 2)
-      return [
-        Math.cos(angle) * (2 + rand(i, 1.7) * 2),
-        Math.sin(angle) * (2 + rand(i, 2.1) * 2) - 1,
-      ];
-    const centers = [
-      [-3, 3.4],
-      [4.2, 4],
-      [1, -1.7],
-    ];
-    return [
-      centers[group][0] + (rand(i, 1.4) - 0.5) * 3.2,
-      centers[group][1] + (rand(i, 2.4) - 0.5) * 3.2,
-    ];
-  });
+  const source =
+    shape === "rings"
+      ? datasetFConcentricCircles()
+      : shape === "mixed"
+        ? [...datasetETwoMoons(), ...datasetGNoisyBlobs().slice(-8)]
+        : shape === "elongated"
+          ? datasetIElongated()
+          : shape === "four"
+            ? datasetBFourBlobs()
+            : datasetAWellSeparatedBlobs();
+  return source.map((point) => [point.x, point.y]);
 }
 const distance = (a: number[], b: number[]) =>
   Math.hypot(a[0] - b[0], a[1] - b[1]);
@@ -79,15 +74,19 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
     [dragging, setDragging] = useState<number | null>(null),
     [toast, setToast] = useState(""),
     [light, setLight] = useState(false);
+  const navigate = useNavigate();
+  const go = (label: string) => {
+    const route = resolveNavRoute(label);
+    if (route) navigate(route);
+  };
   const plotRef = useRef<HTMLDivElement>(null);
+  const safeK = Math.max(1, Math.min(k, Math.max(1, points.length)));
   const result = useMemo(
-    () => kmeans(points, k, 12, init, seed),
-    [points, k, init, seed],
+    () => kmeans(points, safeK, 50, init, seed),
+    [points, safeK, init, seed],
   );
-  const maxStep = 12,
-    active =
-      result.steps[Math.min(Math.floor(step / 2), result.steps.length - 1)] ??
-      result.steps[0],
+  const maxStep = Math.max(1, result.steps.length),
+    active = result.steps[Math.min(step, result.steps.length - 1)] ?? result.steps[0],
     centroids = manual ?? active.centroids;
   const assignments = useMemo(
     () =>
@@ -159,10 +158,10 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
         <span>
           ← Unsupervised Learning › <b>Clustering Lab</b>
         </span>
-        <button onClick={() => setToast("Documentation opened")}>
+        <button onClick={() => go("Documentation")}>
           <FileText /> Docs
         </button>
-        <button onClick={() => setToast("Help opened")}>
+        <button onClick={() => go("Help")}>
           <HelpCircle /> Help
         </button>
         <button onClick={() => setLight(!light)}>
@@ -172,39 +171,41 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
       </header>
       <aside className="km-nav">
         <h3>LEARNING PATH</h3>
-        <button>
+        <button onClick={() => go("Overview")}>
           <BarChart3 /> Overview
         </button>
-        <button>
+        <button onClick={() => go("Supervised Learning")}>
           <Network /> Supervised Learning ›
         </button>
-        <button className="open">
+        <button className="open" onClick={() => go("Unsupervised Learning")}>
           <Network /> Unsupervised Learning⌄
         </button>
         <section>
           <b>│ Clustering ⌃</b>
           <button className="active">● K-Means Clustering</button>
-          <button>DBSCAN</button>
-          <button>Hierarchical Clustering</button>
+          <button onClick={() => go("DBSCAN")}>DBSCAN</button>
+          <button onClick={() => go("Hierarchical Clustering")}>
+            Hierarchical Clustering
+          </button>
         </section>
-        <button>
+        <button onClick={() => go("Dimensionality Reduction")}>
           <Sparkles /> Dimensionality Reduction ›
         </button>
-        <button>
+        <button onClick={() => go("Anomaly Detection")}>
           <Network /> Anomaly Detection ›
         </button>
         <hr />
         <h3>LAB TOOLS</h3>
-        <button onClick={() => setToast("Datasets opened")}>
+        <button onClick={() => go("Datasets")}>
           <Database /> Datasets
         </button>
-        <button onClick={() => setToast("Visualizations opened")}>
+        <button onClick={() => go("Visualizations")}>
           <BarChart3 /> Visualizations
         </button>
-        <button onClick={() => setToast("Experiments opened")}>
+        <button onClick={() => go("Experiments")}>
           <FlaskConical /> Experiments
         </button>
-        <button onClick={() => setToast("Notes opened")}>
+        <button onClick={() => go("Notes")}>
           <Notebook /> Notes
         </button>
         <footer>
@@ -216,7 +217,7 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
           </div>
           <p>Next up</p>
           <b>DBSCAN Lab</b>
-          <button onClick={() => setToast("Cheat sheet opened")}>
+          <button onClick={() => go("Cheat Sheet")}>
             <FileText /> Cheat Sheet
           </button>
           <button onClick={onAdvanced}>
@@ -236,7 +237,7 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
             </p>
           </div>
           {[
-            ["Iteration", `${step + 1} / 12`],
+            ["Iteration", `${Math.min(step + 1, maxStep)} / ${maxStep}`],
             ["Inertia (SSE)", inertia.toFixed(2)],
             ["Δ Inertia", `${delta.toFixed(1)}%`],
           ].map((v, i) => (
@@ -458,22 +459,54 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
         <button
           onClick={() =>
             setToast(
-              `K-Means++ inertia ${kmeans(points, k, 12, "kmeans++", seed).inertia.toFixed(1)} vs random ${kmeans(points, k, 12, "random", seed).inertia.toFixed(1)}`,
+              `K-Means++ inertia ${kmeans(points, safeK, 50, "kmeans++", seed).inertia.toFixed(1)} vs random ${kmeans(points, safeK, 50, "random", seed).inertia.toFixed(1)}. Best of 4 restarts ${kmeansWithRestarts(points, safeK, 4, 50, init, seed).inertia.toFixed(1)}. Empty-cluster re-inits this run: ${result.emptyClusterResets}.`,
             )
           }
         >
           <RotateCcw /> Compare initializations
         </button>
+        <p>
+          Current run uses real iteration history (not interpolated frames).
+          Empty centroids are replaced by the farthest observation, not NaN.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>iter</th>
+              <th>inertia</th>
+              <th>move</th>
+              <th>Δ assign</th>
+            </tr>
+          </thead>
+          <tbody>
+            {result.steps.slice(0, 8).map((item) => (
+              <tr key={item.iteration}>
+                <td>{item.iteration}</td>
+                <td>{item.inertia.toFixed(2)}</td>
+                <td>{item.maxMovement.toFixed(3)}</td>
+                <td>{item.assignmentsChanged}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
         <label>Dataset shape ⓘ</label>
         <div className="shapes">
-          {(["blobs", "rings", "mixed"] as Shape[]).map((item) => (
+          {(["blobs", "rings", "mixed", "elongated", "four"] as Shape[]).map((item) => (
             <button
               aria-label={`${item} dataset`}
               className={shape === item ? "active" : ""}
               onClick={() => setDataset(item)}
               key={item}
             >
-              {item === "blobs" ? "⠿" : item === "rings" ? "◎" : "◌◌"}
+              {item === "blobs"
+                ? "⠿"
+                : item === "rings"
+                  ? "◎"
+                  : item === "mixed"
+                    ? "◌◌"
+                    : item === "elongated"
+                      ? "═"
+                      : "++++"}
             </button>
           ))}
         </div>

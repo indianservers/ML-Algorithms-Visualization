@@ -20,14 +20,20 @@ import {
   Sun,
   Upload,
 } from "lucide-react";
-import { irisDataset } from "../../../../data/sampleDatasets";
+import {
+  datasetFThreeBlobs,
+  datasetGIris,
+  pointsToRows,
+} from "../../../../lib/classification/classificationDatasets";
 import {
   buildDecisionTree,
   predictTree,
+  splitQuality,
   treeDepth,
   type SplitCriterion,
   type TreeNode,
 } from "../../../../lib/algorithms/classification/decisionTree";
+import { classificationSplit } from "../../../../lib/classification/classificationEval";
 import "./DecisionTreeClassificationPage.css";
 
 type Row = { features: number[]; label: number };
@@ -60,39 +66,17 @@ const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   { id: "compare", label: "Compare", icon: <Network /> },
   { id: "explain", label: "Explain", icon: <FileText /> },
 ];
-const seedRows = () =>
-  (irisDataset.data as Record<string, unknown>[]).map((item) => ({
-    features: [
-      "sepal_length",
-      "sepal_width",
-      "petal_length",
-      "petal_width",
-    ].map((key) => Number(item[key])),
-    label:
-      item.species === "setosa" ? 0 : item.species === "versicolor" ? 1 : 2,
-  }));
-function balancedIris(): Row[] {
-  const seeds = seedRows();
-  return [0, 1, 2].flatMap((label) => {
-    const group = seeds.filter((row) => row.label === label);
-    return Array.from({ length: 50 }, (_, index) => ({
-      features: group[index % group.length].features.map(
-        (value, feature) =>
-          value +
-          Math.sin((index + 2) * (feature + 1) * 1.31) *
-            [0.35, 0.25, 0.32, 0.22][feature] +
-          (index % 5 === 0 && label === 1
-            ? [0, 0, 0.72, 0.32][feature]
-            : index % 5 === 0 && label === 2
-              ? [0, 0, -0.72, -0.32][feature]
-              : 0),
-      ),
-      label,
-    }));
-  });
-}
-const BASE = balancedIris();
+const BASE = datasetGIris().map((row) => ({
+  features: row.features,
+  label: row.label,
+}));
 function transform(source: Row[], kind: DatasetId): Row[] {
+  if (kind === "synthetic") {
+    return pointsToRows(datasetFThreeBlobs(), NAMES).map((row) => ({
+      features: [...row.features, row.features[0] * 0.5, row.features[1] * 0.4],
+      label: row.label,
+    }));
+  }
   return source.map((row, index) => {
     if (kind === "wine")
       return {
@@ -412,16 +396,25 @@ export default function DecisionTreeClassificationPage() {
   const uploadRef = useRef<HTMLInputElement>(null),
     X = useMemo(() => rows.map((row) => row.features), [rows]),
     y = useMemo(() => rows.map((row) => row.label), [rows]);
+  const split = useMemo(() => {
+    try {
+      return classificationSplit(X, y, 0.2, 42);
+    } catch {
+      return null;
+    }
+  }, [X, y]);
+  const trainX = split?.trainX ?? X;
+  const trainY = split?.trainY ?? y;
   const rawTree = useMemo(
     () =>
       buildDecisionTree(
-        X,
-        y,
+        trainX,
+        trainY,
         maxDepth,
         Math.max(minLeaf, Math.ceil(minSplit / 2)),
         criterion,
       ),
-    [X, y, maxDepth, minLeaf, minSplit, criterion],
+    [trainX, trainY, maxDepth, minLeaf, minSplit, criterion],
   );
   const tree = useMemo(
     () => prune(rawTree, appliedAlpha),
@@ -429,9 +422,11 @@ export default function DecisionTreeClassificationPage() {
   );
   const prediction = predictTree(tree, query),
     path = new Set(pathFor(tree, query));
+  const evalX = split?.testX ?? X;
+  const evalY = split?.testY ?? y;
   const predicted = useMemo(
-    () => X.map((row) => predictTree(tree, row)),
-    [X, tree],
+    () => evalX.map((row) => predictTree(tree, row)),
+    [evalX, tree],
   );
   const confusion = useMemo(
     () =>
@@ -439,11 +434,11 @@ export default function DecisionTreeClassificationPage() {
         Array.from(
           { length: 3 },
           (_, p) =>
-            predicted.filter((value, index) => y[index] === a && value === p)
+            predicted.filter((value, index) => evalY[index] === a && value === p)
               .length,
         ),
       ),
-    [predicted, y],
+    [evalY, predicted],
   );
   const classMetrics = [0, 1, 2].map((label) => {
     const tp = confusion[label][label],
@@ -467,8 +462,12 @@ export default function DecisionTreeClassificationPage() {
     };
   });
   const accuracy =
-      predicted.filter((value, index) => value === y[index]).length / y.length,
-    importances = importance(tree, rows.length),
+      trainX.filter((row, index) => predictTree(tree, row) === trainY[index]).length /
+      trainX.length,
+    testAccuracy =
+      evalX.filter((row, index) => predictTree(tree, row) === evalY[index]).length /
+      (evalX.length || 1),
+    importances = importance(tree, trainX.length),
     impTotal = importances.reduce((a, b) => a + b, 0) || 1;
   const region = useMemo(() => {
     const xs = X.map((row) => row[axes[0]]),
@@ -713,7 +712,11 @@ export default function DecisionTreeClassificationPage() {
                 {SHORT[item.node.featureIndex!]} ≤{" "}
                 {item.node.threshold?.toFixed(2)}
               </span>
-              <em>gain = {(item.node.impurity ?? 0).toFixed(3)}</em>
+              <em>
+                ΔI ={" "}
+                {splitQuality(item.node)?.reduction.toFixed(3) ??
+                  (item.node.impurity ?? 0).toFixed(3)}
+              </em>
             </p>
           ))}
           <button onClick={() => setTab("explain")}>
@@ -854,7 +857,11 @@ export default function DecisionTreeClassificationPage() {
             </article>
             <article>
               <b>{(accuracy * 100).toFixed(1)}%</b>
-              <span>Accuracy</span>
+              <span>Train accuracy</span>
+            </article>
+            <article>
+              <b>{(testAccuracy * 100).toFixed(1)}%</b>
+              <span>Test accuracy</span>
             </article>
           </div>
           <button
@@ -881,7 +888,7 @@ export default function DecisionTreeClassificationPage() {
           <div className="dt-metric-grid">
             <article>
               <b>{(accuracy * 100).toFixed(1)}%</b>
-              <span>Accuracy</span>
+              <span>Train accuracy</span>
             </article>
             <article>
               <b>{treeDepth(tree)}</b>

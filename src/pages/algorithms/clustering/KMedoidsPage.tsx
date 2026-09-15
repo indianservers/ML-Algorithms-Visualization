@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useLabNavigate } from "../../../lib/labNavigation";
 import {
   BookOpen,
   BrainCircuit,
@@ -22,9 +23,17 @@ import {
   trainKMedoids,
   type KMedoidsMetric,
 } from "../../../lib/algorithms/clustering/kMedoids";
+import {
+  datasetAWellSeparatedBlobs,
+  datasetBFourBlobs,
+  datasetCUnequalSizes,
+  datasetGNoisyBlobs,
+  datasetIElongated,
+} from "../../../lib/clustering/clusteringDatasets";
+import { scatterPercents } from "../../../lib/clustering/clusteringEval";
 import "./KMedoidsPage.css";
 type Point = { x: number; y: number; outlier: boolean };
-type DataKey = "mall" | "customers" | "traffic" | "imported";
+type DataKey = "mall" | "customers" | "traffic" | "elongated" | "four" | "imported";
 type Tab =
   | "learn"
   | "visualize"
@@ -34,46 +43,32 @@ type Tab =
   | "compare"
   | "explain";
 const COLORS = ["#25c5d8", "#6bce43", "#ff9909", "#8a6cf0", "#ef4f8f"];
-const rand = (i: number, k: number) => {
-  const raw = Math.sin((i + 4) * 12.9898 + k * 78.233) * 43758.5453;
-  return raw - Math.floor(raw);
-};
-function makeData(kind: Exclude<DataKey, "imported">, count = 200): Point[] {
-  return Array.from({ length: count }, (_, i) => {
-    const group = i % 3,
-      centers =
-        kind === "traffic"
-          ? [
-              [-45, 35],
-              [15, -30],
-              [65, 28],
-            ]
-          : [
-              [-28, 45],
-              [-5, -38],
-              [65, 5],
-            ],
-      outlier = i % 13 === 0;
-    return {
-      x: outlier
-        ? -78 + rand(i, 1.2) * 180
-        : centers[group][0] + (rand(i, 1.7) - 0.5) * 45,
-      y: outlier
-        ? -78 + rand(i, 2.7) * 160
-        : centers[group][1] + (rand(i, 2.1) - 0.5) * 45,
-      outlier,
-    };
-  });
+function tagged(
+  source: { x: number; y: number }[],
+  outlierFrom = Number.POSITIVE_INFINITY,
+): Point[] {
+  return source.map((point, index) => ({
+    x: point.x,
+    y: point.y,
+    outlier: index >= outlierFrom,
+  }));
 }
 const BUILT = {
-  mall: makeData("mall"),
-  customers: makeData("customers", 180),
-  traffic: makeData("traffic", 220),
+  mall: tagged(datasetAWellSeparatedBlobs()),
+  customers: tagged(datasetCUnequalSizes()),
+  traffic: tagged(
+    datasetGNoisyBlobs(),
+    datasetAWellSeparatedBlobs().length,
+  ),
+  elongated: tagged(datasetIElongated()),
+  four: tagged(datasetBFourBlobs()),
 };
 const LABELS: Record<DataKey, string> = {
-  mall: "Mall Customers (Sample)",
-  customers: "Customer Segments",
-  traffic: "Urban Mobility",
+  mall: "Well-separated blobs",
+  customers: "Unequal cluster sizes",
+  traffic: "Noisy blobs with outliers",
+  elongated: "Elongated clusters",
+  four: "Four blobs",
   imported: "Imported Dataset",
 };
 const TABS: Tab[] = [
@@ -102,33 +97,30 @@ export default function KMedoidsPage() {
     [view, setView] = useState("clusters"),
     [scale, setScale] = useState("standard"),
     [toast, setToast] = useState("");
+  const go = useLabNavigate();
   const uploadRef = useRef<HTMLInputElement>(null),
     X = useMemo(() => points.map((p) => [p.x, p.y]), [points]);
+  const safeK = Math.max(1, Math.min(k, Math.max(1, X.length)));
   const result = useMemo(
-      () => trainKMedoids(X, { k, maxIterations, metric, init, seed: 42 }),
-      [X, k, maxIterations, metric, init],
+      () => trainKMedoids(X, { k: safeK, maxIterations, metric, init, seed: 42 }),
+      [X, safeK, maxIterations, metric, init],
     ),
-    phase = Math.min(step, 5),
-    active =
-      result.steps[Math.min(Math.floor(phase / 2), result.steps.length - 1)] ??
-      result.steps.at(-1)!,
+    phase = Math.min(step, Math.max(0, result.steps.length - 1)),
+    active = result.steps[phase] ?? result.steps.at(-1)!,
     medoidSet = new Set(active.medoidIndices);
-  const previous =
-      result.steps[
-        Math.max(
-          0,
-          Math.min(result.steps.length - 1, Math.floor(phase / 2) - 1),
-        )
-      ],
+  const previous = result.steps[Math.max(0, phase - 1)],
     improvement = previous ? previous.cost - active.cost : 0;
   useEffect(() => {
     if (!playing) return;
     const timer = window.setInterval(
-      () => setStep((current) => (current >= 5 ? 0 : current + 1)),
+      () =>
+        setStep((current) =>
+          current >= result.steps.length - 1 ? 0 : current + 1,
+        ),
       delay,
     );
     return () => clearInterval(timer);
-  }, [playing, delay]);
+  }, [playing, delay, result.steps.length]);
   const choose = (next: DataKey) => {
     const source = next === "imported" ? imported : BUILT[next];
     if (!source.length) return;
@@ -173,7 +165,7 @@ export default function KMedoidsPage() {
     const removed = points.filter((point) => !point.outlier);
     return trainKMedoids(
       removed.map((point) => [point.x, point.y]),
-      { k: Math.min(k, removed.length), maxIterations, metric, init, seed: 42 },
+      { k: Math.min(safeK, Math.max(1, removed.length)), maxIterations, metric, init, seed: 42 },
     );
   }, [points, k, maxIterations, metric, init]);
   return (
@@ -197,13 +189,13 @@ export default function KMedoidsPage() {
           <b>Objective</b>Understand how K-Medoids forms robust clusters using
           actual data points.
         </p>
-        <button aria-label="Reading" onClick={() => setToast("Reading opened")}>
+        <button aria-label="Reading" onClick={() => go("Reading")}>
           <BookOpen />
         </button>
-        <button aria-label="Hints" onClick={() => setToast("Hints opened")}>
+        <button aria-label="Hints" onClick={() => go("Hints")}>
           <Lightbulb />
         </button>
-        <button aria-label="Code" onClick={() => setToast("Code opened")}>
+        <button aria-label="Code" onClick={() => go("Code")}>
           <Code2 />
         </button>
       </header>
@@ -231,7 +223,7 @@ export default function KMedoidsPage() {
             <button
               key={item}
               className={phase === i + 1 ? "active" : ""}
-              onClick={() => setStep(Math.min(5, i + 1))}
+              onClick={() => setStep(Math.min(result.steps.length - 1, i + 1))}
             >
               {item}
             </button>
@@ -275,7 +267,7 @@ export default function KMedoidsPage() {
               </b>
             </span>
           </div>
-          <p>Customer data with outliers from annual spending vs. income.</p>
+            Customer / spend labels are illustrative. Clustering uses the current 2D points; medoids are actual observations.
           <select
             value={dataKey}
             onChange={(e) => choose(e.target.value as DataKey)}
@@ -331,8 +323,8 @@ export default function KMedoidsPage() {
                 key={i}
                 className={`${p.outlier ? "outlier" : "point"} ${medoid ? "medoid" : ""}`}
                 style={{
-                  left: `${((p.x + 90) / 220) * 100}%`,
-                  top: `${((90 - p.y) / 180) * 100}%`,
+                  left: `${scatterPercents(p.x, p.y, points).left}%`,
+                  top: `${scatterPercents(p.x, p.y, points).top}%`,
                   background: p.outlier ? "transparent" : COLORS[cluster],
                   borderColor: COLORS[cluster],
                 }}
@@ -348,9 +340,9 @@ export default function KMedoidsPage() {
                 <i
                   key={i}
                   style={{
-                    left: `${((p.x + 90) / 220) * 100}%`,
-                    top: `${((90 - p.y) / 180) * 100}%`,
-                    width: `${(kMedoidsDistance([p.x, p.y], m, "euclidean") / 220) * 100}%`,
+                    left: `${scatterPercents(p.x, p.y, points).left}%`,
+                    top: `${scatterPercents(p.x, p.y, points).top}%`,
+                    width: `${Math.min(40, kMedoidsDistance([p.x, p.y], m, metric) * 8)}%`,
                     transform: `rotate(${(Math.atan2(-(m[1] - p.y), m[0] - p.x) * 180) / Math.PI}deg)`,
                     background: COLORS[active.assignments[i]],
                   }}
@@ -358,7 +350,7 @@ export default function KMedoidsPage() {
               );
             })}
           <article>
-            <b>Step {phase + 1} of 6</b>
+            <b>Step {phase + 1} of {result.steps.length}</b>
             <h3>
               {
                 [
@@ -503,7 +495,7 @@ export default function KMedoidsPage() {
           <button onClick={() => setToast("Fullscreen toggled")}>
             ⛶ Fullscreen
           </button>
-          <button onClick={() => setToast("Help opened")}>
+          <button onClick={() => go("Help")}>
             <HelpCircle />
             Help
           </button>

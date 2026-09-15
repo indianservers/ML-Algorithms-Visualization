@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
+import { useLabNavigate } from "../../../lib/labNavigation";
 import { Download, Maximize2, Upload } from "lucide-react";
 import { evaluateMulticlass } from "../../../lib/evaluation/multiclassMetrics";
 import "./ConfusionMatrixApprovedPage.css";
@@ -72,6 +73,7 @@ export default function ConfusionMatrixApprovedPage() {
     [samplePage, setSamplePage] = useState(0),
     [message, setMessage] = useState("Interactive"),
     [editMode, setEditMode] = useState(false);
+  const go = useLabNavigate();
   const fileRef = useRef<HTMLInputElement>(null),
     dataset = imported ?? datasets[datasetIndex],
     expanded = expand(dataset),
@@ -124,7 +126,7 @@ export default function ConfusionMatrixApprovedPage() {
         <button className="active">⌂ Home</button>
         <h4>LEARN</h4>
         {["◇ Courses", "▣ Playgrounds", "▤ Models"].map((x) => (
-          <button onClick={() => setMessage(`${x} opened`)} key={x}>
+          <button onClick={() => go(x)} key={x}>
             {x}
           </button>
         ))}
@@ -138,7 +140,7 @@ export default function ConfusionMatrixApprovedPage() {
         ].map((x) => (
           <button
             className={x.includes("Evaluate") ? "active" : ""}
-            onClick={() => setMessage(`${x} opened`)}
+            onClick={() => go(x)}
             key={x}
           >
             {x}
@@ -146,7 +148,7 @@ export default function ConfusionMatrixApprovedPage() {
         ))}
         <h4>RESOURCES</h4>
         {["▤ Docs", "◇ Guides", "▱ API"].map((x) => (
-          <button onClick={() => setMessage(`${x} opened`)} key={x}>
+          <button onClick={() => go(x)} key={x}>
             {x}
           </button>
         ))}

@@ -6,8 +6,8 @@ export function exponentialSmoothing(
 ) {
   if (!values.length || !values.every(Number.isFinite))
     throw new Error("Exponential smoothing requires finite observations");
-  if (!Number.isFinite(alpha) || alpha < 0 || alpha > 1)
-    throw new Error("Alpha must be between 0 and 1");
+  if (!Number.isFinite(alpha) || alpha <= 0 || alpha > 1)
+    throw new Error("Alpha must satisfy 0 < α ≤ 1");
   if (!Number.isFinite(horizon) || horizon < 1)
     throw new Error("Forecast horizon must be positive");
   const a = alpha;
@@ -34,9 +34,11 @@ export function exponentialSmoothing(
   const percentageErrors = usable
     .map((value, i) => values[i + 1] === 0 ? undefined : Math.abs(value / values[i + 1]))
     .filter((value): value is number => value !== undefined);
-  const mape = percentageErrors.length
-    ? (percentageErrors.reduce((sum, value) => sum + value, 0) / percentageErrors.length) * 100
-    : 0;
+  const mape = percentageErrors.length !== usable.length
+    ? Number.NaN
+    : percentageErrors.length
+      ? (percentageErrors.reduce((sum, value) => sum + value, 0) / percentageErrors.length) * 100
+      : Number.NaN;
   const bias =
     usable.reduce((sum, value) => sum + value, 0) / Math.max(1, usable.length);
   const naive = values.slice(1).map((value, i) => value - values[i]);
@@ -62,5 +64,32 @@ export function exponentialSmoothing(
     lower,
     upper,
     metrics: { mae, rmse, mape, bias, theilU: rmse / naiveRmse },
+    initialization: "Level initialized to the first observation y_0.",
+  };
+}
+
+export function inspectExponentialSmoothing(
+  values: number[],
+  alpha: number,
+  index: number,
+) {
+  if (index < 0 || index >= values.length) {
+    throw new Error("Timestep is outside the series.");
+  }
+  if (index === 0) {
+    return {
+      observation: values[0],
+      previousSmoothed: values[0],
+      alpha,
+      smoothed: values[0],
+    };
+  }
+  const prior = exponentialSmoothing(values.slice(0, index), alpha, 1);
+  const previousSmoothed = prior.level.at(-1) ?? values[0];
+  return {
+    observation: values[index],
+    previousSmoothed,
+    alpha,
+    smoothed: alpha * values[index] + (1 - alpha) * previousSmoothed,
   };
 }

@@ -14,6 +14,7 @@ export interface RegressionTreeNode {
 export interface RegressionTreeOptions {
   maxDepth: number;
   minSamplesLeaf: number;
+  minSamplesSplit?: number;
   costComplexity?: number;
   preferredSplits?: Array<{ featureIndex: number; threshold: number }>;
   preferredSplitsByNode?: Record<
@@ -170,8 +171,10 @@ export function buildRegressionTree(
     impurity: variance(y),
     gain: 0,
   };
+  const minSplit = options.minSamplesSplit ?? 2;
   if (
     depth >= options.maxDepth ||
+    y.length < minSplit ||
     y.length < options.minSamplesLeaf * 2 ||
     node.impurity <= 1e-12
   )

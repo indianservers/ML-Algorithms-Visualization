@@ -77,6 +77,32 @@ export function maxPool2d(matrix: ImageMatrix, size = 2): ImageMatrix {
   );
 }
 
+export function convolutionPatch(
+  image: ImageMatrix,
+  kernel: ImageMatrix,
+  outputRow: number,
+  outputColumn: number,
+  stride = 1,
+  padding = 0,
+  dilation = 1,
+  bias = 0,
+) {
+  const patch = kernel.map((row, ky) =>
+    row.map((_, kx) => {
+      const y = outputRow * stride + ky * dilation - padding;
+      const x = outputColumn * stride + kx * dilation - padding;
+      if (y >= 0 && y < image.length && x >= 0 && x < (image[0]?.length ?? 0))
+        return image[y][x];
+      return 0;
+    }),
+  );
+  const products = kernel.map((row, ky) =>
+    row.map((weight, kx) => weight * patch[ky][kx]),
+  );
+  const sum = products.flat().reduce((total, value) => total + value, 0);
+  return { patch, products, sum, bias, output: sum + bias };
+}
+
 export function normalizeFeatureMap(matrix: ImageMatrix): ImageMatrix {
   const values = matrix.flat(),
     minimum = Math.min(...values),

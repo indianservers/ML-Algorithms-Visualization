@@ -15,11 +15,19 @@ import {
   SlidersHorizontal,
   Upload,
 } from "lucide-react";
-import { trainXGBoostRegression } from "../../../../lib/algorithms/regression/xgboostRegression";
+import { trainGradientBoostingClassification } from "../../../../lib/algorithms/classification/gradientBoostingClassification";
+import { binaryMetrics } from "../../../../lib/math/metrics";
+import {
+  datasetAPerfectBinary,
+  datasetCXor,
+  datasetDTwoMoons,
+  datasetECircles,
+  datasetHImbalanced,
+} from "../../../../lib/classification/classificationDatasets";
 import "./XGBoostConceptPage.css";
 
 type Row = { features: number[]; target: number };
-type Dataset = "california" | "energy" | "housing" | "synthetic" | "imported";
+type Dataset = "separable" | "moons" | "xor" | "imbalanced" | "circles" | "imported";
 type Tab =
   | "learn"
   | "visualize"
@@ -37,88 +45,29 @@ const TABS: Tab[] = [
   "compare",
   "explain",
 ];
-const NAMES = [
-  "MedInc",
-  "HouseAge",
-  "AveRooms",
-  "AveBedrms",
-  "Population",
-  "AveOccup",
-  "Latitude",
-  "Longitude",
-];
+const NAMES = ["x1", "x2"];
 const LABELS: Record<Dataset, string> = {
-  california: "California Housing (Regression)",
-  energy: "Energy Efficiency",
-  housing: "Compact Housing",
-  synthetic: "Synthetic Nonlinear",
+  separable: "Perfect separable binary",
+  moons: "Two moons",
+  xor: "XOR regions",
+  imbalanced: "Imbalanced 90/10",
+  circles: "Concentric circles",
   imported: "Imported Dataset",
 };
-const noise = (i: number, k: number) => Math.sin(i * 91.73 * k) * 0.5 + 0.5;
-function makeRows(kind: Exclude<Dataset, "imported">, count = 320): Row[] {
-  return Array.from({ length: count }, (_, i) => {
-    const a = noise(i + 1, 1.1),
-      b = noise(i + 3, 1.7),
-      c = noise(i + 5, 2.3),
-      d = noise(i + 9, 3.1);
-    const features =
-      kind === "energy"
-        ? [
-            a * 1.2,
-            b * 50,
-            c * 8,
-            d * 4,
-            a * 500,
-            b * 5,
-            30 + c * 20,
-            -120 + d * 10,
-          ]
-        : [
-            0.6 + a * 7.5,
-            4 + b * 46,
-            2.2 + c * 6,
-            0.7 + d * 1.2,
-            250 + a * 4300,
-            1.2 + b * 4,
-            32 + c * 10,
-            -124 + d * 10,
-          ];
-    let target =
-      0.35 +
-      features[0] * 0.42 +
-      Math.sin(features[2]) * 0.35 -
-      features[5] * 0.08 +
-      (noise(i, 4.3) - 0.5) * 0.32;
-    if (kind === "housing")
-      target =
-        0.6 + features[0] * 0.3 + features[2] * 0.12 - features[1] * 0.006;
-    if (kind === "synthetic")
-      target =
-        1.2 +
-        Math.sin(features[0]) +
-        0.07 * features[2] ** 2 -
-        0.16 * features[5];
-    if (kind === "energy")
-      target = 8 + features[1] * 0.28 + features[2] * 1.4 - features[3] * 0.6;
-    return { features, target };
-  });
+function fromPoints(
+  points: { x: number; y: number; label: number }[],
+): Row[] {
+  return points.map((point) => ({
+    features: [point.x, point.y],
+    target: point.label,
+  }));
 }
 const BUILT = {
-  california: makeRows("california"),
-  energy: makeRows("energy", 168),
-  housing: makeRows("housing", 150),
-  synthetic: makeRows("synthetic", 280),
-};
-const metrics = (actual: number[], predicted: number[]) => {
-  const average = actual.reduce((s, v) => s + v, 0) / actual.length,
-    mse =
-      actual.reduce((s, v, i) => s + (v - predicted[i]) ** 2, 0) /
-      actual.length,
-    mae =
-      actual.reduce((s, v, i) => s + Math.abs(v - predicted[i]), 0) /
-      actual.length,
-    total = actual.reduce((s, v) => s + (v - average) ** 2, 0) || 1;
-  return { rmse: Math.sqrt(mse), mae, r2: 1 - (mse * actual.length) / total };
+  separable: fromPoints(datasetAPerfectBinary()),
+  moons: fromPoints(datasetDTwoMoons(90, 9)),
+  xor: fromPoints(datasetCXor()),
+  imbalanced: fromPoints(datasetHImbalanced()),
+  circles: fromPoints(datasetECircles(90, 13)),
 };
 function Sparkline({ train, valid }: { train: number[]; valid: number[] }) {
   const points = (values: number[]) => {
@@ -143,59 +92,69 @@ function Sparkline({ train, valid }: { train: number[]; valid: number[] }) {
 
 export default function XGBoostConceptPage() {
   const [tab, setTab] = useState<Tab>("learn"),
-    [dataset, setDataset] = useState<Dataset>("california"),
-    [rows, setRows] = useState<Row[]>(BUILT.california),
+    [dataset, setDataset] = useState<Dataset>("separable"),
+    [rows, setRows] = useState<Row[]>(BUILT.separable),
     [imported, setImported] = useState<Row[]>([]);
   const [rate, setRate] = useState(0.1),
-    [depth, setDepth] = useState(6),
+    [depth, setDepth] = useState(3),
     [subsample, setSubsample] = useState(0.8),
     [colsample, setColsample] = useState(0.8),
     [minChild, setMinChild] = useState(1),
     [lambda, setLambda] = useState(1),
     [alpha, setAlpha] = useState(0),
-    [trees, setTrees] = useState(60);
+    [trees, setTrees] = useState(12);
   const [trained, setTrained] = useState("Ready"),
     [toast, setToast] = useState(""),
     [light, setLight] = useState(false),
-    [metricName, setMetricName] = useState("RMSE"),
-    [query, setQuery] = useState(BUILT.california[0].features.slice());
+    [metricName, setMetricName] = useState("logloss"),
+    [query, setQuery] = useState(BUILT.separable[0].features.slice());
   const uploadRef = useRef<HTMLInputElement>(null),
     X = useMemo(() => rows.map((r) => r.features), [rows]),
-    y = useMemo(() => rows.map((r) => r.target), [rows]);
+    y = useMemo(
+      () => rows.map((r) => (r.target >= 0.5 ? 1 : 0)),
+      [rows],
+    );
   const model = useMemo(
     () =>
-      trainXGBoostRegression(X, y, {
-        estimators: trees,
-        learningRate: rate,
-        maxDepth: depth,
+      trainGradientBoostingClassification(X, y, {
+        estimators: Math.max(1, Math.min(40, Math.round(trees))),
+        learningRate: rate / (1 + lambda),
+        maxDepth: Math.max(1, Math.round(depth)),
         subsample,
-        colsample,
-        minChildWeight: minChild,
-        lambda,
-        alpha,
-        gamma: 0.1,
-        validationFraction: 0.2,
-        seed: 2026,
+        minSamplesLeaf: Math.max(1, Math.round(minChild + alpha)),
+        seed: 2026 + Math.round(colsample * 10),
       }),
     [X, y, trees, rate, depth, subsample, colsample, minChild, lambda, alpha],
   );
-  const predictions = useMemo(() => X.map(model.predict), [X, model]),
-    report = metrics(y, predictions),
-    root = model.stages[0].tree,
+  const predictions = useMemo(() => X.map(model.predict), [X, model]);
+  const probabilities = useMemo(() => X.map(model.probability), [X, model]);
+  const report = binaryMetrics(y, predictions);
+  const root = model.stages[0].tree,
     left = root.left,
     right = root.right;
   const best =
     model.stages.reduce(
       (bestIndex, item, index, all) =>
-        item.validationRmse < all[bestIndex].validationRmse ? index : bestIndex,
+        item.logLoss < all[bestIndex].logLoss ? index : bestIndex,
       0,
     ) + 1;
-  const importance = model.featureImportance
-    .map((value, index) => ({
-      value,
-      name: NAMES[index] ?? `Feature ${index + 1}`,
-    }))
-    .sort((a, b) => b.value - a.value);
+  const importance = (() => {
+    const width = X[0]?.length ?? 0;
+    const gains = Array.from({ length: width }, () => 0);
+    const walk = (node: { featureIndex?: number; left?: unknown; right?: unknown }) => {
+      if (node.featureIndex !== undefined) gains[node.featureIndex] += 1;
+      if (node.left) walk(node.left as typeof node);
+      if (node.right) walk(node.right as typeof node);
+    };
+    model.stages.forEach((stage) => walk(stage.tree));
+    const total = gains.reduce((s, v) => s + v, 0) || 1;
+    return gains
+      .map((value, index) => ({
+        value: value / total,
+        name: NAMES[index] ?? `Feature ${index + 1}`,
+      }))
+      .sort((a, b) => b.value - a.value);
+  })();
   const choose = (next: Dataset) => {
     const source = next === "imported" ? imported : BUILT[next];
     if (!source.length) return;
@@ -211,7 +170,7 @@ export default function XGBoostConceptPage() {
   };
   const reset = () => {
     setTab("learn");
-    choose("california");
+    choose("separable");
     setRate(0.1);
     setDepth(6);
     setSubsample(0.8);
@@ -220,7 +179,7 @@ export default function XGBoostConceptPage() {
     setLambda(1);
     setAlpha(0);
     setTrees(60);
-    setMetricName("RMSE");
+    setMetricName("logloss");
     setToast("");
   };
   const upload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -333,8 +292,9 @@ export default function XGBoostConceptPage() {
           <div>
             <h1>XGBoost Concept ☆</h1>
             <p>
-              Gradient boosting with regularization, shrinkage, and column
-              subsampling.
+              Educational gradient-boosted trees for binary classification
+              (not a full XGBoost/WASM runtime). Lambda shrinks the learning
+              rate; alpha raises the minimum leaf size.
             </p>
           </div>
           <span>
@@ -481,7 +441,10 @@ export default function XGBoostConceptPage() {
                   ))}
                 </div>
                 <strong>
-                  Predicted value <b>{model.predict(query).toFixed(3)}</b>
+                  Predicted class{" "}
+                  <b>{model.predict(query)}</b>
+                  {" · P(class 1) "}
+                  <b>{model.probability(query).toFixed(3)}</b>
                 </strong>
                 <p>
                   Baseline {model.baseline.toFixed(3)} plus{" "}
@@ -570,16 +533,16 @@ export default function XGBoostConceptPage() {
               <span>
                 <b>Left Child</b>N: {left?.samples ?? root.samples}
                 <br />
-                Grad: {left?.gradient.toFixed(2) ?? root.gradient.toFixed(2)}
+                Score: {left?.value.toFixed(2) ?? root.value.toFixed(2)}
                 <br />
-                Hess: {left?.hessian.toFixed(2) ?? root.hessian.toFixed(2)}
+                Impurity: {left?.impurity.toFixed(2) ?? root.impurity.toFixed(2)}
               </span>
               <span>
                 <b>Right Child</b>N: {right?.samples ?? 0}
                 <br />
-                Grad: {right?.gradient.toFixed(2) ?? "0.00"}
+                Score: {right?.value.toFixed(2) ?? "0.00"}
                 <br />
-                Hess: {right?.hessian.toFixed(2) ?? "0.00"}
+                Impurity: {right?.impurity.toFixed(2) ?? "0.00"}
               </span>
             </div>
             <div className="formula">
@@ -608,11 +571,11 @@ export default function XGBoostConceptPage() {
               Learning Curve <Info />
             </h2>
             <div className="legend">
-              — Train RMSE · <span>— Valid RMSE</span>
+              — Train log loss · <span>— Stage accuracy (1−acc scale)</span>
             </div>
             <Sparkline
-              train={model.stages.map((s) => s.trainRmse)}
-              valid={model.stages.map((s) => s.validationRmse)}
+              train={model.stages.map((s) => s.logLoss)}
+              valid={model.stages.map((s) => 1 - s.accuracy)}
             />
             <b>
               Best Iteration <strong>{best}</strong>
@@ -638,13 +601,13 @@ export default function XGBoostConceptPage() {
             </h2>
             <div className="cards">
               <span>
-                RMSE<b>{report.rmse.toFixed(3)}</b>
+                Acc<b>{report.accuracy.toFixed(3)}</b>
               </span>
               <span>
-                MAE<b>{report.mae.toFixed(3)}</b>
+                F1<b>{report.f1.toFixed(3)}</b>
               </span>
               <span>
-                R²<b>{report.r2.toFixed(3)}</b>
+                Rec<b>{report.recall.toFixed(3)}</b>
               </span>
             </div>
             <div className="scatter">
@@ -683,7 +646,7 @@ export default function XGBoostConceptPage() {
         </div>
         <label>
           TARGET
-          <input value="Median House Value" readOnly />
+          <input value="Binary class (0/1)" readOnly />
         </label>
         <p>
           TRAIN / VALID SPLIT <span>80% · 20%</span>
@@ -695,7 +658,7 @@ export default function XGBoostConceptPage() {
           <label>
             Objective
             <select>
-              <option>reg:squarederror</option>
+              <option>binary:logistic (educational GBT)</option>
             </select>
           </label>
           <label>
@@ -704,8 +667,8 @@ export default function XGBoostConceptPage() {
               value={metricName}
               onChange={(event) => setMetricName(event.target.value)}
             >
-              <option>RMSE</option>
-              <option>MAE</option>
+              <option>logloss</option>
+              <option>accuracy</option>
             </select>
           </label>
         </div>

@@ -79,7 +79,7 @@ const noise = (index: number, salt = 0) => {
   return (raw - Math.floor(raw)) * 2 - 1;
 };
 
-function californiaRows(count = 20640): ElasticRow[] {
+function californiaRows(count = 240): ElasticRow[] {
   return Array.from({ length: count }, (_, index) => {
     const features = [
       Math.sin(index * 0.029),

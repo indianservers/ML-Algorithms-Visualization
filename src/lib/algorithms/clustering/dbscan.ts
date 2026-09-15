@@ -9,6 +9,19 @@ export interface DBSCANResult {
   corePoints: number[];
   borderPoints: number[];
   noisePoints: number[];
+  expansionOrder: number[];
+}
+
+export function dbscanNeighbors(
+  X: number[][],
+  index: number,
+  eps: number,
+): number[] {
+  if (!X[index] || !(eps > 0)) return [];
+  return X.reduce<number[]>((neighbors, candidate, j) => {
+    if (euclideanDistance(X[index], candidate) <= eps) neighbors.push(j);
+    return neighbors;
+  }, []);
 }
 
 export function dbscan(
@@ -24,6 +37,7 @@ export function dbscan(
       corePoints: [],
       borderPoints: [],
       noisePoints: [],
+      expansionOrder: [],
     };
   }
   if (!(eps > 0) || minPts < 1)
@@ -35,6 +49,7 @@ export function dbscan(
   const n = X.length;
   const labels = Array(n).fill(-1);
   const visited = Array(n).fill(false);
+  const expansionOrder: number[] = [];
   let clusterID = 0;
 
   const neighborhoods = X.map((point) =>
@@ -52,6 +67,7 @@ export function dbscan(
       labels[i] = -1;
     } else {
       labels[i] = clusterID;
+      expansionOrder.push(i);
       const queue = [...neighbors];
       const queued = new Set(queue);
       for (let cursor = 0; cursor < queue.length; cursor++) {
@@ -67,7 +83,10 @@ export function dbscan(
             }
           }
         }
-        if (labels[current] < 0) labels[current] = clusterID;
+        if (labels[current] < 0) {
+          labels[current] = clusterID;
+          expansionOrder.push(current);
+        }
       }
       clusterID++;
     }
@@ -97,5 +116,6 @@ export function dbscan(
     corePoints,
     borderPoints,
     noisePoints,
+    expansionOrder,
   };
 }

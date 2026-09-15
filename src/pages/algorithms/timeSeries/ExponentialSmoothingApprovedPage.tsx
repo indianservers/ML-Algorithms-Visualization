@@ -1,6 +1,15 @@
 /* eslint-disable no-irregular-whitespace */
 import { useRef, useState } from "react";
+import { useLabNavigate } from "../../../lib/labNavigation";
 import { exponentialSmoothing } from "../../../lib/timeSeries/exponentialSmoothing";
+import { chronologicalSplit } from "../../../lib/timeSeries/timeSeriesSplit";
+import { forecastMetrics, naiveForecast } from "../../../lib/timeSeries/forecastMetrics";
+import { TIME_SERIES_CATALOG } from "../../../lib/timeSeries/timeSeriesDatasets";
+import {
+  optimizeSesAlpha,
+  splitRangeLabels,
+} from "../../../lib/timeSeries/forecastDiagnostics";
+import { useActiveTimeSeries } from "../../../lib/timeSeries/useActiveTimeSeries";
 import "./ExponentialSmoothingApprovedPage.css";
 
 type Point = { time: string; value: number };
@@ -48,6 +57,13 @@ const DATA = [
     periods: 2160,
     points: make(125, 180),
   },
+  ...TIME_SERIES_CATALOG.map((item) => ({
+    name: item.name,
+    source: "Catalog",
+    frequency: item.frequency,
+    periods: item.points.length,
+    points: item.points.map((point) => ({ time: point.date, value: point.value })),
+  })),
 ];
 function line(
   values: number[],
@@ -79,10 +95,34 @@ export default function ExponentialSmoothingApprovedPage() {
     [controlsOpen, setControlsOpen] = useState(true),
     [status, setStatus] = useState("Ready"),
     [collapsed, setCollapsed] = useState(false);
+  const go = useLabNavigate();
+  const handoff = useActiveTimeSeries("/ml/time-series/exponential-smoothing");
   const fileRef = useRef<HTMLInputElement>(null),
-    points = uploaded?.points ?? DATA[dataset].points,
+    points =
+      uploaded?.points ??
+      (handoff
+        ? handoff.points.map((point) => ({ time: point.date, value: point.value }))
+        : DATA[dataset].points),
     values = points.map((x) => x.value),
-    result = exponentialSmoothing(values, alpha, horizon, confidence),
+    split = chronologicalSplit(values),
+    ranges = splitRangeLabels(
+      points.map((point) => point.time),
+      split.trainEnd,
+      split.validationEnd,
+    ),
+    result = exponentialSmoothing(
+      split.train.length ? split.train : values,
+      alpha,
+      horizon,
+      confidence,
+    ),
+    holdout = [...split.validation, ...split.test],
+    modelHoldout = result.forecast.slice(0, holdout.length),
+    naiveHoldout = split.train.length
+      ? naiveForecast(split.train, holdout.length)
+      : [],
+    holdoutMetrics = forecastMetrics(holdout, modelHoldout, split.train),
+    naiveMetrics = forecastMetrics(holdout, naiveHoldout, split.train),
     all = [...values, ...result.forecast, ...result.lower, ...result.upper],
     min = Math.min(...all) * 0.9,
     max = Math.max(...all) * 1.05,
@@ -140,22 +180,22 @@ export default function ExponentialSmoothingApprovedPage() {
           <button
             className={i === 1 ? "active" : ""}
             key={x}
-            onClick={() => setStatus(`${x.slice(2)} opened`)}
+            onClick={() => go(x)}
           >
             {x}
           </button>
         ))}
         <small>Resources</small>
         {["▣　Docs", "⌘　Algorithms", "▤　Notebooks", "▦　API"].map((x) => (
-          <button key={x} onClick={() => setStatus(`${x.slice(2)} opened`)}>
+          <button key={x} onClick={() => go(x)}>
             {x}
           </button>
         ))}
         <footer>
-          <button onClick={() => setStatus("Settings opened")}>
+          <button onClick={() => go("Settings")}>
             ⚙　Settings
           </button>
-          <button onClick={() => setStatus("Help opened")}>?　Help</button>
+          <button onClick={() => go("Help")}>?　Help</button>
           <button onClick={() => setCollapsed((v) => !v)}>
             ♧　Ada Lovelace　›<small>Pro Plan</small>
           </button>
@@ -164,6 +204,16 @@ export default function ExponentialSmoothingApprovedPage() {
       <header className="es-head">
         <p>
           Learn　›　Time Series　›　<b>Exponential Smoothing</b>
+        </p>
+        <p>
+          Train: {ranges.train} · Validation: {ranges.validation} · Test:{" "}
+          {ranges.test} · Forecast: {ranges.forecast} · FORECAST START after
+          train
+        </p>
+        <p>
+          Hold-out ME (actual − forecast):{" "}
+          {Number.isFinite(holdoutMetrics.me) ? holdoutMetrics.me.toFixed(3) : "n/a"}.
+          Positive means under-forecast on average.
         </p>
         <label>
           Dataset　
@@ -306,13 +356,22 @@ export default function ExponentialSmoothingApprovedPage() {
               RMSE (one-step) <b>{result.metrics.rmse.toFixed(2)}</b>
             </p>
             <p>
-              MAPE (one-step) <b>{result.metrics.mape.toFixed(2)}%</b>
+              MAPE (one-step) <b>{Number.isFinite(result.metrics.mape) ? `${result.metrics.mape.toFixed(2)}%` : "n/a (zero actuals)"}</b>
             </p>
             <p>
               Bias <b>{result.metrics.bias.toFixed(2)}</b>
             </p>
             <p>
               Theil's U <b>{result.metrics.theilU.toFixed(3)}</b>
+            </p>
+            <p>
+              Holdout RMSE <b>{Number.isFinite(holdoutMetrics.rmse) ? holdoutMetrics.rmse.toFixed(2) : "n/a"}</b>
+            </p>
+            <p>
+              Naive RMSE <b>{Number.isFinite(naiveMetrics.rmse) ? naiveMetrics.rmse.toFixed(2) : "n/a"}</b>
+            </p>
+            <p>
+              Initialization <b>first observation y₀</b>
             </p>
           </aside>
         </section>
@@ -340,6 +399,20 @@ export default function ExponentialSmoothingApprovedPage() {
               />
               <small>0.01　　　　　　　　　　　　　　　　　0.99</small>
             </label>
+            <button
+              type="button"
+              onClick={() => {
+                const fit = optimizeSesAlpha(
+                  split.train.length ? split.train : values,
+                );
+                setAlpha(Math.min(0.99, Math.max(0.01, fit.alpha)));
+                setStatus(
+                  `Optimized α=${fit.alpha.toFixed(2)} on train SSE ${fit.trainSse.toFixed(2)} (RMSE ${fit.trainRmse.toFixed(3)})`,
+                );
+              }}
+            >
+              Optimize α on train SSE
+            </button>
             <label>
               Animate Level Update{" "}
               <button
@@ -428,14 +501,14 @@ export default function ExponentialSmoothingApprovedPage() {
               </tr>
             </thead>
             <tbody>
-              {values.slice(-3).map((v, i) => {
-                const j = values.length - 3 + i;
+              {split.train.slice(-3).map((v, i) => {
+                const j = split.train.length - 3 + i;
                 return (
                   <tr className={i === 1 ? "active" : ""} key={j}>
                     <td>{j}</td>
                     <td>{v.toFixed(2)}</td>
-                    <td>{result.level[j].toFixed(2)}</td>
-                    <td>{result.oneStep[j].toFixed(2)}</td>
+                    <td>{result.level[j]?.toFixed(2) ?? "—"}</td>
+                    <td>{result.oneStep[j]?.toFixed(2) ?? "—"}</td>
                   </tr>
                 );
               })}

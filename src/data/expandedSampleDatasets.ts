@@ -553,6 +553,14 @@ const firstNames = [
   "Jade",
 ];
 
+function optionalRating(rand: () => number, missing = 0.18) {
+  return rand() < missing ? null : 1 + Math.floor(rand() * 5);
+}
+
+function userLabel(rand: () => number, index: number) {
+  return `${pick(rand, firstNames)}_${String(index + 1).padStart(3, "0")}`;
+}
+
 export const ratingsLargeDataset: Dataset = {
   id: "ratings-large",
   name: "Movie Ratings Matrix (760 rows)",
@@ -562,15 +570,190 @@ export const ratingsLargeDataset: Dataset = {
   columns: ["user", "movie_a", "movie_b", "movie_c", "movie_d", "movie_e"],
   data: (() => {
     const rand = seeded(101);
+    return Array.from({ length: ROW_COUNT }, (_, index) => ({
+      user: userLabel(rand, index),
+      movie_a: optionalRating(rand),
+      movie_b: optionalRating(rand),
+      movie_c: optionalRating(rand),
+      movie_d: optionalRating(rand),
+      movie_e: optionalRating(rand),
+    }));
+  })(),
+};
+
+export const bookRatingsDataset: Dataset = {
+  id: "book-ratings",
+  name: "Book Genre Ratings (760 rows)",
+  description:
+    "Reader scores across five book genres, with missing cells for collaborative filtering.",
+  type: "recommendation",
+  columns: ["user", "fantasy", "mystery", "biography", "science", "romance"],
+  data: (() => {
+    const rand = seeded(201);
     return Array.from({ length: ROW_COUNT }, (_, index) => {
-      const score = () => (rand() < 0.18 ? null : 1 + Math.floor(rand() * 5));
+      const taste = index % 5;
+      const bias = (genre: number) => (taste === genre ? 1 : 0);
+      const skewed = (genre: number) => {
+        if (rand() < 0.16) return null;
+        return Math.max(1, Math.min(5, 3 + bias(genre) * 2 - Math.floor(rand() * 2)));
+      };
       return {
-        user: `${pick(rand, firstNames)}_${String(index + 1).padStart(3, "0")}`,
-        movie_a: score(),
-        movie_b: score(),
-        movie_c: score(),
-        movie_d: score(),
-        movie_e: score(),
+        user: userLabel(rand, index),
+        fantasy: skewed(0),
+        mystery: skewed(1),
+        biography: skewed(2),
+        science: skewed(3),
+        romance: skewed(4),
+      };
+    });
+  })(),
+};
+
+export const musicRatingsDataset: Dataset = {
+  id: "music-ratings",
+  name: "Music Track Ratings (760 rows)",
+  description:
+    "Listener ratings for pop, jazz, hip-hop, classical, and indie tracks.",
+  type: "recommendation",
+  columns: ["user", "pop", "jazz", "hip_hop", "classical", "indie"],
+  data: (() => {
+    const rand = seeded(211);
+    return Array.from({ length: ROW_COUNT }, (_, index) => ({
+      user: userLabel(rand, index),
+      pop: optionalRating(rand, 0.14),
+      jazz: optionalRating(rand, 0.22),
+      hip_hop: optionalRating(rand, 0.18),
+      classical: optionalRating(rand, 0.28),
+      indie: optionalRating(rand, 0.2),
+    }));
+  })(),
+};
+
+export const restaurantRatingsDataset: Dataset = {
+  id: "restaurant-ratings",
+  name: "Restaurant Cuisine Ratings (760 rows)",
+  description:
+    "Diner ratings for Italian, Indian, Mexican, Japanese, and American restaurants.",
+  type: "recommendation",
+  columns: ["user", "italian", "indian", "mexican", "japanese", "american"],
+  data: (() => {
+    const rand = seeded(221);
+    return Array.from({ length: ROW_COUNT }, (_, index) => ({
+      user: userLabel(rand, index),
+      italian: optionalRating(rand, 0.15),
+      indian: optionalRating(rand, 0.17),
+      mexican: optionalRating(rand, 0.19),
+      japanese: optionalRating(rand, 0.21),
+      american: optionalRating(rand, 0.16),
+    }));
+  })(),
+};
+
+const productCategories = ["electronics", "home", "apparel", "books", "sports"] as const;
+
+export const ecommerceInteractionsDataset: Dataset = {
+  id: "ecommerce-interactions",
+  name: "E-commerce Product Interactions (760 rows)",
+  description:
+    "Implicit and explicit shopping signals: clicks, cart adds, purchases, and optional ratings.",
+  type: "recommendation",
+  columns: [
+    "user_id",
+    "item_id",
+    "category",
+    "clicks",
+    "added_to_cart",
+    "purchased",
+    "rating",
+  ],
+  data: (() => {
+    const rand = seeded(231);
+    return Array.from({ length: ROW_COUNT }, (_, index) => {
+      const clicks = 1 + Math.floor(rand() * 12);
+      const addedToCart = clicks >= 4 && rand() > 0.35 ? 1 : 0;
+      const purchased = addedToCart === 1 && rand() > 0.4 ? 1 : 0;
+      return {
+        user_id: `U${String((index % 190) + 1).padStart(3, "0")}`,
+        item_id: `SKU-${1000 + (index % 240)}`,
+        category: pick(rand, productCategories),
+        clicks,
+        added_to_cart: addedToCart,
+        purchased,
+        rating: purchased ? 1 + Math.floor(rand() * 5) : null,
+      };
+    });
+  })(),
+};
+
+const courseTopics = ["python", "statistics", "sql", "machine-learning", "product-design"] as const;
+
+export const courseRatingsDataset: Dataset = {
+  id: "course-ratings",
+  name: "Online Course Ratings (760 rows)",
+  description:
+    "Learner ratings for catalog courses, with topic, difficulty, hours watched, and completion.",
+  type: "recommendation",
+  columns: [
+    "user_id",
+    "course_id",
+    "topic",
+    "difficulty",
+    "hours_watched",
+    "completed",
+    "rating",
+  ],
+  data: (() => {
+    const rand = seeded(241);
+    return Array.from({ length: ROW_COUNT }, (_, index) => {
+      const topic = courseTopics[index % courseTopics.length]!;
+      const difficulty = 1 + (index * 3) % 5;
+      const hours = round(lerp(rand, 0.5, 18), 1);
+      const completed = hours > 8 && rand() > 0.35 ? 1 : 0;
+      const rating =
+        rand() < 0.12 ? null : Math.max(1, Math.min(5, Math.round(2 + hours / 5 + (completed ? 1 : 0) - difficulty * 0.15)));
+      return {
+        user_id: `L${String((index % 160) + 1).padStart(3, "0")}`,
+        course_id: `C-${topic.slice(0, 3).toUpperCase()}-${(index % 48) + 1}`,
+        topic,
+        difficulty,
+        hours_watched: hours,
+        completed,
+        rating,
+      };
+    });
+  })(),
+};
+
+const videoGenres = ["drama", "comedy", "documentary", "scifi", "sports"] as const;
+
+export const videoWatchRatingsDataset: Dataset = {
+  id: "video-watch-ratings",
+  name: "Video Streaming Watch Ratings (760 rows)",
+  description:
+    "Streaming sessions with genre, watch minutes, completion, and optional show ratings.",
+  type: "recommendation",
+  columns: [
+    "user_id",
+    "show_id",
+    "genre",
+    "watch_minutes",
+    "completed",
+    "rating",
+  ],
+  data: (() => {
+    const rand = seeded(251);
+    return Array.from({ length: ROW_COUNT }, (_, index) => {
+      const genre = videoGenres[index % videoGenres.length]!;
+      const runtime = 22 + (index % 4) * 18;
+      const watch = Math.round(lerp(rand, 4, runtime + 8));
+      const completed = watch >= runtime * 0.9 ? 1 : 0;
+      return {
+        user_id: `V${String((index % 175) + 1).padStart(3, "0")}`,
+        show_id: `S${String((index % 90) + 1).padStart(3, "0")}`,
+        genre,
+        watch_minutes: watch,
+        completed,
+        rating: watch < 8 && rand() < 0.5 ? null : optionalRating(rand, 0.1),
       };
     });
   })(),
@@ -772,6 +955,12 @@ export const expandedSampleDatasets: Dataset[] = [
   newsTopicLargeDataset,
   productReviewsLargeDataset,
   ratingsLargeDataset,
+  bookRatingsDataset,
+  musicRatingsDataset,
+  restaurantRatingsDataset,
+  ecommerceInteractionsDataset,
+  courseRatingsDataset,
+  videoWatchRatingsDataset,
   loanLargeDataset,
   customerChurnLargeDataset,
   medicalRiskLargeDataset,

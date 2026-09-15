@@ -34,10 +34,15 @@ import {
   studentMarksDataset,
 } from "../../../../data/sampleDatasets";
 import {
+  datasetKPiecewise,
+  datasetLSvrNonlinear,
+  labPoints,
+} from "../../../../lib/regression/regressionDatasets";
+import {
   polynomialFeatures,
   ridgeRegression,
 } from "../../../../lib/algorithms/regression/linearRegression";
-import { mse, rSquared } from "../../../../lib/math/metrics";
+import { mae, mse, rmse, rSquared } from "../../../../lib/math/metrics";
 import "./PolynomialRegressionPage.css";
 
 type Point = { x: number; y: number };
@@ -76,6 +81,16 @@ function sineRows(noise: number, count = 200): Point[] {
 }
 const datasetFactories = {
   sine: (noise: number) => sineRows(noise),
+  quadratic: (_noise: number) =>
+    Array.from({ length: 11 }, (_, i) => {
+      const x = i - 5;
+      return { x, y: x * x };
+    }),
+  cubic: (_noise: number) =>
+    Array.from({ length: 21 }, (_, i) => {
+      const x = i - 10;
+      return { x, y: 0.5 * x ** 3 - 2 * x ** 2 + x + noiseAt(i) * 6 };
+    }),
   linear: () =>
     Array.from({ length: 80 }, (_, i) => {
       const x = -3 + (i * 6) / 79;
@@ -91,13 +106,19 @@ const datasetFactories = {
       x: r.temperature_c,
       y: r.demand_mw,
     })),
+  piecewise: () => labPoints(datasetKPiecewise()).map((p) => ({ x: p.x, y: p.y })),
+  svrCurve: () => labPoints(datasetLSvrNonlinear()).map((p) => ({ x: p.x, y: p.y })),
 };
 type DatasetId = keyof typeof datasetFactories;
 const datasetLabels: Record<DatasetId, string> = {
   sine: "Sine Wave with Noise",
+  quadratic: "Quadratic (y = x²)",
+  cubic: "Cubic with noise",
   linear: "Synthetic Linear Data",
   students: "Student Marks Dataset",
   energy: "Energy Demand Dataset",
+  piecewise: "Piecewise / tree",
+  svrCurve: "Smooth nonlinear",
 };
 function scaler(points: Point[], mode: Scaling) {
   const xs = points.map((p) => p.x),
@@ -122,23 +143,24 @@ function scaler(points: Point[], mode: Scaling) {
   };
 }
 function fit(points: Point[], degree: number, alpha: number, scaling: Scaling) {
-  const train = points.filter((_, i) => i % 5 !== 0),
-    validation = points.filter((_, i) => i % 5 === 0),
-    scaleX = scaler(train, scaling).transform,
-    model = ridgeRegression(
-      polynomialFeatures(
-        train.map((p) => scaleX(p.x)),
-        degree,
-      ),
-      train.map((p) => p.y),
-      alpha,
-    ),
-    predict = (x: number) =>
-      model.predict(polynomialFeatures([scaleX(x)], degree)[0]),
-    ta = train.map((p) => p.y),
-    tp = train.map((p) => predict(p.x)),
-    va = validation.map((p) => p.y),
-    vp = validation.map((p) => predict(p.x));
+  const train = points.filter((_, i) => i % 5 !== 0);
+  const validation = points.filter((_, i) => i % 5 === 0);
+  if (train.length < 2 || validation.length < 1) {
+    throw new Error("Polynomial degree fitting requires enough observations for a train/validation split.");
+  }
+  const scaleX = scaler(train, scaling).transform;
+  const expanded = polynomialFeatures(train.map((p) => scaleX(p.x)), degree);
+  if (expanded.some((row) => row.some((v) => !Number.isFinite(v)))) {
+    throw new Error(`Polynomial degree ${degree} produced non-finite features. Scale the input or lower the degree.`);
+  }
+  const model = ridgeRegression(expanded, train.map((p) => p.y), alpha);
+  const predict = (x: number) => model.predict(polynomialFeatures([scaleX(x)], degree)[0]);
+  const ta = train.map((p) => p.y);
+  const tp = train.map((p) => predict(p.x));
+  const va = validation.map((p) => p.y);
+  const vp = validation.map((p) => predict(p.x));
+  const trainStats = { mae: mae(ta, tp), rmse: rmse(ta, tp), r2: rSquared(ta, tp) };
+  const valStats = { mae: mae(va, vp), rmse: rmse(va, vp), r2: rSquared(va, vp) };
   return {
     model,
     predict,
@@ -146,11 +168,14 @@ function fit(points: Point[], degree: number, alpha: number, scaling: Scaling) {
     validation,
     trainMse: mse(ta, tp),
     validationMse: mse(va, vp),
-    r2: rSquared(
-      points.map((p) => p.y),
-      points.map((p) => predict(p.x)),
-    ),
-    residuals: points.map((p) => ({ x: p.x, value: p.y - predict(p.x) })),
+    trainRmse: trainStats.rmse,
+    validationRmse: valStats.rmse,
+    trainR2: trainStats.r2,
+    validationR2: valStats.r2,
+    r2: valStats.r2,
+    mae: valStats.mae,
+    rmse: valStats.rmse,
+    residuals: validation.map((p, i) => ({ x: p.x, value: p.y - vp[i] })),
   };
 }
 const fmt = (value: number, digits = 4) =>
@@ -258,7 +283,7 @@ function MainChart({
       const xv = xMin + (i * (xMax - xMin)) / 99;
       return { x: xv, y: result.predict(xv) };
     }),
-    band = Math.sqrt(result.validationMse / result.validation.length) * 1.96,
+    band = Math.sqrt(result.validationMse),
     upper = curve.map((p) => ({ x: p.x, y: p.y + band })),
     lower = [...curve].reverse().map((p) => ({ x: p.x, y: p.y - band }));
   const click = (e: React.MouseEvent<SVGSVGElement>) => {
@@ -455,7 +480,7 @@ function ErrorChart({
 export default function PolynomialRegressionPage() {
   const [activeTab, setActiveTab] = useState<Tab>("learn"),
     [degree, setDegree] = useState(3),
-    [alpha, setAlpha] = useState(0.001),
+    [alpha, setAlpha] = useState(0),
     [noise, setNoise] = useState(0.1),
     [scaling, setScaling] = useState<Scaling>("standardize"),
     [datasetId, setDatasetId] = useState<DatasetId>("sine"),
@@ -473,13 +498,17 @@ export default function PolynomialRegressionPage() {
     ),
     errors = useMemo(
       () =>
-        Array.from({ length: 10 }, (_, i) => {
-          const r = fit(rows, i + 1, alpha, scaling);
-          return {
-            degree: i + 1,
-            train: r.trainMse,
-            validation: r.validationMse,
-          };
+        [1, 2, 3, 5, 8].map((d) => {
+          try {
+            const r = fit(rows, d, alpha, scaling);
+            return {
+              degree: d,
+              train: r.trainRmse,
+              validation: r.validationRmse,
+            };
+          } catch {
+            return { degree: d, train: Number.NaN, validation: Number.NaN };
+          }
         }),
       [rows, alpha, scaling],
     ),
@@ -1146,6 +1175,14 @@ function MetricsPanel({
         <article>
           <small>R²</small>
           <strong>{fmt(result.r2)}</strong>
+        </article>
+        <article>
+          <small>MAE</small>
+          <strong>{fmt(result.mae)}</strong>
+        </article>
+        <article>
+          <small>RMSE</small>
+          <strong>{fmt(result.rmse)}</strong>
         </article>
         <article>
           <small>Overall MSE</small>

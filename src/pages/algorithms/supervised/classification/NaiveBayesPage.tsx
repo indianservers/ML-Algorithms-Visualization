@@ -25,11 +25,22 @@ import {
   Upload,
 } from "lucide-react";
 import { irisDataset } from "../../../../data/sampleDatasets";
-import { trainGaussianNB } from "../../../../lib/algorithms/classification/naiveBayes";
+import {
+  trainBernoulliNB,
+  trainGaussianNB,
+  trainMultinomialNB,
+} from "../../../../lib/algorithms/classification/naiveBayes";
+import {
+  datasetFThreeBlobs,
+  datasetGIris,
+  datasetKCounts,
+  datasetLBernoulli,
+  pointsToRows,
+} from "../../../../lib/classification/classificationDatasets";
 import "./NaiveBayesPage.css";
 
 type Row = { features: number[]; label: number };
-type DatasetId = "iris" | "wine" | "clusters" | "diagnostic" | "imported";
+type DatasetId = "iris" | "blobs" | "counts" | "bernoulli" | "imported";
 type TabId =
   | "learn"
   | "visualize"
@@ -114,18 +125,30 @@ const transformRows = (source: Row[], kind: DatasetId): Row[] =>
     }
     return { features: [...row.features], label: row.label };
   });
-const BASE = irisRows();
+const BASE = datasetGIris().map((row) => ({
+  features: row.features,
+  label: row.label,
+}));
 const BUILT_INS: Record<Exclude<DatasetId, "imported">, Row[]> = {
   iris: BASE,
-  wine: transformRows(BASE, "wine"),
-  clusters: transformRows(BASE, "clusters"),
-  diagnostic: transformRows(BASE, "diagnostic"),
+  blobs: pointsToRows(datasetFThreeBlobs(), ["A", "B", "C"]).map((row) => ({
+    features: [...row.features, row.features[0] * 0.4, row.features[1] * 0.3],
+    label: row.label,
+  })),
+  counts: datasetKCounts().map((row) => ({
+    features: row.features,
+    label: row.label,
+  })),
+  bernoulli: datasetLBernoulli().map((row) => ({
+    features: row.features,
+    label: row.label,
+  })),
 };
 const LABELS: Record<DatasetId, string> = {
-  iris: "Fisher's Iris (150 samples)",
-  wine: "Wine Chemistry (150 samples)",
-  clusters: "Gaussian Clusters (150 samples)",
-  diagnostic: "Diagnostic Measures (150 samples)",
+  iris: "Iris (Gaussian NB)",
+  blobs: "Three-class blobs (Gaussian NB)",
+  counts: "Topic word counts (Multinomial NB)",
+  bernoulli: "Binary spam flags (Bernoulli NB)",
   imported: "Imported CSV",
 };
 
@@ -181,10 +204,38 @@ export default function NaiveBayesPage() {
   const uploadRef = useRef<HTMLInputElement>(null);
   const X = useMemo(() => rows.map((row) => row.features), [rows]);
   const y = useMemo(() => rows.map((row) => row.label), [rows]);
-  const model = useMemo(() => trainGaussianNB(X, y), [X, y]);
-  const evidence = useMemo(
-    () =>
-      model.classes.map((label) => {
+  const fitted = useMemo(() => {
+    try {
+      const model =
+        datasetId === "counts"
+          ? trainMultinomialNB(X, y, smoothing)
+          : datasetId === "bernoulli"
+            ? trainBernoulliNB(X, y, smoothing)
+            : trainGaussianNB(X, y);
+      return { model, error: "" };
+    } catch (error) {
+      return {
+        model: trainGaussianNB(
+          BASE.map((row) => row.features),
+          BASE.map((row) => row.label),
+        ),
+        error: error instanceof Error ? error.message : "Naive Bayes training failed",
+      };
+    }
+  }, [X, y, datasetId, smoothing]);
+  const model = fitted.model;
+  const evidence = useMemo(() => {
+    if (!("means" in model)) {
+      const proba = model.predictProba(query);
+      return model.classes.map((label) => ({
+        label,
+        prior: model.priors[label],
+        likelihoods: query.map(() => 1),
+        logJoint: Math.log((proba[label] ?? 1e-12) + 1e-300),
+        joint: proba[label] ?? 0,
+      }));
+    }
+    return model.classes.map((label) => {
         const prior =
           priorMode === "uniform"
             ? 1 / model.classes.length
@@ -208,9 +259,8 @@ export default function NaiveBayesPage() {
           logJoint,
           joint: Math.exp(logJoint),
         };
-      }),
-    [active, model, priorMode, query, smoothing],
-  );
+      });
+  }, [active, datasetId, model, priorMode, query, smoothing]);
   const posteriors = useMemo(() => {
     const max = Math.max(...evidence.map((item) => item.logJoint));
     const values = evidence.map((item) => Math.exp(item.logJoint - max));
@@ -237,8 +287,18 @@ export default function NaiveBayesPage() {
     for (let j = 0; j < lines; j++)
       for (let i = 0; i < cols; i++) {
         const sample = query.slice();
-        sample[axes[0]] = x0 + ((i + 0.5) / cols) * (x1 - x0);
-        sample[axes[1]] = y0 + ((j + 0.5) / lines) * (y1 - y0);
+        let xVal = x0 + ((i + 0.5) / cols) * (x1 - x0);
+        let yVal = y0 + ((j + 0.5) / lines) * (y1 - y0);
+        if (datasetId === "bernoulli") {
+          xVal = xVal >= 0.5 ? 1 : 0;
+          yVal = yVal >= 0.5 ? 1 : 0;
+        }
+        if (datasetId === "counts") {
+          xVal = Math.max(0, xVal);
+          yVal = Math.max(0, yVal);
+        }
+        sample[axes[0]] = xVal;
+        sample[axes[1]] = yVal;
         cells.push({ x: i, y: j, label: model.predict(sample) });
       }
     return {
@@ -255,7 +315,7 @@ export default function NaiveBayesPage() {
         label: row.label,
       })),
     };
-  }, [X, axes, model, query, rows]);
+  }, [X, axes, datasetId, model, query, rows]);
   const selectDataset = (next: DatasetId) => {
     const source = next === "imported" ? imported : BUILT_INS[next];
     if (!source.length) return;
@@ -263,8 +323,17 @@ export default function NaiveBayesPage() {
     setRows(
       source.map((row) => ({ features: [...row.features], label: row.label })),
     );
-    setQuery(source[Math.floor(source.length / 2)].features.slice());
-    setTrained("Gaussian Naive Bayes");
+    const sample = source[Math.floor(source.length / 2)].features.slice();
+    setQuery(sample);
+    setActive(sample.map(() => true));
+    setAxes([0, Math.min(1, sample.length - 1)]);
+    setTrained(
+      next === "counts"
+        ? "Multinomial Naive Bayes"
+        : next === "bernoulli"
+          ? "Bernoulli Naive Bayes"
+          : "Gaussian Naive Bayes",
+    );
   };
   const reset = () => {
     setDatasetId("iris");
@@ -322,6 +391,7 @@ export default function NaiveBayesPage() {
         <p>
           Toggle feature evidence to see how likelihoods multiply into posterior
           probabilities.
+          {fitted.error ? ` Training error: ${fitted.error}` : ""}
         </p>
         <div>
           {CLASSES.map((name, index) => (
@@ -367,7 +437,11 @@ export default function NaiveBayesPage() {
                 key={item.label}
                 color={COLORS[item.label]}
                 value={query[2]}
-                mean={model.means[item.label][2]}
+                mean={
+                  "means" in model
+                    ? model.means[item.label][Math.min(2, query.length - 1)]
+                    : 0
+                }
               />
             ))}
           </div>
@@ -480,7 +554,11 @@ export default function NaiveBayesPage() {
                       <Bell
                         color={COLORS[item.label]}
                         value={query[feature]}
-                        mean={model.means[item.label][feature]}
+                        mean={
+                          "means" in model
+                            ? (model.means[item.label][feature] ?? 0)
+                            : 0
+                        }
                       />
                       <b>{item.likelihoods[feature].toFixed(4)}</b>
                     </>
@@ -699,7 +777,7 @@ export default function NaiveBayesPage() {
             </article>
             <article>
               <b>{(posteriors[predicted] * 100).toFixed(1)}%</b>
-              <span>Query confidence</span>
+              <span>Query posterior</span>
             </article>
           </div>
         </section>

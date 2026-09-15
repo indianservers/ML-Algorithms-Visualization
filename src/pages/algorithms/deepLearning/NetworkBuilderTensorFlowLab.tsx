@@ -56,32 +56,40 @@ const presets: Record<string, LayerConfig[]> = {
   ],
 };
 
-function makeDataset(kind: DatasetName, count = 240): Point[] {
+function seeded(seed: number) {
+  let state = seed >>> 0;
+  return () => {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    return state / 4294967296;
+  };
+}
+
+function makeDataset(kind: DatasetName, count = 240, seed = 17): Point[] {
+  const rand = seeded(seed);
   return Array.from({ length: count }, (_, index) => {
     const t = index / count;
     if (kind === "xor") {
-      const x = Math.random() * 2 - 1;
-      const y = Math.random() * 2 - 1;
+      const x = rand() * 2 - 1;
+      const y = rand() * 2 - 1;
       return { x, y, label: x * y > 0 ? 1 : 0 };
     }
     if (kind === "circles") {
-      const r =
-        index % 2 ? 0.72 + Math.random() * 0.18 : 0.25 + Math.random() * 0.16;
-      const a = Math.random() * Math.PI * 2;
+      const r = index % 2 ? 0.72 + rand() * 0.18 : 0.25 + rand() * 0.16;
+      const a = rand() * Math.PI * 2;
       return { x: Math.cos(a) * r, y: Math.sin(a) * r, label: index % 2 };
     }
     if (kind === "moons") {
-      const a = Math.random() * Math.PI;
+      const a = rand() * Math.PI;
       const upper = index % 2 === 0;
       return upper
         ? {
-            x: Math.cos(a) * 0.75 - 0.1 + Math.random() * 0.08,
-            y: Math.sin(a) * 0.55 + Math.random() * 0.08,
+            x: Math.cos(a) * 0.75 - 0.1 + rand() * 0.08,
+            y: Math.sin(a) * 0.55 + rand() * 0.08,
             label: 0,
           }
         : {
-            x: 0.55 - Math.cos(a) * 0.75 + Math.random() * 0.08,
-            y: -Math.sin(a) * 0.55 + 0.35 + Math.random() * 0.08,
+            x: 0.55 - Math.cos(a) * 0.75 + rand() * 0.08,
+            y: -Math.sin(a) * 0.55 + 0.35 + rand() * 0.08,
             label: 1,
           };
     }
@@ -89,8 +97,8 @@ function makeDataset(kind: DatasetName, count = 240): Point[] {
     const r = t;
     const a = t * Math.PI * 7 + label * Math.PI;
     return {
-      x: Math.cos(a) * r + Math.random() * 0.08,
-      y: Math.sin(a) * r + Math.random() * 0.08,
+      x: Math.cos(a) * r + rand() * 0.08,
+      y: Math.sin(a) * r + rand() * 0.08,
       label,
     };
   });

@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useLabNavigate } from "../../../lib/labNavigation";
 import {
   binaryMetrics,
   precisionRecallCurve,
@@ -123,6 +124,7 @@ export default function PrecisionRecallApprovedPage() {
   const [showPoint, setShowPoint] = useState(true);
   const [showConfidence, setShowConfidence] = useState(false);
   const [message, setMessage] = useState("Ready");
+  const go = useLabNavigate();
   const uploadRef = useRef<HTMLInputElement>(null);
   const dataset = customDataset ?? datasets[datasetIndex];
 
@@ -304,13 +306,13 @@ export default function PrecisionRecallApprovedPage() {
             <button
               className={item.includes("Playground") ? "active" : ""}
               key={item}
-              onClick={() => setMessage(`${item.slice(2)} opened`)}
+              onClick={() => go(item)}
             >
               {item}
             </button>
           ))}
         </nav>
-        <button className="pr-help" onClick={() => setMessage("Help opened")}>? Help</button>
+        <button className="pr-help" onClick={() => go("Help")}>? Help</button>
         <button className="pr-user" onClick={() => setMessage("Profile opened")}>
           <span>AS</span><b>Avery Smith<small>Data Scientist</small></b><i>›</i>
         </button>

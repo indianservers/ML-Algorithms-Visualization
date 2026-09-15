@@ -11,10 +11,19 @@ import {
   Upload,
 } from "lucide-react";
 import { multinomialLogisticRegression } from "../../../../lib/algorithms/classification/multinomialLogisticRegression";
+import {
+  classificationSplit,
+  fitStandardScaler,
+} from "../../../../lib/classification/classificationEval";
+import {
+  datasetFThreeBlobs,
+  datasetGIris,
+  pointsToRows,
+} from "../../../../lib/classification/classificationDatasets";
 import "./MultinomialLogisticRegressionPage.css";
 
 type Row = { features: number[]; label: number };
-type DatasetKey = "iris" | "wine" | "seeds" | "synthetic" | "imported";
+type DatasetKey = "iris" | "blobs" | "wine" | "seeds" | "synthetic" | "imported";
 const tabs = [
   "Learn",
   "Visualize",
@@ -26,7 +35,7 @@ const tabs = [
 ] as const;
 type Tab = (typeof tabs)[number];
 const colors = ["#1ed4e8", "#39d68b", "#ff685c"],
-  names = ["Class A", "Class B", "Class C"],
+  names = ["setosa", "versicolor", "virginica"],
   featureNames = ["Sepal Length", "Sepal Width", "Petal Length", "Petal Width"];
 function clusters(count = 150, kind = 0): Row[] {
   return Array.from({ length: count }, (_, i) => {
@@ -47,11 +56,24 @@ function clusters(count = 150, kind = 0): Row[] {
     };
   });
 }
+const irisRows = datasetGIris().map((row) => ({
+  features: row.features,
+  label: row.label,
+}));
+const blobRows = pointsToRows(datasetFThreeBlobs(), [
+  "blob 0",
+  "blob 1",
+  "blob 2",
+]).map((row) => ({
+  features: [...row.features, row.features[0] * 0.3, row.features[1] * 0.2],
+  label: row.label,
+}));
 const builtins = {
-  iris: { name: "Iris (Fisher's Iris)", count: 150, rows: clusters(150) },
-  wine: { name: "Wine Cultivars", count: 178, rows: clusters(178, 2) },
-  seeds: { name: "Wheat Seeds", count: 210, rows: clusters(210, 4) },
-  synthetic: { name: "Synthetic Blobs", count: 180, rows: clusters(180, 6) },
+  iris: { name: "Iris (measurements + class-conditional draws)", count: irisRows.length, rows: irisRows },
+  blobs: { name: "Three-class blobs (lab F)", count: blobRows.length, rows: blobRows },
+  wine: { name: "Wine-like 4D blobs", count: blobRows.length, rows: blobRows.map((r, i) => ({ features: r.features.map((v, j) => v + (j + 1) * 0.15 * r.label), label: r.label })) },
+  seeds: { name: "Seeds-like 4D blobs", count: blobRows.length, rows: blobRows.map((r) => ({ features: r.features.map((v) => v * 1.4 + 2), label: r.label })) },
+  synthetic: { name: "Synthetic 3-class", count: blobRows.length, rows: blobRows },
 };
 function parseCsv(text: string) {
   const lines = text.trim().split(/\r?\n/).filter(Boolean);
@@ -68,27 +90,23 @@ function parseCsv(text: string) {
   });
 }
 function fit(rows: Row[], l2: number, c: number) {
-  const means = featureNames.map(
-      (_, j) => rows.reduce((s, v) => s + v.features[j], 0) / rows.length,
-    ),
-    scales = featureNames.map(
-      (_, j) =>
-        Math.sqrt(
-          rows.reduce((s, v) => s + (v.features[j] - means[j]) ** 2, 0) /
-            rows.length,
-        ) || 1,
-    ),
-    standard = (f: number[]) => f.map((v, j) => (v - means[j]) / scales[j]);
+  const X = rows.map((v) => v.features);
+  const y = rows.map((v) => v.label);
+  const nClasses = new Set(y).size;
+  const split = classificationSplit(X, y, 0.2, 42);
+  const scaler = fitStandardScaler(split.trainX);
   const model = multinomialLogisticRegression(
-    rows.map((v) => standard(v.features)),
-    rows.map((v) => v.label),
-    3,
+    scaler.transformAll(split.trainX),
+    split.trainY,
+    nClasses,
     0.11,
     360,
     (l2 * 0.025) / c,
   );
+  const standard = (f: number[]) => scaler.transform(f);
   return {
     ...model,
+    split,
     standard,
     proba: (f: number[]) => model.predictProba(standard(f)),
     predict: (f: number[]) => model.predict(standard(f)),
@@ -115,16 +133,24 @@ function DecisionPlot({
 }) {
   const W = 430,
     H = 330,
-    p = 34,
-    min = -2.2,
-    max = 2.2,
-    s = (v: number) => p + ((v - min) / (max - min)) * (W - 2 * p),
-    sy = (v: number) => H - p - ((v - min) / (max - min)) * (H - 2 * p);
+    pad = 34;
+  const xs = rows.map((row) => row.features[x1]),
+    ys = rows.map((row) => row.features[x2]),
+    minX = Math.min(...xs),
+    maxX = Math.max(...xs),
+    minY = Math.min(...ys),
+    maxY = Math.max(...ys),
+    meanF = [0, 1, 2, 3].map(
+      (j) => rows.reduce((s, row) => s + row.features[j], 0) / rows.length,
+    );
+  const s = (v: number) => pad + ((v - minX) / (maxX - minX || 1)) * (W - 2 * pad),
+    sy = (v: number) =>
+      H - pad - ((v - minY) / (maxY - minY || 1)) * (H - 2 * pad);
   const grid = Array.from({ length: 22 }, (_, yi) =>
     Array.from({ length: 25 }, (_, xi) => {
-      const a = min + (xi / 24) * (max - min),
-        b = min + (yi / 21) * (max - min),
-        f = [0, 0, 0, 0];
+      const a = minX + (xi / 24) * (maxX - minX),
+        b = minY + (yi / 21) * (maxY - minY),
+        f = meanF.slice();
       f[x1] = a;
       f[x2] = b;
       return { a, b, c: model.predict(f) };
@@ -137,8 +163,8 @@ function DecisionPlot({
       onClick={(e) => {
         const r = e.currentTarget.getBoundingClientRect();
         onSelect([
-          min + ((e.clientX - r.left) / r.width) * (max - min),
-          max - ((e.clientY - r.top) / r.height) * (max - min),
+          minX + ((e.clientX - r.left) / r.width) * (maxX - minX),
+          maxY - ((e.clientY - r.top) / r.height) * (maxY - minY),
         ]);
       }}
     >
@@ -153,12 +179,8 @@ function DecisionPlot({
           opacity=".24"
         />
       ))}
-      {boundary && (
-        <path
-          d="M205 30 L195 170 L33 225 M195 170 L395 255"
-          className="boundary"
-        />
-      )}
+      {boundary &&
+        null}
       {points &&
         rows.map((v, i) => (
           <circle
@@ -328,7 +350,7 @@ function Generic({
         {tab === "Train"
           ? `Softmax optimization completed ${loss.length} iterations; final negative log-likelihood ${loss.at(-1)?.toFixed(4)}.`
           : tab === "Metrics"
-            ? `Training accuracy ${(accuracy * 100).toFixed(1)}%. Inspect per-class precision, recall, and confusion outcomes.`
+            ? `Train accuracy ${(accuracy * 100).toFixed(1)}%. Test accuracy is shown in the status bar — not the same number.`
             : tab === "Compare"
               ? "Compare softmax probabilities and one-vs-rest alternatives across regularization settings."
               : tab === "Explain"
@@ -357,9 +379,14 @@ export default function MultinomialLogisticRegressionPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   // The selected-point interaction must not retrain the model.
   const model = useMemo(() => fit(rows, l2, c), [rows, l2, c]);
-  const accuracy =
-    rows.filter((v) => model.predict(v.features) === v.label).length /
-    rows.length;
+  const trainAcc =
+    model.split.trainX.filter(
+      (row, i) => model.predict(row) === model.split.trainY[i],
+    ).length / model.split.nTrain;
+  const testAcc =
+    model.split.testX.filter(
+      (row, i) => model.predict(row) === model.split.testY[i],
+    ).length / model.split.nTest;
   const selectedFeatures = [0, 0, 0, 0];
   selectedFeatures[x1] = selected[0];
   selectedFeatures[x2] = selected[1];
@@ -481,7 +508,7 @@ export default function MultinomialLogisticRegressionPage() {
             {tab === "Dataset" ? (
               <DataTable rows={rows} setRows={setRows} />
             ) : tab !== "Visualize" ? (
-              <Generic tab={tab} loss={model.lossHistory} accuracy={accuracy} />
+              <Generic tab={tab} loss={model.lossHistory} accuracy={trainAcc} />
             ) : (
               <>
                 <article className="regions">
@@ -556,7 +583,7 @@ export default function MultinomialLogisticRegressionPage() {
                                 }}
                               />
                             </i>
-                            <b>{p.toFixed(2)}</b>
+                            <b>{p.toFixed(3)}</b>
                           </label>
                         ))}
                       </section>
@@ -566,7 +593,8 @@ export default function MultinomialLogisticRegressionPage() {
                       <b style={{ color: colors[prediction] }}>
                         {names[prediction]}
                       </b>{" "}
-                      (highest probability)
+                      (highest probability) · softmax sum{" "}
+                      {selectedProb.reduce((a, b) => a + b, 0).toFixed(4)}
                     </footer>
                   </article>
                   <article className="coefficients">
@@ -614,8 +642,8 @@ export default function MultinomialLogisticRegressionPage() {
                 value={dataset}
                 onChange={(e) => choose(e.target.value as DatasetKey)}
               >
-                <option value="iris">Iris (Fisher's Iris)</option>
-                <option value="wine">Wine Cultivars</option>
+                <option value="iris">Iris measurements</option>
+                <option value="blobs">Three-class blobs</option>
                 <option value="seeds">Wheat Seeds</option>
                 <option value="synthetic">Synthetic Blobs</option>
                 {imported && <option value="imported">Imported CSV</option>}
@@ -776,11 +804,10 @@ export default function MultinomialLogisticRegressionPage() {
             Loss (NLL) <b>{model.lossHistory.at(-1)?.toFixed(3)}</b>
           </span>
           <span>
-            Training Acc. <b>{(accuracy * 100).toFixed(1)}%</b>
+            Train Acc. <b>{(trainAcc * 100).toFixed(1)}%</b>
           </span>
           <span>
-            Validation Acc.
-            <b>{Math.max(0, accuracy * 100 - 1.1).toFixed(1)}%</b>
+            Test Acc. <b>{(testAcc * 100).toFixed(1)}%</b>
           </span>
           <span>
             Iterations <b>{model.lossHistory.length}</b>

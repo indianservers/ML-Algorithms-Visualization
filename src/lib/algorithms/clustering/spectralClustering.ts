@@ -1,10 +1,15 @@
+import { kmeans as clusterEmbedding } from "./kmeans";
+
 export type SpectralMetric = "euclidean" | "manhattan";
 export type SpectralKernel = "rbf" | "binary";
 export interface SpectralResult {
   affinity: number[][];
+  degree: number[];
+  unnormalizedLaplacian: number[][];
   embedding: number[][];
   labels: number[];
   eigenvalues: number[];
+  laplacianForm: string;
   normalizedCut: number;
   modularity: number;
   silhouette: number;
@@ -42,45 +47,6 @@ function orthonormalize(vectors: number[][]) {
   }
   return result;
 }
-function kmeans(X: number[][], k: number, seed: number) {
-  const rng = random(seed),
-    centers = [X[Math.floor(rng() * X.length)].slice()];
-  while (centers.length < k)
-    centers.push(
-      X.reduce(
-        (best, point) => {
-          const score = Math.min(
-            ...centers.map((center) => distance(point, center, "euclidean")),
-          );
-          return score > best.score ? { point, score } : best;
-        },
-        { point: X[0], score: -1 },
-      ).point.slice(),
-    );
-  let labels = Array(X.length).fill(0);
-  for (let iteration = 0; iteration < 40; iteration++) {
-    labels = X.map((point) =>
-      centers.reduce(
-        (best, center, index) =>
-          distance(point, center, "euclidean") <
-          distance(point, centers[best], "euclidean")
-            ? index
-            : best,
-        0,
-      ),
-    );
-    centers.forEach((center, cluster) =>
-      center.forEach((_, dimension) => {
-        const members = X.filter((__, index) => labels[index] === cluster);
-        if (members.length)
-          center[dimension] =
-            members.reduce((sum, point) => sum + point[dimension], 0) /
-            members.length;
-      }),
-    );
-  }
-  return labels;
-}
 export function spectralClustering(
   X: number[][],
   clusters = 3,
@@ -94,6 +60,10 @@ export function spectralClustering(
   const n = X.length;
   if (n < clusters || clusters < 2)
     throw new Error("Spectral clustering requires n >= k >= 2.");
+  if (n > 260)
+    throw new Error(
+      "Spectral clustering is capped at 260 samples in the browser lab because of the affinity/eigen decomposition.",
+    );
   const width = X[0]?.length;
   if (!Number.isInteger(clusters) || !width ||
       !X.every((row) => row.length === width && row.every(Number.isFinite)) ||
@@ -122,6 +92,9 @@ export function spectralClustering(
       }
   const degrees = affinity.map((row) =>
     row.reduce((sum, value) => sum + value, 0),
+  );
+  const unnormalizedLaplacian = degrees.map((degree, i) =>
+    affinity[i].map((value, j) => (i === j ? degree : 0) - value),
   );
   const normalized = affinity.map((row, i) =>
     row.map(
@@ -158,7 +131,13 @@ export function spectralClustering(
       row[i] /= norm;
     });
   });
-  const labels = kmeans(embedding, clusters, seed);
+  const { assignments: labels } = clusterEmbedding(
+    embedding,
+    clusters,
+    80,
+    "kmeans++",
+    seed,
+  );
   const volume = degrees.reduce((sum, value) => sum + value, 0) || 1;
   let modularity = 0;
   for (let i = 0; i < n; i++)
@@ -203,11 +182,15 @@ export function spectralClustering(
   });
   return {
     affinity,
+    degree: degrees,
+    unnormalizedLaplacian,
     embedding,
     labels,
     eigenvalues: ranked
       .map((item) => Math.max(0, 1 - item.value))
       .sort((a, b) => a - b),
+    laplacianForm:
+      "Embedding uses the symmetric normalized affinity D^{-1/2} A D^{-1/2}. Unnormalized L = D − A is also stored. Eigenvalues shown are 1 − λ of the normalized affinity (≈ Laplacian eigenvalues).",
     normalizedCut,
     modularity: modularity / volume,
     silhouette: silhouettes.reduce((sum, value) => sum + value, 0) / n,

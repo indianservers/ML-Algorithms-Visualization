@@ -1,4 +1,5 @@
 import { neighborhoodQuality } from "../../math/neighborhoodQuality";
+import { pca } from "./pca";
 
 export type UMAPMetric = "euclidean" | "manhattan" | "cosine";
 export interface UMAPEdge {
@@ -6,12 +7,19 @@ export interface UMAPEdge {
   to: number;
   weight: number;
 }
+export interface UMAPNeighbor {
+  rank: number;
+  id: number;
+  distance: number;
+}
 export interface UMAPResult {
   embedding: number[][];
   edges: UMAPEdge[];
+  neighbors: UMAPNeighbor[][];
   trustworthiness: number;
   continuity: number;
   distanceCorrelation: number;
+  incomplete: boolean;
 }
 const distance = (a: number[], b: number[], metric: UMAPMetric) => {
   if (metric === "manhattan")
@@ -36,17 +44,21 @@ export function umap(
   seed = 42,
   spread = 1,
   iterations = 220,
+  shouldStop?: () => boolean,
 ): UMAPResult {
   const n = X.length;
   if (n < 3) throw new Error("UMAP requires at least three samples.");
   const width = X[0]?.length;
   if (!width || !X.every((row) => row.length === width && row.every(Number.isFinite)))
     throw new Error("UMAP requires a finite rectangular feature matrix.");
-  if (!Number.isInteger(neighbors) || neighbors < 2 ||
-      !Number.isFinite(minDist) || minDist < 0 ||
+  if (!Number.isInteger(neighbors) || neighbors < 2 || neighbors >= n)
+    throw new Error(`UMAP n_neighbors must be in [2, N-1]. N=${n}.`);
+  if (!Number.isFinite(minDist) || minDist < 0 ||
       !Number.isFinite(spread) || spread <= 0 ||
       !Number.isInteger(iterations) || iterations < 1)
     throw new Error("Invalid UMAP hyperparameters.");
+  if (n > 800)
+    throw new Error("This browser UMAP-like optimizer is limited to 800 samples.");
   const k = Math.min(Math.max(2, neighbors), n - 1),
     lists = X.map((row, i) =>
       X.map((other, j) => ({
@@ -86,13 +98,18 @@ export function umap(
           weight = a + b - a * b;
         if (weight > 0) edges.push({ from: i, to: item.j, weight });
       }
-  const random = randomGenerator(seed),
-    means = [0, 1].map((d) => X.reduce((s, row) => s + (row[d] || 0), 0) / n),
-    embedding = X.map((row) => [
-      (row[0] - means[0]) * 0.2 + (random() - 0.5) * 0.01,
-      ((row[1] ?? row[0]) - means[1]) * 0.2 + (random() - 0.5) * 0.01,
-    ]);
+  const random = randomGenerator(seed);
+  const pcaInit = pca(X, 2, "none").projections;
+  const embedding = pcaInit.map((row) => [
+    row[0] * 0.01 + (random() - 0.5) * 0.01,
+    (row[1] ?? 0) * 0.01 + (random() - 0.5) * 0.01,
+  ]);
+  let incomplete = false;
   for (let iteration = 0; iteration < iterations; iteration++) {
+    if (shouldStop?.()) {
+      incomplete = true;
+      break;
+    }
     const rate = 0.8 * (1 - iteration / iterations) + 0.02;
     for (const edge of edges) {
       if (random() > edge.weight) continue;
@@ -142,5 +159,16 @@ export function umap(
     sx = Math.sqrt(pairs.reduce((s, p) => s + (p[0] - mx) ** 2, 0)),
     sy = Math.sqrt(pairs.reduce((s, p) => s + (p[1] - my) ** 2, 0)),
     distanceCorrelation = cov / Math.max(1e-12, sx * sy);
-  return { embedding, edges, trustworthiness, continuity, distanceCorrelation };
+  const neighborGraph = lists.map((row) =>
+    row.map((item, rank) => ({ rank: rank + 1, id: item.j, distance: item.d })),
+  );
+  return {
+    embedding,
+    edges,
+    neighbors: neighborGraph,
+    trustworthiness,
+    continuity,
+    distanceCorrelation,
+    incomplete,
+  };
 }

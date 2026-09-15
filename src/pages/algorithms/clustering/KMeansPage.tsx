@@ -529,7 +529,7 @@ export function KMeansAdvancedWorkbench() {
     () =>
       activeX.length >= 3 && (mode === "points" || Boolean(result))
         ? elbowMethod(activeX, Math.min(8, activeX.length)).map(
-            (inertia, i) => ({ k: i + 2, inertia: Number(inertia.toFixed(2)) }),
+            (inertia, i) => ({ k: i + 1, inertia: Number(inertia.toFixed(2)) }),
           )
         : [],
     [activeX, mode, result],

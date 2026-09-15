@@ -66,7 +66,7 @@ const categories = [
     description: "Bag of Words, TF-IDF, Sentiment Analysis in the browser",
     color: "from-amber-500 to-orange-600",
     link: "/ml/nlp/tf-idf",
-    count: 6,
+    count: 7,
   },
   {
     icon: <FlaskConical size={20} />,

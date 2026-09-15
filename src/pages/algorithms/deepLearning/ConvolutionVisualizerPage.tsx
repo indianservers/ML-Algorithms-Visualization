@@ -34,6 +34,36 @@ const samples: ImageMatrix[] = [
 ];
 
 function createKernel(size: number, preset: string): ImageMatrix {
+  if (preset === "Identity")
+    return Array.from({ length: size }, (_, y) =>
+      Array.from({ length: size }, (_, x) =>
+        x === Math.floor(size / 2) && y === Math.floor(size / 2) ? 1 : 0,
+      ),
+    );
+  if (preset === "Sobel X")
+    return size === 3
+      ? [
+          [-1, 0, 1],
+          [-2, 0, 2],
+          [-1, 0, 1],
+        ]
+      : Array.from({ length: size }, () =>
+          Array.from({ length: size }, (_, x) =>
+            x < Math.floor(size / 2) ? -1 : x > Math.floor((size - 1) / 2) ? 1 : 0,
+          ),
+        );
+  if (preset === "Sobel Y")
+    return size === 3
+      ? [
+          [-1, -2, -1],
+          [0, 0, 0],
+          [1, 2, 1],
+        ]
+      : Array.from({ length: size }, (_, y) =>
+          Array.from({ length: size }, () =>
+            y < Math.floor(size / 2) ? -1 : y > Math.floor((size - 1) / 2) ? 1 : 0,
+          ),
+        );
   if (preset === "Blur")
     return Array.from({ length: size }, () =>
       Array(size).fill(1 / (size * size)),
@@ -478,10 +508,13 @@ export default function ConvolutionVisualizerPage() {
               value={preset}
               onChange={(event) => choosePreset(event.target.value)}
             >
+              <option>Identity</option>
               <option>Edge</option>
               <option>Blur</option>
               <option>Sharpen</option>
               <option>Emboss</option>
+              <option>Sobel X</option>
+              <option>Sobel Y</option>
             </select>
           </h2>
           <label>Kernel Size</label>

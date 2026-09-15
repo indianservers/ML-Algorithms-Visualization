@@ -34,6 +34,7 @@ import {
   predictRegressionTree,
   regressionTreeDepth,
   regressionTreeLeaves,
+  regressionTreePath,
   type RegressionTreeNode,
 } from "../../../../lib/algorithms/regression/decisionTreeRegression";
 import { mae, mse, rSquared, rmse } from "../../../../lib/math/metrics";
@@ -66,7 +67,7 @@ const jitter = (index: number, salt = 0) => {
   return (value - Math.floor(value)) * 2 - 1;
 };
 
-function bikeRows(count = 8760): TreeRow[] {
+function bikeRows(count = 360): TreeRow[] {
   return Array.from({ length: count }, (_, index) => {
     const hour = index % 24;
     const day = Math.floor(index / 24);
@@ -236,11 +237,11 @@ function sampleRows(rows: TreeRow[], limit: number) {
 
 function fitTree(
   rows: TreeRow[],
-  datasetId: DatasetId,
+  _datasetId: DatasetId,
   maxDepth: number,
   minLeaf: number,
   cost: number,
-  thresholds: number[],
+  _thresholds: number[],
 ) {
   const working = sampleRows(rows, 1200);
   const training = working.filter((_, index) => index % 5 !== 0);
@@ -258,21 +259,14 @@ function fitTree(
   const variance =
     trainTargets.reduce((sum, value) => sum + (value - average) ** 2, 0) /
     trainTargets.length;
-  const preferredSplitsByNode =
-    datasetId === "bike" || datasetId === "energy"
-      ? {
-          root: { featureIndex: 1, threshold: thresholds[0] },
-          rootL: { featureIndex: 0, threshold: thresholds[1] },
-          rootR: { featureIndex: 2, threshold: thresholds[2] },
-          rootRL: { featureIndex: 3, threshold: thresholds[3] },
-        }
-      : undefined;
+  const preferredSplitsByNode = undefined;
   const tree = buildRegressionTree(
     training.map((row) => row.features),
     trainTargets,
     {
       maxDepth,
       minSamplesLeaf: actualLeaf,
+      minSamplesSplit: 4,
       costComplexity: cost * variance,
       preferredSplitsByNode,
     },
@@ -759,7 +753,7 @@ function TreeControls({
       <h3>
         Split Thresholds <Info size={13} />
       </h3>
-      <p>Drag sliders to adjust thresholds. Tree updates in real time.</p>
+      <p>CART chooses splits from the data. Depth and min-leaf rebuild the tree. These sliders are informational defaults only.</p>
       {controls.map((control, index) => (
         <label key={control.name}>
           <span>
@@ -962,11 +956,7 @@ function NodeInspector({
         <span>
           Samples (n)
           <b>
-            {node
-              ? Math.round(
-                  (node.samples / rootSamples) * totalRows,
-                ).toLocaleString()
-              : "—"}
+            {node ? node.samples.toLocaleString() : "—"}
           </b>
         </span>
         <span>
@@ -1348,14 +1338,15 @@ function GenericPanels({
       <aside>
         <small>Predicted target</small>
         <strong>{prediction.toFixed(2)}</strong>
-        <p>
-          {
-            flattenRegressionTree(result.tree).filter(
-              (node) => node.id && node.featureIndex !== undefined,
-            ).length
-          }{" "}
-          evaluated split nodes
-        </p>
+        <ol>
+          {regressionTreePath(result.tree, inputs).map((node) => (
+            <li key={node.id}>
+              {node.featureIndex === undefined
+                ? `Leaf ŷ = ${node.value.toFixed(2)} (n=${node.samples})`
+                : `${names[node.featureIndex]} ${inputs[node.featureIndex] <= (node.threshold ?? 0) ? "≤" : ">"} ${node.threshold?.toFixed(2)}`}
+            </li>
+          ))}
+        </ol>
       </aside>
     </section>
   );

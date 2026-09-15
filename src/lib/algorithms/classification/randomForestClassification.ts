@@ -32,6 +32,8 @@ export interface RandomForestClassificationModel {
   featureImportance: number[];
   oobPredictions: Array<number | null>;
   oobAccuracy: number;
+  oobSampleCount: number;
+  importanceType: "mean decrease in impurity";
   predict: (x: number[]) => number;
   predictProba: (x: number[]) => Record<number, number>;
   treePredictions: (x: number[]) => number[];
@@ -270,10 +272,12 @@ export function trainRandomForestClassification(
     trees,
     featureImportance: importance.map((value) => value / totalImportance),
     oobPredictions,
+    oobSampleCount: covered.length,
+    importanceType: "mean decrease in impurity",
     oobAccuracy: covered.length
       ? covered.filter((item) => item.value === y[item.index]).length /
         covered.length
-      : 0,
+      : NaN,
     predict,
     predictProba,
     treePredictions,

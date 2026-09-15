@@ -12,6 +12,7 @@ export interface FewShotEpisode {
   predictions: Array<{
     classIndex: number;
     distance: number;
+    probability: number;
     confidence: number;
     distances: number[];
   }>;
@@ -75,6 +76,7 @@ export function createFewShotEpisode(
     return {
       classIndex,
       distance: best,
+      probability: scores[classIndex] / total,
       confidence: scores[classIndex] / total,
       distances,
     };

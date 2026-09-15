@@ -1,10 +1,15 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useLabNavigate } from "../../../lib/labNavigation";
 import { Download, Save, Share2, Star, Upload } from "lucide-react";
+import { optics, type OpticsMetric, type OpticsResult } from "../../../lib/algorithms/clustering/optics";
 import {
-  optics,
-  type OpticsMetric,
-} from "../../../lib/algorithms/clustering/optics";
+  datasetETwoMoons,
+  datasetFConcentricCircles,
+  datasetGNoisyBlobs,
+  datasetKVariableDensity,
+} from "../../../lib/clustering/clusteringDatasets";
+import { fitClusterScaler } from "../../../lib/clustering/clusteringEval";
 import "./OPTICSPage.css";
 
 type Point = { x: number; y: number };
@@ -17,79 +22,17 @@ const COLORS = [
   "#ff647d",
   "#a66aea",
 ];
-const rand = (i: number, salt: number) => {
-  const value = Math.sin((i + 11) * 12.9898 + salt * 78.233) * 43758.5453;
-  return value - Math.floor(value);
-};
-function aggregation(): Point[] {
-  const centers = [
-      [-5.3, 0.3],
-      [-2.7, 5.3],
-      [0.8, 2.1],
-      [0.7, -0.3],
-      [5.6, 1.1],
-      [-2.7, -4.2],
-    ],
-    counts = [110, 105, 100, 95, 90, 80];
-  const points = centers.flatMap(([cx, cy], k) =>
-    Array.from({ length: counts[k] }, (_, i) => {
-      const angle = rand(i + k * 170, 1) * Math.PI * 2,
-        radius = Math.sqrt(rand(i + k * 170, 2)) * (0.65 + k * 0.05);
-      return {
-        x: cx + Math.cos(angle) * radius,
-        y: cy + Math.sin(angle) * radius,
-      };
-    }),
-  );
-  return points.concat(
-    Array.from({ length: 140 }, (_, i) => ({
-      x: rand(i, 31) * 15 - 7.5,
-      y: rand(i, 32) * 14 - 7,
-    })),
-  );
-}
-function makeData(kind: Exclude<Dataset, "aggregation" | "imported">): Point[] {
-  return Array.from({ length: 500 }, (_, i) => {
-    const t = rand(i, 4) * Math.PI * 2,
-      r = Math.sqrt(rand(i, 5));
-    if (kind === "rings") {
-      const radius = i % 2 ? 2.4 : 5;
-      return {
-        x: Math.cos(t) * radius + (rand(i, 6) - 0.5) * 0.25,
-        y: Math.sin(t) * radius + (rand(i, 7) - 0.5) * 0.25,
-      };
-    }
-    if (kind === "moons") {
-      const side = i % 2;
-      return {
-        x: Math.cos(t / 2 + side * Math.PI) * 3 + side * 1.7,
-        y:
-          Math.sin(t / 2 + side * Math.PI) * 3 +
-          side * 1.2 +
-          (rand(i, 8) - 0.5) * 0.35,
-      };
-    }
-    const centers = [
-        [-4, -2],
-        [0, 3.8],
-        [4, -1.3],
-        [0, 0],
-      ],
-      [cx, cy] = centers[i % 4];
-    return { x: cx + Math.cos(t) * r * 0.75, y: cy + Math.sin(t) * r * 0.75 };
-  });
-}
 const BUILT = {
-  aggregation: aggregation(),
-  moons: makeData("moons"),
-  rings: makeData("rings"),
-  blobs: makeData("blobs"),
+  aggregation: datasetKVariableDensity(),
+  moons: datasetETwoMoons(),
+  rings: datasetFConcentricCircles(),
+  blobs: datasetGNoisyBlobs(),
 };
 const NAMES: Record<Dataset, string> = {
-  aggregation: "Aggregation",
-  moons: "Two Moons",
-  rings: "Concentric Rings",
-  blobs: "Gaussian Blobs",
+  aggregation: "Variable-density clusters",
+  moons: "Two moons",
+  rings: "Concentric circles",
+  blobs: "Noisy blobs",
   imported: "Imported Data",
 };
 
@@ -98,7 +41,7 @@ export default function OPTICSPage() {
     [dataset, setDataset] = useState<Dataset>("aggregation"),
     [points, setPoints] = useState<Point[]>(BUILT.aggregation),
     [imported, setImported] = useState<Point[]>([]),
-    [minPts, setMinPts] = useState(15),
+    [minPts, setMinPts] = useState(5),
     [autoDistance, setAutoDistance] = useState(true),
     [maxDistance, setMaxDistance] = useState(2.45),
     [epsilon, setEpsilon] = useState(0.62),
@@ -108,29 +51,54 @@ export default function OPTICSPage() {
     [showCore, setShowCore] = useState(true),
     [showPath, setShowPath] = useState(true),
     [logScale, setLogScale] = useState(true),
+    [standardize, setStandardize] = useState(false),
+    [selected, setSelected] = useState(0),
     [toast, setToast] = useState("");
+  const go = useLabNavigate();
   const fileRef = useRef<HTMLInputElement>(null),
-    X = useMemo(() => points.map((p) => [p.x, p.y]), [points]);
-  const result = useMemo(
-    () =>
-      optics(
-        X,
-        Math.min(minPts, points.length),
-        autoDistance ? 2.45 : maxDistance,
-        extract ? epsilon : -1,
-        metric,
-      ),
-    [
-      X,
-      minPts,
-      autoDistance,
-      maxDistance,
-      epsilon,
-      metric,
-      extract,
-      points.length,
-    ],
-  );
+    X = useMemo(() => {
+      const raw = points.map((p) => [p.x, p.y]);
+      return standardize ? fitClusterScaler(raw).transformAll(raw) : raw;
+    }, [points, standardize]);
+  const fitted = useMemo(() => {
+    try {
+      return {
+        result: optics(
+          X,
+          Math.max(2, Math.min(minPts, points.length)),
+          autoDistance ? 2.45 : maxDistance,
+          extract ? epsilon : -1,
+          metric,
+        ),
+        error: "",
+      };
+    } catch (error) {
+      const empty: OpticsResult = {
+        ordering: [],
+        reachability: [],
+        coreDistances: [],
+        labels: points.map(() => -1),
+        core: points.map(() => false),
+        clusterCount: 0,
+        noiseCount: points.length,
+      };
+      return {
+        result: empty,
+        error: error instanceof Error ? error.message : "OPTICS failed",
+      };
+    }
+  }, [
+    X,
+    minPts,
+    autoDistance,
+    maxDistance,
+    epsilon,
+    metric,
+    extract,
+    points.length,
+    points,
+  ]);
+  const result = fitted.result;
   const choose = (kind: Dataset) => {
     const next = kind === "imported" ? imported : BUILT[kind];
     if (!next.length) return;
@@ -153,12 +121,12 @@ export default function OPTICSPage() {
     setImported(rows);
     setDataset("imported");
     setPoints(rows);
-    setMinPts(Math.min(15, rows.length));
+    setMinPts(Math.max(2, Math.min(5, rows.length)));
     setToast(`Imported ${rows.length} points`);
     event.target.value = "";
   };
   const reset = () => {
-    setMinPts(Math.min(15, points.length));
+    setMinPts(Math.max(2, Math.min(5, points.length)));
     setAutoDistance(true);
     setMaxDistance(2.45);
     setEpsilon(0.62);
@@ -227,14 +195,14 @@ export default function OPTICSPage() {
           ["⚗", "Experiments"],
           ["▣", "Reports"],
         ].map(([icon, name]) => (
-          <button key={name} onClick={() => setToast(name)}>
+          <button key={name} onClick={() => go(name)}>
             <i>{icon}</i>
             {name}
           </button>
         ))}
         <footer>
           {["▤ Docs", "⚗ API", "⚙ Settings"].map((name) => (
-            <button key={name} onClick={() => setToast(name)}>
+            <button key={name} onClick={() => go(name)}>
               {name}
             </button>
           ))}
@@ -304,10 +272,13 @@ export default function OPTICSPage() {
           <button onClick={() => setToast("Dataset switched")}>⟳ Switch</button>
           <label>
             Scaling{" "}
-            <select>
-              <option>Standardize</option>
-              <option>None</option>
-              <option>Min-Max</option>
+            <select
+              aria-label="Feature scaling"
+              value={standardize ? "z" : "none"}
+              onChange={(event) => setStandardize(event.target.value === "z")}
+            >
+              <option value="none">None (raw coordinates)</option>
+              <option value="z">Standardize (z-score)</option>
             </select>
           </label>
         </section>
@@ -337,6 +308,7 @@ export default function OPTICSPage() {
                   <i
                     key={i}
                     className={result.core[i] && showCore ? "core" : ""}
+                    onClick={() => setSelected(i)}
                     style={{
                       left: `${px(point.x)}%`,
                       top: `${py(point.y)}%`,
@@ -352,6 +324,34 @@ export default function OPTICSPage() {
             </div>
             <b className="op-x">Feature 1</b>
             <b className="op-y">Feature 2</b>
+            <p>
+              {fitted.error ? `${fitted.error} ` : ""}
+              Point {selected}: order {result.ordering.indexOf(selected)}, core
+              distance{" "}
+              {Number.isFinite(result.coreDistances[selected])
+                ? result.coreDistances[selected].toFixed(3)
+                : "∞"}
+              , reachability{" "}
+              {Number.isFinite(
+                result.reachability[result.ordering.indexOf(selected)],
+              )
+                ? result.reachability[
+                    result.ordering.indexOf(selected)
+                  ].toFixed(3)
+                : "∞"}
+              , cluster {result.labels[selected] ?? "n/a"}, neighbors in max-ε{" "}
+              {X.filter(
+                (row, j) =>
+                  j !== selected &&
+                  Math.hypot(
+                    row[0] - X[selected][0],
+                    row[1] - X[selected][1],
+                  ) <= (autoDistance ? 2.45 : maxDistance),
+              ).length}
+            </p>
+            <p>
+              Undefined reachability is plotted at the finite cap, never as 0.
+            </p>
           </article>
           <article className="op-reach">
             <h2>Reachability Plot ⓘ</h2>
@@ -567,13 +567,7 @@ export default function OPTICSPage() {
         </article>
         <article>
           <h3>⌄ Styling</h3>
-          <label>
-            Color Palette
-            <select>
-              <option>Vivid</option>
-              <option>Pastel</option>
-            </select>
-          </label>
+          <p>Color palette is the lab vivid set (pastel is not a second renderer).</p>
           <label>
             Show Core Points{" "}
             <input

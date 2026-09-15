@@ -6,9 +6,10 @@ import {
   type AutoencoderArchitecture,
   type AutoencoderResult,
 } from "../../../lib/algorithms/dimensionality/autoencoder";
+import { getDimensionalityDataset } from "../../../lib/dimensionality/dimensionalityDatasets";
 import "./AutoencoderDimensionalityPage.css";
 type Sample = { pixels: number[]; label: number };
-type Dataset = "digits" | "fashion" | "symbols" | "imported";
+type Dataset = "digits" | "fashion" | "symbols" | "tabular" | "imported";
 const COLORS = [
     "#ffc52f",
     "#8d52e8",
@@ -69,15 +70,18 @@ function makeData(style: number, n = 200): Sample[] {
     pixels: digit(i % 10, i, style),
   }));
 }
+const noisy = getDimensionalityDataset("i-noisy-hd");
 const BUILT = {
     digits: makeData(0),
     fashion: makeData(4),
     symbols: makeData(8),
+    tabular: noisy.X.map((pixels, i) => ({ pixels, label: i % 3 })),
   },
   NAMES: Record<Dataset, string> = {
     digits: "Digit Glyphs",
     fashion: "Fashion-like Glyphs",
     symbols: "Symbol Grid",
+    tabular: "Noisy high-D table (linear reconstruction)",
     imported: "Imported Data",
   };
 function PixelImage({
@@ -119,12 +123,16 @@ export default function AutoencoderDimensionalityPage() {
     [result, setResult] = useState<AutoencoderResult | null>(null),
     [training, setTraining] = useState(false),
     [progress, setProgress] = useState(0),
+    [inspect, setInspect] = useState(0),
+    [tfTensors, setTfTensors] = useState<number | null>(null),
+    [status, setStatus] = useState<"NOT TRAINED" | "TRAINING" | "TRAINED" | "STALE" | "ERROR">("NOT TRAINED"),
     [toast, setToast] = useState("");
   const fileRef = useRef<HTMLInputElement>(null),
     runId = useRef(0);
   const runTraining = useCallback(async () => {
     const id = ++runId.current;
     setTraining(true);
+    setStatus("TRAINING");
     setProgress(0);
     try {
       const trained = await trainAutoencoder(
@@ -138,14 +146,21 @@ export default function AutoencoderDimensionalityPage() {
         (epoch) => {
           if (id === runId.current) setProgress(epoch / epochs);
         },
+        {
+          outputActivation: dataset === "tabular" ? "linear" : "sigmoid",
+          shouldStop: () => id !== runId.current,
+        },
       );
       if (id === runId.current) {
         setResult(trained);
+        setStatus("TRAINED");
         setToast("Autoencoder training complete");
       }
     } catch (error) {
-      if (id === runId.current)
+      if (id === runId.current) {
+        setStatus("ERROR");
         setToast(error instanceof Error ? error.message : "Training failed");
+      }
     } finally {
       if (id === runId.current) setTraining(false);
     }
@@ -157,11 +172,10 @@ export default function AutoencoderDimensionalityPage() {
     learningRate,
     batchSize,
     epochs,
+    dataset,
   ]);
-  const initialTraining = useRef(runTraining);
-  useEffect(() => {
-    const timer = window.setTimeout(() => void initialTraining.current(), 120);
-    return () => window.clearTimeout(timer);
+  useEffect(() => () => {
+    runId.current += 1;
   }, []);
   const choose = (kind: Dataset) => {
       const next = kind === "imported" ? imported : BUILT[kind];
@@ -172,6 +186,7 @@ export default function AutoencoderDimensionalityPage() {
       setResult(null);
       setProgress(0);
       setToast(`${NAMES[kind]} loaded — train to update`);
+      setStatus("STALE");
     },
     upload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const f = e.target.files?.[0];
@@ -200,14 +215,9 @@ export default function AutoencoderDimensionalityPage() {
       setToast(`Imported ${next.length} samples`);
       e.target.value = "";
     };
-  const reconstructions =
+  const     reconstructions =
       result?.reconstructions || samples.map((s) => s.pixels),
-    latent =
-      result?.latent ||
-      samples.map((s, i) => [
-        Math.cos((s.label / 10) * Math.PI * 2) * 2 + (rand(i, 2) - 0.5),
-        Math.sin((s.label / 10) * Math.PI * 2) * 2 + (rand(i, 3) - 0.5),
-      ]),
+    latent = result?.latent ?? [],
     coords = latent.flat().map(Math.abs),
     scale = Math.max(...coords, 1),
     mse = result?.mse ?? 0,
@@ -404,11 +414,29 @@ export default function AutoencoderDimensionalityPage() {
             <h3>COMPRESSION ⓘ</h3>
             <p>
               Original Dim <b>{samples[0].pixels.length}</b> → Latent Dim{" "}
-              <b>{latentDimension}</b> Compression{" "}
+              <b>{latentDimension}</b>
+              {" "}
+              dimensional reduction{" "}
               <strong>
-                {(samples[0].pixels.length / latentDimension).toFixed(1)}x
+                {(((samples[0].pixels.length - latentDimension) / samples[0].pixels.length) * 100).toFixed(0)}%
               </strong>
+              {" "}(not a file-size compression ratio)
             </p>
+            {latentDimension >= samples[0].pixels.length && (
+              <p>Latent space is not a compression bottleneck.</p>
+            )}
+            {result && (
+              <div>
+                <p>Sample {inspect} MSE {result.sampleErrors[inspect]?.toFixed(4)}</p>
+                <input
+                  type="range"
+                  min={0}
+                  max={samples.length - 1}
+                  value={inspect}
+                  onChange={(e) => setInspect(Number(e.target.value))}
+                />
+              </div>
+            )}
           </article>
         </section>
         <footer>
@@ -552,6 +580,19 @@ export default function AutoencoderDimensionalityPage() {
           >
             ⊗ Stop
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              runId.current++;
+              setTraining(false);
+              setResult(null);
+              setProgress(0);
+              setStatus("NOT TRAINED");
+              setToast("Reset: model and latent vectors cleared");
+            }}
+          >
+            Reset
+          </button>
           <p>
             Training Progress <b>{Math.round(progress * 100)}%</b>
             <i>
@@ -574,8 +615,11 @@ export default function AutoencoderDimensionalityPage() {
             </b>
           </p>
           <p>
-            Last Trained <b>{result ? "Just now ✓" : "Not trained"}</b>
+            Last trained <b>{status}</b>
           </p>
+          {tfTensors != null && (
+            <p>tf.memory tensors after last train <b>{tfTensors}</b></p>
+          )}
         </section>
       </aside>
       {toast && (

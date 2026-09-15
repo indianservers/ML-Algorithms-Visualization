@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useLabNavigate } from "../../../lib/labNavigation";
 import {
   Bell,
   BrainCircuit,
@@ -16,11 +17,34 @@ import {
   cutHierarchy,
   trainHierarchicalClustering,
   type HierarchicalMetric,
+  type HierarchicalModel,
   type LinkageMethod,
 } from "../../../lib/algorithms/clustering/hierarchicalClustering";
+import {
+  datasetAWellSeparatedBlobs,
+  datasetBFourBlobs,
+  datasetETwoMoons,
+  datasetHBridge,
+  datasetIElongated,
+  datasetLHighDimensional,
+} from "../../../lib/clustering/clusteringDatasets";
+import { compareClusteringSuite } from "../../../lib/clustering/clusteringCompare";
+import {
+  calinskiHarabaszIndex,
+  daviesBouldinIndex,
+  formatCl,
+  projectPca2d,
+  silhouetteScore,
+} from "../../../lib/clustering/clusteringEval";
+import { ClusteringDiagnosticsPanel } from "../../../components/ml/ClusteringDiagnosticsPanel";
 import "./HierarchicalClusteringPage.css";
+const EMPTY_HIER: HierarchicalModel = {
+  sampleCount: 0,
+  merges: [],
+  maxDistance: 0,
+};
 type Point = { features: number[]; x: number; y: number };
-type Dataset = "iris" | "wine" | "seeds" | "imported";
+type Dataset = "iris" | "wine" | "seeds" | "moons" | "four" | "highdim" | "imported";
 type Tab =
   | "learn"
   | "visualize"
@@ -46,48 +70,38 @@ const TABS: Tab[] = [
   "compare",
   "explain",
 ];
-const rand = (i: number, k: number) => {
-  const raw = Math.sin((i + 2) * 12.9898 + k * 78.233) * 43758.5453;
-  return raw - Math.floor(raw);
-};
-function makeData(kind: Exclude<Dataset, "imported">, n = 150): Point[] {
-  return Array.from({ length: n }, (_, i) => {
-    const group = i % 3,
-      centers =
-        kind === "wine"
-          ? [
-              [-4, 2],
-              [0, -2],
-              [4, 3],
-            ]
-          : [
-              [-3.2, 3.8],
-              [-2.8, -2.2],
-              [4.3, -2.7],
-            ],
-      x = centers[group][0] + (rand(i, 1.3) - 0.5) * 2.1,
-      y = centers[group][1] + (rand(i, 2.1) - 0.5) * 2.1;
-    return {
-      features: [
-        x,
-        y,
-        x * 0.45 + (rand(i, 3) - 0.5),
-        y * 0.35 + (rand(i, 4) - 0.5),
-      ],
-      x,
-      y,
-    };
-  });
+function fromCloud(
+  source: { x: number; y: number; features?: number[] }[],
+): Point[] {
+  if (source[0]?.features && source[0].features.length > 2) {
+    const projected = projectPca2d(source.map((point) => point.features!));
+    return source.map((point, index) => ({
+      features: point.features!,
+      x: projected[index][0],
+      y: projected[index][1],
+    }));
+  }
+  return source.map((point) => ({
+    features: [point.x, point.y],
+    x: point.x,
+    y: point.y,
+  }));
 }
 const BUILT = {
-  iris: makeData("iris"),
-  wine: makeData("wine", 178),
-  seeds: makeData("seeds", 210),
+  iris: fromCloud(datasetAWellSeparatedBlobs()),
+  wine: fromCloud(datasetHBridge()),
+  seeds: fromCloud(datasetIElongated()),
+  moons: fromCloud(datasetETwoMoons()),
+  four: fromCloud(datasetBFourBlobs()),
+  highdim: fromCloud(datasetLHighDimensional()),
 };
 const LABELS: Record<Dataset, string> = {
-  iris: "Iris (Standardized)",
-  wine: "Wine Chemistry",
-  seeds: "Wheat Seeds",
+  iris: "Well-separated blobs",
+  wine: "Bridge / chaining clusters",
+  seeds: "Elongated clusters",
+  moons: "Two moons",
+  four: "Four blobs",
+  highdim: "4D blobs (cluster all dims, PCA plot)",
   imported: "Imported Dataset",
 };
 const dist = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -103,23 +117,40 @@ export default function HierarchicalClusteringPage() {
     [animate, setAnimate] = useState(true),
     [speed, setSpeed] = useState("1.0x"),
     [toast, setToast] = useState("");
+  const go = useLabNavigate();
   const uploadRef = useRef<HTMLInputElement>(null);
   // Agglomerative fitting is cubic; keep it off unrelated UI renders.
   // eslint-disable-next-line react-hooks/preserve-manual-memoization
-  const model = useMemo(
-      () =>
-        trainHierarchicalClustering(
-          points.map((p) => p.features),
-          linkage,
-          metric,
-        ),
-      [points, linkage, metric],
-    ),
-    normalizedCut = Math.min(model.maxDistance, cut),
+  const trained = useMemo(() => {
+      try {
+        return {
+          model: trainHierarchicalClustering(
+            points.map((p) => p.features),
+            linkage,
+            metric,
+          ),
+          error: "",
+        };
+      } catch (error) {
+        return {
+          model: { ...EMPTY_HIER, sampleCount: points.length },
+          error: error instanceof Error ? error.message : "Hierarchical fit failed",
+        };
+      }
+    }, [points, linkage, metric]),
+    model = trained.model,
+    normalizedCut = Math.min(model.maxDistance || 0, cut),
     cutResult = useMemo(
       () => cutHierarchy(model, normalizedCut, maxClusters || undefined),
       [model, normalizedCut, maxClusters],
     );
+  const compareRows = useMemo(
+    () =>
+      points.length <= 120
+        ? compareClusteringSuite(points.map((p) => p.features), 42)
+        : [],
+    [points],
+  );
   const clusterCount = cutResult.clusters.length,
     summaries = cutResult.clusters.slice(0, 6).map((cluster, index) => {
       const members = cluster.members.map((i) => points[i]),
@@ -136,32 +167,18 @@ export default function HierarchicalClusteringPage() {
         diameter: Math.max(0, ...pairs),
       };
     });
-  const silhouettes = points.map((p, i) => {
-      const own = cutResult.assignments[i],
-        same = points.filter(
-          (_, j) => j !== i && cutResult.assignments[j] === own,
-        ),
-        a = same.length
-          ? same.reduce((s, q) => s + dist(p, q), 0) / same.length
-          : 0,
-        others = Array.from({ length: clusterCount }, (_, c) =>
-          c === own
-            ? Infinity
-            : (() => {
-                const group = points.filter(
-                  (_, j) => cutResult.assignments[j] === c,
-                );
-                return group.length
-                  ? group.reduce((s, q) => s + dist(p, q), 0) / group.length
-                  : Infinity;
-              })(),
-        ),
-        b = Math.min(...others);
-      return Number.isFinite(b) && Math.max(a, b) > 0
-        ? (b - a) / Math.max(a, b)
-        : 0;
-    }),
-    silhouette = silhouettes.reduce((s, v) => s + v, 0) / silhouettes.length;
+  const silhouette = silhouetteScore(
+      points.map((point) => point.features),
+      cutResult.assignments,
+    ),
+    calinski = calinskiHarabaszIndex(
+      points.map((point) => point.features),
+      cutResult.assignments,
+    ),
+    davies = daviesBouldinIndex(
+      points.map((point) => point.features),
+      cutResult.assignments,
+    );
   const choose = (next: Dataset) => {
     const source = next === "imported" ? imported : BUILT[next];
     if (!source.length) return;
@@ -227,7 +244,7 @@ export default function HierarchicalClusteringPage() {
             <button
               className={i === 1 ? "active" : i === 0 ? "done" : ""}
               key={item}
-              onClick={() => setToast(item)}
+              onClick={() => go(item)}
             >
               <i /> {item}
               {i === 0 ? <Check /> : i === 1 ? <b /> : null}
@@ -241,16 +258,16 @@ export default function HierarchicalClusteringPage() {
           "Model Evaluation",
           "MLOps",
         ].map((item) => (
-          <button key={item} onClick={() => setToast(item)}>
+          <button key={item} onClick={() => go(item)}>
             <Network />
             {item} ›
           </button>
         ))}
         <footer>
-          <button onClick={() => setToast("Playground opened")}>
+          <button onClick={() => go("Playground")}>
             ◉ Playground
           </button>
-          <button onClick={() => setToast("Resources opened")}>
+          <button onClick={() => go("Help & Resources")}>
             <HelpCircle />
             Help & Resources
           </button>
@@ -295,6 +312,33 @@ export default function HierarchicalClusteringPage() {
           ))}
         </nav>
         <section className="hc-work">
+          {trained.error && <p role="alert">{trained.error}</p>}
+          {tab === "compare" && (
+            <ClusteringDiagnosticsPanel
+              algorithm="Hierarchical"
+              dataset={LABELS[dataset]}
+              samples={points.length}
+              features={points[0]?.features.length ?? 0}
+              preprocessing={
+                (points[0]?.features.length ?? 0) > 2
+                  ? "All selected dimensions; scatter is PCA"
+                  : "Raw coordinates"
+              }
+              status={trained.error ? "ERROR" : "READY"}
+              clustersFound={clusterCount}
+              extras={[
+                ["silhouette", formatCl(silhouette)],
+                ["calinskiHarabasz", formatCl(calinski, 1)],
+                ["daviesBouldin", formatCl(davies)],
+              ]}
+              why={
+                linkage === "single" && dataset === "wine"
+                  ? "Single linkage can chain through the bridge, merging the two blobs earlier than complete linkage."
+                  : `Cut height ${normalizedCut.toFixed(2)} yields ${clusterCount} clusters from the stored dendrogram (hierarchy is not refit when only the cut changes).`
+              }
+              compare={compareRows}
+            />
+          )}
           <header>
             <h2>♧ Linked Dendrogram & Scatter ⓘ</h2>
             <p>Drag the cut height line to form clusters.</p>
@@ -391,7 +435,7 @@ export default function HierarchicalClusteringPage() {
             <div className="merge-head">
               Step · Merge · Distance · Cluster Size
             </div>
-            {model.merges.slice(-5).map((m, i) => (
+            {model.merges.slice(-8).map((m, i) => (
               <p
                 className={
                   Math.abs(m.distance - normalizedCut) <
@@ -403,10 +447,9 @@ export default function HierarchicalClusteringPage() {
               >
                 {m.step}
                 <b>
-                  <i style={{ background: COLORS[i % 4] }} />＋
-                  <i style={{ background: COLORS[(i + 1) % 4] }} />
+                  {m.left}＋{m.right}
                 </b>
-                <span>{m.distance.toFixed(2)}</span>
+                <span>{m.distance.toFixed(3)}</span>
                 <em>{m.size}</em>
               </p>
             ))}
@@ -414,13 +457,15 @@ export default function HierarchicalClusteringPage() {
           <article>
             <h3>Cluster Quality (k={clusterCount})</h3>
             {[
-              ["Silhouette Score", silhouette, "Good"],
-              ["Calinski-Harabasz", Math.max(0, clusterCount * 78.1), "High"],
-              ["Davies-Bouldin", Math.max(0.2, 1 - silhouette), "Good"],
+              ["Silhouette Score", silhouette, silhouette == null ? "N/A (<2 clusters)" : "Good"],
+              ["Calinski-Harabasz", calinski, calinski == null ? "N/A" : "High"],
+              ["Davies-Bouldin", davies, davies == null ? "N/A" : "Lower is better"],
             ].map((v) => (
               <p key={v[0] as string}>
                 <span>{v[0] as string}</span>
-                <b>{Number(v[1]).toFixed(2)}</b>
+                <b>
+                  {typeof v[1] === "number" ? v[1].toFixed(2) : "N/A"}
+                </b>
                 <em>{v[2] as string}</em>
                 <i>
                   <b
@@ -492,8 +537,9 @@ export default function HierarchicalClusteringPage() {
             <i /> {LABELS[dataset]} <small>×</small>
           </b>
           <p>
-            {points.length} samples · {points[0].features.length} features · 3
-            species
+            {points[0].features.length > 2
+              ? `${points.length} samples · clustering uses ${points[0].features.length} features. Plot is a 2D projection.`
+              : `${points.length} samples · ${points[0].features.length} features`}
           </p>
           <select
             value={dataset}
@@ -522,9 +568,9 @@ export default function HierarchicalClusteringPage() {
             <br />
             Missing Values <b>0%</b>
             <br />
-            Feature Scale <b>Standardized</b>
+            Feature Scale <b>Raw coordinates (no z-score)</b>
           </p>
-          <button onClick={() => setToast("Dataset preview opened")}>
+          <button onClick={() => go("Dataset Library")}>
             <Database />
             View Dataset ↗
           </button>

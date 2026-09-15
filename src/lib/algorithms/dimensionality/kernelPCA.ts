@@ -1,5 +1,7 @@
 export type KernelPCAKernel =
   "rbf" | "polynomial" | "sigmoid" | "laplacian" | "linear";
+
+export const KERNEL_PCA_MAX_SAMPLES = 400;
 export interface KernelPCAResult {
   kernel: number[][];
   centeredKernel: number[][];
@@ -7,10 +9,50 @@ export interface KernelPCAResult {
   eigenvalues: number[];
   explainedVariance: number[];
   transformedInput: number[][];
+  vectors: number[][];
+  trainX: number[][];
+  kernelName: KernelPCAKernel;
+  gamma: number;
+  degree: number;
+  coef0: number;
+  center: boolean;
+  rowMeans: number[];
+  grandMean: number;
+  inputMeans: number[];
+  inputScales: number[];
+  normalize: boolean;
 }
+
 const dot = (a: number[], b: number[]) =>
   a.reduce((sum, value, i) => sum + value * b[i], 0);
 const norm = (values: number[]) => Math.sqrt(dot(values, values)) || 1;
+
+export function rbfKernel(a: number[], b: number[], gamma: number) {
+  const squared = a.reduce((s, value, i) => s + (value - b[i]) ** 2, 0);
+  return Math.exp(-gamma * squared);
+}
+
+export function polynomialKernel(a: number[], b: number[], gamma: number, coef0: number, degree: number) {
+  return (gamma * dot(a, b) + coef0) ** degree;
+}
+
+export function kernelSimilarity(
+  a: number[],
+  b: number[],
+  kernel: KernelPCAKernel,
+  gamma: number,
+  degree: number,
+  coef0: number,
+) {
+  const product = dot(a, b);
+  const squared = a.reduce((s, value, i) => s + (value - b[i]) ** 2, 0);
+  if (kernel === "linear") return product;
+  if (kernel === "polynomial") return (gamma * product + coef0) ** degree;
+  if (kernel === "sigmoid") return Math.tanh(gamma * product + coef0);
+  if (kernel === "laplacian") return Math.exp(-gamma * Math.sqrt(squared));
+  return Math.exp(-gamma * squared);
+}
+
 export function kernelPCA(
   X: number[][],
   components = 10,
@@ -23,6 +65,10 @@ export function kernelPCA(
 ): KernelPCAResult {
   if (X.length < 2)
     throw new Error("Kernel PCA requires at least two samples.");
+  if (X.length > KERNEL_PCA_MAX_SAMPLES)
+    throw new Error(
+      `Kernel PCA builds an N×N kernel (~${((X.length * X.length * 8) / 1e6).toFixed(1)} MB). Limit is ${KERNEL_PCA_MAX_SAMPLES} samples in this browser lab.`,
+    );
   const width = X[0]?.length;
   if (!width || !X.every((row) => row.length === width && row.every(Number.isFinite)))
     throw new Error("Kernel PCA requires a finite rectangular feature matrix.");
@@ -45,17 +91,8 @@ export function kernelPCA(
   const transformedInput = X.map((row) =>
     row.map((value, j) => (normalize ? (value - means[j]) / scales[j] : value)),
   );
-  const similarity = (a: number[], b: number[]) => {
-    const product = dot(a, b),
-      squared = a.reduce((s, value, i) => s + (value - b[i]) ** 2, 0);
-    if (kernel === "linear") return product;
-    if (kernel === "polynomial") return (gamma * product + coef0) ** degree;
-    if (kernel === "sigmoid") return Math.tanh(gamma * product + coef0);
-    if (kernel === "laplacian") return Math.exp(-gamma * Math.sqrt(squared));
-    return Math.exp(-gamma * squared);
-  };
   const kernelMatrix = transformedInput.map((row) =>
-    transformedInput.map((other) => similarity(row, other)),
+    transformedInput.map((other) => kernelSimilarity(row, other, kernel, gamma, degree, coef0)),
   );
   const rowMeans = kernelMatrix.map(
       (row) => row.reduce((s, v) => s + v, 0) / X.length,
@@ -77,10 +114,12 @@ export function kernelPCA(
     for (let iteration = 0; iteration < 70; iteration += 1) {
       const next = work.map((row) => dot(row, vector));
       const magnitude = norm(next);
+      if (!Number.isFinite(magnitude) || magnitude < 1e-12) break;
       vector = next.map((value) => value / magnitude);
     }
     const multiplied = work.map((row) => dot(row, vector)),
       value = Math.max(0, dot(vector, multiplied));
+    if (!Number.isFinite(value)) continue;
     eigenvalues.push(value);
     vectors.push(vector);
     for (let i = 0; i < X.length; i += 1)
@@ -90,20 +129,13 @@ export function kernelPCA(
   const ranked = eigenvalues
     .map((value, index) => ({ value, vector: vectors[index] }))
     .sort((a, b) => b.value - a.value);
-  eigenvalues.splice(
-    0,
-    eigenvalues.length,
-    ...ranked.map((item) => item.value),
-  );
+  eigenvalues.splice(0, eigenvalues.length, ...ranked.map((item) => item.value));
   vectors.splice(0, vectors.length, ...ranked.map((item) => item.vector));
   const projection = X.map((_, i) =>
     vectors.map(
       (vector, c) => vector[i] * Math.sqrt(Math.max(eigenvalues[c], 0)),
-    ),
+    ).map((value) => (Number.isFinite(value) ? value : 0)),
   );
-  // For a centered PSD kernel, trace(K) is the sum of the full spectrum.
-  // Using only the requested eigenvalues would incorrectly make every partial
-  // embedding claim 100% explained variance.
   const selectedTotal = eigenvalues.reduce((s, v) => s + v, 0),
     kernelTrace = centeredKernel.reduce((sum, row, i) => sum + row[i], 0),
     total = Math.max(selectedTotal, kernelTrace, 1e-12),
@@ -115,5 +147,39 @@ export function kernelPCA(
     eigenvalues,
     explainedVariance,
     transformedInput,
+    vectors,
+    trainX: transformedInput,
+    kernelName: kernel,
+    gamma,
+    degree,
+    coef0,
+    center,
+    rowMeans,
+    grandMean: grand,
+    inputMeans: means,
+    inputScales: scales,
+    normalize,
   };
+}
+
+export function transformKernelPCA(Xnew: number[][], model: KernelPCAResult) {
+  const mapped = Xnew.map((row) =>
+    row.map((value, j) =>
+      model.normalize ? (value - model.inputMeans[j]) / model.inputScales[j] : value,
+    ),
+  );
+  return mapped.map((point) => {
+    const k = model.trainX.map((train) =>
+      kernelSimilarity(point, train, model.kernelName, model.gamma, model.degree, model.coef0),
+    );
+    const kMean = k.reduce((s, v) => s + v, 0) / k.length;
+    const centered = model.center
+      ? k.map((value, j) => value - kMean - model.rowMeans[j] + model.grandMean)
+      : k;
+    return model.vectors.map((vector, c) => {
+      const score = centered.reduce((sum, value, i) => sum + value * vector[i], 0);
+      const scaled = score / Math.sqrt(Math.max(model.eigenvalues[c], 1e-12));
+      return Number.isFinite(scaled) ? scaled : 0;
+    });
+  });
 }

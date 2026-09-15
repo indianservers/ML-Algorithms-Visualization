@@ -1,72 +1,35 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { HelpCircle, Play, Share2, Upload } from "lucide-react";
-import { irisDataset } from "../../../data/sampleDatasets";
 import {
   linearDiscriminantAnalysis,
+  maxLdaComponents,
+  LDA_TARGET_ERROR,
   type LDACenter,
   type LDAPriors,
 } from "../../../lib/algorithms/dimensionality/lda";
+import { pca } from "../../../lib/algorithms/dimensionality/pca";
+import { getDimensionalityDataset } from "../../../lib/dimensionality/dimensionalityDatasets";
 import "./LDAPage.css";
 
 type Sample = { values: number[]; label: number };
 type Dataset = "iris" | "wine" | "medical" | "imported";
-const COLORS = ["#3375ed", "#49cbbd", "#ff693a"],
-  CLASS_NAMES = ["setosa", "versicolor", "virginica"],
-  FEATURES = ["Sepal length", "Sepal width", "Petal length", "Petal width"];
-const rand = (i: number, salt: number) => {
-  const value = Math.sin((i + 17) * 12.9898 + salt * 78.233) * 43758.5453;
-  return value - Math.floor(value);
-};
-function irisSamples(): Sample[] {
-  const rows = irisDataset.data.map((row) => ({
-    values: [
-      Number(row.sepal_length),
-      Number(row.sepal_width),
-      Number(row.petal_length),
-      Number(row.petal_width),
-    ],
-    label: CLASS_NAMES.indexOf(String(row.species)),
-  }));
-  return CLASS_NAMES.flatMap((_, label) => {
-    const group = rows.filter((row) => row.label === label);
-    return Array.from({ length: 50 }, (_, i) => {
-      const base = group[i % group.length];
-      return {
-        label,
-        values: base.values.map(
-          (value, j) => value + (rand(i + label * 53, j + 1) - 0.5) * 0.12,
-        ),
-      };
-    });
-  });
-}
-function synthetic(kind: "wine" | "medical", n = 180): Sample[] {
-  const classes = 3,
-    dimensions = kind === "wine" ? 6 : 4;
-  return Array.from({ length: n }, (_, i) => {
-    const label = i % classes;
-    return {
-      label,
-      values: Array.from(
-        { length: dimensions },
-        (_, j) =>
-          label * (1.2 + j * 0.15) +
-          Math.sin(i * 1.7 + j) * 0.35 +
-          (rand(i, j + 3) - 0.5) * 0.35,
-      ),
-    };
-  });
+const COLORS = ["#3375ed", "#49cbbd", "#ff693a", "#a855f7"],
+  CLASS_NAMES = ["class 0", "class 1", "class 2", "class 3"],
+  FEATURES = ["f1", "f2", "f3", "f4"];
+function catalogSamples(id: "d-iris" | "h-class-separable" | "j-few-informative"): Sample[] {
+  const item = getDimensionalityDataset(id);
+  return item.X.map((values, i) => ({ values, label: item.y?.[i] ?? 0 }));
 }
 const BUILT = {
-    iris: irisSamples(),
-    wine: synthetic("wine"),
-    medical: synthetic("medical"),
+    iris: catalogSamples("d-iris"),
+    wine: catalogSamples("h-class-separable"),
+    medical: catalogSamples("j-few-informative"),
   },
   NAMES: Record<Dataset, string> = {
-    iris: "Iris (Fisher 1936)",
-    wine: "Wine Chemistry",
-    medical: "Medical Risk",
+    iris: "Iris (4 features, 3 classes)",
+    wine: "Class-separable (4 classes)",
+    medical: "Few informative features",
     imported: "Imported Data",
   };
 export default function LDAPage() {
@@ -80,20 +43,37 @@ export default function LDAPage() {
     [priors, setPriors] = useState<LDAPriors>("empirical"),
     [standardize, setStandardize] = useState(true),
     [centerMode, setCenterMode] = useState<LDACenter>("class"),
+    [requestedComponents, setRequestedComponents] = useState(2),
     [toast, setToast] = useState("");
   const fileRef = useRef<HTMLInputElement>(null),
     y = samples.map((sample) => sample.label),
-    result = useMemo(
-      () =>
-        linearDiscriminantAnalysis(
-          samples.map((sample) => sample.values),
-          samples.map((sample) => sample.label),
-          regularization,
-          priors,
-          standardize,
-          centerMode,
-        ),
-      [samples, regularization, priors, standardize, centerMode],
+    ldaMax = maxLdaComponents(samples[0]?.values.length ?? 0, new Set(y).size),
+    keptComponents = Math.min(Math.max(1, requestedComponents), Math.max(1, ldaMax)),
+    ldaFit = useMemo(() => {
+      try {
+        return {
+          result: linearDiscriminantAnalysis(
+            samples.map((sample) => sample.values),
+            samples.map((sample) => sample.label),
+            regularization,
+            priors,
+            standardize,
+            centerMode,
+            keptComponents,
+          ),
+          error: null as string | null,
+        };
+      } catch (error) {
+        return {
+          result: null,
+          error: error instanceof Error ? error.message : LDA_TARGET_ERROR,
+        };
+      }
+    }, [samples, regularization, priors, standardize, centerMode, keptComponents]),
+    result = ldaFit.result,
+    pcaCompare = useMemo(
+      () => pca(samples.map((sample) => sample.values), 2, standardize ? "standard" : "none"),
+      [samples, standardize],
     );
   const classes = [...new Set(y)].sort((a, b) => a - b),
     choose = (kind: Dataset) => {
@@ -136,17 +116,27 @@ export default function LDAPage() {
         max = Math.max(...values);
       return { min, span: max - min || 1 };
     },
-    rx = range(samples.map((s) => s.values[featureX])),
-    ry = range(samples.map((s) => s.values[featureY])),
-    rs = range(result.scores),
-    confusion = classes.map((actual) =>
-      classes.map(
-        (predicted) =>
-          result.predictions.filter(
-            (value, i) => y[i] === actual && value === predicted,
-          ).length,
-      ),
+    rx = range(samples.map((s) => s.values[featureX] ?? 0)),
+    ry = range(samples.map((s) => s.values[featureY] ?? 0)),
+    rs = range(result?.scores ?? [0, 1]),
+    rld2 = range(result?.projections.map((row) => row[1] ?? 0) ?? [0, 1]),
+    confusion = result
+      ? classes.map((actual) =>
+          classes.map(
+            (predicted) =>
+              result.predictions.filter(
+                (value, i) => y[i] === actual && value === predicted,
+              ).length,
+          ),
+        )
+      : [];
+  if (!result) {
+    return (
+      <div className="ld-page">
+        <p>{ldaFit.error ?? LDA_TARGET_ERROR}</p>
+      </div>
     );
+  }
   return (
     <div className="ld-page">
       <aside className="ld-side">
@@ -304,26 +294,46 @@ export default function LDAPage() {
           </article>
           <strong>Project →</strong>
           <article>
-            <h3>Projection: w (LDA direction)</h3>
-            <code>
-              w = [{result.direction.map((v) => v.toFixed(3)).join(", ")}]
-            </code>
-            <div className="ld-projection">
-              {samples.map((sample, i) => (
-                <i
-                  key={i}
-                  style={{
-                    left: `${5 + ((result.scores[i] - rs.min) / rs.span) * 90}%`,
-                    top: `${23 + (sample.label / Math.max(1, classes.length - 1)) * 55 + (rand(i, 19) - 0.5) * 4}%`,
-                    background: COLORS[sample.label % COLORS.length],
-                  }}
-                />
-              ))}
-            </div>
-            <footer>
-              Explained (between/total scatter):{" "}
-              <b>{(result.explained * 100).toFixed(1)}%</b>
-            </footer>
+            <h3>Projection: LD1 vs LD2 (max {ldaMax} axes = min(p, C-1); requested {requestedComponents} → kept {keptComponents})</h3>
+            <label>
+              Requested LDA dimensions
+              <input
+                type="number"
+                min={1}
+                max={8}
+                value={requestedComponents}
+                onChange={(e) => setRequestedComponents(Number(e.target.value))}
+              />
+            </label>
+            {ldaFit.error && <p>{ldaFit.error}</p>}
+            {result && (
+              <>
+                <code>
+                  LD1 = [{result.direction.map((v) => v.toFixed(3)).join(", ")}]
+                </code>
+                <div className="ld-scatter">
+                  {samples.map((sample, i) => (
+                    <i
+                      key={i}
+                      style={{
+                        left: `${7 + ((result.projections[i][0] - rs.min) / rs.span) * 86}%`,
+                        top: `${93 - ((((result.projections[i][1] ?? 0) - rld2.min) / rld2.span) * 86)}%`,
+                        background: COLORS[sample.label % COLORS.length],
+                      }}
+                    />
+                  ))}
+                </div>
+                <footer>
+                  Discriminative ratios:{" "}
+                  {result.discriminativeRatio.map((value, i) => `LD${i + 1}=${(value * 100).toFixed(1)}%`).join(" · ")}
+                  · PCA on the same scaled features is unsupervised variance, not class separation.
+                </footer>
+                <p>
+                  PCA PC1/PC2 first point: {pcaCompare.projections[0]?.map((v) => v.toFixed(2)).join(", ")} vs LDA{" "}
+                  {result.projections[0]?.map((v) => v.toFixed(2)).join(", ")}
+                </p>
+              </>
+            )}
           </article>
         </section>
         <section className="ld-results">
@@ -418,8 +428,7 @@ export default function LDAPage() {
         <label>
           Solver
           <select>
-            <option>Eigen Decomposition</option>
-            <option>SVD</option>
+            <option>Eigen decomposition of Sw⁻¹ Sb (implemented)</option>
           </select>
         </label>
         <label>

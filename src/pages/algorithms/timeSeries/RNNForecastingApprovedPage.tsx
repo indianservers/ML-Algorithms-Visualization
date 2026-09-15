@@ -1,8 +1,11 @@
 import { useMemo, useRef, useState } from "react";
+import { useLabNavigate } from "../../../lib/labNavigation";
 import {
   recurrentForecast,
   type RecurrentKind,
 } from "../../../lib/timeSeries/recurrentForecast";
+import { TIME_SERIES_CATALOG, seriesValues } from "../../../lib/timeSeries/timeSeriesDatasets";
+import { useActiveTimeSeries } from "../../../lib/timeSeries/useActiveTimeSeries";
 import "./RNNForecastingApprovedPage.css";
 
 const DATASETS = [
@@ -42,6 +45,11 @@ const DATASETS = [
       ),
     ),
   },
+  ...TIME_SERIES_CATALOG.map((item) => ({
+    name: item.name,
+    target: "value",
+    values: seriesValues(item),
+  })),
 ];
 function line(
   values: number[],
@@ -86,12 +94,14 @@ export default function RNNForecastingApprovedPage() {
     [step, setStep] = useState(1),
     [target, setTarget] = useState("Total Load (MW)"),
     [scaling, setScaling] = useState("Standard Scaler"),
-    [model, setModel] = useState("LSTM (2 layers)"),
+    [model, setModel] = useState("SimpleRNN (2 layers)"),
     [status, setStatus] = useState("Ready"),
     [collapsed, setCollapsed] = useState(false);
+  const go = useLabNavigate();
+  const handoff = useActiveTimeSeries("/ml/time-series/rnn-forecasting");
   const fileRef = useRef<HTMLInputElement>(null),
     source = DATASETS[dataset],
-    values = custom?.values ?? source.values,
+    values = custom?.values ?? handoff?.points.map((point) => point.value) ?? source.values,
     kind: RecurrentKind = model.startsWith("LSTM")
       ? "lstm"
       : model.startsWith("GRU")
@@ -113,21 +123,24 @@ export default function RNNForecastingApprovedPage() {
     [sampledValues, lookback, horizon, kind],
   );
   const forecastValues = [values.at(-1) ?? 0, ...result.predictions],
-    all = [...values, ...forecastValues, ...result.lower, ...result.upper],
+    all = [...values, ...forecastValues],
     lo = Math.min(...all),
     hi = Math.max(...all),
     split = (values.length / (values.length + horizon)) * 900;
-  const band = `${line([values.at(-1) ?? 0, ...result.upper], 900 - split + 10, 126, lo, hi, 5)} ${line(
-    [values.at(-1) ?? 0, ...result.lower],
-    900 - split + 10,
-    126,
-    lo,
-    hi,
-    5,
-  )
-    .split(" ")
-    .reverse()
-    .join(" ")} Z`;
+  const band =
+    result.lower.length && result.upper.length
+      ? `${line([values.at(-1) ?? 0, ...result.upper], 900 - split + 10, 126, lo, hi, 5)} ${line(
+          [values.at(-1) ?? 0, ...result.lower],
+          900 - split + 10,
+          126,
+          lo,
+          hi,
+          5,
+        )
+          .split(" ")
+          .reverse()
+          .join(" ")} Z`
+      : "";
   const tabs = [
       "Learn",
       "Visualize",
@@ -179,7 +192,7 @@ export default function RNNForecastingApprovedPage() {
           </span>
         </a>
         {side.map((x, i) => (
-          <button key={x} onClick={() => setStatus(`${x.slice(2)} opened`)}>
+          <button key={x} onClick={() => go(x)}>
             {x.slice(0, 1)}
             <span>{x.slice(2)}</span>
             {i === 1 || i === 4 ? <em>⌄</em> : null}
@@ -196,22 +209,22 @@ export default function RNNForecastingApprovedPage() {
           <button
             className={i === 0 ? "active" : ""}
             key={x}
-            onClick={() => setStatus(`${x} opened`)}
+            onClick={() => go(x)}
           >
             ▣<span>{x}</span>
           </button>
         ))}
         <button
           className="new"
-          onClick={() => setStatus("New project created")}
+          onClick={() => go("New Project")}
         >
           ＋ <span>New Project</span>
         </button>
         <footer>
-          <button onClick={() => setStatus("Docs opened")}>
+          <button onClick={() => go("Docs")}>
             ▣ <span>Docs</span>
           </button>
-          <button onClick={() => setStatus("Support opened")}>
+          <button onClick={() => go("Support")}>
             ? <span>Support</span>
           </button>
           <button onClick={() => setCollapsed((v) => !v)}>
@@ -221,7 +234,7 @@ export default function RNNForecastingApprovedPage() {
       </aside>
       <header className="rf-top">
         <span>Deep Learning › RNN › Forecasting</span>
-        <button onClick={() => setStatus("Help opened")}>?</button>
+        <button onClick={() => go("Help")}>?</button>
         <button onClick={() => setStatus("Feedback opened")}>Feedback</button>
         <button onClick={() => setStatus("Theme changed")}>◔</button>
         <button onClick={() => setStatus("Profile opened")}>MM</button>
@@ -352,18 +365,20 @@ export default function RNNForecastingApprovedPage() {
               ROLLING FORECAST <small>(Latest window)</small>
             </b>
             <span>
-              ━ Observed ⋯ Actual <em>━ Forecast (mean)</em> <i>■ 80% PI</i>
+              ━ Observed ⋯ Actual <em>━ Forecast (mean)</em> <i>Prediction interval not available</i>
             </span>
           </header>
           <svg viewBox="0 0 900 126" preserveAspectRatio="none">
             {[18, 52, 86, 120].map((y) => (
               <line key={y} x1="10" x2="890" y1={y} y2={y} />
             ))}
-            <path
-              d={band}
-              transform={`translate(${split - 4} 0)`}
-              className="band"
-            />
+            {band ? (
+              <path
+                d={band}
+                transform={`translate(${split - 4} 0)`}
+                className="band"
+              />
+            ) : null}
             <path d={line(values, 900, 126, lo, hi)} className="observed" />
             <line x1={split} x2={split} y1="4" y2="122" className="split" />
             <path
@@ -419,6 +434,9 @@ export default function RNNForecastingApprovedPage() {
               </section>
             </div>
             <footer>1 25 50 75 100 1 25 50 75 100</footer>
+            <p>{result.architecture}</p>
+            {result.dataWarning ? <p>{result.dataWarning}</p> : null}
+            <p>{result.strategy}</p>
           </article>
           <article className="card rf-error">
             <h3>
@@ -477,7 +495,7 @@ export default function RNNForecastingApprovedPage() {
               "Export Forecast",
               "Schedule Retraining",
             ].map((x) => (
-              <button key={x} onClick={() => setStatus(`${x} opened`)}>
+              <button key={x} onClick={() => go(x)}>
                 {x}
               </button>
             ))}
@@ -579,7 +597,7 @@ export default function RNNForecastingApprovedPage() {
           <p>
             Learning Rate <b>0.001</b>
           </p>
-          <button onClick={() => setStatus("Architecture opened")}>
+          <button onClick={() => go("Architecture")}>
             ♨ View Architecture
           </button>
         </section>

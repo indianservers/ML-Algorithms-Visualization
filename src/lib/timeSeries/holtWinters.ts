@@ -90,5 +90,7 @@ export function holtWinters(
     forecast,
     residuals,
     metrics: { mae, rmse, mape, smape },
+    initialization:
+      "Level = mean of the first seasonal cycle. Trend = average of first-to-second cycle differences. Seasonal indices = first cycle minus (or divided by) that initial level.",
   };
 }

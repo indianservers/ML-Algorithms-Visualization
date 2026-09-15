@@ -16,7 +16,16 @@ import {
   Sun,
   Upload,
 } from "lucide-react";
+import { energyDemandDataset, housingDataset } from "../../../../data/sampleDatasets";
 import { mae, mse, rSquared } from "../../../../lib/math/metrics";
+import {
+  datasetAPerfectPositive,
+  datasetFQuadratic,
+  datasetKPiecewise,
+  datasetLSvrNonlinear,
+  labPoints,
+} from "../../../../lib/regression/regressionDatasets";
+import { fitStandardScalerTrainOnly, splitRegressionData } from "../../../../lib/regression/regressionEval";
 import {
   trainSupportVectorRegression,
   type SvrKernel,
@@ -24,7 +33,7 @@ import {
 import "./SupportVectorRegressionPage.css";
 
 type Row = { x: number; y: number; temp: number; humidity: number };
-type DatasetKey = "bike" | "energy" | "housing" | "synthetic" | "imported";
+type DatasetKey = "bike" | "energy" | "housing" | "synthetic" | "quadratic" | "piecewise" | "imported";
 const tabs = [
   "Learn",
   "Visualize",
@@ -45,48 +54,62 @@ const lessons = [
   "Metrics & Evaluation",
   "Pros, Cons & Best Practices",
 ];
-
-const wave = (count: number, kind = 0): Row[] =>
-  Array.from({ length: count }, (_, i) => {
-    const x = (i % 60) / 5.7;
-    const temp = 8 + ((i * 7) % 25);
-    const humidity = 35 + ((i * 11) % 58);
-    const y =
-      kind === 1
-        ? 45 + 20 * Math.cos(x * 0.52) + 0.7 * temp
-        : kind === 2
-          ? 18 + 5.1 * x + (i % 4) * 5
-          : 29 +
-            18 * Math.sin(x * 0.62) +
-            0.8 * temp -
-            0.14 * humidity +
-            (((i * 17) % 19) - 9) * 1.7;
-    return { x, y: Number(y.toFixed(2)), temp, humidity };
-  });
 const builtins = {
   bike: {
-    name: "Bike Sharing Demand",
-    source: "Kaggle",
-    count: "17,379",
-    rows: wave(180),
+    name: "Smooth nonlinear (SVR)",
+    source: "Lab L",
+    count: String(datasetLSvrNonlinear().rows.length),
+    rows: labPoints(datasetLSvrNonlinear()).map((p) => ({
+      x: p.x,
+      y: p.y,
+      temp: 0,
+      humidity: 0,
+    })),
   },
   energy: {
     name: "Energy Demand",
-    source: "OpenML",
-    count: "168",
-    rows: wave(168, 1),
+    source: "Sample",
+    count: String(energyDemandDataset.data.length),
+    rows: energyDemandDataset.data.map((row) => ({
+      x: Number(row.temperature_c),
+      y: Number(row.demand_mw),
+      temp: Number(row.temperature_c),
+      humidity: Number(row.humidity),
+    })),
   },
   housing: {
     name: "Housing Prices",
     source: "Sample",
-    count: "15",
-    rows: wave(15, 2),
+    count: String(housingDataset.data.length),
+    rows: housingDataset.data.map((row) => ({
+      x: Number(row.area_sqft),
+      y: Number(row.price) / 1000,
+      temp: Number(row.bedrooms),
+      humidity: Number(row.age_years),
+    })),
   },
   synthetic: {
-    name: "Synthetic Wave",
-    source: "Generated",
-    count: "240",
-    rows: wave(240),
+    name: "Perfect line y = 1 + 2x",
+    source: "Lab A",
+    count: String(datasetAPerfectPositive.rows.length),
+    rows: labPoints(datasetAPerfectPositive).map((p) => ({
+      x: p.x,
+      y: p.y,
+      temp: 0,
+      humidity: 0,
+    })),
+  },
+  quadratic: {
+    name: datasetFQuadratic().name,
+    source: "Lab F",
+    count: String(datasetFQuadratic().rows.length),
+    rows: labPoints(datasetFQuadratic()).map((p) => ({ x: p.x, y: p.y, temp: 0, humidity: 0 })),
+  },
+  piecewise: {
+    name: datasetKPiecewise().name,
+    source: "Lab K",
+    count: String(datasetKPiecewise().rows.length),
+    rows: labPoints(datasetKPiecewise()).map((p) => ({ x: p.x, y: p.y, temp: 0, humidity: 0 })),
   },
 };
 
@@ -268,6 +291,15 @@ function DataPanel({
   );
 }
 
+function featureNamesFor(rows: Row[]) {
+  const names: Array<keyof Row> = ["x", "temp", "humidity"];
+  return names.filter((name) => {
+    if (name === "x" || name === "y") return name === "x";
+    const values = rows.map((row) => row[name]);
+    return Math.max(...values) - Math.min(...values) > 1e-8;
+  });
+}
+
 export default function SupportVectorRegressionPage() {
   const [tab, setTab] = useState<Tab>("Visualize"),
     [dataset, setDataset] = useState<DatasetKey>("bike"),
@@ -285,17 +317,26 @@ export default function SupportVectorRegressionPage() {
     [px, setPx] = useState(5);
   const fileRef = useRef<HTMLInputElement>(null),
     sample = rows.slice(0, 160);
-  const model = useMemo(
-    () =>
-      trainSupportVectorRegression(
-        sample.map((v) => [v.x, v.temp, v.humidity]),
-        sample.map((v) => v.y),
-        { kernel, c, epsilon, gamma, epochs: 180 },
-      ),
-    [sample, kernel, c, epsilon, gamma],
-  );
+  const featureNames = featureNamesFor(sample);
+  const model = useMemo(() => {
+    const safeC = c > 0 ? c : 1e-6;
+    const X = sample.map((row) => featureNames.map((name) => row[name]));
+    const y = sample.map((row) => row.y);
+    const split = splitRegressionData(X, y, 0.2, 7, true);
+    const scaler = fitStandardScalerTrainOnly(split.trainX);
+    const fitted = trainSupportVectorRegression(
+      scaler.transformAll(split.trainX),
+      split.trainY,
+      { kernel, c: safeC, epsilon, gamma, epochs: 180 },
+    );
+    return {
+      ...fitted,
+      predict: (row: number[]) => fitted.predict(scaler.transform(row)),
+      split,
+    };
+  }, [sample, kernel, c, epsilon, gamma, featureNames.join(",")]);
   const predictions = sample.map((v) =>
-      model.predict([v.x, v.temp, v.humidity]),
+      model.predict(featureNames.map((name) => v[name])),
     ),
     support = new Set(model.supportIndices);
   const current =
@@ -321,14 +362,10 @@ export default function SupportVectorRegressionPage() {
     setMessage("Ready to visualize and explore.");
   };
   const train = () => {
-    setTrained(false);
-    setMessage("Optimizing ε-insensitive objective…");
-    setTimeout(() => {
-      setTrained(true);
-      setMessage(
-        `Trained ${kernel.toUpperCase()} SVR on ${sample.length} rows.`,
-      );
-    }, 450);
+    setTrained(true);
+    setMessage(
+      `Trained ${kernel.toUpperCase()} SVR on ${sample.length} rows. Support vectors: ${model.supportIndices.length}.`,
+    );
   };
   const generic = (
     <article className="svr-generic">
@@ -457,7 +494,9 @@ export default function SupportVectorRegressionPage() {
                 <option value="bike">Bike Sharing Demand (Kaggle)</option>
                 <option value="energy">Energy Demand (OpenML)</option>
                 <option value="housing">Housing Prices (Sample)</option>
-                <option value="synthetic">Synthetic Wave (Generated)</option>
+                <option value="synthetic">Perfect line y = 1 + 2x</option>
+                <option value="quadratic">Quadratic</option>
+                <option value="piecewise">Piecewise</option>
                 {imported && <option value="imported">Imported CSV</option>}
               </select>
               <button onClick={() => fileRef.current?.click()}>
@@ -524,7 +563,11 @@ export default function SupportVectorRegressionPage() {
                   </div>
                   <TubePlot
                     rows={sample}
-                    predict={(x) => model.predict([x, 20, 60])}
+                    predict={(x) =>
+                      model.predict(
+                        featureNames.map((name) => (name === "x" ? x : sample[0]?.[name] ?? 0)),
+                      )
+                    }
                     epsilon={epsilon}
                     support={support}
                     margins={margins}
@@ -712,7 +755,7 @@ export default function SupportVectorRegressionPage() {
                   onChange={(e) => setPx(Number(e.target.value))}
                 />
               </label>
-              <strong>{model.predict([px, 20, 60]).toFixed(3)}</strong>
+              <strong>{model.predict(featureNames.map((name) => (name === "x" ? px : sample[0]?.[name] ?? 0))).toFixed(3)}</strong>
             </div>
           </aside>
         </section>

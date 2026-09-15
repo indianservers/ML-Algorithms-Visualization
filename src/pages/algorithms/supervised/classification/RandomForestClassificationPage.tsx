@@ -22,7 +22,12 @@ import {
   Upload,
   UserCircle,
 } from "lucide-react";
-import { irisDataset } from "../../../../data/sampleDatasets";
+import {
+  datasetFThreeBlobs,
+  datasetGIris,
+  pointsToRows,
+} from "../../../../lib/classification/classificationDatasets";
+import { classificationSplit } from "../../../../lib/classification/classificationEval";
 import {
   trainRandomForestClassification,
   type ClassificationTreeNode,
@@ -52,39 +57,17 @@ const TABS: { id: TabId; label: string }[] = [
   { id: "compare", label: "Compare" },
   { id: "explain", label: "Explain" },
 ];
-const seeds = () =>
-  (irisDataset.data as Record<string, unknown>[]).map((item) => ({
-    features: [
-      "sepal_length",
-      "sepal_width",
-      "petal_length",
-      "petal_width",
-    ].map((key) => Number(item[key])),
-    label:
-      item.species === "setosa" ? 0 : item.species === "versicolor" ? 1 : 2,
-  }));
-function irisRows() {
-  const source = seeds();
-  return [0, 1, 2].flatMap((label) => {
-    const group = source.filter((row) => row.label === label);
-    return Array.from({ length: 50 }, (_, index) => ({
-      features: group[index % group.length].features.map(
-        (value, feature) =>
-          value +
-          Math.sin((index + 3) * (feature + 2) * 1.17) *
-            [0.32, 0.22, 0.29, 0.2][feature] +
-          (index % 6 === 0 && label === 1
-            ? [0, 0, 0.65, 0.3][feature]
-            : index % 6 === 0 && label === 2
-              ? [0, 0, -0.65, -0.3][feature]
-              : 0),
-      ),
-      label,
-    }));
-  });
-}
-const BASE = irisRows();
+const BASE = datasetGIris().map((row) => ({
+  features: row.features,
+  label: row.label,
+}));
 function transform(source: Row[], kind: DatasetId): Row[] {
+  if (kind === "synthetic") {
+    return pointsToRows(datasetFThreeBlobs(), NAMES).map((row) => ({
+      features: [...row.features, row.features[0] * 0.5, row.features[1] * 0.4],
+      label: row.label,
+    }));
+  }
   return source.map((row, index) => {
     if (kind === "wine")
       return {
@@ -203,9 +186,18 @@ export default function RandomForestClassificationPage() {
   const uploadRef = useRef<HTMLInputElement>(null),
     X = useMemo(() => rows.map((row) => row.features), [rows]),
     y = useMemo(() => rows.map((row) => row.label), [rows]);
+  const split = useMemo(() => {
+    try {
+      return classificationSplit(X, y, 0.2, 42);
+    } catch {
+      return null;
+    }
+  }, [X, y]);
+  const trainX = split?.trainX ?? X;
+  const trainY = split?.trainY ?? y;
   const model = useMemo(
     () =>
-      trainRandomForestClassification(X, y, {
+      trainRandomForestClassification(trainX, trainY, {
         estimators,
         maxDepth: depth >= 12 ? null : depth,
         maxFeatures,
@@ -214,7 +206,7 @@ export default function RandomForestClassificationPage() {
         featureSampleRate: featureRate,
         seed: 2026,
       }),
-    [X, y, estimators, depth, maxFeatures, bootstrap, minSplit, featureRate],
+    [trainX, trainY, estimators, depth, maxFeatures, bootstrap, minSplit, featureRate],
   );
   const probabilities = model.predictProba(query),
     prediction = model.predict(query),
@@ -227,8 +219,14 @@ export default function RandomForestClassificationPage() {
       [X, model],
     ),
     accuracy =
-      predictions.filter((value, index) => value === y[index]).length /
-      y.length;
+      trainX.filter((row, index) => model.predict(row) === trainY[index]).length /
+      trainX.length;
+  const testAccuracy = split
+    ? split.testX.filter((row, index) => model.predict(row) === split.testY[index])
+        .length / split.nTest
+    : accuracy;
+  const oobReady = bootstrap && model.oobSampleCount > 0;
+  const oobLabel = !oob ? "Off" : oobReady ? model.oobAccuracy.toFixed(3) : "N/A";
   const oobConfusion = useMemo(
     () =>
       Array.from({ length: 3 }, (_, actual) =>
@@ -236,11 +234,11 @@ export default function RandomForestClassificationPage() {
           { length: 3 },
           (_, pred) =>
             model.oobPredictions.filter(
-              (value, index) => y[index] === actual && value === pred,
+              (value, index) => trainY[index] === actual && value === pred,
             ).length,
         ),
       ),
-    [model.oobPredictions, y],
+    [model.oobPredictions, trainY],
   );
   const region = useMemo(() => {
     const xFeature = 2,
@@ -473,11 +471,14 @@ export default function RandomForestClassificationPage() {
           <h3>OOB PERFORMANCE</h3>
           <div>
             <i />
-            <b>{oob ? model.oobAccuracy.toFixed(3) : "Off"}</b>
+            <b>{oobLabel}</b>
             <span>OOB Accuracy</span>
           </div>
           <p>
-            OOB Error: <b>{oob ? (1 - model.oobAccuracy).toFixed(3) : "Off"}</b>
+            OOB Error:{" "}
+            <b>
+              {oobReady && oob ? (1 - model.oobAccuracy).toFixed(3) : oobLabel}
+            </b>
           </p>
         </article>
         <article className="rfc-conf">
@@ -496,16 +497,16 @@ export default function RandomForestClassificationPage() {
                 <tr key={index}>
                   <th>{NAMES[index]}</th>
                   {line.map((value, j) => (
-                    <td key={j}>{oob ? value : "—"}</td>
+                    <td key={j}>{oob && oobReady ? value : "—"}</td>
                   ))}
                 </tr>
               ))}
             </tbody>
           </table>
-          <p>Accuracy: {oob ? model.oobAccuracy.toFixed(3) : "Off"}</p>
+          <p>OOB accuracy: {oobLabel}</p>
         </article>
         <article className="rfc-importance">
-          <h3>FEATURE IMPORTANCE</h3>
+          <h3>FEATURE IMPORTANCE (MDI)</h3>
           {model.featureImportance.map((value, index) => (
             <p key={index}>
               <span>{FEATURES[index]}</span>
@@ -654,18 +655,22 @@ export default function RandomForestClassificationPage() {
               <span>OOB evaluations</span>
             </article>
             <article>
-              <b>{model.oobAccuracy.toFixed(3)}</b>
+              <b>{oobLabel}</b>
               <span>OOB accuracy</span>
             </article>
             <article>
               <b>{(accuracy * 100).toFixed(1)}%</b>
-              <span>Training accuracy</span>
+              <span>Train accuracy</span>
+            </article>
+            <article>
+              <b>{(testAccuracy * 100).toFixed(1)}%</b>
+              <span>Test accuracy</span>
             </article>
           </div>
           <button
             onClick={() => {
               setTrained(
-                `Trained ${estimators} trees with OOB ${model.oobAccuracy.toFixed(3)}`,
+                `Trained ${estimators} trees with OOB ${oobLabel}`,
               );
               setToast("Random forest retrained");
             }}
@@ -686,14 +691,18 @@ export default function RandomForestClassificationPage() {
           <div className="rfc-metrics">
             <article>
               <b>{(accuracy * 100).toFixed(1)}%</b>
-              <span>Training accuracy</span>
+              <span>Train accuracy</span>
             </article>
             <article>
-              <b>{model.oobAccuracy.toFixed(3)}</b>
+              <b>{(testAccuracy * 100).toFixed(1)}%</b>
+              <span>Test accuracy</span>
+            </article>
+            <article>
+              <b>{oobLabel}</b>
               <span>OOB accuracy</span>
             </article>
             <article>
-              <b>{(1 - model.oobAccuracy).toFixed(3)}</b>
+              <b>{oobReady && oob ? (1 - model.oobAccuracy).toFixed(3) : oobLabel}</b>
               <span>OOB error</span>
             </article>
             <article>
@@ -1057,7 +1066,7 @@ export default function RandomForestClassificationPage() {
               </label>
               <label>
                 OOB Score (Accuracy)
-                <strong>{oob ? model.oobAccuracy.toFixed(3) : "Off"}</strong>
+                <strong>{oobLabel}</strong>
               </label>
               <label>
                 Feature Sample Rate

@@ -22,7 +22,16 @@ import {
   Upload,
   UserCircle,
 } from "lucide-react";
+import {
+  datasetAPerfectBinary,
+  datasetBOverlappingBinary,
+  datasetBOverlappingBinary,
+  datasetCXor,
+  datasetDTwoMoons,
+  datasetECircles,
+} from "../../../../lib/classification/classificationDatasets";
 import { binaryMetrics } from "../../../../lib/math/metrics";
+import { classificationSplit } from "../../../../lib/classification/classificationEval";
 import {
   trainSvmClassification,
   type SvmKernel,
@@ -30,7 +39,7 @@ import {
 import "./SVMClassificationPage.css";
 
 type Point = { x: number; y: number; label: number };
-type Dataset = "moons" | "linear" | "blobs" | "xor" | "imported";
+type Dataset = "moons" | "linear" | "circles" | "xor" | "overlap" | "imported";
 type Tab =
   | "learn"
   | "visualize"
@@ -51,54 +60,27 @@ const TABS: [Tab, string][] = [
 const LABELS: Record<Dataset, string> = {
   moons: "Moons",
   linear: "Linear Separation",
-  blobs: "Gaussian Blobs",
+  circles: "Concentric Circles",
   xor: "XOR Classes",
+  overlap: "Overlapping blobs",
   imported: "Imported Dataset",
 };
 const noise = (i: number, k = 1) => Math.sin(i * 91.17 * k) * 0.5 + 0.5;
 
 function makeData(kind: Exclude<Dataset, "imported">): Point[] {
-  if (kind === "moons")
-    return Array.from({ length: 400 }, (_, i) => {
-      const half = 200,
-        t = ((i % half) / (half - 1)) * Math.PI,
-        fuzz = (noise(i, 1.7) - 0.5) * 0.22;
-      return i < half
-        ? {
-            x: Math.cos(t) + fuzz - 0.35,
-            y: Math.sin(t) + (noise(i, 2.3) - 0.5) * 0.18 + 0.25,
-            label: 1,
-          }
-        : {
-            x: 1 - Math.cos(t) + fuzz - 0.35,
-            y: -Math.sin(t) + (noise(i, 2.9) - 0.5) * 0.18 - 0.18,
-            label: 0,
-          };
-    });
-  return Array.from({ length: 240 }, (_, i) => {
-    const label = i % 2,
-      x = (noise(i, 2.1) - 0.5) * 4,
-      y = (noise(i, 3.7) - 0.5) * 3;
-    if (kind === "linear")
-      return {
-        x: x + (label ? 0.9 : -0.9),
-        y: y * 0.45 + (label ? 0.65 : -0.65),
-        label,
-      };
-    if (kind === "xor") return { x, y, label: x * y > 0 ? 1 : 0 };
-    return {
-      x: (noise(i, 4.3) - 0.5) * 1.2 + (label ? 1 : -1),
-      y: (noise(i, 5.1) - 0.5) * 1.1 + (label ? 0.8 : -0.8),
-      label,
-    };
-  });
+  if (kind === "moons") return datasetDTwoMoons(90, 9);
+  if (kind === "linear") return datasetAPerfectBinary();
+  if (kind === "xor") return datasetCXor();
+  if (kind === "overlap") return datasetBOverlappingBinary();
+  return datasetECircles(90, 13);
 }
 
 const BUILT_INS = {
   moons: makeData("moons"),
   linear: makeData("linear"),
-  blobs: makeData("blobs"),
+  circles: makeData("circles"),
   xor: makeData("xor"),
+  overlap: makeData("overlap"),
 };
 
 export default function SVMClassificationLesson() {
@@ -115,11 +97,23 @@ export default function SVMClassificationLesson() {
   const [toast, setToast] = useState("");
   const [lightTheme, setLightTheme] = useState(false);
   const uploadRef = useRef<HTMLInputElement>(null);
+  const split = useMemo(() => {
+    try {
+      return classificationSplit(
+        points.map((point) => [point.x, point.y]),
+        points.map((point) => point.label),
+        0.2,
+        42,
+      );
+    } catch {
+      return null;
+    }
+  }, [points]);
   const model = useMemo(
     () =>
       trainSvmClassification(
-        points.map((point) => [point.x, point.y]),
-        points.map((point) => point.label),
+        split?.trainX ?? points.map((point) => [point.x, point.y]),
+        split?.trainY ?? points.map((point) => point.label),
         {
           C: cValue,
           kernel,
@@ -129,12 +123,13 @@ export default function SVMClassificationLesson() {
           maxIterations: 600,
         },
       ),
-    [points, cValue, kernel, gamma, standardize],
+    [points, split, cValue, kernel, gamma, standardize],
   );
-  const predictions = points.map((point) => model.predict([point.x, point.y]));
   const metrics = binaryMetrics(
-    points.map((point) => point.label),
-    predictions,
+    split?.testY ?? points.map((point) => point.label),
+    (split?.testX ?? points.map((point) => [point.x, point.y])).map((row) =>
+      model.predict(row),
+    ),
   );
   const support = new Set(model.supportIndices);
   const bounds = useMemo(() => {
@@ -501,7 +496,11 @@ export default function SVMClassificationLesson() {
           </p>
           <div>
             <b>{model.supportIndices.length}</b> support vectors ·{" "}
-            <b>{(metrics.accuracy * 100).toFixed(1)}%</b> training accuracy
+            <b>{(metrics.accuracy * 100).toFixed(1)}%</b> test accuracy
+            <small>
+              {" "}
+              · decision scores are not probabilities unless calibrated
+            </small>
           </div>
           <button
             onClick={() => {
@@ -522,7 +521,8 @@ export default function SVMClassificationLesson() {
           <h2>Classification Metrics</h2>
           <div className="svmc-metrics">
             {[
-              ["Accuracy", metrics.accuracy],
+              ["Test accuracy", metrics.accuracy],
+              ["Balanced accuracy", metrics.balancedAccuracy],
               ["Precision", metrics.precision],
               ["Recall", metrics.recall],
               ["F1", metrics.f1],

@@ -36,12 +36,13 @@ import {
   energyDemandDataset,
   housingDataset,
 } from "../../../../data/sampleDatasets";
+import { datasetIMulticollinearity, datasetJIrrelevantFeatures, labXy } from "../../../../lib/regression/regressionDatasets";
 import { ridgeRegression } from "../../../../lib/algorithms/regression/linearRegression";
 import { mae, mse, rSquared, rmse } from "../../../../lib/math/metrics";
 import "./RidgeRegressionPage.css";
 
 type RidgeRow = { features: number[]; target: number };
-type DatasetId = "synthetic" | "housing" | "energy" | "linear";
+type DatasetId = "synthetic" | "housing" | "energy" | "linear" | "collinear" | "irrelevant";
 type Tab =
   | "learn"
   | "visualize"
@@ -81,7 +82,7 @@ function syntheticFeatures(x: number, n = 0) {
   ];
 }
 
-function syntheticRows(count = 1000): RidgeRow[] {
+function syntheticRows(count = 240): RidgeRow[] {
   return Array.from({ length: count }, (_, index) => {
     const x =
       -3.2 + ((index % 200) * 6.4) / 199 + Math.floor(index / 200) * 0.006;
@@ -125,6 +126,14 @@ const datasetFactories: Record<DatasetId, () => RidgeRow[]> = {
         target: 1.4 * x + 0.5 + noiseAt(index + 30) * 0.55,
       };
     }),
+  collinear: () => {
+    const { X, y } = labXy(datasetIMulticollinearity());
+    return X.map((features, index) => ({ features, target: y[index] }));
+  },
+  irrelevant: () => {
+    const { X, y } = labXy(datasetJIrrelevantFeatures());
+    return X.map((features, index) => ({ features, target: y[index] }));
+  },
 };
 
 const datasetMeta: Record<DatasetId, { name: string; description: string }> = {
@@ -144,6 +153,14 @@ const datasetMeta: Record<DatasetId, { name: string; description: string }> = {
   linear: {
     name: "Synthetic Linear",
     description: "Correlated linear features with deterministic noise.",
+  },
+  collinear: {
+    name: "Multicollinear predictors",
+    description: "Near-duplicate area columns. Ridge should shrink rather than explode.",
+  },
+  irrelevant: {
+    name: "Useful + irrelevant features",
+    description: "Only one signal column drives y.",
   },
 };
 
