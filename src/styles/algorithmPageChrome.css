@@ -1,0 +1,460 @@
+/**
+ * RootLayout already owns the app menu. Hide in-page "Mega ML / Observatory"
+ * rails. Keep algorithm step tabs (Learn / Visualize / Dataset / …).
+ */
+
+.pp-page.pp-embedded > .pp-side,
+.pp-page.pp-embedded > .pp-mobile-menu {
+  display: none !important;
+}
+
+aside.mlr-sidebar,
+aside.poly-sidebar,
+aside.ridge-sidebar,
+aside.lasso-sidebar,
+aside.elastic-sidebar,
+aside.tree-sidebar,
+aside.gb-sidebar,
+aside.svr-sidebar,
+aside.slr-sidebar,
+aside.rf-sidebar,
+aside.lesson-nav,
+aside.knn-nav,
+aside.nb-nav,
+aside.dt-nav,
+aside.rfc-nav,
+aside.svmc-nav,
+aside.ada-nav,
+aside.gbc-nav,
+aside.xgb-nav,
+aside.mlr-nav,
+aside.km-nav,
+aside.hc-nav,
+aside.ql-rail,
+aside.builder-side,
+aside.attention-side,
+aside[class$="-side"]:not([class*="control"]):not([class*="right"]):not(
+    [class*="inspector"]
+  ) {
+  display: none !important;
+}
+
+.km-top,
+.rf-brand,
+.gb-brand,
+.slr-brand,
+.poly-brand,
+.mlr-brand,
+.tree-brand {
+  display: none !important;
+}
+
+.mlr-shell,
+.poly-shell,
+.ridge-shell,
+.lasso-shell,
+.elastic-shell,
+.tree-shell,
+.slr-shell,
+.slr-shell.collapsed {
+  grid-template-columns: minmax(0, 1fr) !important;
+  height: auto !important;
+  min-height: 100% !important;
+  overflow: visible !important;
+}
+
+.rf-shell {
+  grid-template: auto minmax(0, 1fr) / minmax(0, 1fr) !important;
+  height: auto !important;
+  min-height: 100% !important;
+  overflow: visible !important;
+}
+
+.gb-shell {
+  grid-template: auto minmax(0, 1fr) / minmax(0, 1fr) !important;
+  height: auto !important;
+  min-height: 100% !important;
+  overflow: visible !important;
+}
+
+.gb-header {
+  grid-template-columns: minmax(0, 1fr) 244px 142px 44px 44px !important;
+}
+
+.ma-page {
+  grid-template-columns: 0 minmax(0, 1fr) 282px !important;
+}
+.hw-page {
+  grid-template-columns: 0 minmax(0, 1fr) 297px !important;
+}
+.es-page {
+  grid-template-columns: 0 minmax(0, 1fr) 354px !important;
+}
+.pr-page {
+  grid-template-columns: 0 minmax(0, 1fr) 290px !important;
+}
+.rm-page {
+  grid-template-columns: 0 minmax(0, 1fr) 257px !important;
+}
+.lf-page {
+  grid-template-columns: 0 minmax(0, 1fr) 330px !important;
+}
+.rf-page {
+  grid-template-columns: 0 minmax(0, 1fr) 244px !important;
+}
+.ar-page {
+  grid-template-columns: 0 minmax(0, 1fr) 332px !important;
+}
+.od-page {
+  grid-template-columns: 0 minmax(0, 1fr) 263px !important;
+}
+.mv-page {
+  grid-template-columns: 0 minmax(0, 1fr) 386px !important;
+}
+.sc-page {
+  grid-template-columns: 0 minmax(0, 1fr) 274px !important;
+}
+.bv-page {
+  grid-template-columns: 0 minmax(0, 1fr) 278px !important;
+}
+.fs-page {
+  grid-template-columns: 0 405px 514px minmax(0, 1fr) !important;
+}
+.ce-page {
+  grid-template-columns: 0 214px minmax(0, 1fr) 327px !important;
+}
+.gf-page {
+  grid-template-columns: 0 minmax(0, 1fr) 306px !important;
+}
+.ad-page {
+  grid-template-columns: 0 minmax(0, 1fr) 248px !important;
+}
+.ql-approved {
+  grid-template-columns: 0 minmax(0, 1fr) !important;
+}
+
+.knn-page,
+.logistic-page,
+.nb-page,
+.dt-page,
+.mlr-page,
+.svr-page,
+.lf-page,
+.rf-page,
+.ar-page,
+.gf-page,
+.ad-page,
+.ql-approved,
+.builder-page {
+  position: relative !important;
+  inset: auto !important;
+  z-index: auto !important;
+  width: 100%;
+  height: auto !important;
+  min-height: 100%;
+  overflow: visible !important;
+}
+
+.knn-page > main,
+.logistic-page > main,
+.nb-page > main,
+.dt-page > main,
+.mlr-page > main,
+.svr-page > main,
+.km-page > main,
+.db-page > main,
+.gm-page > main,
+.hc-page > main,
+.sp-page > main,
+.ms-page > main,
+.op-page > main,
+.kmed-page > main,
+.xgb-page > main,
+.rfc-page > main,
+.svmc-page > main,
+.ada-page > main,
+.gbc-page > main {
+  position: relative !important;
+  left: 0 !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+  width: 100%;
+  height: auto !important;
+  min-height: 0;
+  margin-left: 0 !important;
+}
+
+.km-page > main {
+  top: 0 !important;
+}
+
+.cnn-page,
+.mlp-page,
+.pc-page,
+.lstm-page,
+.gru-page,
+.rnn-page,
+.nnp-page,
+.bp-page,
+.mha-page,
+.transfer-page,
+.few-page,
+.attention-page,
+.builder-page,
+.ae-page,
+.ts-page,
+.ld-page,
+.um-page,
+.kp-page,
+.cv-page,
+.split-page,
+.cm-page,
+.roc-page,
+.bv-page {
+  padding-left: 12px !important;
+}
+
+.slr-mobile-steps {
+  display: flex !important;
+  height: 40px;
+  margin-bottom: 10px;
+  padding: 0 7px 0 13px;
+  justify-content: flex-start;
+  gap: 0;
+  overflow-x: auto;
+  border: 1px solid #2c3f5f;
+  border-radius: 6px;
+  background: #081326;
+}
+
+.slr-mobile-steps button {
+  min-width: 89px;
+  height: 39px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: #aab7ce;
+  font-size: 12px;
+}
+
+.slr-mobile-steps button.active {
+  border-bottom-color: #4a7cff;
+  color: white;
+  background: #102047;
+}
+
+.rf-lesson-header nav {
+  display: flex;
+  height: 40px;
+  overflow-x: auto;
+  border: 1px solid #2c3f5f;
+  border-radius: 6px;
+  background: #081326;
+}
+
+.rf-lesson-header nav button {
+  min-width: 89px;
+  height: 39px;
+  padding: 0 12px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #aab7ce;
+}
+
+.rf-lesson-header nav button.active {
+  border-bottom-color: #4a7cff;
+  color: white;
+  background: #102047;
+}
+
+.mlr-main,
+.poly-main,
+.ridge-main,
+.lasso-main,
+.elastic-main,
+.tree-main,
+.slr-main,
+.gb-body,
+.rf-body,
+.rf-main {
+  height: auto !important;
+  min-height: 0;
+  overflow: visible !important;
+}
+
+aside.kmed-nav,
+aside.kmed-top,
+header.kmed-top,
+header.km-top,
+.kmed-top,
+.svmc-nav {
+  display: none !important;
+}
+
+.km-page {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 306px !important;
+  align-items: start;
+  gap: 14px;
+  padding: 4px 10px 18px;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+  position: relative !important;
+  inset: auto !important;
+  box-sizing: border-box !important;
+}
+.kmed-page {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 272px !important;
+  align-items: start;
+  gap: 12px;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+  position: relative !important;
+  inset: auto !important;
+  box-sizing: border-box !important;
+}
+
+.db-page,
+.hc-page,
+.sp-page,
+.ms-page,
+.op-page,
+.gm-page {
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+  position: relative !important;
+  inset: auto !important;
+}
+
+.km-page > main,
+.kmed-page > main,
+.db-page > main,
+.hc-page > main,
+.sp-page > main,
+.ms-page > main,
+.op-page > main,
+.gm-page > main {
+  position: relative !important;
+  inset: auto !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+  width: auto !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+}
+
+aside.km-controls,
+aside.kmed-controls,
+aside.svmc-controls,
+aside.knn-controls,
+aside.db-controls,
+aside.hc-controls,
+aside.sp-controls,
+aside.ms-controls,
+aside.op-controls,
+aside.gm-controls {
+  position: relative !important;
+  inset: auto !important;
+  top: auto !important;
+  right: auto !important;
+  left: auto !important;
+  width: auto !important;
+  height: auto !important;
+  max-height: none !important;
+  z-index: auto !important;
+}
+
+.km-plot,
+.kmed-plot {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.km-bottom,
+.km-page > main > nav,
+.kmed-page > main > nav,
+.kmed-cards {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.km-bottom {
+  width: 100% !important;
+  height: auto !important;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(210px, 0.75fr) !important;
+}
+aside.km-controls {
+  width: 306px !important;
+}
+
+.svmc-page {
+  overflow: visible !important;
+  height: auto !important;
+  min-height: 0 !important;
+  position: relative !important;
+}
+
+.svmc-page > main {
+  margin-left: 0 !important;
+  min-height: 0 !important;
+  position: relative !important;
+}
+
+.svmc-bar {
+  position: relative !important;
+  inset: auto !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  width: auto !important;
+  margin: 0 16px 12px !important;
+}
+
+.svmc-work {
+  position: relative !important;
+  inset: auto !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px) !important;
+  width: auto !important;
+  padding: 0 16px 16px !important;
+}
+
+.svmc-controls {
+  height: auto !important;
+}
+
+.knn-page {
+  position: relative !important;
+  inset: auto !important;
+  overflow: visible !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+aside.knn-controls {
+  height: auto !important;
+  overflow: visible !important;
+}
