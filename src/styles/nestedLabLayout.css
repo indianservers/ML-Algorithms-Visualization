@@ -1,0 +1,162 @@
+/* RootLayout already provides the suite sidebar. Hide each lesson's native
+   sidebar and collapse the grid track it reserved so content does not sit
+   behind an empty column. */
+main aside[class$="-side"]:not([class*="control"]):not([class*="right"]):not(
+    [class*="inspector"]
+  ) {
+  display: none !important;
+}
+
+.mlr-shell,
+.poly-shell,
+.ridge-shell,
+.lasso-shell,
+.elastic-shell,
+.tree-shell,
+.slr-shell,
+.slr-shell.collapsed {
+  grid-template-columns: minmax(0, 1fr) !important;
+  height: auto !important;
+  min-height: 100% !important;
+  overflow: visible !important;
+}
+
+.ma-page {
+  grid-template-columns: 0 minmax(0, 1fr) 282px !important;
+}
+.hw-page {
+  grid-template-columns: 0 minmax(0, 1fr) 297px !important;
+}
+.es-page {
+  grid-template-columns: 0 minmax(0, 1fr) 354px !important;
+}
+.pr-page {
+  grid-template-columns: 0 minmax(0, 1fr) 290px !important;
+}
+.rm-page {
+  grid-template-columns: 0 minmax(0, 1fr) 257px !important;
+}
+.lf-page {
+  grid-template-columns: 0 minmax(0, 1fr) 330px !important;
+}
+.rf-page {
+  grid-template-columns: 0 minmax(0, 1fr) 244px !important;
+}
+.ar-page {
+  grid-template-columns: 0 minmax(0, 1fr) 332px !important;
+}
+.od-page {
+  grid-template-columns: 0 minmax(0, 1fr) 263px !important;
+}
+.mv-page {
+  grid-template-columns: 0 minmax(0, 1fr) 386px !important;
+}
+.sc-page {
+  grid-template-columns: 0 minmax(0, 1fr) 274px !important;
+}
+.bv-page {
+  grid-template-columns: 0 minmax(0, 1fr) 278px !important;
+}
+.fs-page {
+  grid-template-columns: 0 405px 514px minmax(0, 1fr) !important;
+}
+.ce-page {
+  grid-template-columns: 0 214px minmax(0, 1fr) 327px !important;
+}
+.gf-page {
+  grid-template-columns: 0 minmax(0, 1fr) 306px !important;
+}
+.ad-page {
+  grid-template-columns: 0 minmax(0, 1fr) 248px !important;
+}
+.pf-page,
+.pf-page.collapsed {
+  grid-template-columns: 0 245px 359px 510px minmax(0, 1fr) !important;
+}
+
+.ma-page,
+.hw-page,
+.es-page,
+.pr-page,
+.rm-page,
+.lf-page,
+.rf-page,
+.ar-page,
+.od-page,
+.mv-page,
+.sc-page,
+.bv-page,
+.fs-page,
+.ce-page,
+.gf-page,
+.ad-page,
+.pf-page,
+.ql-approved {
+  height: auto !important;
+  min-height: 100% !important;
+  overflow: visible !important;
+}
+
+.cnn-page,
+.mlp-page,
+.pc-page,
+.lstm-page,
+.gru-page,
+.rnn-page,
+.nnp-page,
+.bp-page,
+.mha-page,
+.transfer-page,
+.few-page,
+.attention-page,
+.builder-page,
+.ae-page,
+.ts-page,
+.ld-page,
+.um-page,
+.kp-page,
+.cv-page,
+.split-page,
+.cm-page,
+.roc-page,
+.bv-page {
+  padding-left: 12px !important;
+}
+
+aside.mlr-sidebar,
+aside.poly-sidebar,
+aside.ridge-sidebar,
+aside.lasso-sidebar,
+aside.elastic-sidebar,
+aside.tree-sidebar,
+aside.gb-sidebar,
+aside.svr-sidebar,
+aside.slr-sidebar,
+aside.rf-sidebar,
+aside.lesson-nav,
+aside.knn-nav,
+aside.nb-nav,
+aside.dt-nav,
+aside.rfc-nav,
+aside.svmc-nav,
+aside.ada-nav,
+aside.gbc-nav,
+aside.xgb-nav,
+aside.mlr-nav,
+aside.km-nav,
+aside.hc-nav,
+aside.ql-rail,
+aside.builder-side,
+aside.attention-side {
+  display: none !important;
+}
+
+.km-top,
+.rf-brand,
+.gb-brand,
+.slr-brand,
+.poly-brand,
+.mlr-brand,
+.tree-brand {
+  display: none !important;
+}

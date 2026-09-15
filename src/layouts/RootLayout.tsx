@@ -54,6 +54,7 @@ import { AlgorithmFAQ } from "../components/learning/AlgorithmFAQ";
 import { getSeoMetadata, routeToUrl, siteConfig } from "../data/seo";
 import { getLearnerNote, saveLearnerNote } from "../stores/learningStore";
 import { VisualizationSkeleton } from "../components/common/EmptyState";
+import "../styles/nestedLabLayout.css";
 
 const ACTIVE_DATASETS_KEY = "mlSuite.activeAlgorithmDatasets";
 

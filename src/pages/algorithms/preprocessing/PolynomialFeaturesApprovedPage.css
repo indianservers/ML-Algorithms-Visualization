@@ -9,11 +9,11 @@
     12px/1.42 Inter,
     system-ui,
     sans-serif;
-  grid-template-columns: 238px 245px 359px 510px minmax(0, 1fr);
+  grid-template-columns: 0 245px 359px 510px minmax(0, 1fr);
   grid-template-rows: 155px 335px 288px 162px;
-  height: 100vh;
+  height: auto;
   min-height: 940px;
-  overflow: hidden;
+  overflow: visible;
 }
 .pf-page * {
   box-sizing: border-box;
@@ -36,11 +36,7 @@
   border-radius: 5px;
 }
 .pf-side {
-  border-right: 1px solid #24344e;
-  display: flex;
-  flex-direction: column;
-  grid-row: 1/5;
-  padding: 15px;
+  display: none;
 }
 .pf-side .logo {
   align-items: center;
@@ -641,7 +637,7 @@
   right: 4px;
 }
 .pf-page.collapsed {
-  grid-template-columns: 58px 245px 359px 510px minmax(0, 1fr);
+  grid-template-columns: 0 245px 359px 510px minmax(0, 1fr);
 }
 .pf-page.collapsed .pf-side > *:not(footer):not(.logo),
 .pf-page.collapsed .pf-side .logo b,
@@ -650,7 +646,7 @@
 }
 @media (max-width: 1200px) {
   .pf-page {
-    grid-template-columns: 150px minmax(0, 1fr);
+    grid-template-columns: 0 minmax(0, 1fr);
     grid-template-rows: 190px auto auto auto;
     height: 100vh;
     min-height: 0;
