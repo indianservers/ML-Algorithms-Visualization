@@ -200,7 +200,7 @@ export function trainXGBoostRegression(
       "XGBoost requires matching non-empty feature and target arrays.",
     );
   const validationCount = Math.max(
-    1,
+    0,
     Math.min(
       X.length - 2,
       Math.round(X.length * (options.validationFraction ?? 0.2)),
@@ -258,7 +258,9 @@ export function trainXGBoostRegression(
     stages.push({
       tree,
       trainRmse: rmse(trainY, trainPredictions),
-      validationRmse: rmse(validationY, validationPredictions),
+      validationRmse: validationY.length
+        ? rmse(validationY, validationPredictions)
+        : 0,
       residuals: trainY.map(
         (target, index) => target - trainPredictions[index],
       ),

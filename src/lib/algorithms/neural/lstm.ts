@@ -84,9 +84,15 @@ const sigmoid = (value: number) =>
 const hardSigmoid = (value: number) =>
   Math.max(0, Math.min(1, value * 0.2 + 0.5));
 
-export function defaultLstmWeights(units = 16, layers = 1): LSTMWeights {
+export function defaultLstmWeights(
+  units = 16,
+  layers = 1,
+  layerIndex = 0,
+): LSTMWeights {
   const scale =
-    Math.sqrt(16 / Math.max(1, units)) * (1 + (Math.max(1, layers) - 1) * 0.04);
+    Math.sqrt(16 / Math.max(1, units)) *
+    (1 + (Math.max(1, layers) - 1) * 0.04) *
+    (1 + layerIndex * 0.07);
   return {
     Wf: 0.7 * scale,
     Uf: 0.35 * scale,
@@ -212,7 +218,7 @@ export function runLSTM(
       layer === 0 ? recurrentDropout : 0,
       layer === 0 ? inputDropout : 0,
       layer === depth - 1 ? overrides : {},
-      weights,
+      layer === 0 ? weights : defaultLstmWeights(units, layers, layer),
     );
     series = steps.map((step) => step.hidden);
   }
@@ -253,10 +259,13 @@ export function diagnoseLSTM(
     };
   }
   const mae =
-    steps.slice(0, -1).reduce((sum, item, index) => {
-      const next = steps[index + 1];
-      return sum + Math.abs(item.hidden - (next?.input ?? 0));
-    }, 0) / Math.max(1, steps.length - 1);
+    steps.reduce((sum, item, index) => {
+      const target =
+        targets?.[index] ??
+        steps[index + 1]?.input ??
+        item.input;
+      return sum + Math.abs(item.hidden - target);
+    }, 0) / steps.length;
   const cells = steps.map((item) => item.cell);
   const saturated = steps.filter(
     (step) =>
@@ -266,7 +275,8 @@ export function diagnoseLSTM(
       step.output >= 0.95,
   ).length;
   const last = steps[steps.length - 1];
-  const target = targets?.[targets.length - 1] ?? steps[0]?.input ?? 0;
+  const target =
+    targets?.[targets.length - 1] ?? last?.input ?? 0;
   return {
     mae,
     forget: meanGate(steps, "forget"),

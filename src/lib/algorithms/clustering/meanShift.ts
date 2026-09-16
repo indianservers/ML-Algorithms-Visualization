@@ -46,18 +46,16 @@ export function meanShift(
       const weights = X.map((sample) =>
         kernelWeight(distance(point, sample), bandwidth, kernel),
       );
-      const total = weights.reduce((sum, value) => sum + value, 0) || 1;
+      const total = weights.reduce((sum, value) => sum + value, 0);
+      if (total <= 0) return point;
       const target = X[0].map(
         (_, dimension) =>
           X.reduce(
-            (sum, sample, index) => sum + weights[index] * sample[dimension],
+            (sum, sample, index) => sum + (weights[index] ?? 0) * sample[dimension],
             0,
           ) / total,
       );
-      const moved = target.map(
-        (value, dimension) =>
-          point[dimension] + (value - point[dimension]) * 0.5,
-      );
+      const moved = target;
       maxDisplacement = Math.max(maxDisplacement, distance(point, moved));
       return moved;
     });

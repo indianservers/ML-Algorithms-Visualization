@@ -152,7 +152,7 @@ export function tsne(
     klHistory,
     trustworthiness,
     continuity,
-    incomplete: incomplete || iterations < 250,
+    incomplete,
     iterationsCompleted: klHistory.length,
   };
 }

@@ -52,6 +52,7 @@ function kMeansPlusPlusCentroids(
       centroids.push([...X[centroids.length % X.length]]);
       continue;
     }
+    const before = centroids.length;
     let r = random() * total;
     for (let i = 0; i < X.length; i++) {
       r -= distances[i];
@@ -59,6 +60,9 @@ function kMeansPlusPlusCentroids(
         centroids.push([...X[i]]);
         break;
       }
+    }
+    if (centroids.length === before) {
+      centroids.push([...X[X.length - 1]]);
     }
   }
   return centroids;

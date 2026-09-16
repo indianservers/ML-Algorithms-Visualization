@@ -4,10 +4,11 @@ import { AlertTriangle, BarChart3, Check, Copy, Database, Download, Grid3X3, Inf
 import {
   getAlgorithmDatasetSuggestions,
   loadAlgorithmDataset,
+  suggestionRowCount,
 } from '../../data/algorithmDatasets';
 import type { LoadedAlgorithmDataset } from '../../data/algorithmDatasets';
 import { checkDatasetCompatibility } from '../../lib/preprocessing/datasetCompatibility';
-import { bestFitSummary, scoreDatasetForAlgorithms } from '../../lib/experimentWorkspace';
+import { applyAlgorithmDataset, bestFitSummary, scoreDatasetForAlgorithms } from '../../lib/experimentWorkspace';
 import { loadDatasets, type SavedDataset } from '../../stores/experimentStore';
 import { Card } from '../common/Card';
 import { EditableDataGrid } from './EditableDataGrid';
@@ -27,11 +28,7 @@ function toCSV(dataset: LoadedAlgorithmDataset) {
 }
 
 function persistLoadedDataset(route: string, dataset: LoadedAlgorithmDataset) {
-  if (typeof localStorage === 'undefined') return;
-  const current = JSON.parse(localStorage.getItem(ACTIVE_DATASETS_KEY) ?? '{}') as Record<string, LoadedAlgorithmDataset>;
-  current[route] = dataset;
-  localStorage.setItem(ACTIVE_DATASETS_KEY, JSON.stringify(current));
-  window.dispatchEvent(new CustomEvent('ml:algorithm-dataset-loaded', { detail: { route, dataset } }));
+  applyAlgorithmDataset(route, dataset);
 }
 
 function loadActiveDataset(route: string): LoadedAlgorithmDataset | null {
@@ -113,6 +110,13 @@ export function AlgorithmDatasetLoader({ route, category }: { route: string; cat
     const applyActive = () => {
       if (!mounted) return;
       const active = loadActiveDataset(route);
+      if (!active && loaded) {
+        persistLoadedDataset(route, cloneLoadedDataset(loaded));
+        setActiveDataset(cloneLoadedDataset(loaded));
+        setActiveId(loaded.id);
+        setEditableDataset(cloneLoadedDataset(loaded));
+        return;
+      }
       setActiveDataset(active);
       setActiveId(active?.id ?? null);
       setEditableDataset(active ? cloneLoadedDataset(active) : (loaded ? cloneLoadedDataset(loaded) : null));
@@ -246,12 +250,18 @@ export function AlgorithmDatasetLoader({ route, category }: { route: string; cat
             <optgroup label="Samples">
             {suggestions.map(dataset => (
               <option key={dataset.id} value={dataset.id}>
-                {dataset.name}{dataset.target ? ` -> ${dataset.target}` : ''}
+                {dataset.name} · {suggestionRowCount(dataset)} rows{dataset.target ? ` -> ${dataset.target}` : ''}
               </option>
             ))}
             </optgroup>
           </select>
           <p className="text-xs text-gray-500 dark:text-gray-400">{workingDataset.description}</p>
+          {workingDataset.why && (
+            <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">
+              <span className="font-bold">Why this dataset: </span>
+              {workingDataset.why}
+            </p>
+          )}
           <div className="rounded-lg border border-blue-200 bg-blue-50 p-2 text-xs text-blue-800 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-200">
             <p className="font-bold">Best fit</p>
             <p className="mt-1">{bestFitSummary(workingDataset)}</p>

@@ -171,11 +171,11 @@ export function buildLstmSequences(): LSTMLabSequence[] {
       name: "Delayed XOR",
       kind: "task",
       values: [1, 0, 0, 0, 0, 0, 0, 0],
-      extras: [0, 0, 0, 0, 0, 0, 0, 0],
+      extras: [0, 1, 0, 0, 0, 0, 0, 0],
       featureNames: ["bit A", "bit B"],
-      targets: [0, 0, 0, 0, 0, 0, 0, 1],
+      targets: [0, 0, 0, 0, 0, 0, 0, 0],
       stress:
-        "Bit A=1 at t=0, bit B=0 at t=1 (feature 2 stays 0). Last h should stay high: 1 XOR 0 = 1.",
+        "Bit A=1 at t=0, bit B=1 at t=1 on feature 2. Last h should go to 0: 1 XOR 1 = 0.",
       highlight: 0,
     },
     {

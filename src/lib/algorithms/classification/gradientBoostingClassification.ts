@@ -107,6 +107,8 @@ export function trainGradientBoostingClassification(
           options.minSamplesLeaf ?? 4,
           Math.max(1, Math.floor(indices.length / 5)),
         ),
+        sampleWeights: indices.map((index) => sampleWeights[index] ?? 1e-4),
+        leafMode: "newton",
       },
     );
     scores = scores.map(

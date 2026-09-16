@@ -21,6 +21,8 @@ export interface RegressionTreeOptions {
     string,
     { featureIndex: number; threshold: number }
   >;
+  sampleWeights?: number[];
+  leafMode?: "mean" | "newton";
 }
 
 export interface ParsedRegressionCsv {
@@ -57,17 +59,50 @@ interface Split {
   rightIndices: number[];
 }
 
-function mean(values: number[]) {
-  return values.reduce((sum, value) => sum + value, 0) / values.length;
+function weightAt(weights: number[] | undefined, index: number) {
+  return Math.max(1e-12, weights?.[index] ?? 1);
 }
 
-function variance(values: number[]) {
+function mean(values: number[], weights?: number[]) {
   if (!values.length) return 0;
-  const average = mean(values);
-  return (
-    values.reduce((sum, value) => sum + (value - average) ** 2, 0) /
-    values.length
-  );
+  if (!weights) {
+    return values.reduce((sum, value) => sum + value, 0) / values.length;
+  }
+  let sum = 0;
+  let total = 0;
+  values.forEach((value, index) => {
+    const weight = weightAt(weights, index);
+    sum += weight * value;
+    total += weight;
+  });
+  return sum / total;
+}
+
+function newtonLeaf(values: number[], weights?: number[]) {
+  const residualSum = values.reduce((sum, value) => sum + value, 0);
+  const total = weights
+    ? weights.reduce((sum, value) => sum + Math.max(1e-12, value), 0)
+    : values.length;
+  return residualSum / (total || 1);
+}
+
+function variance(values: number[], weights?: number[]) {
+  if (!values.length) return 0;
+  const average = mean(values, weights);
+  if (!weights) {
+    return (
+      values.reduce((sum, value) => sum + (value - average) ** 2, 0) /
+      values.length
+    );
+  }
+  let sse = 0;
+  let total = 0;
+  values.forEach((value, index) => {
+    const weight = weightAt(weights, index);
+    sse += weight * (value - average) ** 2;
+    total += weight;
+  });
+  return sse / total;
 }
 
 function splitAt(
@@ -76,6 +111,7 @@ function splitAt(
   featureIndex: number,
   threshold: number,
   minSamplesLeaf: number,
+  sampleWeights?: number[],
 ): Split | null {
   const leftIndices: number[] = [];
   const rightIndices: number[] = [];
@@ -87,13 +123,32 @@ function splitAt(
     rightIndices.length < minSamplesLeaf
   )
     return null;
-  const parentVariance = variance(y);
-  const leftVariance = variance(leftIndices.map((index) => y[index]));
-  const rightVariance = variance(rightIndices.map((index) => y[index]));
+  const leftWeights = sampleWeights
+    ? leftIndices.map((index) => sampleWeights[index] ?? 1)
+    : undefined;
+  const rightWeights = sampleWeights
+    ? rightIndices.map((index) => sampleWeights[index] ?? 1)
+    : undefined;
+  const parentVariance = variance(y, sampleWeights);
+  const leftVariance = variance(
+    leftIndices.map((index) => y[index]),
+    leftWeights,
+  );
+  const rightVariance = variance(
+    rightIndices.map((index) => y[index]),
+    rightWeights,
+  );
+  const leftMass = leftWeights
+    ? leftWeights.reduce((sum, value) => sum + value, 0)
+    : leftIndices.length;
+  const rightMass = rightWeights
+    ? rightWeights.reduce((sum, value) => sum + value, 0)
+    : rightIndices.length;
+  const totalMass = leftMass + rightMass || 1;
   const gain =
     parentVariance -
-    (leftIndices.length / y.length) * leftVariance -
-    (rightIndices.length / y.length) * rightVariance;
+    (leftMass / totalMass) * leftVariance -
+    (rightMass / totalMass) * rightVariance;
   return { featureIndex, threshold, gain, leftIndices, rightIndices };
 }
 
@@ -101,47 +156,57 @@ function bestSplit(
   X: number[][],
   y: number[],
   minSamplesLeaf: number,
+  sampleWeights?: number[],
 ): Split | null {
   const featureCount = X[0]?.length ?? 0;
-  const parentVariance = variance(y);
+  const parentVariance = variance(y, sampleWeights);
   let best: Split | null = null;
 
   for (let featureIndex = 0; featureIndex < featureCount; featureIndex++) {
     const ordered = X.map((row, index) => ({
       value: row[featureIndex],
       target: y[index],
+      weight: weightAt(sampleWeights, index),
       index,
     })).sort((a, b) => a.value - b.value);
     let leftSum = 0;
     let leftSquareSum = 0;
-    const totalSum = ordered.reduce((sum, item) => sum + item.target, 0);
-    const totalSquareSum = ordered.reduce(
-      (sum, item) => sum + item.target ** 2,
+    let leftWeight = 0;
+    const totalSum = ordered.reduce(
+      (sum, item) => sum + item.weight * item.target,
       0,
     );
+    const totalSquareSum = ordered.reduce(
+      (sum, item) => sum + item.weight * item.target ** 2,
+      0,
+    );
+    const totalWeight = ordered.reduce((sum, item) => sum + item.weight, 0);
 
     for (let splitIndex = 0; splitIndex < ordered.length - 1; splitIndex++) {
       const item = ordered[splitIndex];
-      leftSum += item.target;
-      leftSquareSum += item.target ** 2;
+      leftSum += item.weight * item.target;
+      leftSquareSum += item.weight * item.target ** 2;
+      leftWeight += item.weight;
       const leftCount = splitIndex + 1;
       const rightCount = ordered.length - leftCount;
       if (leftCount < minSamplesLeaf || rightCount < minSamplesLeaf) continue;
       if (item.value === ordered[splitIndex + 1].value) continue;
       const rightSum = totalSum - leftSum;
       const rightSquareSum = totalSquareSum - leftSquareSum;
+      const rightWeight = totalWeight - leftWeight;
+      if (leftWeight <= 0 || rightWeight <= 0) continue;
       const leftVariance = Math.max(
         0,
-        leftSquareSum / leftCount - (leftSum / leftCount) ** 2,
+        leftSquareSum / leftWeight - (leftSum / leftWeight) ** 2,
       );
       const rightVariance = Math.max(
         0,
-        rightSquareSum / rightCount - (rightSum / rightCount) ** 2,
+        rightSquareSum / rightWeight - (rightSum / rightWeight) ** 2,
       );
       const gain =
         parentVariance -
-        (leftCount / ordered.length) * leftVariance -
-        (rightCount / ordered.length) * rightVariance;
+        (leftWeight / totalWeight) * leftVariance -
+        (rightWeight / totalWeight) * rightVariance;
       if (!best || gain > best.gain) {
         best = {
           featureIndex,
@@ -167,8 +232,11 @@ export function buildRegressionTree(
     id,
     depth,
     samples: y.length,
-    value: mean(y),
-    impurity: variance(y),
+    value:
+      options.leafMode === "newton"
+        ? newtonLeaf(y, options.sampleWeights)
+        : mean(y, options.sampleWeights),
+    impurity: variance(y, options.sampleWeights),
     gain: 0,
   };
   const minSplit = options.minSamplesSplit ?? 2;
@@ -189,24 +257,31 @@ export function buildRegressionTree(
         preferred.featureIndex,
         preferred.threshold,
         options.minSamplesLeaf,
+        options.sampleWeights,
       )
-    : bestSplit(X, y, options.minSamplesLeaf);
+    : bestSplit(X, y, options.minSamplesLeaf, options.sampleWeights);
   if (!split || split.gain <= (options.costComplexity ?? 0)) return node;
 
   node.featureIndex = split.featureIndex;
   node.threshold = split.threshold;
   node.gain = split.gain;
+  const childOptions = (indices: number[]): RegressionTreeOptions => ({
+    ...options,
+    sampleWeights: options.sampleWeights
+      ? indices.map((index) => options.sampleWeights?.[index] ?? 1)
+      : undefined,
+  });
   node.left = buildRegressionTree(
     split.leftIndices.map((index) => X[index]),
     split.leftIndices.map((index) => y[index]),
-    options,
+    childOptions(split.leftIndices),
     depth + 1,
     `${id}L`,
   );
   node.right = buildRegressionTree(
     split.rightIndices.map((index) => X[index]),
     split.rightIndices.map((index) => y[index]),
-    options,
+    childOptions(split.rightIndices),
     depth + 1,
     `${id}R`,
   );

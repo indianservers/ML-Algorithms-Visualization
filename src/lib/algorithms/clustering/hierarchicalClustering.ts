@@ -37,6 +37,8 @@ export function trainHierarchicalClustering(
     throw new Error(
       "Hierarchical clustering is capped at 360 samples in the browser lab because of O(n²) merge cost.",
     );
+  if (linkage === "ward" && metric !== "euclidean")
+    throw new Error("Ward linkage requires Euclidean distance.");
   let clusters: Cluster[] = X.map((row, i) => ({
     id: i,
     members: [i],
@@ -44,8 +46,13 @@ export function trainHierarchicalClustering(
   }));
   const distances = new Map<string, number>();
   for (let i = 0; i < X.length; i++)
-    for (let j = i + 1; j < X.length; j++)
-      distances.set(key(i, j), distance(X[i], X[j], metric));
+    for (let j = i + 1; j < X.length; j++) {
+      const euclid = distance(X[i], X[j], metric);
+      distances.set(
+        key(i, j),
+        linkage === "ward" ? 0.5 * euclid * euclid : euclid,
+      );
+    }
   const merges: HierarchicalMerge[] = [];
   let nextId = X.length;
   while (clusters.length > 1) {
@@ -75,7 +82,7 @@ export function trainHierarchicalClustering(
       left: a.id,
       right: b.id,
       id: merged.id,
-      distance: best,
+      distance: linkage === "ward" ? Math.sqrt(Math.max(0, 2 * best)) : best,
       size: members.length,
       members: [...members],
     });
@@ -90,12 +97,14 @@ export function trainHierarchicalClustering(
         value =
           (da * a.members.length + db * b.members.length) /
           (a.members.length + b.members.length);
-      else
+      else {
+        const dab = distances.get(key(a.id, b.id)) ?? 0;
+        const na = a.members.length;
+        const nb = b.members.length;
+        const nc = other.members.length;
         value =
-          Math.sqrt(
-            (2 * members.length * other.members.length) /
-              (members.length + other.members.length),
-          ) * distance(merged.centroid, other.centroid, metric);
+          ((na + nc) * da + (nb + nc) * db - nc * dab) / (na + nb + nc);
+      }
       distances.set(key(merged.id, other.id), value);
     }
     clusters = clusters.filter((_, i) => i !== bestA && i !== bestB);

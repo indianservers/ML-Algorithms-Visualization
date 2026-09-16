@@ -107,12 +107,10 @@ function makeImage(seed = 0): ImageMatrix {
   return Array.from({ length: 8 }, (_, row) => values.slice(row * 8, row * 8 + 8));
 }
 
-function runPass(
+function featurePass(
   image: ImageMatrix,
   conv1Bank: KernelBank,
   conv2Bank: KernelBank,
-  dense128: DenseLayer,
-  dense2: DenseLayer,
   stride: number,
   padding: number,
   useBias: boolean,
@@ -128,10 +126,24 @@ function runPass(
   if (batchNorm) conv2 = batchNormVolume(conv2);
   const relu2 = reluVolume(conv2);
   const pool2 = maxPoolVolume(relu2, 2);
-  const flat = flattenVolume(pool2);
-  const hidden = denseForward(flat, dense128.weights, dense128.bias, "relu");
+  return { conv1, relu1, pool1, conv2, relu2, pool2, flat: flattenVolume(pool2) };
+}
+
+function runPass(
+  image: ImageMatrix,
+  conv1Bank: KernelBank,
+  conv2Bank: KernelBank,
+  dense128: DenseLayer,
+  dense2: DenseLayer,
+  stride: number,
+  padding: number,
+  useBias: boolean,
+  batchNorm: boolean,
+) {
+  const features = featurePass(image, conv1Bank, conv2Bank, stride, padding, useBias, batchNorm);
+  const hidden = denseForward(features.flat, dense128.weights, dense128.bias, "relu");
   const logits = denseForward(hidden, dense2.weights, dense2.bias);
-  return { conv1, relu1, pool1, conv2, relu2, pool2, flat, hidden, logits, probs: softmax(logits) };
+  return { ...features, hidden, logits, probs: softmax(logits) };
 }
 
 function vectorStats(values: number[]) {
@@ -150,8 +162,6 @@ const PARAMS = {
   dense: 256 * 128 + 128,
   softmax: 128 * 2 + 2,
 };
-const TOTAL_PARAMS = PARAMS.conv1 + PARAMS.conv2 + PARAMS.dense + PARAMS.softmax;
-
 const VIEW_TAB: Record<View, string> = {
   overview: "Visualize",
   data: "Dataset",
@@ -234,10 +244,24 @@ export default function CNNPage() {
   const [history, setHistory] = useState<Array<{ epoch: number; loss: number; accuracy: number }>>([]);
   const [prediction, setPrediction] = useState<number[]>([]);
 
-  const dense128 = useMemo(() => makeDenseWeights(128, 256, 128), []);
-  const dense2 = useMemo(() => makeDenseWeights(2, 128, 2), []);
-
   const image = useMemo(() => makeImage(seed), [seed]);
+  const flattenSize = useMemo(
+    () =>
+      featurePass(image, conv1Bank, conv2Bank, stride, padding, bias, batchNorm)
+        .flat.length,
+    [image, conv1Bank, conv2Bank, stride, padding, bias, batchNorm],
+  );
+  const dense128 = useMemo(
+    () => makeDenseWeights(128, Math.max(1, flattenSize), 128),
+    [flattenSize],
+  );
+  const dense2 = useMemo(() => makeDenseWeights(2, 128, 2), []);
+  const paramCounts = {
+    ...PARAMS,
+    dense: flattenSize * 128 + 128,
+  };
+  const totalParams =
+    paramCounts.conv1 + paramCounts.conv2 + paramCounts.dense + paramCounts.softmax;
   const pass = useMemo(
     () => runPass(image, conv1Bank, conv2Bank, dense128, dense2, stride, padding, bias, batchNorm),
     [image, conv1Bank, conv2Bank, stride, padding, bias, batchNorm, dense128, dense2],
@@ -292,8 +316,8 @@ export default function CNNPage() {
         bank.map((kernels, i) =>
           i !== channel
             ? kernels
-            : kernels.map((k, j) =>
-                j !== 0 ? k : k.map((row, y) => row.map((item, x) => (y === r && x === c ? value : item))),
+            : kernels.map((k) =>
+                k.map((row, y) => row.map((item, x) => (y === r && x === c ? value : item))),
               ),
         ),
       );
@@ -423,7 +447,7 @@ export default function CNNPage() {
           </p>
           <h4>MODEL</h4>
           <p>
-            ⌘ CNN v1.0 · <small>9 layers · {TOTAL_PARAMS.toLocaleString()} weights</small>
+            ⌘ CNN v1.0 · <small>9 layers · {totalParams.toLocaleString()} weights</small>
           </p>
           <h4>TRAINING</h4>
           <p>
@@ -526,7 +550,7 @@ export default function CNNPage() {
                   ["5", "ReLU", shapeOf(pass.relu2), "0", STAGE_COPY.relu2.purpose],
                   ["6", "MaxPool 2×2", shapeOf(pass.pool2), "0", STAGE_COPY.pool2.purpose],
                   ["7", "Flatten", String(pass.flat.length), "0", STAGE_COPY.flatten.purpose],
-                  ["8", "Dense", String(pass.hidden.length), String(PARAMS.dense), STAGE_COPY.dense.purpose],
+                  ["8", "Dense", String(pass.hidden.length), String(paramCounts.dense), STAGE_COPY.dense.purpose],
                   ["9", "Softmax", String(pass.probs.length), String(PARAMS.softmax), STAGE_COPY.softmax.purpose],
                 ].map((row) => (
                   <tr key={row[0] + row[1]}>
@@ -609,7 +633,7 @@ ReLU → MaxPool(2×2) → ${shapeOf(pass.pool2)}
 Flatten → ${pass.flat.length}
 Dense(128, ReLU) → ${pass.hidden.length}
 Softmax → ${pass.probs.map((p) => p.toFixed(3)).join(" / ")}
-params ${TOTAL_PARAMS}`}</pre>
+params ${totalParams}`}</pre>
             </article>
           </section>
         ) : view === "evaluate" ? (

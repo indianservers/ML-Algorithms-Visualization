@@ -67,7 +67,13 @@ function initialize(X: number[][], options: KMedoidsOptions) {
     return pool.slice(0, options.k);
   }
   const medoids = [Math.floor(random() * X.length)];
+  const unused = () =>
+    Array.from({ length: X.length }, (_, i) => i).filter(
+      (i) => !medoids.includes(i),
+    );
   while (medoids.length < options.k) {
+    const remaining = unused();
+    if (!remaining.length) break;
     const distances = X.map(
       (row) =>
         Math.min(
@@ -76,14 +82,21 @@ function initialize(X: number[][], options: KMedoidsOptions) {
           ),
         ) ** 2,
     );
-    let threshold = random() * distances.reduce((sum, value) => sum + value, 0),
-      chosen = X.length - 1;
-    for (let index = 0; index < X.length; index++)
-      if ((threshold -= distances[index]) <= 0) {
+    const total = distances.reduce((sum, value) => sum + value, 0);
+    if (total <= 1e-12) {
+      medoids.push(remaining[Math.floor(random() * remaining.length)] ?? remaining[0]!);
+      continue;
+    }
+    let threshold = random() * total,
+      chosen = remaining[remaining.length - 1] ?? X.length - 1;
+    for (const index of remaining) {
+      if ((threshold -= distances[index] ?? 0) <= 0) {
         chosen = index;
         break;
       }
+    }
     if (!medoids.includes(chosen)) medoids.push(chosen);
+    else medoids.push(remaining.find((index) => !medoids.includes(index)) ?? remaining[0]!);
   }
   return medoids;
 }

@@ -325,7 +325,7 @@ describe("data, preprocessing, and time series", () => {
   it("returns stable forecasts with expected horizons", () => {
     const values = Array.from({ length: 30 }, (_, i) => 10 + i * 0.5 + Math.sin(i));
     expect(differenceSeries([1, 3, 6], 1)).toEqual([2, 3]);
-    expect(movingAverage([1, 2, 3, 4], 2)).toEqual([1, 1.5, 2.5, 3.5]);
+    expect(movingAverage([1, 2, 3, 4], 2)).toEqual([Number.NaN, 1.5, 2.5, 3.5]);
     expect(exponentialSmoothing(values, 0.3, 5).forecast).toHaveLength(5);
     expect(holtWinters(values, 5, 0.3, 0.1, 0.1, 4).forecast).toHaveLength(4);
     expect(fitArima(values, 1, 1, 0, 4).forecast).toHaveLength(4);

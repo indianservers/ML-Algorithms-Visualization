@@ -1,6 +1,19 @@
-/* Nested algorithm labs live inside RootLayout. Do not treat them as a
-   second full-screen app (fixed/inset), and do not keep a column for the
-   lesson's own sidebar once the suite sidebar is showing. */
+/* Nested algorithm labs live inside RootLayout. Fill the remaining viewport
+   under the suite top bar instead of pretending to be a second 100vh app. */
+
+.lab-fit-host {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.lab-fit-inner {
+  height: 100%;
+  min-height: 0;
+  width: 100%;
+  overflow: visible;
+  transform-origin: top left;
+}
 
 #main-content [class*="-page"],
 #main-content [class*="-shell"],
@@ -13,9 +26,8 @@
   left: auto !important;
   width: 100% !important;
   max-width: 100% !important;
-  height: auto !important;
-  min-height: 100vh;
-  overflow: visible !important;
+  height: 100% !important;
+  box-sizing: border-box !important;
   /* Several lessons still pin their own header/rail/footer with position:fixed
      and top:0. A transform makes this root their containing block, so they land
      inside the page instead of over the suite's Home bar. */
@@ -28,9 +40,31 @@
   grid-template-columns: minmax(0, 1fr) !important;
 }
 
-#main-content [class*="-page"] > main,
-#main-content [class*="-shell"] > main,
-#main-content [class*="-approved"] > main,
+/* Do not flatten page > main into in-flow. Absolute mockups (OPTICS, GMM,
+   DBSCAN, …) place the workbench with left/right offsets. Only reclaim the
+   gutter after the duplicate lesson rail is hidden. */
+#main-content [class*="-page"]:has(
+    > aside[class$="-side"]:not([class*="control"]):not([class*="right"]):not(
+        [class*="inspector"]
+      )
+  )
+  > main,
+#main-content [class*="-page"]:has(
+    > aside[class$="-side"]:not([class*="control"]):not([class*="right"]):not(
+        [class*="inspector"]
+      )
+  )
+  > [class*="-head"],
+#main-content [class*="-page"]:has(
+    > aside[class$="-side"]:not([class*="control"]):not([class*="right"]):not(
+        [class*="inspector"]
+      )
+  )
+  > header {
+  left: 12px !important;
+  margin-left: 0 !important;
+}
+
 #main-content .mlr-main,
 #main-content .gb-body > main,
 #main-content .gb-main,
@@ -42,21 +76,12 @@
 #main-content .tree-main,
 #main-content .svr-main,
 #main-content .rf-main {
-  position: relative !important;
-  inset: auto !important;
-  top: auto !important;
-  right: auto !important;
-  bottom: auto !important;
-  left: 0 !important;
   margin-left: 0 !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  height: auto !important;
-  min-height: 100vh;
-  overflow: visible !important;
+  max-width: 100%;
 }
 
-main aside[class$="-side"]:not([class*="control"]):not([class*="right"]):not(
+#main-content
+  aside[class$="-side"]:not([class*="control"]):not([class*="right"]):not(
     [class*="inspector"]
   ) {
   display: none !important;
@@ -185,19 +210,35 @@ aside.ada-nav {
   margin-top: 20px !important;
 }
 
-/* Keep lab control docks beside the canvas instead of overlaying it. */
-#main-content [class*="-page"]:has(> aside[class*="controls"]),
-#main-content [class*="-shell"]:has(> aside[class*="controls"]),
-#main-content [class*="-approved"]:has(> aside[class*="controls"]) {
+/* Keep lab control docks beside the canvas instead of overlaying it.
+   Skip mockups that already reserve space with a left rail + absolute main. */
+#main-content
+  [class*="-page"]:has(> aside[class*="controls"]):not(
+    :has(> aside[class$="-side"])
+  ),
+#main-content
+  [class*="-shell"]:has(> aside[class*="controls"]):not(
+    :has(> aside[class$="-side"])
+  ),
+#main-content
+  [class*="-approved"]:has(> aside[class*="controls"]):not(
+    :has(> aside[class$="-side"])
+  ) {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) minmax(260px, 340px) !important;
   gap: 12px !important;
   padding: 12px !important;
 }
 
-#main-content [class*="-page"] > aside[class*="controls"],
-#main-content [class*="-shell"] > aside[class*="controls"],
-#main-content [class*="-approved"] > aside[class*="controls"] {
+#main-content
+  [class*="-page"]:not(:has(> aside[class$="-side"]))
+  > aside[class*="controls"],
+#main-content
+  [class*="-shell"]:not(:has(> aside[class$="-side"]))
+  > aside[class*="controls"],
+#main-content
+  [class*="-approved"]:not(:has(> aside[class$="-side"]))
+  > aside[class*="controls"] {
   position: relative !important;
   inset: auto !important;
   top: auto !important;
@@ -206,7 +247,7 @@ aside.ada-nav {
   width: 100% !important;
   max-width: 340px;
   height: auto !important;
-  max-height: calc(100vh - 24px);
+  max-height: 100%;
   overflow: auto !important;
   z-index: 2;
 }
@@ -233,15 +274,30 @@ aside.ada-nav {
 }
 
 @media (max-width: 980px) {
-  #main-content [class*="-page"]:has(> aside[class*="controls"]),
-  #main-content [class*="-shell"]:has(> aside[class*="controls"]),
-  #main-content [class*="-approved"]:has(> aside[class*="controls"]) {
+  #main-content
+    [class*="-page"]:has(> aside[class*="controls"]):not(
+      :has(> aside[class$="-side"])
+    ),
+  #main-content
+    [class*="-shell"]:has(> aside[class*="controls"]):not(
+      :has(> aside[class$="-side"])
+    ),
+  #main-content
+    [class*="-approved"]:has(> aside[class*="controls"]):not(
+      :has(> aside[class$="-side"])
+    ) {
     grid-template-columns: minmax(0, 1fr) !important;
   }
 
-  #main-content [class*="-page"] > aside[class*="controls"],
-  #main-content [class*="-shell"] > aside[class*="controls"],
-  #main-content [class*="-approved"] > aside[class*="controls"] {
+  #main-content
+    [class*="-page"]:not(:has(> aside[class$="-side"]))
+    > aside[class*="controls"],
+  #main-content
+    [class*="-shell"]:not(:has(> aside[class$="-side"]))
+    > aside[class*="controls"],
+  #main-content
+    [class*="-approved"]:not(:has(> aside[class$="-side"]))
+    > aside[class*="controls"] {
     max-width: none;
   }
 

@@ -136,17 +136,20 @@ export function trainMLP(
     velocityW = weights.map((matrix) => matrix.map((row) => row.map(() => 0))),
     momentB = biases.map((row) => row.map(() => 0)),
     velocityB = biases.map((row) => row.map(() => 0));
-  const validationEvery = Math.max(
-      2,
-      Math.round(1 / (options.validationSplit ?? 0.2)),
-    ),
+  const split = Math.min(0.45, Math.max(0.05, options.validationSplit ?? 0.2));
+  const validationEvery = Math.max(2, Math.round(1 / split)),
     validation = X.map((_, index) => index).filter(
       (index) => index % validationEvery === 0,
     ),
     train = X.map((_, index) => index).filter(
       (index) => index % validationEvery !== 0,
-    ),
-    trainLoss: number[] = [],
+    );
+  if (!train.length) {
+    throw new Error(
+      "MLP needs at least one training sample after the validation hold-out.",
+    );
+  }
+  const trainLoss: number[] = [],
     validationLoss: number[] = [];
   let update = 0;
   for (let epoch = 0; epoch < options.epochs; epoch++) {

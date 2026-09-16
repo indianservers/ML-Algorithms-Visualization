@@ -120,7 +120,10 @@ export function spectralClustering(
   const ranked = values
     .map((value, index) => ({ value, vector: vectors[index] }))
     .sort((a, b) => b.value - a.value);
-  const selected = ranked.slice(0, clusters),
+  const selected =
+    ranked.length > clusters
+      ? ranked.slice(1, clusters + 1)
+      : ranked.slice(0, clusters),
     embedding = Array.from({ length: n }, (_, i) =>
       selected.map((item) => item.vector[i]),
     );

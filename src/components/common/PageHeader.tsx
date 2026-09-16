@@ -4,7 +4,8 @@ import { Badge } from './Badge';
 import type { BadgeType } from '../../data/navigation';
 import { ChevronRight, Clock, Home } from 'lucide-react';
 import { getAlgorithmByRoute, getAllAlgorithms } from '../../data/implementationStatus';
-import { getAlgorithmDatasetSuggestions } from '../../data/algorithmDatasets';
+import { getAlgorithmDatasetSuggestions, loadAlgorithmDataset, suggestionRowCount } from '../../data/algorithmDatasets';
+import { applyAlgorithmDataset } from '../../lib/experimentWorkspace';
 
 const LearningCompanion = lazy(() => import('../learning/LearningCompanion').then(module => ({ default: module.LearningCompanion })));
 const AlgorithmDatasetLoader = lazy(() => import('../dataset/AlgorithmDatasetLoader').then(module => ({ default: module.AlgorithmDatasetLoader })));
@@ -99,9 +100,16 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <span className="text-[11px] font-bold uppercase tracking-wide text-gray-400">Datasets</span>
               {datasetSuggestions.map(dataset => (
-                <span key={dataset.id} title={dataset.description} className="inline-flex min-h-10 items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-2 text-xs font-medium text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200">
-                  {dataset.name}{dataset.target ? ` -> ${dataset.target}` : ''}
-                </span>
+                <button
+                  key={dataset.id}
+                  type="button"
+                  title={dataset.why ?? dataset.description}
+                  onClick={() => applyAlgorithmDataset(location.pathname, loadAlgorithmDataset(dataset))}
+                  className="inline-flex min-h-10 items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-2 text-xs font-medium text-emerald-800 hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-200 dark:hover:bg-emerald-900/40"
+                >
+                  {dataset.name} · {suggestionRowCount(dataset)}
+                  {dataset.target ? ` → ${dataset.target}` : ''}
+                </button>
               ))}
             </div>
           )}

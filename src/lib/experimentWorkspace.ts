@@ -32,6 +32,14 @@ export function loadActiveDatasets(): ActiveDatasetEntry[] {
   return Object.entries(loadActiveDatasetMap()).map(([route, dataset]) => ({ route, dataset }));
 }
 
+export function applyAlgorithmDataset(route: string, dataset: LoadedAlgorithmDataset) {
+  if (typeof localStorage === 'undefined') return;
+  const current = loadActiveDatasetMap();
+  current[route] = dataset;
+  localStorage.setItem(ACTIVE_DATASETS_KEY, JSON.stringify(current));
+  window.dispatchEvent(new CustomEvent('ml:algorithm-dataset-loaded', { detail: { route, dataset } }));
+}
+
 function categoryBonus(dataset: LoadedAlgorithmDataset, algorithm: AlgorithmNavItem) {
   const type = dataset.type ?? '';
   const text = `${algorithm.route} ${algorithm.category}`.toLowerCase();

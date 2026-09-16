@@ -114,26 +114,37 @@ export function multipleLinearRegressionDiagnostics(
   };
 }
 
-function solveLinearSystem(A: number[][], b: number[]): number[] {
+function solveLinearSystem(A: number[][], b: number[], ridge = 0): number[] {
   const n = b.length;
-  const aug = A.map((row, i) => [...row, b[i]]);
+  const aug = A.map((row, i) =>
+    row.map((value, j) => value + (i === j ? ridge : 0)).concat(b[i] ?? 0),
+  );
+  let singular = false;
   for (let col = 0; col < n; col++) {
     let maxRow = col;
     for (let row = col + 1; row < n; row++) {
-      if (Math.abs(aug[row][col]) > Math.abs(aug[maxRow][col])) maxRow = row;
+      if (Math.abs(aug[row]?.[col] ?? 0) > Math.abs(aug[maxRow]?.[col] ?? 0))
+        maxRow = row;
     }
-    [aug[col], aug[maxRow]] = [aug[maxRow], aug[col]];
-    if (Math.abs(aug[col][col]) < 1e-12) continue;
+    const left = aug[col];
+    const right = aug[maxRow];
+    if (left && right) [aug[col], aug[maxRow]] = [right, left];
+    if (Math.abs(aug[col]?.[col] ?? 0) < 1e-12) {
+      singular = true;
+      continue;
+    }
+    const pivot = aug[col]![col]!;
     for (let row = 0; row < n; row++) {
       if (row !== col) {
-        const factor = aug[row][col] / aug[col][col];
+        const factor = (aug[row]?.[col] ?? 0) / pivot;
         for (let k = col; k <= n; k++) {
-          aug[row][k] -= factor * aug[col][k];
+          aug[row]![k] = (aug[row]?.[k] ?? 0) - factor * (aug[col]?.[k] ?? 0);
         }
       }
     }
   }
-  return aug.map((row, i) => row[n] / (row[i] || 1e-12));
+  if (singular && ridge === 0) return solveLinearSystem(A, b, 1e-6);
+  return aug.map((row, i) => (row[n] ?? 0) / (row[i] || 1e-12));
 }
 
 export function ridgeRegression(
@@ -237,6 +248,7 @@ export function elasticNetRegression(
   const n = y.length;
   const p = X[0].length;
   const ratio = Math.max(0, Math.min(1, l1Ratio));
+  if (ratio === 0) return ridgeRegression(X, y, alpha);
   const mx = X[0].map((_, j) =>
     standardize && fitIntercept ? mean(X.map((row) => row[j])) : 0,
   );

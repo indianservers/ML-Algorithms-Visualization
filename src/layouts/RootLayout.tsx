@@ -28,6 +28,7 @@ import {
   useRouteProgress,
 } from "../components/common/RouteProgress";
 import { GuideMode } from "../components/common/GuideMode";
+import { FitToViewport } from "../components/common/FitToViewport";
 import { useGuideMode } from "../stores/uiStore";
 import "../styles/labTheme.css";
 import "../styles/nestedLabLayout.css";
@@ -404,7 +405,7 @@ export const RootLayout: React.FC = () => {
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={location.pathname}
-        className="min-h-full"
+        className="h-full min-h-0"
         initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -6 }}
@@ -478,9 +479,15 @@ export const RootLayout: React.FC = () => {
       <main
         id="main-content"
         tabIndex={-1}
-        className="relative isolate min-h-0 flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin"
+        className={`relative isolate min-h-0 flex-1 overflow-x-hidden scrollbar-thin ${
+          location.pathname.startsWith("/ml/") ? "overflow-hidden" : "overflow-y-auto"
+        }`}
       >
-        {page}
+        {location.pathname.startsWith("/ml/") ? (
+          <FitToViewport>{page}</FitToViewport>
+        ) : (
+          page
+        )}
       </main>
       <RouteSearchModal
         open={routeSearchOpen}

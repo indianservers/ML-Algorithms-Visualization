@@ -146,11 +146,12 @@ export function linearDiscriminantAnalysis(
           members.reduce((sum, row) => sum + row[j], 0) / members.length,
       );
     });
+  void centerMode;
   const withinScatter = zeros(d),
     betweenScatter = zeros(d);
   data.forEach((row, i) => {
     const classIndex = classes.indexOf(y[i]),
-      reference = centerMode === "class" ? classMeans[classIndex] : overall;
+      reference = classMeans[classIndex] ?? overall;
     for (let a = 0; a < d; a += 1)
       for (let b = 0; b < d; b += 1)
         withinScatter[a][b] +=
@@ -158,7 +159,7 @@ export function linearDiscriminantAnalysis(
   });
   classes.forEach((label, classIndex) => {
     const count = y.filter((value) => value === label).length,
-      weight = priors === "uniform" ? n / classes.length : count,
+      weight = count,
       delta = classMeans[classIndex].map((value, j) => value - overall[j]);
     for (let a = 0; a < d; a += 1)
       for (let b = 0; b < d; b += 1)
@@ -187,7 +188,13 @@ export function linearDiscriminantAnalysis(
         const centroid = point.map((_, dim) =>
           members.reduce((sum, row) => sum + row[dim], 0) / members.length,
         );
-        const distance = point.reduce((sum, value, dim) => sum + (value - centroid[dim]) ** 2, 0);
+        const prior =
+          priors === "uniform"
+            ? 1 / classes.length
+            : members.length / n;
+        const distance =
+          point.reduce((sum, value, dim) => sum + (value - centroid[dim]) ** 2, 0) -
+          2 * Math.log(Math.max(1e-12, prior));
         if (distance < bestDistance) {
           bestDistance = distance;
           best = label;
