@@ -11,18 +11,23 @@ import {
   CircleHelp,
   Crosshair,
   Database,
+  Eraser,
   FileText,
   FlaskConical,
   Home,
   Lightbulb,
   Minus,
   Moon,
+  MousePointer2,
   Network,
+  PaintBucket,
   Play,
   Plus,
   RotateCcw,
   Share2,
+  Shuffle,
   Sparkles,
+  Sun,
   Target,
   Upload,
 } from "lucide-react";
@@ -30,11 +35,12 @@ import {
   datasetCXor,
   datasetDTwoMoons,
   datasetECircles,
-  datasetFThreeBlobs,
+  datasetMultiClassBlobs,
   irisPetalPoints,
   datasetHImbalanced,
 } from "../../../../lib/classification/classificationDatasets";
 import { knnPredict, type DistanceMetric, type KnnWeight } from "../../../../lib/algorithms/classification/knn";
+import { useTheme } from "../../../../stores/uiStore";
 import "./KNNClassificationPage.css";
 
 type TabId =
@@ -47,87 +53,50 @@ type TabId =
   | "explain";
 type DatasetId = "iris" | "blobs" | "xor" | "moons" | "circles" | "imbalanced" | "imported";
 type Point = { x: number; y: number; label: number };
+/** Plot interaction mode: move the query/points, paint new samples, or erase. */
+type Tool = "move" | "paint" | "erase";
+type DragTarget = { kind: "query" } | { kind: "point"; index: number };
+type Domain = { xMin: number; xMax: number; yMin: number; yMax: number };
 
-const COLORS = ["#3b82f6", "#ec4899", "#22c55e"];
-const FILLS = ["#122b5b", "#3a153e", "#103b35"];
+const MAX_CLASSES = 6;
+const COLORS = [
+  "#3b82f6",
+  "#ec4899",
+  "#22c55e",
+  "#f59e0b",
+  "#a855f7",
+  "#14b8a6",
+];
+const FILLS = [
+  "#122b5b",
+  "#3a153e",
+  "#103b35",
+  "#3b2a0b",
+  "#2c1548",
+  "#0c3733",
+];
 const IRIS_NAMES = ["Setosa", "Versicolor", "Virginica"];
-const GENERIC_NAMES = ["Class A", "Class B", "Class C"];
-const seeded = (seed: number) => {
-  const value = Math.sin(seed * 999.91) * 43758.5453;
-  return value - Math.floor(value);
-};
-function cloud(
-  cx: number,
-  cy: number,
-  label: number,
-  count: number,
-  seed: number,
-  sx: number,
-  sy: number,
-): Point[] {
-  return Array.from({ length: count }, (_, index) => {
-    const angle = seeded(seed + index * 3) * Math.PI * 2;
-    const radius = Math.sqrt(seeded(seed + index * 3 + 1));
-    return {
-      x:
-        cx +
-        Math.cos(angle) * radius * sx +
-        (seeded(seed + index * 3 + 2) - 0.5) * sx * 0.25,
-      y: cy + Math.sin(angle) * radius * sy,
-      label,
-    };
-  });
-}
-function irisData(): Point[] {
-  return [
-    ...cloud(1.55, 0.28, 0, 50, 4, 0.62, 0.2),
-    ...cloud(4.35, 1.34, 1, 50, 108, 1.12, 0.5),
-    ...cloud(5.45, 2.02, 2, 50, 212, 1.25, 0.52),
-  ];
-}
-function blobData(): Point[] {
-  return [
-    ...cloud(-2.3, -1.1, 0, 30, 13, 1.25, 1.05),
-    ...cloud(2.1, -0.2, 1, 30, 67, 1.25, 1.1),
-    ...cloud(-0.2, 2.6, 2, 30, 121, 1.25, 1.05),
-  ];
-}
-function wineData(): Point[] {
-  return [
-    ...cloud(13.7, 2.1, 0, 30, 26, 0.7, 0.7),
-    ...cloud(12.4, 2.7, 1, 30, 80, 0.75, 0.75),
-    ...cloud(13.1, 3.9, 2, 30, 134, 0.7, 0.85),
-  ];
-}
-function moonData(): Point[] {
-  return Array.from({ length: 90 }, (_, index) => {
-    const label = index % 3;
-    const step = Math.floor(index / 3);
-    const angle = (step / 29) * Math.PI;
-    const jitter = (seeded(index + 81) - 0.5) * 0.12;
-    if (label === 0)
-      return { x: Math.cos(angle) * 2, y: Math.sin(angle) + jitter, label };
-    if (label === 1)
-      return {
-        x: 1.1 - Math.cos(angle) * 2,
-        y: 0.45 - Math.sin(angle) + jitter,
-        label,
-      };
-    return {
-      x: Math.cos(angle) * 1.35 + 0.5,
-      y: Math.sin(angle) * 0.7 + 1.15 + jitter,
-      label,
-    };
-  });
-}
-const BUILT_INS: Record<Exclude<DatasetId, "imported">, Point[]> = {
+const GENERIC_NAMES = [
+  "Class A",
+  "Class B",
+  "Class C",
+  "Class D",
+  "Class E",
+  "Class F",
+];
+const BUILT_INS: Record<Exclude<DatasetId, "imported" | "blobs">, Point[]> = {
   iris: irisPetalPoints(),
-  blobs: datasetFThreeBlobs(),
   xor: datasetCXor(),
   moons: datasetDTwoMoons(),
   circles: datasetECircles(),
   imbalanced: datasetHImbalanced(),
 };
+const makeBlobs = (classes: number, seed: number): Point[] =>
+  datasetMultiClassBlobs(classes, 26, seed).map((point) => ({ ...point }));
+const centroid = (list: Point[]) => ({
+  x: list.reduce((sum, point) => sum + point.x, 0) / list.length,
+  y: list.reduce((sum, point) => sum + point.y, 0) / list.length,
+});
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   { id: "learn", label: "Learn", icon: <Lightbulb /> },
   { id: "visualize", label: "Visualize", icon: <Sparkles /> },
@@ -156,10 +125,24 @@ export default function KNNClassificationPage() {
   const [showBoundary, setShowBoundary] = useState(true);
   const [showLinks, setShowLinks] = useState(true);
   const [tip, setTip] = useState(0);
+  const [blobClasses, setBlobClasses] = useState(3);
+  const [blobSeed, setBlobSeed] = useState(401);
+  const [tool, setTool] = useState<Tool>("move");
+  const [paintClass, setPaintClass] = useState(0);
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  // Rescaling mid-gesture makes the dragged dot chase the cursor, so a drag
+  // carries the axes it started with.
+  const [drag, setDrag] = useState<{
+    target: DragTarget;
+    domain: Domain;
+    points: Point[];
+  } | null>(null);
   const [trainedAt, setTrainedAt] = useState(
     "Ready — KNN stores the current examples",
   );
   const [toast, setToast] = useState("");
+  const { theme, toggleTheme } = useTheme();
+  const light = theme === "light";
   const uploadRef = useRef<HTMLInputElement>(null);
   const trainX = useMemo(
     () => points.map((point) => [point.x, point.y]),
@@ -167,6 +150,7 @@ export default function KNNClassificationPage() {
   );
   const trainY = useMemo(() => points.map((point) => point.label), [points]);
   const safeK = Math.min(k, Math.max(1, points.length));
+  const kCeiling = Math.min(25, Math.max(1, points.length));
   const prediction = useMemo(
     () =>
       points.length
@@ -174,8 +158,30 @@ export default function KNNClassificationPage() {
         : null,
     [metric, points.length, query.x, query.y, safeK, trainX, trainY, weight],
   );
-  const names = datasetId === "iris" ? IRIS_NAMES : GENERIC_NAMES;
-  const domain = useMemo(() => {
+  /** Highest label present, so every legend/vote/table view scales with the data. */
+  const classCount = useMemo(
+    () =>
+      Math.max(
+        2,
+        Math.min(
+          MAX_CLASSES,
+          points.reduce((max, point) => Math.max(max, point.label), 0) + 1,
+        ),
+      ),
+    [points],
+  );
+  const classIds = useMemo(
+    () => Array.from({ length: classCount }, (_, index) => index),
+    [classCount],
+  );
+  const names = useMemo(
+    () =>
+      datasetId === "iris"
+        ? [...IRIS_NAMES, ...GENERIC_NAMES.slice(3)]
+        : GENERIC_NAMES,
+    [datasetId],
+  );
+  const liveDomain = useMemo<Domain>(() => {
     const xs = points.map((point) => point.x).concat(query.x);
     const ys = points.map((point) => point.y).concat(query.y);
     const xMin = Math.min(...xs),
@@ -191,12 +197,27 @@ export default function KNNClassificationPage() {
       yMax: yMax + yPad,
     };
   }, [points, query.x, query.y]);
+  const domain = drag ? drag.domain : liveDomain;
+  // The boundary costs 800+ predictions per pass, far too slow to redo on every
+  // pointermove, so dragging a sample keeps the pre-drag snapshot on screen and
+  // the real boundary is recomputed once the gesture ends.
+  const boundaryPoints =
+    drag?.target.kind === "point" ? drag.points : points;
+  const boundaryX = useMemo(
+    () => boundaryPoints.map((point) => [point.x, point.y]),
+    [boundaryPoints],
+  );
+  const boundaryY = useMemo(
+    () => boundaryPoints.map((point) => point.label),
+    [boundaryPoints],
+  );
   const grid = useMemo(() => {
-    if (!showBoundary || !points.length) return [];
+    if (!showBoundary || !boundaryPoints.length) return [];
     const columns = 39,
       rows = 21,
       xStep = (domain.xMax - domain.xMin) / columns,
       yStep = (domain.yMax - domain.yMin) / rows;
+    const boundaryK = Math.min(safeK, boundaryPoints.length);
     const cells: { x: number; y: number; label: number }[] = [];
     for (let row = 0; row < rows; row += 1)
       for (let column = 0; column < columns; column += 1) {
@@ -205,12 +226,27 @@ export default function KNNClassificationPage() {
         cells.push({
           x: column,
           y: row,
-          label: knnPredict(trainX, trainY, [x, y], safeK, metric, weight)
-            .predictedClass,
+          label: knnPredict(
+            boundaryX,
+            boundaryY,
+            [x, y],
+            boundaryK,
+            metric,
+            weight,
+          ).predictedClass,
         });
       }
     return cells;
-  }, [domain, metric, safeK, showBoundary, points.length, trainX, trainY, weight]);
+  }, [
+    boundaryPoints.length,
+    boundaryX,
+    boundaryY,
+    domain,
+    metric,
+    safeK,
+    showBoundary,
+    weight,
+  ]);
   const looAccuracy = useMemo(() => {
     if (points.length < 2) return 0;
     let correct = 0;
@@ -228,35 +264,74 @@ export default function KNNClassificationPage() {
     });
     return correct / points.length;
   }, [metric, points, safeK, weight]);
-  const votes = [0, 1, 2].map((label) => prediction?.votes[label] ?? 0);
+  const votes = classIds.map((label) => prediction?.votes[label] ?? 0);
   const winningVotes = prediction
     ? (prediction.votes[prediction.predictedClass] ?? 0)
     : 0;
   const voteTotal = votes.reduce((sum, value) => sum + value, 0) || 1;
   const confidence = prediction ? winningVotes / voteTotal : 0;
   const kthDistance = prediction?.neighbors.at(-1)?.distance ?? 0;
-  const setDataset = (next: DatasetId) => {
-    const source = next === "imported" ? imported : BUILT_INS[next];
+  const pointsInRadius = points.filter(
+    (point) => Math.hypot(point.x - query.x, point.y - query.y) <= radius,
+  ).length;
+  const voteGradient = useMemo(() => {
+    let running = 0;
+    const stops = votes.map((vote, label) => {
+      const from = (running / voteTotal) * 100;
+      running += vote;
+      const to = (running / voteTotal) * 100;
+      return `${COLORS[label]} ${from}% ${to}%`;
+    });
+    return `conic-gradient(${stops.join(", ")})`;
+  }, [voteTotal, votes]);
+  const loadPoints = (source: Point[], next: DatasetId) => {
     if (!source.length) return;
     setDatasetId(next);
     setPoints(source.map((point) => ({ ...point })));
-    if (next === "iris") setQuery({ x: 4.4, y: 1.6 });
-    else
-      setQuery({
-        x: source.reduce((sum, point) => sum + point.x, 0) / source.length,
-        y: source.reduce((sum, point) => sum + point.y, 0) / source.length,
-      });
+    setQuery(next === "iris" ? { x: 4.4, y: 1.6 } : centroid(source));
+    setK((value) => clampK(value, source.length));
+    setPaintClass((value) =>
+      Math.min(
+        value,
+        source.reduce((max, point) => Math.max(max, point.label), 0),
+      ),
+    );
     setTrainedAt("Ready — KNN stores the current examples");
+  };
+  const setDataset = (next: DatasetId) => {
+    if (next === "blobs") {
+      loadPoints(makeBlobs(blobClasses, blobSeed), "blobs");
+      return;
+    }
+    loadPoints(next === "imported" ? imported : BUILT_INS[next], next);
+  };
+  /** Rebuild the synthetic dataset so KNN has `next` labelled groups to vote on. */
+  const changeClasses = (next: number) => {
+    const classes = Math.max(2, Math.min(MAX_CLASSES, Math.round(next)));
+    if (classes === classCount && datasetId === "blobs") return;
+    setBlobClasses(classes);
+    loadPoints(makeBlobs(classes, blobSeed), "blobs");
+    setToast(`Dataset rebuilt with ${classes} classes`);
+    window.setTimeout(() => setToast(""), 1600);
+  };
+  const shuffleBlobs = () => {
+    const seed = Math.floor(Math.random() * 9000) + 100;
+    setBlobSeed(seed);
+    loadPoints(makeBlobs(blobClasses, seed), "blobs");
   };
   const reset = () => {
     setDatasetId("iris");
     setPoints(BUILT_INS.iris.map((point) => ({ ...point })));
     setK(5);
     setMetric("euclidean");
+    setWeight("uniform");
     setQuery({ x: 4.4, y: 1.6 });
     setRadius(1.3);
     setShowBoundary(true);
     setShowLinks(true);
+    setTool("move");
+    setPaintClass(0);
+    setBlobClasses(3);
     setTrainedAt("Ready — KNN stores the current examples");
   };
   const train = () => {
@@ -276,7 +351,7 @@ export default function KNNClassificationPage() {
       .map((columns) => ({
         x: Number(columns[0]),
         y: Number(columns[1]),
-        label: Math.max(0, Math.min(2, Number(columns[2]))),
+        label: Math.max(0, Math.min(MAX_CLASSES - 1, Number(columns[2]))),
       }))
       .filter(
         (point) =>
@@ -289,13 +364,7 @@ export default function KNNClassificationPage() {
       return;
     }
     setImported(parsed);
-    setDatasetId("imported");
-    setPoints(parsed);
-    setK(clampK(k, parsed.length));
-    setQuery({
-      x: parsed.reduce((sum, point) => sum + point.x, 0) / parsed.length,
-      y: parsed.reduce((sum, point) => sum + point.y, 0) / parsed.length,
-    });
+    loadPoints(parsed, "imported");
     setToast(`Imported ${parsed.length} samples`);
     event.target.value = "";
   };
@@ -307,7 +376,7 @@ export default function KNNClassificationPage() {
               ...point,
               [key]:
                 key === "label"
-                  ? Math.max(0, Math.min(2, Math.round(value)))
+                  ? Math.max(0, Math.min(MAX_CLASSES - 1, Math.round(value)))
                   : value,
             }
           : point,
@@ -320,15 +389,100 @@ export default function KNNClassificationPage() {
   const queryPixel = project(query),
     xScale = 834 / (domain.xMax - domain.xMin),
     yScale = 330 / (domain.yMax - domain.yMin);
-  const plotClick = (event: React.MouseEvent<SVGSVGElement>) => {
+  /** Screen position -> feature-space position, plus whether it hit the canvas. */
+  const toData = (event: React.PointerEvent<SVGSVGElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
     const svgX = ((event.clientX - rect.left) / rect.width) * 930,
       svgY = ((event.clientY - rect.top) / rect.height) * 410;
-    if (svgX < 48 || svgX > 882 || svgY < 44 || svgY > 374) return;
-    setQuery({
+    return {
+      inside: svgX >= 48 && svgX <= 882 && svgY >= 44 && svgY <= 374,
       x: domain.xMin + ((svgX - 48) / 834) * (domain.xMax - domain.xMin),
       y: domain.yMin + ((374 - svgY) / 330) * (domain.yMax - domain.yMin),
+    };
+  };
+  const nearestIndex = (x: number, y: number, maxPixels = 13) => {
+    let best = -1;
+    let bestDistance = Infinity;
+    points.forEach((point, index) => {
+      const distance = Math.hypot(
+        (point.x - x) * xScale,
+        (point.y - y) * yScale,
+      );
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = index;
+      }
     });
+    return bestDistance <= maxPixels ? best : -1;
+  };
+  const plotPointerDown = (event: React.PointerEvent<SVGSVGElement>) => {
+    const at = toData(event);
+    if (!at.inside) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    if (tool === "paint") {
+      setPoints((current) => [
+        ...current,
+        { x: at.x, y: at.y, label: paintClass },
+      ]);
+      setTrainedAt(`Added a ${names[paintClass]} sample — re-index to refresh`);
+      return;
+    }
+    if (tool === "erase") {
+      const hit = nearestIndex(at.x, at.y, 18);
+      if (hit < 0 || points.length <= 3) return;
+      setPoints((current) =>
+        current.filter((_, index) => index !== hit),
+      );
+      return;
+    }
+    const hit = nearestIndex(at.x, at.y);
+    if (hit >= 0) {
+      setDrag({
+        target: { kind: "point", index: hit },
+        domain: liveDomain,
+        points,
+      });
+      return;
+    }
+    setQuery({ x: at.x, y: at.y });
+    setDrag({ target: { kind: "query" }, domain: liveDomain, points });
+  };
+  const plotPointerMove = (event: React.PointerEvent<SVGSVGElement>) => {
+    const at = toData(event);
+    if (!drag) {
+      const hit = at.inside && tool !== "paint" ? nearestIndex(at.x, at.y) : -1;
+      setHoverIndex(hit >= 0 ? hit : null);
+      return;
+    }
+    if (drag.target.kind === "query") {
+      setQuery({ x: at.x, y: at.y });
+      return;
+    }
+    const dragIndex = drag.target.index;
+    setPoints((current) =>
+      current.map((point, index) =>
+        index === dragIndex ? { ...point, x: at.x, y: at.y } : point,
+      ),
+    );
+  };
+  const plotPointerUp = () => setDrag(null);
+  const plotKeyDown = (event: React.KeyboardEvent<SVGSVGElement>) => {
+    const nudgeX = (domain.xMax - domain.xMin) / 60;
+    const nudgeY = (domain.yMax - domain.yMin) / 60;
+    const moves: Record<string, [number, number]> = {
+      ArrowLeft: [-nudgeX, 0],
+      ArrowRight: [nudgeX, 0],
+      ArrowUp: [0, nudgeY],
+      ArrowDown: [0, -nudgeY],
+    };
+    const move = moves[event.key];
+    if (!move) return;
+    event.preventDefault();
+    const scale = event.shiftKey ? 5 : 1;
+    setQuery((current) => ({
+      x: current.x + move[0] * scale,
+      y: current.y + move[1] * scale,
+    }));
   };
 
   const mainPlot = (
@@ -337,9 +491,15 @@ export default function KNNClassificationPage() {
         <span>
           <Crosshair /> Feature Space
         </span>
-        <small>Click anywhere to move the query point</small>
+        <small>
+          {tool === "paint"
+            ? `Click to add ${names[paintClass]} samples`
+            : tool === "erase"
+              ? "Click a sample to delete it"
+              : "Drag the query or any sample • arrow keys nudge"}
+        </small>
         <div className="knn-plot-legend">
-          {[0, 1, 2].map((label) => (
+          {classIds.map((label) => (
             <i key={label}>
               <b style={{ background: COLORS[label] }} />
               {names[label]}
@@ -352,57 +512,91 @@ export default function KNNClassificationPage() {
         </div>
       </div>
       <svg
-        className="knn-chart"
+        className={`knn-chart tool-${tool}`}
         viewBox="0 0 930 410"
-        onClick={plotClick}
-        role="img"
-        aria-label="Interactive KNN feature-space plot"
+        tabIndex={0}
+        onPointerDown={plotPointerDown}
+        onPointerMove={plotPointerMove}
+        onPointerUp={plotPointerUp}
+        onPointerCancel={plotPointerUp}
+        onPointerLeave={() => setHoverIndex(null)}
+        onKeyDown={plotKeyDown}
+        role="application"
+        aria-label="Interactive KNN feature-space plot. Arrow keys move the query point."
       >
         <defs>
           <clipPath id="knn-clip">
-            <rect x="48" y="44" width="834" height="330" rx="4" />
+            <rect x="48" y="44" width="834" height="330" rx="10" />
           </clipPath>
-        </defs>
-        <rect
-          x="48"
-          y="44"
-          width="834"
-          height="330"
-          rx="4"
-          fill="#08162c"
-          stroke="#284467"
-        />
-        <g clipPath="url(#knn-clip)">
-          {grid.map((cell, index) => (
-            <rect
-              key={index}
-              x={48 + cell.x * (834 / 39)}
-              y={44 + (20 - cell.y) * (330 / 21)}
-              width={834 / 39 + 0.6}
-              height={330 / 21 + 0.6}
-              fill={FILLS[cell.label]}
-              opacity=".82"
+          <radialGradient id="knn-aurora-purple" cx=".84" cy=".42" r=".8">
+            <stop className="aurora-purple-core" offset="0" />
+            <stop className="aurora-purple-mid" offset=".48" />
+            <stop className="aurora-purple-deep" offset="1" />
+          </radialGradient>
+          <radialGradient id="knn-aurora-teal" cx=".16" cy=".55" r=".85">
+            <stop className="aurora-teal-core" offset="0" />
+            <stop className="aurora-teal-edge" offset=".52" />
+          </radialGradient>
+          <radialGradient id="knn-query-bloom">
+            <stop
+              stopColor={COLORS[prediction?.predictedClass ?? 0]}
+              stopOpacity=".5"
             />
-          ))}
+            <stop
+              offset="1"
+              stopColor={COLORS[prediction?.predictedClass ?? 0]}
+              stopOpacity="0"
+            />
+          </radialGradient>
+        </defs>
+        <g clipPath="url(#knn-clip)">
+          <g className="knn-plot-surface">
+            <rect
+              className="knn-plot-base"
+              x="48"
+              y="44"
+              width="834"
+              height="330"
+            />
+            <rect
+              className="knn-plot-wash"
+              x="48"
+              y="44"
+              width="834"
+              height="330"
+            />
+            <g className="knn-plot-regions">
+              {grid.map((cell, index) => (
+                <rect
+                  key={index}
+                  x={48 + cell.x * (834 / 39)}
+                  y={44 + (20 - cell.y) * (330 / 21)}
+                  width={834 / 39 + 0.6}
+                  height={330 / 21 + 0.6}
+                  fill={FILLS[cell.label]}
+                />
+              ))}
+            </g>
+          </g>
           {Array.from({ length: 9 }, (_, index) => (
             <line
+              className="knn-plot-grid"
               key={`v${index}`}
               x1={48 + index * 104.25}
               x2={48 + index * 104.25}
               y1="44"
               y2="374"
-              stroke="#28405f"
               strokeWidth=".8"
             />
           ))}
           {Array.from({ length: 7 }, (_, index) => (
             <line
+              className="knn-plot-grid"
               key={`h${index}`}
               x1="48"
               x2="882"
               y1={44 + index * 55}
               y2={44 + index * 55}
-              stroke="#28405f"
               strokeWidth=".8"
             />
           ))}
@@ -448,22 +642,43 @@ export default function KNNClassificationPage() {
             const pixel = project(point),
               neighbor = prediction?.neighbors.some(
                 (item) => item.index === index,
-              );
+              ),
+              highlighted = hoverIndex === index;
             return (
-              <circle
-                key={index}
-                cx={pixel.x}
-                cy={pixel.y}
-                r={neighbor ? 6.6 : 4.3}
-                fill={COLORS[point.label]}
-                stroke={neighbor ? "#fff" : "#102344"}
-                strokeWidth={neighbor ? 2 : 1}
-                opacity=".95"
-              >
-                <title>{`${names[point.label]} · (${point.x.toFixed(2)}, ${point.y.toFixed(2)})`}</title>
-              </circle>
+              <g key={index}>
+                {highlighted && (
+                  <circle
+                    cx={pixel.x}
+                    cy={pixel.y}
+                    r="11"
+                    fill="none"
+                    stroke="#f7c948"
+                    strokeWidth="1.6"
+                  />
+                )}
+                <circle
+                  cx={pixel.x}
+                  cy={pixel.y}
+                  r={highlighted ? 7.4 : neighbor ? 6.6 : 4.3}
+                  fill={COLORS[point.label]}
+                  stroke="#fff"
+                  strokeWidth={neighbor || highlighted ? 2 : 1}
+                  opacity=".95"
+                  style={{
+                    filter: `drop-shadow(0 0 ${neighbor || highlighted ? 8 : 5}px ${COLORS[point.label]})`,
+                  }}
+                >
+                  <title>{`${names[point.label]} · (${point.x.toFixed(2)}, ${point.y.toFixed(2)})`}</title>
+                </circle>
+              </g>
             );
           })}
+          <circle
+            cx={queryPixel.x}
+            cy={queryPixel.y}
+            r="58"
+            fill="url(#knn-query-bloom)"
+          />
           <circle
             cx={queryPixel.x}
             cy={queryPixel.y}
@@ -471,6 +686,9 @@ export default function KNNClassificationPage() {
             fill={COLORS[prediction?.predictedClass ?? 0]}
             stroke="#fff"
             strokeWidth="2.5"
+            style={{
+              filter: `drop-shadow(0 0 18px ${COLORS[prediction?.predictedClass ?? 0]})`,
+            }}
           />
           <path
             d={`M${queryPixel.x - 16},${queryPixel.y}h32M${queryPixel.x},${queryPixel.y - 16}v32`}
@@ -478,6 +696,14 @@ export default function KNNClassificationPage() {
             strokeWidth="2"
           />
         </g>
+        <rect
+          className="knn-plot-frame"
+          x="48"
+          y="44"
+          width="834"
+          height="330"
+          rx="10"
+        />
         <text x="465" y="403" textAnchor="middle">
           Feature 1
         </text>
@@ -576,9 +802,11 @@ export default function KNNClassificationPage() {
                           )
                         }
                       >
-                        <option value="0">{names[0]}</option>
-                        <option value="1">{names[1]}</option>
-                        <option value="2">{names[2]}</option>
+                        {classIds.map((label) => (
+                          <option key={label} value={label}>
+                            {names[label]}
+                          </option>
+                        ))}
                       </select>
                     </td>
                     <td>
@@ -623,7 +851,10 @@ export default function KNNClassificationPage() {
             </b>
             <i>→</i>
             <b>
-              3<span>Vote among K = {safeK}</span>
+              3
+              <span>
+                Vote among K = {safeK} over {classCount} classes
+              </span>
             </b>
           </div>
           <button onClick={train}>
@@ -659,7 +890,7 @@ export default function KNNClassificationPage() {
             </article>
           </div>
           <div className="knn-class-bars">
-            {[0, 1, 2].map((label) => {
+            {classIds.map((label) => {
               const count = points.filter(
                 (point) => point.label === label,
               ).length;
@@ -765,7 +996,7 @@ export default function KNNClassificationPage() {
   };
 
   return (
-    <div className="knn-page">
+    <div className={`knn-page ${light ? "light" : ""}`}>
       <aside className="knn-nav">
         <Link className="knn-brand" to="/">
           <i>
@@ -868,11 +1099,8 @@ export default function KNNClassificationPage() {
           >
             <Share2 />
           </button>
-          <button
-            aria-label="Toggle theme"
-            onClick={() => setToast("Dark learning mode is active")}
-          >
-            <Moon />
+          <button aria-label="Toggle theme" onClick={toggleTheme}>
+            {light ? <Moon /> : <Sun />}
           </button>
           <button aria-label="Lesson help" onClick={() => setTab("explain")}>
             <CircleHelp />
@@ -899,7 +1127,7 @@ export default function KNNClassificationPage() {
               onChange={(event) => setDataset(event.target.value as DatasetId)}
             >
               <option value="iris">Iris petals (real + draws)</option>
-              <option value="blobs">Three-class blobs</option>
+              <option value="blobs">Synthetic blobs (2-6 classes)</option>
               <option value="xor">XOR</option>
               <option value="moons">Two moons</option>
               <option value="circles">Concentric circles</option>
@@ -938,7 +1166,12 @@ export default function KNNClassificationPage() {
                   <span>Weight</span>
                 </div>
                 {prediction?.neighbors.slice(0, 5).map((neighbor, index) => (
-                  <div key={neighbor.index}>
+                  <div
+                    key={neighbor.index}
+                    className={hoverIndex === neighbor.index ? "hovered" : ""}
+                    onMouseEnter={() => setHoverIndex(neighbor.index)}
+                    onMouseLeave={() => setHoverIndex(null)}
+                  >
                     <i>{index + 1}</i>
                     <span>
                       <b style={{ background: COLORS[neighbor.label] }} />
@@ -958,12 +1191,7 @@ export default function KNNClassificationPage() {
                 <h3>
                   <BarChart3 /> Majority Vote
                 </h3>
-                <div
-                  className="knn-donut"
-                  style={{
-                    background: `conic-gradient(${COLORS[0]} 0 ${(votes[0] / voteTotal) * 100}%, ${COLORS[1]} ${(votes[0] / voteTotal) * 100}% ${((votes[0] + votes[1]) / voteTotal) * 100}%, ${COLORS[2]} ${((votes[0] + votes[1]) / voteTotal) * 100}% 100%)`,
-                  }}
-                >
+                <div className="knn-donut" style={{ background: voteGradient }}>
                   <span>
                     <b>{names[prediction?.predictedClass ?? 0]}</b>
                     <small>
@@ -984,15 +1212,15 @@ export default function KNNClassificationPage() {
                 <h3>
                   <Network /> Decision Boundary
                 </h3>
-                <p>
-                  <span className="region blue" /> Setosa region
-                </p>
-                <p>
-                  <span className="region pink" /> Versicolor region
-                </p>
-                <p>
-                  <span className="region green" /> Virginica region
-                </p>
+                {classIds.map((label) => (
+                  <p key={label}>
+                    <span
+                      className="region"
+                      style={{ background: FILLS[label] }}
+                    />{" "}
+                    {names[label]} region
+                  </p>
+                ))}
                 <label>
                   <input
                     type="checkbox"
@@ -1015,13 +1243,13 @@ export default function KNNClassificationPage() {
                   <Lightbulb /> How to Explore
                 </h3>
                 <p>
-                  <b>1</b> Click the plot to place a query.
+                  <b>1</b> Drag the crosshair or any sample.
                 </p>
                 <p>
-                  <b>2</b> Change K and watch the vote.
+                  <b>2</b> Use Add to paint a new class.
                 </p>
                 <p>
-                  <b>3</b> Compare distance metrics.
+                  <b>3</b> Change K and watch the vote flip.
                 </p>
                 <button onClick={() => setTab("explain")}>
                   Open explanation <ChevronRight />
@@ -1040,6 +1268,88 @@ export default function KNNClassificationPage() {
                 <RotateCcw />
               </button>
             </div>
+            <section>
+              <h3>PLOT TOOL</h3>
+              <div className="knn-tools">
+                {(
+                  [
+                    ["move", "Move", <MousePointer2 key="m" />],
+                    ["paint", "Add", <PaintBucket key="p" />],
+                    ["erase", "Delete", <Eraser key="e" />],
+                  ] as [Tool, string, React.ReactNode][]
+                ).map(([id, label, icon]) => (
+                  <button
+                    key={id}
+                    className={tool === id ? "active" : ""}
+                    onClick={() => setTool(id)}
+                  >
+                    {icon}
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="knn-tool-hint">
+                {tool === "move"
+                  ? "Drag the query crosshair or any training sample."
+                  : tool === "paint"
+                    ? "Click the plot to drop a new labelled sample."
+                    : "Click a sample to remove it from the dataset."}
+              </p>
+            </section>
+            <section>
+              <h3>CLASSES IN DATASET</h3>
+              <div className="knn-stepper">
+                <button
+                  aria-label="Fewer classes"
+                  disabled={classCount <= 2}
+                  onClick={() => changeClasses(classCount - 1)}
+                >
+                  <Minus />
+                </button>
+                <input
+                  aria-label="Number of classes"
+                  type="number"
+                  min="2"
+                  max={MAX_CLASSES}
+                  value={classCount}
+                  onChange={(event) => changeClasses(Number(event.target.value))}
+                />
+                <button
+                  aria-label="More classes"
+                  disabled={classCount >= MAX_CLASSES}
+                  onClick={() => changeClasses(classCount + 1)}
+                >
+                  <Plus />
+                </button>
+              </div>
+              <p className="knn-tool-hint">
+                KNN is supervised, so these are labelled classes, not clusters.
+                Changing the count rebuilds a synthetic dataset with that many
+                groups.
+              </p>
+              <div className="knn-class-picker">
+                {Array.from(
+                  { length: Math.min(classCount + 1, MAX_CLASSES) },
+                  (_, label) => (
+                    <button
+                      key={label}
+                      className={paintClass === label ? "active" : ""}
+                      style={{ borderColor: COLORS[label] }}
+                      onClick={() => {
+                        setPaintClass(label);
+                        setTool("paint");
+                      }}
+                    >
+                      <b style={{ background: COLORS[label] }} />
+                      {label === classCount ? `New (${names[label]})` : names[label]}
+                    </button>
+                  ),
+                )}
+              </div>
+              <button className="knn-reset-point" onClick={shuffleBlobs}>
+                <Shuffle /> Resample Blobs
+              </button>
+            </section>
             <section>
               <h3>QUERY POINT</h3>
               <div className="knn-query-inputs">
@@ -1076,9 +1386,13 @@ export default function KNNClassificationPage() {
               </div>
               <button
                 className="knn-reset-point"
-                onClick={() => setQuery({ x: 4.4, y: 1.6 })}
+                onClick={() =>
+                  setQuery(
+                    datasetId === "iris" ? { x: 4.4, y: 1.6 } : centroid(points),
+                  )
+                }
               >
-                <Crosshair /> Reset Point
+                <Crosshair /> Centre Query
               </button>
             </section>
             <section>
@@ -1087,7 +1401,7 @@ export default function KNNClassificationPage() {
                 <button
                   aria-label="Decrease K"
                   onClick={() =>
-                    setK((value) => clampK(value - 2, points.length))
+                    setK((value) => clampK(value - 1, points.length))
                   }
                 >
                   <Minus />
@@ -1096,8 +1410,7 @@ export default function KNNClassificationPage() {
                   aria-label="K numeric"
                   type="number"
                   min="1"
-                  max={Math.min(15, points.length)}
-                  step="2"
+                  max={kCeiling}
                   value={safeK}
                   onChange={(event) =>
                     setK(clampK(Number(event.target.value), points.length))
@@ -1106,7 +1419,7 @@ export default function KNNClassificationPage() {
                 <button
                   aria-label="Increase K"
                   onClick={() =>
-                    setK((value) => clampK(value + 2, points.length))
+                    setK((value) => clampK(value + 1, points.length))
                   }
                 >
                   <Plus />
@@ -1116,8 +1429,8 @@ export default function KNNClassificationPage() {
                 aria-label="K slider"
                 type="range"
                 min="1"
-                max={Math.min(15, points.length)}
-                step="2"
+                max={kCeiling}
+                step="1"
                 value={safeK}
                 onChange={(event) =>
                   setK(clampK(Number(event.target.value), points.length))
@@ -1125,8 +1438,11 @@ export default function KNNClassificationPage() {
               />
               <div className="knn-range-label">
                 <span>1</span>
-                <b>K = {safeK}</b>
-                <span>{points.length}</span>
+                <b>
+                  K = {safeK}
+                  {safeK % 2 === 0 && classCount === 2 ? " (ties possible)" : ""}
+                </b>
+                <span>{kCeiling}</span>
               </div>
             </section>
             <section>
@@ -1202,6 +1518,13 @@ export default function KNNClassificationPage() {
                 value={radius}
                 onChange={(event) => setRadius(Number(event.target.value))}
               />
+              <div className="knn-range-label">
+                <span>0.2</span>
+                <b>
+                  {pointsInRadius} sample{pointsInRadius === 1 ? "" : "s"} inside
+                </b>
+                <span>4.0</span>
+              </div>
             </section>
             <section className="knn-live-result">
               <span>

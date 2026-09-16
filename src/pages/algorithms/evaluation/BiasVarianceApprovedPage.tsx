@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLabNavigate } from '../../../lib/labNavigation';
 import { ridgeRegression } from '../../../lib/algorithms/regression/linearRegression';
 import { mse, rSquared } from '../../../lib/math/metrics';
+import { LabLessonPanel, useLabTabs } from '../../../components/common/LabTabs';
 import './BiasVarianceApprovedPage.css';
 
 type Point = { x: number; y: number };
@@ -90,7 +91,7 @@ export default function BiasVarianceApprovedPage() {
   const [seed, setSeed] = useState(42);
   const [scaling, setScaling] = useState(true);
   const [animating, setAnimating] = useState(false);
-  const [activeTab, setActiveTab] = useState('Visualize');
+  const { tab: activeTab, setTab: setActiveTab, panel, layout, lesson } = useLabTabs('Visualize', 'Visualize', ['Learn', 'Compare', 'Explain']);
   const [complete, setComplete] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [status, setStatus] = useState('Ready');
@@ -168,11 +169,12 @@ export default function BiasVarianceApprovedPage() {
     <header className="bv-head">
       <div className="bv-top"><span>Learn › Core Concepts › <b>▧ Bias–Variance Tradeoff</b></span><span>PROGRESS <strong>{complete ? '100%' : '75%'}</strong><button onClick={() => { setComplete(value => !value); setStatus(complete ? 'Lesson reopened' : 'Lesson completed'); }}>✓ {complete ? 'Completed' : 'Mark Complete'}</button> ⓘ <span className="avatar">MM</span>⌄</span></div>
       <div className="bv-title"><span>〽</span><h1>Bias-Variance Tradeoff<small>Explore how model complexity impacts underfitting and overfitting.</small></h1></div>
-      <nav className="bv-tabs">{TABS.map(tab => <button className={activeTab === tab ? 'active' : ''} onClick={() => { setActiveTab(tab); setStatus(`${tab} view selected`); }} key={tab}>{tab}</button>)}</nav>
+      <nav className="bv-tabs" role="tablist" aria-label="Bias-variance sections">{TABS.map(tab => <button role="tab" aria-selected={activeTab === tab} className={activeTab === tab ? 'active' : ''} onClick={() => { setActiveTab(tab); setStatus(`${tab} view selected`); }} key={tab}>{tab}</button>)}</nav>
     </header>
 
-    <main className="bv-main">
-      <section className="bv-explorer panel">
+    <main className={`bv-main${layout}`}>
+      {lesson && <LabLessonPanel tab={activeTab} route="/ml/evaluation/bias-variance-tradeoff" />}
+      <section className={`bv-explorer panel${panel('Dataset', 'Transform', 'Train')}`}>
         <div className="bv-section-title"><h2>Interactive Bias-Variance Explorer<small>Adjust model complexity to see how it affects training/validation error and prediction spread.</small></h2><button onClick={() => setAnimating(value => !value)}>▷ Animation <span className={`switch ${animating ? 'on' : ''}`}/></button></div>
         <div className="bv-complexity"><b>Model Complexity ⓘ</b><div className="bv-complexity-label" style={{ left: `${6 + conceptualPosition * .88}%` }}><span>{complexityLabel}</span><small>{complexityLabel === 'Balanced' ? 'Good Fit' : complexityLabel === 'Underfit' ? 'High Bias' : 'High Variance'}</small></div><div className="complexity-track"><span className="under">Underfit<br/><b>High Bias</b></span><i style={{ left: `${conceptualPosition}%` }}/><span className="over">Overfit<br/><b>High Variance</b></span></div></div>
         <div className="bv-charts">
@@ -182,7 +184,7 @@ export default function BiasVarianceApprovedPage() {
         </div>
         <div className="bv-takeaway"><span>ϟ</span><p><b>Key Takeaway</b><br/>As complexity increases, training error usually decreases, but validation error eventually increases.<br/>The optimal model is at the minimum of the validation error curve.</p></div>
       </section>
-      <section className="bv-live panel"><h2>Live Metrics <small>(at current complexity) ⓘ</small></h2><div className="metric-row">
+      <section className={`bv-live panel${panel('Metrics')}`}><h2>Live Metrics <small>(at current complexity) ⓘ</small></h2><div className="metric-row">
         <article><small>Training Error (MSE)</small><b>{analysis.trainError.toFixed(4)}</b><MiniSpark values={curves.map(v=>v.train)} color="#23d1b6"/><em>Low</em></article>
         <article><small>Validation Error (MSE)</small><b>{analysis.validationError.toFixed(4)}</b><MiniSpark values={curves.map(v=>v.validation)} color="#9464ff"/><em>Optimal</em></article>
         <article><small>Generalization Gap</small><b>{generalizationGap.toFixed(4)}</b><MiniSpark values={curves.map(v=>Math.abs(v.validation-v.train))} color="#ff8b21"/><em>Small</em></article>
@@ -193,9 +195,9 @@ export default function BiasVarianceApprovedPage() {
     </main>
 
     <aside className="bv-controls">
-      <section className="panel"><h2>Dataset ⓘ</h2><label className="dataset-select">⌂<select aria-label="Dataset" value={dataset} onChange={event => { setDataset(event.target.value as DatasetKey); setUploaded(null); setStatus(`${event.target.value} loaded`); }}>{Object.keys(DATASETS).map(name=><option key={name}>{name}</option>)}</select></label><h3>About</h3><p>{uploaded ? `Imported numeric regression dataset ${uploaded.name}.` : DATASETS[dataset].about}</p><div className="dataset-stats"><span>Samples<b>{uploaded?.points.length.toLocaleString() ?? DATASETS[dataset].rows.toLocaleString()}</b></span><span>Features<b>{uploaded ? 1 : DATASETS[dataset].features}</b></span></div><div className="dataset-actions"><button onClick={() => { const names=Object.keys(DATASETS) as DatasetKey[]; const next=names[(names.indexOf(dataset)+1)%names.length]; setDataset(next); setUploaded(null); setStatus(`${next} loaded`); }}>Switch Dataset</button><button onClick={() => fileRef.current?.click()}>⇧ Upload CSV</button><input ref={fileRef} type="file" accept=".csv,text/csv" hidden onChange={event => void upload(event.target.files?.[0])}/></div></section>
-      <section className="panel control-panel"><h2>Controls</h2><label>Model Type<select value={modelKind} onChange={event=>setModelKind(event.target.value as ModelKind)}><option>Polynomial Regression</option><option>Ridge Polynomial</option><option>Spline Approximation</option></select></label><label className="toggle-line">Feature Scaling <input type="checkbox" checked={scaling} onChange={event=>setScaling(event.target.checked)}/><i/></label><label>Noise Level ⓘ <b>{noise}%</b><input type="range" min="0" max="50" value={noise} onChange={event=>{setNoise(Number(event.target.value));setUploaded(null)}}/><small>0% — 50%</small></label><label>Test Size ⓘ <b>{testSize}%</b><input type="range" min="10" max="50" value={testSize} onChange={event=>setTestSize(Number(event.target.value))}/><small>10% — 50%</small></label><label>Random Seed <input type="number" min="1" max="9999" value={seed} onChange={event=>setSeed(Math.max(1,Number(event.target.value)||1))}/></label></section>
-      <section className="panel current"><h2>Current Complexity</h2><p>Degree (Polynomial)<b>{complexity}</b></p><p>Effective Parameters<b>{basis(0,complexity,scaling,modelKind).length+1}</b></p><input aria-label="Model complexity" type="range" min="1" max="15" value={complexity} onChange={event=>setComplexity(Number(event.target.value))}/><small>Simple — Complex</small><button onClick={reset}>Reset Experiment</button><a href="?advanced=1">Open original polynomial lab →</a></section>
+      <section className={`panel${panel('Dataset')}`}><h2>Dataset ⓘ</h2><label className="dataset-select">⌂<select aria-label="Dataset" value={dataset} onChange={event => { setDataset(event.target.value as DatasetKey); setUploaded(null); setStatus(`${event.target.value} loaded`); }}>{Object.keys(DATASETS).map(name=><option key={name}>{name}</option>)}</select></label><h3>About</h3><p>{uploaded ? `Imported numeric regression dataset ${uploaded.name}.` : DATASETS[dataset].about}</p><div className="dataset-stats"><span>Samples<b>{uploaded?.points.length.toLocaleString() ?? DATASETS[dataset].rows.toLocaleString()}</b></span><span>Features<b>{uploaded ? 1 : DATASETS[dataset].features}</b></span></div><div className="dataset-actions"><button onClick={() => { const names=Object.keys(DATASETS) as DatasetKey[]; const next=names[(names.indexOf(dataset)+1)%names.length]; setDataset(next); setUploaded(null); setStatus(`${next} loaded`); }}>Switch Dataset</button><button onClick={() => fileRef.current?.click()}>⇧ Upload CSV</button><input ref={fileRef} type="file" accept=".csv,text/csv" hidden onChange={event => void upload(event.target.files?.[0])}/></div></section>
+      <section className={`panel control-panel${panel('Transform')}`}><h2>Controls</h2><label>Model Type<select value={modelKind} onChange={event=>setModelKind(event.target.value as ModelKind)}><option>Polynomial Regression</option><option>Ridge Polynomial</option><option>Spline Approximation</option></select></label><label className="toggle-line">Feature Scaling <input type="checkbox" checked={scaling} onChange={event=>setScaling(event.target.checked)}/><i/></label><label>Noise Level ⓘ <b>{noise}%</b><input type="range" min="0" max="50" value={noise} onChange={event=>{setNoise(Number(event.target.value));setUploaded(null)}}/><small>0% — 50%</small></label><label>Test Size ⓘ <b>{testSize}%</b><input type="range" min="10" max="50" value={testSize} onChange={event=>setTestSize(Number(event.target.value))}/><small>10% — 50%</small></label><label>Random Seed <input type="number" min="1" max="9999" value={seed} onChange={event=>setSeed(Math.max(1,Number(event.target.value)||1))}/></label></section>
+      <section className={`panel current${panel('Train', 'Metrics')}`}><h2>Current Complexity</h2><p>Degree (Polynomial)<b>{complexity}</b></p><p>Effective Parameters<b>{basis(0,complexity,scaling,modelKind).length+1}</b></p><input aria-label="Model complexity" type="range" min="1" max="15" value={complexity} onChange={event=>setComplexity(Number(event.target.value))}/><small>Simple — Complex</small><button onClick={reset}>Reset Experiment</button><a href="?advanced=1">Open original polynomial lab →</a></section>
     </aside>
     <div className="bv-status">{status}</div>
   </div>;

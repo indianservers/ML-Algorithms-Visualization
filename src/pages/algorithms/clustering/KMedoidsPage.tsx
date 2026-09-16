@@ -33,6 +33,10 @@ import {
   datasetIElongated,
 } from "../../../lib/clustering/clusteringDatasets";
 import { scatterPercents } from "../../../lib/clustering/clusteringEval";
+import {
+  LabLessonPanel,
+  useLabTabs,
+} from "../../../components/common/LabTabs";
 import "./KMedoidsPage.css";
 type Point = { x: number; y: number; outlier: boolean };
 type PlotTool = "select" | "add" | "remove";
@@ -118,7 +122,11 @@ const TABS: Tab[] = [
   "explain",
 ];
 export default function KMedoidsPage() {
-  const [tab, setTab] = useState<Tab>("visualize"),
+  const { tab, setTab, panel, layout, lesson } = useLabTabs(
+      "visualize",
+      "visualize",
+      ["learn", "compare", "explain"],
+    ),
     [dataKey, setDataKey] = useState<DataKey>("mall"),
     [points, setPoints] = useState<Point[]>(BUILT.mall),
     [imported, setImported] = useState<Point[]>([]),
@@ -388,8 +396,8 @@ export default function KMedoidsPage() {
           <input ref={uploadRef} type="file" accept=".csv" onChange={upload} />
         </article>
       </aside>
-      <main>
-        <header>
+      <main className={layout.trim()}>
+        <header className={panel("dataset", "train", "metrics").trim()}>
           <h1>
             K - Medoids <em>Robust Clustering</em>
           </h1>
@@ -400,9 +408,11 @@ export default function KMedoidsPage() {
             It is robust to outliers and works with any distance metric.
           </p>
         </header>
-        <nav>
+        <nav role="tablist" aria-label="K-Medoids sections">
           {TABS.map((item) => (
             <button
+              role="tab"
+              aria-selected={tab === item}
               className={tab === item ? "active" : ""}
               onClick={() => setTab(item)}
               key={item}
@@ -411,7 +421,8 @@ export default function KMedoidsPage() {
             </button>
           ))}
         </nav>
-        <section className="kmed-plot">
+        {lesson && <LabLessonPanel tab={tab} route="/ml/clustering/k-medoids" />}
+        <section className={`kmed-plot${panel("train", "dataset")}`}>
           <div className="k-label">k = {k} ✎</div>
           {points.map((p, i) => {
             const cluster = active.assignments[i] ?? 0,
@@ -532,7 +543,7 @@ export default function KMedoidsPage() {
             </label>
           </footer>
         </section>
-        <section className="kmed-cards">
+        <section className={`kmed-cards${panel("metrics")}`}>
           <article>
             <h3>
               COST COMPARISON <small>(Lower is better)</small>
@@ -605,7 +616,7 @@ export default function KMedoidsPage() {
             </b>
           </article>
         </section>
-        <footer className="kmed-tip">
+        <footer className={`kmed-tip${panel("train", "dataset", "metrics")}`}>
           ⓘ K-Medoids minimizes total dissimilarity using actual data points as
           centers — making it robust to outliers and suitable for any distance
           metric.

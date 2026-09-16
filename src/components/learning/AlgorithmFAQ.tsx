@@ -13,7 +13,7 @@ export const AlgorithmFAQ: React.FC<AlgorithmFAQProps> = ({ algorithm }) => {
   if (faqs.length === 0) return null;
 
   return (
-    <section className="mx-auto mt-8 max-w-7xl px-4 pb-8" aria-labelledby="algorithm-faq-heading">
+    <section className="w-full" aria-labelledby="algorithm-faq-heading">
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <div className="border-b border-gray-200 px-4 py-3 dark:border-gray-700">
           <div className="flex items-center gap-2">

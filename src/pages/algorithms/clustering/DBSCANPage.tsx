@@ -25,6 +25,10 @@ import {
   scatterPercents,
   silhouetteScore,
 } from "../../../lib/clustering/clusteringEval";
+import {
+  LabLessonPanel,
+  useLabTabs,
+} from "../../../components/common/LabTabs";
 import "./DBSCANPage.css";
 
 type Point = { x: number; y: number };
@@ -65,7 +69,11 @@ const LABELS: Record<Dataset, string> = {
 };
 
 export default function DBSCANPage() {
-  const [tab, setTab] = useState("Learn"),
+  const { tab, setTab, panel, layout, lesson } = useLabTabs(
+      "Visualize",
+      "Visualize",
+      ["Learn", "Compare", "Explain"],
+    ),
     [dataset, setDataset] = useState<Dataset>("moons"),
     [points, setPoints] = useState<Point[]>(BUILT.moons),
     [imported, setImported] = useState<Point[]>([]),
@@ -249,13 +257,15 @@ export default function DBSCANPage() {
           <Sun />
         </button>
       </header>
-      <main>
+      <main className={layout.trim()}>
         <h1>
           DBSCAN <em>Density-Based Clustering</em>
         </h1>
-        <nav className="db-tabs">
+        <nav className="db-tabs" role="tablist" aria-label="DBSCAN sections">
           {TABS.map((name) => (
             <button
+              role="tab"
+              aria-selected={tab === name}
               className={tab === name ? "active" : ""}
               onClick={() => setTab(name)}
               key={name}
@@ -264,7 +274,8 @@ export default function DBSCANPage() {
             </button>
           ))}
         </nav>
-        <section className="db-data">
+        {lesson && <LabLessonPanel tab={tab} route="/ml/clustering/dbscan" />}
+        <section className={`db-data${panel("Dataset")}`}>
           <b>Dataset</b>
           <select
             value={dataset}
@@ -285,7 +296,7 @@ export default function DBSCANPage() {
           </button>
           <input ref={fileRef} type="file" accept=".csv" onChange={upload} />
         </section>
-        <section className="db-stage">
+        <section className={`db-stage${panel("Train")}`}>
           <aside>
             <b>☼ Step {step} of 18</b>
             <h3>
@@ -385,7 +396,7 @@ export default function DBSCANPage() {
             </label>
           </nav>
         </section>
-        <section className="db-cards">
+        <section className={`db-cards${panel("Metrics")}`}>
           <article>
             <h3>Cluster Summary</h3>
             <div>
@@ -468,7 +479,7 @@ export default function DBSCANPage() {
             ))}
           </article>
         </section>
-        <footer className="db-info">
+        <footer className={`db-info${panel("Train", "Dataset", "Metrics")}`}>
           ⓘ DBSCAN finds clusters of arbitrary shape and handles noise. It does
           not require the number of clusters in advance.
           <button onClick={() => setToast("Mathematical details opened")}>

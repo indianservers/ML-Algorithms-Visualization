@@ -488,7 +488,7 @@ function LearnPanel({
     );
   return (
     <>
-      <section className="gb-sequential">
+      <section className="gb-sequential" data-guide="gbr-stages">
         <h2>
           Sequential Weak Trees Correcting Residuals <Info size={13} />
         </h2>
@@ -542,7 +542,7 @@ function LearnPanel({
           </span>
         </div>
       </section>
-      <section className="gb-residuals">
+      <section className="gb-residuals" data-guide="gbr-residuals">
         <h2>
           Residuals After Each Stage <Info size={13} />
           <span>Better ⟶</span>
@@ -574,7 +574,7 @@ function LearnPanel({
           })}
         </div>
       </section>
-      <section className="gb-build">
+      <section className="gb-build" data-guide="gbr-additive">
         <h2>
           Additive Prediction Build-Up <Info size={13} />
         </h2>
@@ -969,7 +969,7 @@ function Controls({
 }) {
   return (
     <aside className="gb-controls">
-      <section>
+      <section data-guide="gbr-dataset">
         <h2>
           Dataset <Info size={12} />
         </h2>
@@ -1016,7 +1016,7 @@ function Controls({
         <h2>
           Model Controls <Info size={12} />
         </h2>
-        <label>
+        <label data-guide="gbr-estimators">
           <span>
             Number of Estimators (Trees)
             <input
@@ -1041,7 +1041,7 @@ function Controls({
             <i>200</i>
           </small>
         </label>
-        <label>
+        <label data-guide="gbr-learning-rate">
           <span>
             Learning Rate (ν)
             <input
@@ -1068,7 +1068,7 @@ function Controls({
             <i>1.00</i>
           </small>
         </label>
-        <label>
+        <label data-guide="gbr-depth">
           <span>
             Max Depth <Info size={11} />
             <input
@@ -1360,6 +1360,7 @@ export default function GradientBoostingRegressionPage() {
               <button
                 key={id}
                 className={tab === id ? "active" : ""}
+                data-guide={id === "train" ? "tab-train" : `tab-${id}`}
                 onClick={() => setTab(id)}
               >
                 {label}

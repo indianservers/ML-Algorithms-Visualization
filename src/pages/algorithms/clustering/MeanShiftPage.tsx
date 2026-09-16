@@ -21,6 +21,10 @@ import {
   datasetIElongated,
   datasetKVariableDensity,
 } from "../../../lib/clustering/clusteringDatasets";
+import {
+  LabLessonPanel,
+  useLabTabs,
+} from "../../../components/common/LabTabs";
 import "./MeanShiftPage.css";
 
 type Point = { x: number; y: number };
@@ -50,7 +54,11 @@ const LABELS: Record<Dataset, string> = {
 };
 
 export default function MeanShiftPage() {
-  const [tab, setTab] = useState("Visualize"),
+  const { tab, setTab, panel, layout, lesson } = useLabTabs(
+      "Visualize",
+      "Visualize",
+      ["Learn", "Compare"],
+    ),
     [dataset, setDataset] = useState<Dataset>("mixed"),
     [points, setPoints] = useState<Point[]>(BUILT.mixed),
     [imported, setImported] = useState<Point[]>([]),
@@ -226,11 +234,13 @@ export default function MeanShiftPage() {
           <Moon />
         </button>
       </header>
-      <main>
-        <nav>
+      <main className={layout.trim()}>
+        <nav role="tablist" aria-label="Mean Shift sections">
           {["Learn", "Visualize", "Dataset", "Train", "Metrics", "Compare"].map(
             (name) => (
               <button
+                role="tab"
+                aria-selected={tab === name}
                 className={tab === name ? "active" : ""}
                 onClick={() => setTab(name)}
                 key={name}
@@ -244,7 +254,8 @@ export default function MeanShiftPage() {
             <b>Objective</b>See how kernels move to density peaks and converge.
           </span>
         </nav>
-        <section className="ms-data">
+        {lesson && <LabLessonPanel tab={tab} route="/ml/clustering/mean-shift" />}
+        <section className={`ms-data${panel("Dataset")}`}>
           <b>Dataset</b>
           <select
             value={dataset}
@@ -361,7 +372,7 @@ export default function MeanShiftPage() {
             <span>◉ Converged center</span>
           </aside>
         </section>
-        <section className="ms-timeline">
+        <section className={`ms-timeline${panel("Train")}`}>
           <button onClick={() => setRunning(!running)}>
             {running ? "Ⅱ" : "▶"}
           </button>
@@ -383,7 +394,7 @@ export default function MeanShiftPage() {
             </button>
           ))}
         </section>
-        <section className="ms-cards">
+        <section className={`ms-cards${panel("Metrics")}`}>
           <article>
             <h3>CONVERGENCE OVER TIME</h3>
             <svg viewBox="0 0 300 120">
@@ -436,7 +447,7 @@ export default function MeanShiftPage() {
             <p>Bandwidth (h): {bandwidth.toFixed(2)}</p>
           </article>
         </section>
-        <footer className="ms-tip">
+        <footer className={`ms-tip${panel("Train", "Dataset", "Metrics")}`}>
           ⓘ Tip: Mean Shift finds density peaks without specifying cluster
           count. Try adjusting the bandwidth to explore different granularities.
         </footer>

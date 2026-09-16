@@ -110,3 +110,112 @@ export function normalizeFeatureMap(matrix: ImageMatrix): ImageMatrix {
     range = maximum - minimum || 1;
   return matrix.map((row) => row.map((value) => (value - minimum) / range));
 }
+
+function nextUnit(seed: { value: number }) {
+  seed.value = (seed.value * 1664525 + 1013904223) >>> 0;
+  return seed.value / 0xffffffff;
+}
+
+export function makeKernelBank(
+  filters: number,
+  inChannels: number,
+  seed = 1,
+  size = 3,
+): ImageMatrix[][] {
+  const state = { value: seed >>> 0 || 1 };
+  return Array.from({ length: filters }, () =>
+    Array.from({ length: inChannels }, () =>
+      Array.from({ length: size }, () =>
+        Array.from({ length: size }, () => (nextUnit(state) - 0.5) * 1.4),
+      ),
+    ),
+  );
+}
+
+export function makeDenseWeights(outputs: number, inputs: number, seed: number) {
+  const state = { value: seed >>> 0 || 1 };
+  const scale = Math.sqrt(2 / inputs);
+  const weights = Array.from({ length: outputs }, () =>
+    Array.from({ length: inputs }, () => (nextUnit(state) - 0.5) * 2 * scale),
+  );
+  const bias = Array.from({ length: outputs }, () => (nextUnit(state) - 0.5) * 0.1);
+  return { weights, bias };
+}
+
+export function convolveVolume(
+  volume: ImageMatrix[],
+  kernels: ImageMatrix[],
+  stride = 1,
+  padding = 0,
+  bias = 0,
+): ImageMatrix {
+  const maps = volume.map((channel, index) =>
+    convolve2d(channel, kernels[index] ?? kernels[0], stride, padding, 1, 0),
+  );
+  return maps[0].map((row, y) =>
+    row.map((_, x) => bias + maps.reduce((sum, map) => sum + map[y][x], 0)),
+  );
+}
+
+export function applyBank(
+  volume: ImageMatrix[],
+  bank: ImageMatrix[][],
+  stride = 1,
+  padding = 0,
+  biases?: number[],
+): ImageMatrix[] {
+  return bank.map((kernels, index) =>
+    convolveVolume(volume, kernels, stride, padding, biases?.[index] ?? 0),
+  );
+}
+
+export const reluVolume = (volume: ImageMatrix[]) => volume.map(reluMatrix);
+
+export function maxPoolVolume(volume: ImageMatrix[], size = 2) {
+  return volume.map((map) => maxPool2d(map, size));
+}
+
+export function batchNormVolume(volume: ImageMatrix[]) {
+  return volume.map((map) => {
+    const values = map.flat();
+    const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+    const variance =
+      values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / values.length;
+    const scale = Math.sqrt(variance + 1e-5);
+    return map.map((row) => row.map((value) => (value - mean) / scale));
+  });
+}
+
+export function flattenVolume(volume: ImageMatrix[]) {
+  return volume.flatMap((map) => map.flat());
+}
+
+export function denseForward(
+  input: number[],
+  weights: number[][],
+  bias: number[],
+  activate: "relu" | "none" = "none",
+) {
+  return weights.map((row, index) => {
+    const logit = bias[index] + row.reduce((sum, weight, i) => sum + weight * (input[i] ?? 0), 0);
+    return activate === "relu" ? Math.max(0, logit) : logit;
+  });
+}
+
+export function softmax(logits: number[]) {
+  const peak = Math.max(...logits);
+  const exps = logits.map((value) => Math.exp(value - peak));
+  const total = exps.reduce((sum, value) => sum + value, 0) || 1;
+  return exps.map((value) => value / total);
+}
+
+export function volumeStats(volume: ImageMatrix[]) {
+  const values = volume.flatMap((map) => map.flat());
+  const mean = values.reduce((sum, value) => sum + value, 0) / (values.length || 1);
+  return {
+    min: Math.min(...values),
+    max: Math.max(...values),
+    mean,
+    zeros: values.filter((value) => value <= 0).length / (values.length || 1),
+  };
+}

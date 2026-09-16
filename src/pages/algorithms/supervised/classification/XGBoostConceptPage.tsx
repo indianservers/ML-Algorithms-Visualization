@@ -25,6 +25,7 @@ import {
   datasetHImbalanced,
 } from "../../../../lib/classification/classificationDatasets";
 import "./XGBoostConceptPage.css";
+import { useTheme } from "../../../../stores/uiStore";
 
 type Row = { features: number[]; target: number };
 type Dataset = "separable" | "moons" | "xor" | "imbalanced" | "circles" | "imported";
@@ -104,9 +105,10 @@ export default function XGBoostConceptPage() {
     [alpha, setAlpha] = useState(0),
     [trees, setTrees] = useState(12);
   const [trained, setTrained] = useState("Ready"),
-    [toast, setToast] = useState(""),
-    [light, setLight] = useState(false),
-    [metricName, setMetricName] = useState("logloss"),
+    [toast, setToast] = useState("");
+  const { theme, toggleTheme } = useTheme();
+  const light = theme === "light";
+  const [metricName, setMetricName] = useState("logloss"),
     [query, setQuery] = useState(BUILT.separable[0].features.slice());
   const uploadRef = useRef<HTMLInputElement>(null),
     X = useMemo(() => rows.map((r) => r.features), [rows]),
@@ -304,7 +306,7 @@ export default function XGBoostConceptPage() {
             </i>{" "}
             68%
           </span>
-          <button onClick={() => setLight(!light)}>
+          <button onClick={toggleTheme}>
             <Moon />
           </button>
           <button onClick={() => setToast("Share link copied")}>

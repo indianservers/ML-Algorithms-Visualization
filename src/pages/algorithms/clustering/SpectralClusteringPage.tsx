@@ -20,6 +20,11 @@ import {
   datasetFConcentricCircles,
   datasetIElongated,
 } from "../../../lib/clustering/clusteringDatasets";
+import {
+  LAB_TABS,
+  LabLessonPanel,
+  useLabTabs,
+} from "../../../components/common/LabTabs";
 import "./SpectralClusteringPage.css";
 type Point = { x: number; y: number };
 type Dataset =
@@ -79,7 +84,11 @@ const LABELS: Record<Dataset, string> = {
   imported: "Imported Data",
 };
 export default function SpectralClusteringPage() {
-  const [tab, setTab] = useState("Visualize"),
+  const { tab, setTab, panel, layout, lesson } = useLabTabs(
+      "Visualize",
+      "Visualize",
+      ["Learn", "Compare", "Explain"],
+    ),
     [dataset, setDataset] = useState<Dataset>("moons"),
     [points, setPoints] = useState<Point[]>(BUILT.moons),
     [imported, setImported] = useState<Point[]>([]),
@@ -201,17 +210,11 @@ export default function SpectralClusteringPage() {
             Mega ML<small>AI Observatory</small>
           </b>
         </Link>
-        <nav>
-          {[
-            "Learn",
-            "Visualize",
-            "Dataset",
-            "Build / Train",
-            "Metrics",
-            "Compare",
-            "Explain",
-          ].map((n) => (
+        <nav role="tablist" aria-label="Spectral Clustering sections">
+          {LAB_TABS.map((n) => (
             <button
+              role="tab"
+              aria-selected={tab === n}
               className={tab === n ? "active" : ""}
               onClick={() => setTab(n)}
               key={n}
@@ -271,8 +274,8 @@ export default function SpectralClusteringPage() {
         </button>
         <input ref={fileRef} type="file" accept=".csv" onChange={upload} />
       </aside>
-      <main>
-        <header>
+      <main className={layout.trim()}>
+        <header className={panel("Dataset", "Build / Train", "Metrics").trim()}>
           <h1>
             Spectral Clustering <em>Advanced</em> ☆
           </h1>
@@ -288,9 +291,16 @@ export default function SpectralClusteringPage() {
             ⓘ How it works
           </button>
         </header>
-        <h3>Interactive Pipeline</h3>
-        <p>Adjust controls and see all views update together.</p>
-        <section className="sp-panels">
+        {lesson && (
+          <LabLessonPanel tab={tab} route="/ml/clustering/spectral-clustering" />
+        )}
+        <h3 className={panel("Build / Train").trim()}>Interactive Pipeline</h3>
+        <p className={panel("Build / Train").trim()}>
+          Adjust controls and see all views update together.
+        </p>
+        <section
+          className={`sp-panels${panel("Dataset", "Build / Train")}${layout}`}
+        >
           <article>
             <header>
               <b>① Similarity Graph ⓘ</b>
@@ -353,7 +363,7 @@ export default function SpectralClusteringPage() {
               </label>
             </footer>
           </article>
-          <article>
+          <article className={panel("Build / Train").trim()}>
             <header>
               <b>② Adjacency (Affinity) Matrix ⓘ</b>
               <select>
@@ -388,7 +398,7 @@ export default function SpectralClusteringPage() {
               <b>{symmetrize ? "Symmetric ✓" : "Directed"}</b>
             </footer>
           </article>
-          <article>
+          <article className={panel("Build / Train").trim()}>
             <header>
               <b>③ Graph Cut Embedding (2D) ⓘ</b>
               <select>
@@ -419,7 +429,7 @@ export default function SpectralClusteringPage() {
             </footer>
           </article>
         </section>
-        <section className="sp-results">
+        <section className={`sp-results${panel("Metrics")}`}>
           <h2>
             Clustering Result <em>Converged</em>
           </h2>

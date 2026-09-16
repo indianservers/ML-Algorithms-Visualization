@@ -1,18 +1,19 @@
 .km-page {
   --bg: #07111e;
-  --panel: #0b1725;
+  --panel: var(--glow-panel-raised);
   --line: #2a384b;
-  --text: #f4f6f9;
-  --muted: #a9b3c2;
-  min-height: 1024px;
+  --text: var(--glow-text);
+  --muted: var(--glow-muted);
+  min-height: 100%;
   width: 100%;
-  overflow: hidden;
-  background: radial-gradient(circle at 60% 5%, #142238, #07111e 52%);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+  gap: 12px;
+  padding: 12px 16px 20px;
+  overflow: auto;
+  background: var(--glow-page);
   color: var(--text);
-  font:
-    12px Inter,
-    system-ui,
-    sans-serif;
+  font: var(--glow-font);
 }
 .km-page * {
   box-sizing: border-box;
@@ -178,11 +179,12 @@
   margin-top: 6px;
 }
 .km-page > main {
-  position: absolute;
-  left: 212px;
-  right: 337px;
-  top: 56px;
-  min-height: 968px;
+  position: relative;
+  left: auto;
+  right: auto;
+  top: auto;
+  min-height: 0;
+  min-width: 0;
 }
 .km-title {
   height: 86px;
@@ -226,13 +228,9 @@
   height: min(62vh, 560px);
   position: relative;
   overflow: hidden;
-  border: 1px solid #3a4f78;
-  border-radius: 10px;
-  background:
-    repeating-linear-gradient(0deg, transparent 0 79px, rgb(255 255 255 / 0.06) 80px),
-    repeating-linear-gradient(90deg, transparent 0 99px, rgb(255 255 255 / 0.06) 100px),
-    radial-gradient(ellipse 85% 90% at 16% 55%, #128a96 0%, transparent 52%),
-    radial-gradient(ellipse 80% 95% at 84% 42%, #7a22b8 0%, #3b1570 48%, #14082c 100%);
+  border: 1px solid var(--glow-canvas-line);
+  border-radius: var(--glow-canvas-radius);
+  background: var(--glow-canvas);
 }
 .km-plot > svg {
   position: absolute;
@@ -271,16 +269,16 @@
   border-radius: 3px;
   color: white;
   font-size: 0;
-  box-shadow: 0 0 18px currentColor;
+  box-shadow: var(--glow-marker-ring);
 }
 .drag-tip,
 .plot-tools,
 .legend {
   position: absolute;
   z-index: 6;
-  border: 1px solid #33445b;
-  border-radius: 5px;
-  background: #0a1626dd;
+  border: 1px solid var(--glow-overlay-line);
+  border-radius: var(--glow-radius);
+  background: var(--glow-overlay);
 }
 .drag-tip {
   left: 18px;
@@ -290,8 +288,10 @@
 .plot-tools {
   left: 13px;
   bottom: 8px;
-  width: 132px;
+  width: 148px;
   padding: 8px;
+  max-height: calc(100% - 24px);
+  overflow: auto;
 }
 .plot-tools button {
   width: 100%;
@@ -338,9 +338,9 @@
   gap: 8px;
 }
 .km-bottom > article {
-  border: 1px solid #344358;
-  border-radius: 5px;
-  background: #0a1625;
+  border: 1px solid var(--glow-line);
+  border-radius: var(--glow-radius);
+  background: var(--glow-panel);
 }
 .loop {
   display: grid;
@@ -458,21 +458,24 @@
   height: 41px;
   margin-top: 16px;
   padding: 12px 20px;
-  border: 1px solid #344358;
-  border-radius: 5px;
-  background: #0a1625;
+  border: 1px solid var(--glow-line);
+  border-radius: var(--glow-radius);
+  background: var(--glow-panel);
 }
 .km-controls {
-  position: fixed;
-  z-index: 6;
-  right: 19px;
-  top: 69px;
-  width: 306px;
-  height: 633px;
+  position: relative;
+  z-index: 2;
+  right: auto;
+  top: auto;
+  width: 100%;
+  height: auto;
+  max-height: calc(100vh - 24px);
+  overflow: auto;
   padding: 14px 16px;
-  border: 1px solid #35445a;
-  border-radius: 6px;
-  background: #0b1725;
+  border: 1px solid var(--glow-line-strong);
+  border-radius: var(--glow-radius-lg);
+  background: var(--glow-panel-raised);
+  align-self: start;
 }
 .km-controls h3 {
   margin: 0 0 21px;
@@ -492,7 +495,7 @@
 .stepper button,
 .stepper b {
   border: 0;
-  background: #101c2c;
+  background: var(--glow-inset);
   color: white;
   display: grid;
   place-items: center;
@@ -538,8 +541,8 @@
   font-size: 25px;
 }
 .shapes button.active {
-  border-color: #3183ff;
-  box-shadow: 0 0 5px #2371e7;
+  border-color: var(--glow-accent);
+  box-shadow: var(--glow-accent-ring);
 }
 .km-controls > input {
   width: 100%;
@@ -599,33 +602,34 @@
   left: 50%;
   transform: translateX(-50%);
   padding: 10px 18px;
-  border: 1px solid #3b74bc;
-  border-radius: 5px;
-  background: #12305a;
+  border: 1px solid var(--glow-toast-line);
+  border-radius: var(--glow-radius);
+  background: var(--glow-toast-bg);
   color: white;
 }
 .km-page.light {
-  filter: brightness(1.17);
+  filter: var(--glow-light-lift);
 }
 @media (max-width: 1100px) {
   .km-page {
     overflow: auto;
+    grid-template-columns: minmax(0, 1fr);
   }
   .km-page > main {
     position: relative;
-    left: 193px;
+    left: auto;
     right: auto;
-    width: calc(100% - 193px);
-    padding: 0 12px;
+    width: 100%;
+    padding: 0;
   }
   .km-controls {
     position: relative;
-    left: 193px;
+    left: auto;
     right: auto;
     top: auto;
-    width: calc(100% - 217px);
+    width: 100%;
     height: auto;
-    margin: 12px;
+    margin: 0;
   }
   .km-bottom {
     height: auto;

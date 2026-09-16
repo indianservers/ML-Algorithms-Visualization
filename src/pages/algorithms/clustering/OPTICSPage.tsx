@@ -10,6 +10,11 @@ import {
   datasetKVariableDensity,
 } from "../../../lib/clustering/clusteringDatasets";
 import { fitClusterScaler } from "../../../lib/clustering/clusteringEval";
+import {
+  LAB_TABS,
+  LabLessonPanel,
+  useLabTabs,
+} from "../../../components/common/LabTabs";
 import "./OPTICSPage.css";
 
 type Point = { x: number; y: number };
@@ -37,7 +42,11 @@ const NAMES: Record<Dataset, string> = {
 };
 
 export default function OPTICSPage() {
-  const [tab, setTab] = useState("Visualize"),
+  const { tab, setTab, panel, layout, lesson } = useLabTabs(
+      "Visualize",
+      "Visualize",
+      ["Learn", "Compare", "Explain"],
+    ),
     [dataset, setDataset] = useState<Dataset>("aggregation"),
     [points, setPoints] = useState<Point[]>(BUILT.aggregation),
     [imported, setImported] = useState<Point[]>([]),
@@ -230,18 +239,12 @@ export default function OPTICSPage() {
           </button>
         </div>
       </header>
-      <main>
-        <nav>
-          {[
-            "Learn",
-            "Visualize",
-            "Dataset",
-            "Build / Train",
-            "Metrics",
-            "Compare",
-            "Explain",
-          ].map((name) => (
+      <main className={layout.trim()}>
+        <nav role="tablist" aria-label="OPTICS sections">
+          {LAB_TABS.map((name) => (
             <button
+              role="tab"
+              aria-selected={tab === name}
               className={tab === name ? "active" : ""}
               onClick={() => setTab(name)}
               key={name}
@@ -250,7 +253,8 @@ export default function OPTICSPage() {
             </button>
           ))}
         </nav>
-        <section className="op-data">
+        {lesson && <LabLessonPanel tab={tab} route="/ml/clustering/optics" />}
+        <section className={`op-data${panel("Dataset")}`}>
           <b>Dataset</b>
           <select
             value={dataset}
@@ -282,7 +286,7 @@ export default function OPTICSPage() {
             </select>
           </label>
         </section>
-        <section className="op-visuals">
+        <section className={`op-visuals${panel("Build / Train")}`}>
           <article className="op-spatial">
             <h2>Spatial View ⓘ</h2>
             <div className="op-tools">▣ ⌕ ⊕ ✋ ⌂ ⛶</div>
@@ -396,7 +400,7 @@ export default function OPTICSPage() {
             </footer>
           </article>
         </section>
-        <section className="op-summary">
+        <section className={`op-summary${panel("Metrics")}`}>
           <div>
             <h2>Cluster Summary ⓘ</h2>
             <div className="cluster-cards">
@@ -440,7 +444,7 @@ export default function OPTICSPage() {
             </p>
           </aside>
         </section>
-        <p className="op-tip">
+        <p className={`op-tip${panel("Build / Train", "Dataset", "Metrics")}`}>
           OPTICS discovers the intrinsic cluster structure. Use ε (epsilon) on
           the reachability plot to extract clusters.
         </p>

@@ -32,8 +32,8 @@ export function AlgorithmWorkbenchLayout({
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[340px_1fr]">
       <div className="space-y-4 lg:sticky lg:top-4 lg:self-start">
-        {controls}
-        {metrics}
+        <div data-guide="algo-params">{controls}</div>
+        <div data-guide="algo-metrics">{metrics}</div>
         <Card title="Export and Save" subtitle="Keep a copy of this run or add it to your saved experiments.">
           <div className="flex flex-wrap gap-2 text-xs">
             <button disabled={!onExportJson} onClick={onExportJson} title={onExportJson ? 'Export this experiment as JSON' : 'JSON export is not available on this page'} className="inline-flex items-center gap-2 rounded border border-gray-200 px-3 py-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gray-700"><FileJson size={14} /> Experiment JSON</button>
@@ -43,7 +43,7 @@ export function AlgorithmWorkbenchLayout({
         </Card>
       </div>
       <div className="space-y-4">
-        {visualization}
+        <div data-guide="algo-visualize">{visualization}</div>
         {output}
         <LearningCompanion route={location.pathname} />
         <InfoBox type="info" title="Try This Next">

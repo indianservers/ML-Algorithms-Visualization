@@ -8,6 +8,11 @@ import {
 } from "../../../lib/algorithms/dimensionality/tsne";
 import { getDimensionalityDataset } from "../../../lib/dimensionality/dimensionalityDatasets";
 import { MAX_EMBEDDING_SAMPLES, subsampleIndices } from "../../../lib/dimensionality/dimensionalityPrep";
+import {
+  LAB_TABS,
+  LabLessonPanel,
+  useLabTabs,
+} from "../../../components/common/LabTabs";
 import "./TSNEPage.css";
 type Sample = { values: number[]; label: number };
 type Dataset = "digits" | "fashion" | "iris" | "swiss" | "imported";
@@ -37,8 +42,12 @@ const BUILT = {
     imported: "Imported Data",
   };
 export default function TSNEPage() {
-  const [tab, setTab] = useState("Visualize"),
-    [dataset, setDataset] = useState<Dataset>("digits"),
+  const { tab, setTab, panel, layout, lesson } = useLabTabs(
+    "Visualize",
+    "Visualize",
+    ["Learn", "Compare", "Explain"],
+  );
+  const [dataset, setDataset] = useState<Dataset>("digits"),
     [samples, setSamples] = useState<Sample[]>(BUILT.digits),
     [imported, setImported] = useState<Sample[]>([]),
     [perplexity, setPerplexity] = useState(30),
@@ -268,17 +277,11 @@ export default function TSNEPage() {
         </div>
       </header>
       <main>
-        <nav>
-          {[
-            "Learn",
-            "Visualize",
-            "Dataset",
-            "Build / Train",
-            "Metrics",
-            "Compare",
-            "Explain",
-          ].map((name) => (
+        <nav role="tablist" aria-label="t-SNE sections">
+          {LAB_TABS.map((name) => (
             <button
+              role="tab"
+              aria-selected={tab === name}
               className={tab === name ? "active" : ""}
               onClick={() => setTab(name)}
               key={name}
@@ -287,7 +290,10 @@ export default function TSNEPage() {
             </button>
           ))}
         </nav>
-        <section className="ts-work">
+        {lesson && (
+          <LabLessonPanel tab={tab} route="/ml/dimensionality-reduction/tsne" />
+        )}
+        <section className={`ts-work${panel("Build / Train")}`}>
           <header>
             <h2>Interactive t-SNE Visualization ⓘ</h2>
             {error && <p>{error}</p>}
@@ -396,8 +402,8 @@ export default function TSNEPage() {
             </p>
           </footer>
         </section>
-        <section className="ts-bottom">
-          <article>
+        <section className={`ts-bottom${layout}`}>
+          <article className={panel("Dataset").trim()}>
             <h3>Dataset ⓘ</h3>
             <select
               value={dataset}
@@ -417,7 +423,7 @@ export default function TSNEPage() {
               Switch Dataset
             </button>
           </article>
-          <article>
+          <article className={panel("Dataset").trim()}>
             <h3>Upload Custom Data ⓘ</h3>
             <button onClick={() => fileRef.current?.click()}>
               <Upload /> Browse Files
@@ -425,7 +431,7 @@ export default function TSNEPage() {
             <input ref={fileRef} type="file" accept=".csv" onChange={upload} />
             <small>Supports .csv</small>
           </article>
-          <article>
+          <article className={panel("Dataset").trim()}>
             <h3>Legend</h3>
             {Array.from(new Set(samples.map((s) => s.label)))
               .slice(0, 10)
@@ -436,7 +442,7 @@ export default function TSNEPage() {
                 </span>
               ))}
           </article>
-          <article>
+          <article className={panel("Metrics").trim()}>
             <h3>Projection Quality ⓘ</h3>
             <p>
               KL Divergence (↓)

@@ -43,8 +43,17 @@ export const Card: React.FC<CardProps> = ({ title, subtitle, children, className
     });
   };
 
+  const guideSpot = stickyControls
+    ? "algo-params"
+    : title && /metrics/i.test(title)
+      ? "algo-metrics"
+      : chartTitle
+        ? "algo-visualize"
+        : undefined;
+
   return (
     <div
+      data-guide={guideSpot}
       data-chart-container={chartTitle ? 'true' : undefined}
       data-control-panel={stickyControls ? 'true' : undefined}
       className={`min-w-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm ${stickyControls ? 'lg:sticky lg:top-28 lg:self-start' : ''} ${className}`}
@@ -142,7 +151,7 @@ export const InfoBox: React.FC<InfoBoxProps> = ({ type, title, children }) => {
     error: 'bg-red-50 border-red-200 text-red-800 dark:bg-red-900/20 dark:border-red-800 dark:text-red-300',
   };
   return (
-    <div className={`border rounded-lg p-3 text-xs ${styles[type]}`}>
+    <div className={`border rounded-lg p-3 text-xs ${styles[type]}`} data-guide={type === 'warning' ? 'algo-watch' : undefined}>
       {title && <p className="font-semibold mb-1">{title}</p>}
       <div>{children}</div>
     </div>

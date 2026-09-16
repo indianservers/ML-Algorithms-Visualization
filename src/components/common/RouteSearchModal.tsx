@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, X } from 'lucide-react';
-import { navigationData } from '../../data/navigation';
-import { getImplementationStatus, type ImplementationStatus } from '../../data/implementationStatus';
+import { type ImplementationStatus } from '../../data/implementationStatus';
+import { searchAlgorithms } from '../../lib/search/algorithmSearchIndex';
 import { Badge } from './Badge';
 import type { BadgeType } from '../../data/navigation';
 
@@ -10,19 +10,6 @@ interface RouteSearchModalProps {
   open: boolean;
   onClose: () => void;
 }
-
-const formulaKeywords: Record<string, string> = {
-  regression: 'mse rmse mae r2 residual slope intercept beta covariance multicollinearity prediction',
-  logistic: 'sigmoid threshold log loss roc auc precision recall f1 probability',
-  knn: 'nearest neighbors distance euclidean manhattan minkowski cosine voting boundary',
-  bayes: 'prior likelihood posterior probability gaussian multinomial bernoulli',
-  kmeans: 'centroid inertia sse elbow assignment clustering',
-  dbscan: 'epsilon minpts core border noise density cluster',
-  pca: 'covariance eigenvalues eigenvectors explained variance projection scree',
-  tfidf: 'term frequency inverse document idf keywords vocabulary matrix',
-  qlearning: 'q table rewards policy epsilon discount grid world bellman',
-  attention: 'query key value softmax heatmap scaled dot product tokens',
-};
 
 export const RouteSearchModal: React.FC<RouteSearchModalProps> = ({ open, onClose }) => {
   const navigate = useNavigate();
@@ -57,25 +44,11 @@ export const RouteSearchModal: React.FC<RouteSearchModalProps> = ({ open, onClos
 
   if (!open) return null;
 
-  const normalized = query.trim().toLowerCase();
-  const routes = navigationData.flatMap((category, categoryIndex) =>
-    category.items.map((item, itemIndex) => {
-      const status = getImplementationStatus(item.route);
-      const routeTerms = item.route.replaceAll('/', ' ').replaceAll('-', ' ');
-      const keywordTerms = Object.entries(formulaKeywords)
-        .filter(([key]) => item.route.includes(key) || item.label.toLowerCase().includes(key))
-        .map(([, terms]) => terms)
-        .join(' ');
-      return { ...item, category: category.category, categoryIndex, itemIndex, status, searchable: `${item.label} ${item.badge} ${status} ${category.category} ${routeTerms} ${keywordTerms}`.toLowerCase() };
-    })
-  );
-  const results = routes
-    .filter(item =>
-      (!normalized || item.searchable.includes(normalized)) &&
-      (statusFilter === 'All' || item.status === statusFilter) &&
-      (levelFilter === 'All' || item.badge === levelFilter)
-    )
-    .slice(0, 30);
+  const results = searchAlgorithms(query, {
+    status: statusFilter,
+    badge: levelFilter,
+    limit: 30,
+  });
   const boundedActiveIndex = Math.min(activeIndex, Math.max(results.length - 1, 0));
 
   const openActiveResult = () => {
@@ -156,7 +129,8 @@ export const RouteSearchModal: React.FC<RouteSearchModalProps> = ({ open, onClos
             >
               <span className="min-w-0">
                 <span className="block truncate font-semibold text-gray-900 dark:text-gray-100">{item.label}</span>
-                <span className="block truncate font-mono text-[11px] text-gray-500 dark:text-gray-400">{item.route}</span>
+                <span className="block truncate text-xs text-gray-500 dark:text-gray-400">{item.description}</span>
+                <span className="block truncate font-mono text-[11px] text-gray-400 dark:text-gray-500">{item.route}</span>
                 <span className="mt-1 flex flex-wrap gap-1">
                   <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-800 dark:text-gray-300">
                     {item.category}

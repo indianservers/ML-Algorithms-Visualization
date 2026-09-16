@@ -1,17 +1,14 @@
-import { useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import {
-  BookOpen,
-  Calculator,
   Check,
   ChevronDown,
-  CircleHelp,
   Info,
-  Moon,
+  Lightbulb,
+  LineChart,
   Play,
   RefreshCw,
-  Settings,
-  Sun,
+  Table2,
   Upload,
 } from "lucide-react";
 import { logisticRegression } from "../../../../lib/algorithms/classification/logisticRegression";
@@ -32,6 +29,8 @@ import {
 } from "../../../../lib/classification/classificationDatasets";
 import { ClassificationDiagnosticsPanel } from "../../../../components/ml/ClassificationDiagnosticsPanel";
 import "./LogisticRegressionPage.css";
+import { loadActiveDatasetMap } from "../../../../lib/experimentWorkspace";
+import type { LoadedAlgorithmDataset } from "../../../../data/algorithmDatasets";
 
 type Point = { x: number; y: number; z?: number };
 type DatasetKey =
@@ -42,6 +41,8 @@ type DatasetKey =
   | "severe"
   | "xor"
   | "imported";
+type View = "probability" | "logodds" | "both";
+
 const tabs = [
   "Learn",
   "Visualize",
@@ -52,11 +53,13 @@ const tabs = [
   "Explain",
 ] as const;
 type Tab = (typeof tabs)[number];
+
 const admissions = Array.from({ length: 120 }, (_, i) => {
   const x = 8 + ((i * 37) % 93),
     noise = ((i * 17) % 23) - 11;
   return { x, y: x + noise > 61 ? 1 : 0 };
 });
+
 const datasets = {
   admissions: {
     name: "University Admissions",
@@ -95,15 +98,7 @@ const datasets = {
     rows: datasetCXor1DFails(),
   },
 };
-const nav = [
-  "Linear Regression",
-  "Logistic Regression",
-  "Decision Tree",
-  "Random Forest",
-  "SVM",
-  "KNN",
-  "Naive Bayes",
-];
+
 function parseCsv(text: string) {
   const lines = text.trim().split(/\r?\n/).filter(Boolean);
   if (lines.length < 3) throw Error("CSV requires a header and two rows.");
@@ -114,8 +109,40 @@ function parseCsv(text: string) {
     return { x: v[0], y: v.at(-1)! };
   });
 }
+
+function rowsFromLoaded(dataset: LoadedAlgorithmDataset): Point[] {
+  const columns = dataset.columns.filter(Boolean);
+  if (columns.length < 2 || dataset.data.length < 4) return [];
+  const target =
+    dataset.target && columns.includes(dataset.target)
+      ? dataset.target
+      : columns[columns.length - 1];
+  if (!target) return [];
+  const features = columns.filter((column) => column !== target);
+  if (!features.length) return [];
+  return dataset.data.map((row) => {
+    const x = Number(row[features[0]]);
+    const yRaw = Number(row[target]);
+    const point: Point = {
+      x: Number.isFinite(x) ? x : 0,
+      y: yRaw >= 0.5 ? 1 : 0,
+    };
+    if (features[1]) {
+      const z = Number(row[features[1]]);
+      if (Number.isFinite(z)) point.z = z;
+    }
+    return point;
+  });
+}
+
 function featuresOf(row: Point) {
   return row.z === undefined ? [row.x] : [row.x, row.z];
+}
+
+function medianX(rows: Point[]) {
+  if (!rows.length) return 0;
+  const sorted = rows.map((r) => r.x).sort((a, b) => a - b);
+  return sorted[Math.floor(sorted.length / 2)];
 }
 
 function train(rows: Point[], l2: number) {
@@ -139,24 +166,16 @@ function train(rows: Point[], l2: number) {
     dim > 1
       ? split.trainX.reduce((s, row) => s + row[1], 0) / split.trainX.length
       : 0;
-  const probaRow = (row: number[]) => {
-    const padded =
-      row.length === dim
-        ? row
-        : dim === 1
-          ? [row[0]]
-          : [row[0], row[1] ?? zMean];
-    return model.predictProba(scaler.transform(padded));
-  };
+  const pad = (row: number[]) =>
+    row.length === dim ? row : dim === 1 ? [row[0]] : [row[0], row[1] ?? zMean];
+  const probaRow = (row: number[]) =>
+    model.predictProba(scaler.transform(pad(row)));
   const logitRow = (row: number[]) => {
-    const padded =
-      row.length === dim
-        ? row
-        : dim === 1
-          ? [row[0]]
-          : [row[0], row[1] ?? zMean];
-    const x = scaler.transform(padded);
-    return x.reduce((sum, value, j) => sum + value * model.weights[j], model.bias);
+    const x = scaler.transform(pad(row));
+    return x.reduce(
+      (sum, value, j) => sum + value * model.weights[j],
+      model.bias,
+    );
   };
   return {
     ...model,
@@ -169,102 +188,318 @@ function train(rows: Point[], l2: number) {
   };
 }
 
-function ProbabilityChart({
+function niceTicks(min: number, max: number, count = 5) {
+  const span = max - min || 1;
+  const raw = span / count;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 2.5, 5, 10].find((m) => raw <= m * mag)! * mag;
+  const out: number[] = [];
+  for (let v = Math.ceil(min / step) * step; v <= max + step * 0.001; v += step)
+    out.push(Number(v.toFixed(10)));
+  return out;
+}
+
+const fmtTick = (v: number) =>
+  Math.abs(v) >= 10000
+    ? `${Math.round(v / 1000)}k`
+    : Number.isInteger(v)
+      ? String(v)
+      : v.toFixed(1);
+
+/* --------------------------------------------------------- sigmoid plot */
+
+function SigmoidPlot({
   rows,
   proba,
   threshold,
-  view,
+  feature,
 }: {
   rows: Point[];
   proba: (x: number) => number;
   threshold: number;
-  view: "probability" | "logodds" | "both";
+  feature: string;
 }) {
-  const W = 870,
-    H = 420,
-    l = 58,
-    r = 90,
-    t = 55,
-    b = 48,
-    xmin = Math.min(...rows.map((v) => v.x)),
-    xmax = Math.max(...rows.map((v) => v.x));
-  const sx = (x: number) => l + ((x - xmin) / (xmax - xmin || 1)) * (W - l - r),
-    sy = (p: number) => H - b - p * (H - t - b);
-  const curve = Array.from({ length: 100 }, (_, i) => {
-    const x = xmin + (i / 99) * (xmax - xmin),
-      p = proba(x);
-    return { x, p, z: Math.log(Math.max(1e-6, p) / Math.max(1e-6, 1 - p)) };
+  const W = 1030,
+    H = 300,
+    L = 74,
+    R = 168,
+    T = 56,
+    B = 56;
+  const xs = rows.map((v) => v.x);
+  const rawMin = Math.min(...xs),
+    rawMax = Math.max(...xs);
+  const pad = (rawMax - rawMin || 1) * 0.06;
+  const xmin = rawMin - pad,
+    xmax = rawMax + pad;
+
+  const sx = (x: number) => L + ((x - xmin) / (xmax - xmin)) * (W - L - R);
+  const sy = (p: number) => H - B - p * (H - T - B);
+
+  const curve = Array.from({ length: 160 }, (_, i) => {
+    const x = xmin + (i / 159) * (xmax - xmin);
+    return { x, p: proba(x) };
   });
   const path = curve
-    .map(
-      (v, i) => `${i ? "L" : "M"}${sx(v.x).toFixed(1)},${sy(v.p).toFixed(1)}`,
-    )
+    .map((v, i) => `${i ? "L" : "M"}${sx(v.x).toFixed(1)},${sy(v.p).toFixed(1)}`)
     .join(" ");
+
+  // Decision boundary: the feature value where P crosses the threshold.
+  let boundary: number | null = null;
+  for (let i = 1; i < curve.length; i++) {
+    const a = curve[i - 1],
+      b = curve[i];
+    if ((a.p - threshold) * (b.p - threshold) <= 0 && a.p !== b.p) {
+      boundary = a.x + ((threshold - a.p) / (b.p - a.p)) * (b.x - a.x);
+      break;
+    }
+  }
+
+  const ticks = niceTicks(rawMin, rawMax, 5);
+
   return (
     <svg
+      className="lr-plot"
       viewBox={`0 0 ${W} ${H}`}
-      aria-label="Logistic probability and log odds chart"
+      role="img"
+      aria-label={`Sigmoid probability curve over ${feature} with decision threshold at ${Math.round(threshold * 100)} percent`}
     >
-      {[0, 0.25, 0.5, 0.75, 1].map((v) => (
+      {[0, 0.5, 1].map((v) => (
         <g key={v}>
-          <line x1={l} x2={W - r} y1={sy(v)} y2={sy(v)} className="grid" />
-          <text x={l - 24} y={sy(v) + 4}>
+          <line x1={L} x2={W - R} y1={sy(v)} y2={sy(v)} className="grid" />
+          <text x={L - 16} y={sy(v) + 4} textAnchor="end">
             {v.toFixed(1)}
           </text>
         </g>
       ))}
-      <line x1={l} x2={W - r} y1={H - b} y2={H - b} className="axis" />
-      <line x1={l} x2={l} y1={t} y2={H - b} className="axis" />
-      <line
-        x1={l}
-        x2={W - r}
-        y1={sy(threshold)}
-        y2={sy(threshold)}
-        className="threshold-line"
-      />
-      {(view === "probability" || view === "both") && (
-        <path d={path} className="sigmoid" />
+
+      <line x1={L} x2={W - R} y1={H - B} y2={H - B} className="axis" />
+
+      {ticks.map((t) => (
+        <text key={t} x={sx(t)} y={H - B + 22}>
+          {fmtTick(t)}
+        </text>
+      ))}
+
+      {boundary !== null && (
+        <>
+          <line
+            x1={sx(boundary)}
+            x2={sx(boundary)}
+            y1={sy(threshold)}
+            y2={H - B}
+            className="threshold-line"
+          />
+          <line
+            x1={sx(boundary)}
+            x2={sx(boundary)}
+            y1={T - 12}
+            y2={sy(threshold)}
+            className="threshold-stem"
+          />
+          <rect
+            x={sx(boundary) - 55}
+            y={T - 40}
+            width="110"
+            height="25"
+            rx="5"
+            className="threshold-pill"
+          />
+          <path
+            d={`M${sx(boundary) - 5},${T - 15} L${sx(boundary)},${T - 9} L${sx(boundary) + 5},${T - 15} Z`}
+            className="threshold-label"
+          />
+          <text x={sx(boundary)} y={T - 23} className="threshold-label">
+            Threshold: {Math.round(threshold * 100)}
+          </text>
+          <circle
+            cx={sx(boundary)}
+            cy={sy(threshold)}
+            r="5"
+            className="cross-dot"
+          />
+        </>
       )}
+
+      <path d={path} className="sigmoid" />
+
       {rows.map((v, i) => (
         <circle
           key={i}
           cx={sx(v.x)}
-          cy={sy(v.y)}
-          r={i === 4 || i === 70 ? 7 : 4}
-          className={v.y ? "positive" : "negative"}
+          cy={H - B}
+          r="4.5"
+          className={v.y ? "pt-pos" : "pt-neg"}
         />
       ))}
-      <rect
-        x={l + 12}
-        y={10}
-        width="130"
-        height="28"
-        rx="5"
-        className="threshold-box"
-      />
-      <text x={l + 77} y={29} className="threshold-text">
-        Threshold: {threshold.toFixed(2)}
+
+      <text x={(L + W - R) / 2} y={H - 10} className="axis-title">
+        {feature}
       </text>
-      <text x={(l + W - r) / 2} y={H - 10}>
-        {view === "logodds" ? "Log-Odds (z)" : "Exam Score"}
+      <text
+        transform={`translate(20 ${(T + H - B) / 2}) rotate(-90)`}
+        className="axis-title"
+      >
+        P(Positive)
       </text>
-      <text transform={`translate(15 ${H / 2}) rotate(-90)`}>P(Admit)</text>
-      <text x={W - r + 15} y={t + 8} className="formula">
+
+      <text x={W - R + 12} y={T + 2} className="formula">
         Sigmoid Function
+      </text>
+      <text x={W - R + 12} y={T + 26} className="formula-math">
+        σ(z) = 1 / (1 + e⁻ᶻ)
       </text>
     </svg>
   );
 }
+
+/* -------------------------------------------------------- log-odds strip */
+
+function LogOddsStrip({
+  rows,
+  logit,
+}: {
+  rows: Point[];
+  logit: (x: number) => number;
+}) {
+  const W = 1030,
+    H = 150,
+    L = 74,
+    R = 74,
+    axisY = 96;
+  const zs = rows.map((r) => logit(r.x));
+  const bound = Math.max(2, Math.ceil(Math.max(...zs.map(Math.abs)) || 2));
+  const sx = (z: number) => L + ((z + bound) / (2 * bound)) * (W - L - R);
+  const ticks = niceTicks(-bound, bound, 6).filter(
+    (t) => t >= -bound && t <= bound,
+  );
+
+  return (
+    <svg
+      className="lr-plot"
+      viewBox={`0 0 ${W} ${H}`}
+      role="img"
+      aria-label="Log-odds space showing each sample's linear score"
+    >
+      <text x={sx(-bound / 2)} y={30} className="zone-neg">
+        Negative (z &lt; 0)
+      </text>
+      <text x={sx(-bound / 2)} y={48} className="zone-neg">
+        P &lt; 0.5
+      </text>
+      <text x={sx(bound / 2)} y={30} className="zone-pos">
+        Positive (z &gt; 0)
+      </text>
+      <text x={sx(bound / 2)} y={48} className="zone-pos">
+        P &gt; 0.5
+      </text>
+
+      <text x={sx(0)} y={30} className="zone-zero">
+        z = 0
+      </text>
+      <text x={sx(0)} y={48} className="zone-zero">
+        P = 0.5
+      </text>
+
+      <line x1={L} x2={W - R} y1={axisY} y2={axisY} className="axis" />
+      <line
+        x1={sx(0)}
+        x2={sx(0)}
+        y1={58}
+        y2={axisY}
+        className="threshold-line"
+      />
+
+      {ticks.map((t) => (
+        <g key={t}>
+          <line x1={sx(t)} x2={sx(t)} y1={axisY} y2={axisY + 6} className="axis" />
+          <text x={sx(t)} y={axisY + 22}>
+            {fmtTick(t)}
+          </text>
+        </g>
+      ))}
+
+      {rows.map((r, i) => {
+        const z = Math.max(-bound, Math.min(bound, zs[i]));
+        return (
+          <circle
+            key={i}
+            cx={sx(z)}
+            cy={axisY}
+            r="4.5"
+            className={r.y ? "pt-pos" : "pt-neg"}
+          />
+        );
+      })}
+
+      <circle cx={sx(0)} cy={axisY} r="4.5" className="cross-dot" />
+
+      <text x={(L + W - R) / 2} y={H - 8} className="axis-title">
+        Log-Odds (z)
+      </text>
+    </svg>
+  );
+}
+
+/* ---------------------------------------------------- probability bars */
+
+function ProbabilityHistogram({
+  scores,
+  threshold,
+}: {
+  scores: number[];
+  threshold: number;
+}) {
+  const bins = 20;
+  const counts = new Array(bins).fill(0) as number[];
+  scores.forEach((p) => {
+    const i = Math.min(bins - 1, Math.max(0, Math.floor(p * bins)));
+    counts[i] += 1;
+  });
+  const peak = Math.max(1, ...counts);
+  const W = 240,
+    H = 72,
+    B = 16,
+    bw = W / bins;
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Predicted probability distribution">
+      {counts.map((c, i) => {
+        const h = (c / peak) * (H - B - 2);
+        return (
+          <rect
+            key={i}
+            x={i * bw + 0.6}
+            y={H - B - h}
+            width={bw - 1.2}
+            height={h}
+            className={(i + 0.5) / bins >= threshold ? "hb-pos" : "hb-neg"}
+          />
+        );
+      })}
+      <line x1="0" x2={W} y1={H - B} y2={H - B} stroke="currentColor" strokeOpacity="0.2" />
+      {[0, 0.25, 0.5, 0.75, 1].map((t) => (
+        <text key={t} x={t * W} y={H - 4} textAnchor={t === 0 ? "start" : t === 1 ? "end" : "middle"}>
+          {t === 0 ? "0" : t.toFixed(2)}
+        </text>
+      ))}
+    </svg>
+  );
+}
+
+/* ------------------------------------------------------------ data tabs */
+
 function DataTable({
   rows,
   setRows,
+  feature,
 }: {
   rows: Point[];
   setRows: React.Dispatch<React.SetStateAction<Point[]>>;
+  feature: string;
 }) {
   return (
-    <article className="lr-data">
-      <header>
+    <article className="lr-card lr-panel">
+      <div className="lr-data-head">
         <h2>Editable Classification Data</h2>
         <span aria-label="Active row count">{rows.length} rows</span>
         <button onClick={() => setRows((v) => [...v, { x: 60, y: 1 }])}>
@@ -273,11 +508,11 @@ function DataTable({
         <button onClick={() => setRows((v) => v.slice(0, -1))}>
           Remove Row
         </button>
-      </header>
+      </div>
       <table>
         <thead>
           <tr>
-            <th>Feature</th>
+            <th>{feature}</th>
             <th>Class</th>
           </tr>
         </thead>
@@ -321,6 +556,7 @@ function DataTable({
     </article>
   );
 }
+
 function Generic({
   tab,
   loss,
@@ -331,7 +567,7 @@ function Generic({
   probability: number;
 }) {
   return (
-    <article className="lr-generic">
+    <article className="lr-card lr-panel">
       <h2>{tab}</h2>
       <p>
         {tab === "Train"
@@ -348,22 +584,24 @@ function Generic({
   );
 }
 
+/* ------------------------------------------------------------------ page */
+
 export default function LogisticRegressionPage() {
+  const location = useLocation();
   const [tab, setTab] = useState<Tab>("Visualize"),
     [dataset, setDataset] = useState<DatasetKey>("admissions"),
     [rows, setRows] = useState<Point[]>(admissions),
     [imported, setImported] = useState<Point[] | null>(null),
+    [importedLabel, setImportedLabel] = useState("Imported CSV"),
     [threshold, setThreshold] = useState(0.5),
-    [view, setView] = useState<"probability" | "logodds" | "both">(
-      "probability",
-    ),
+    [view, setView] = useState<View>("probability"),
     [l2, setL2] = useState(1),
     [trained, setTrained] = useState(true),
     [dataLoaded, setDataLoaded] = useState(false),
-    [status, setStatus] = useState("Last trained: just now"),
-    [dark, setDark] = useState(true),
-    [predX, setPredX] = useState(72);
+    [status, setStatus] = useState("Last trained: just now");
+  const [predX, setPredX] = useState(72);
   const fileRef = useRef<HTMLInputElement>(null),
+    appliedHandoffKey = useRef<string | null>(null),
     model = useMemo(() => {
       try {
         return train(rows, l2);
@@ -371,6 +609,7 @@ export default function LogisticRegressionPage() {
         return null;
       }
     }, [rows, l2]);
+
   const testScores = model
     ? model.split.testX.map((row) => model.probaRow(row))
     : [];
@@ -389,7 +628,9 @@ export default function LogisticRegressionPage() {
         f1: 0,
         balancedAccuracy: 0,
       };
-  const roc = testScores.length ? rocCurve(model!.split.testY, testScores) : null;
+  const roc = testScores.length
+    ? rocCurve(model!.split.testY, testScores)
+    : null;
   const pr = testScores.length ? prAuc(model!.split.testY, testScores) : null;
   const trainScores = model
     ? model.split.trainX.map((row) => model.probaRow(row))
@@ -397,35 +638,92 @@ export default function LogisticRegressionPage() {
   const trainMetrics = model
     ? binaryMetrics(model.split.trainY, applyThreshold(trainScores, threshold))
     : null;
-  const sweep = model
-    ? thresholdSweep(model.split.testY, testScores)
-    : [];
+  const sweep = model ? thresholdSweep(model.split.testY, testScores) : [];
   const baseline = model ? majorityBaseline(model.split.testY) : null;
   const inspectZ = model ? model.logit(predX) : 0;
   const inspectP = model ? model.proba(predX) : 0;
   const inspectClass = inspectP >= threshold ? 1 : 0;
-  const oddsRatios = model?.weights.map((w) => Math.exp(w)) ?? [];
   const positive = rows.filter((v) => v.y).length / Math.max(1, rows.length);
+
+  const allScores = model ? rows.map((r) => model.probaRow(featuresOf(r))) : [];
+  const posScores = allScores.filter((_, i) => rows[i].y);
+  const negScores = allScores.filter((_, i) => !rows[i].y);
+  const mean = (list: number[]) =>
+    list.length ? list.reduce((a, b) => a + b, 0) / list.length : 0;
+
   const current =
     dataset === "imported"
-      ? { name: "Imported CSV", feature: "Feature", source: "Local", rows }
+      ? {
+          name: importedLabel,
+          feature: "Feature",
+          source: "Local",
+          rows,
+        }
       : datasets[dataset];
+
   const choose = (key: DatasetKey) => {
     if (key === "imported" && !imported) return;
+    const next = key === "imported" ? imported! : datasets[key].rows;
     setDataset(key);
-    setRows(key === "imported" ? imported! : datasets[key].rows);
+    setRows(next);
+    // predX belongs to the old feature scale, so re-centre it on the new data.
+    setPredX(medianX(next));
     setTrained(false);
+    setStatus("Dataset changed — retrain to refresh the fit");
   };
+
+  const applyLoaded = (next: LoadedAlgorithmDataset) => {
+    const points = rowsFromLoaded(next);
+    if (!points.length) return;
+    setImported(points);
+    setImportedLabel(next.name);
+    setRows(points);
+    setDataset("imported");
+    setDataLoaded(true);
+    setTrained(true);
+    setPredX(medianX(points));
+    setStatus(`Loaded ${next.name} (${points.length} rows)`);
+  };
+
+  useEffect(() => {
+    const apply = (next?: LoadedAlgorithmDataset | null) => {
+      if (!next) return;
+      const key = `${next.id}:${next.data.length}:${next.target ?? ""}`;
+      if (appliedHandoffKey.current === key) return;
+      appliedHandoffKey.current = key;
+      applyLoaded(next);
+    };
+    apply(loadActiveDatasetMap()[location.pathname]);
+    const onLoaded = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{
+          route?: string;
+          dataset?: LoadedAlgorithmDataset;
+        }>
+      ).detail;
+      if (
+        !detail?.dataset ||
+        (detail.route && detail.route !== location.pathname)
+      )
+        return;
+      apply(detail.dataset);
+    };
+    window.addEventListener("ml:algorithm-dataset-loaded", onLoaded);
+    return () =>
+      window.removeEventListener("ml:algorithm-dataset-loaded", onLoaded);
+  }, [location.pathname]);
+
   const reset = () => {
     setDataset("admissions");
     setRows(admissions);
     setThreshold(0.5);
     setView("probability");
     setL2(1);
-    setPredX(72);
+    setPredX(medianX(admissions));
     setTrained(true);
     setStatus("Last trained: just now");
   };
+
   const retrain = () => {
     setTrained(false);
     setStatus("Optimizing cross-entropy…");
@@ -434,339 +732,347 @@ export default function LogisticRegressionPage() {
       setStatus(`Trained on ${rows.length} samples`);
     }, 400);
   };
-  const cardMetrics = [
-    ["Test accuracy", metrics.accuracy],
-    ["Balanced accuracy", metrics.balancedAccuracy ?? 0],
+
+  const bars = [
+    ["Accuracy", metrics.accuracy],
     ["Precision (PPV)", metrics.precision],
     ["Recall (Sensitivity)", metrics.recall],
     ["F1 Score", metrics.f1],
   ] as const;
+
+  const xMin = Math.min(...rows.map((v) => v.x));
+  const xMax = Math.max(...rows.map((v) => v.x));
+  const featureCount = rows.some((r) => r.z !== undefined) ? 2 : 1;
+
   return (
-    <div className={`logistic-page ${dark ? "dark" : "light"}`}>
-      <aside className="lesson-nav">
-        <Link to="/" className="lr-brand">
-          <i>◇</i>
-          <b>
-            Mega ML<small>AI Observatory</small>
-          </b>
-        </Link>
-        <small>⌄ LESSONS</small>
-        <label>
-          Supervised Learning <ChevronDown />
-        </label>
-        {nav.map((v, i) => (
+    <div className="logistic-page">
+      <header className="lr-head">
+        <div className="lr-head-icon">
+          <LineChart />
+        </div>
+        <div>
+          <h1>Logistic Regression</h1>
+          <p>
+            Objective: Learn how logistic regression models probability and
+            makes classifications.
+          </p>
+        </div>
+        <div className="lr-progress">
+          <span>
+            Lesson Progress <b>68%</b>
+          </span>
+          <i>
+            <em style={{ width: "68%" }} />
+          </i>
+        </div>
+        <button className="lr-resume" onClick={() => setStatus("Progress saved")}>
+          <Play />
+          Resume
+        </button>
+      </header>
+
+      <nav className="lr-tabs" aria-label="Lesson sections">
+        {tabs.map((v) => (
           <button
             key={v}
-            className={i === 1 ? "active" : ""}
-            onClick={() => i === 1 && setTab("Visualize")}
+            className={tab === v ? "active" : ""}
+            aria-current={tab === v ? "page" : undefined}
+            onClick={() => setTab(v)}
           >
-            <i className={i < 2 ? "cyan" : "yellow"}>✓</i>
             {v}
-            {i === 1 && <em />}
           </button>
         ))}
-        {[
-          "Model Evaluation",
-          "Unsupervised Learning",
-          "Deep Learning",
-          "MLOps",
-        ].map((v) => (
-          <label key={v}>
-            {v}
-            <ChevronDown />
-          </label>
-        ))}
-        <div className="your-progress">
-          <b>Your Progress</b>
-          <span>24 / 36 lessons</span>
-          <i />
-        </div>
-        <button className="notes">
-          <BookOpen />
-          Learning Notes
-        </button>
-        <footer>
-          <Settings />
-          <CircleHelp />
-          <button aria-label="Toggle theme" onClick={() => setDark((v) => !v)}>
-            {dark ? <Moon /> : <Sun />}
-          </button>
-        </footer>
-      </aside>
-      <main>
-        <header className="lr-header">
-          <div className="icon">⌁</div>
-          <div>
-            <h1>Logistic Regression</h1>
-            <p>
-              Objective: Learn how logistic regression models probability and
-              makes classifications.
-            </p>
-          </div>
-          <div className="lr-progress">
-            <span>
-              Lesson Progress <b>68%</b>
-            </span>
-            <i />
-          </div>
-          <button onClick={() => setStatus("Progress saved")}>
-            <Play />
-            Resume
-          </button>
-        </header>
-        <nav className="lr-tabs">
-          {tabs.map((v) => (
-            <button
-              key={v}
-              className={tab === v ? "active" : ""}
-              onClick={() => setTab(v)}
-            >
-              {v}
-            </button>
-          ))}
-        </nav>
-        <section className="lr-workspace">
-          <div className="lr-content">
-            {tab === "Dataset" ? (
-              <DataTable rows={rows} setRows={setRows} />
-            ) : tab !== "Visualize" ? (
-              <Generic
-                tab={tab}
-                loss={model?.lossHistory ?? []}
-                probability={
-                  model ? model.proba(predX) : 0
-                }
-              />
-            ) : (
-              <>
-                <article className="probability-chart">
-                  <header>
-                    <b>
-                      ⌁ 1D Feature Space: {current.feature} <Info />
-                    </b>
+      </nav>
+
+      <section className="lr-body">
+        <div className="lr-main">
+          {tab === "Dataset" ? (
+            <DataTable rows={rows} setRows={setRows} feature={current.feature} />
+          ) : tab !== "Visualize" ? (
+            <Generic
+              tab={tab}
+              loss={model?.lossHistory ?? []}
+              probability={inspectP}
+            />
+          ) : (
+            <>
+              <article className="lr-card lr-chart-card">
+                <div className="lr-chart-head">
+                  <span className="lr-card-title">
+                    <i className="dot" />
+                    1D Feature Space: {current.feature}
+                    <Info />
+                  </span>
+                  <div className="lr-legend">
                     <span>
                       <i className="pos" />
-                      Positive (Admit) <i className="neg" /> Negative (Reject) ·
-                      Drag to move points
+                      Positive
                     </span>
-                  </header>
-                  <ProbabilityChart
+                    <span>
+                      <i className="neg" />
+                      Negative
+                    </span>
+                    <span>
+                      <i className="hint" />
+                      Each dot is one sample
+                    </span>
+                  </div>
+                </div>
+
+                {view !== "logodds" && (
+                  <SigmoidPlot
                     rows={rows}
                     proba={(x) => model?.proba(x) ?? 0.5}
                     threshold={threshold}
-                    view={view}
+                    feature={current.feature}
                   />
-                  <div className="logodds">
-                    <b>
-                      Log-Odds (Logit) Space <Info />
-                    </b>
-                    <div>
-                      <span className="negative-zone">
-                        Negative (z &lt; 0)<small>P &lt; 0.5</small>
-                      </span>
-                      <i />
-                      <em>
-                        z = 0<small>P = 0.5</small>
-                      </em>
-                      <i />
-                      <span className="positive-zone">
-                        Positive (z &gt; 0)<small>P &gt; 0.5</small>
-                      </span>
-                    </div>
-                  </div>
+                )}
+
+                <div className="lr-logodds">
+                  <span className="lr-card-title">
+                    Log-Odds (Logit) Space
+                    <Info />
+                  </span>
+                  <LogOddsStrip
+                    rows={rows}
+                    logit={(x) => model?.logit(x) ?? 0}
+                  />
+                </div>
+              </article>
+
+              <div className="lr-metrics">
+                <article className="lr-card">
+                  <span className="lr-card-title">
+                    Confusion Matrix (Threshold = {Math.round(threshold * 100)})
+                    <Info />
+                  </span>
+                  <table className="lr-confusion">
+                    <caption>Predicted</caption>
+                    <thead>
+                      <tr>
+                        <th className="corner" />
+                        <th>Positive</th>
+                        <th>Negative</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th>Positive</th>
+                        <td className="hit">{metrics.tp}</td>
+                        <td className="miss">{metrics.fn}</td>
+                      </tr>
+                      <tr>
+                        <th>Negative</th>
+                        <td className="miss">{metrics.fp}</td>
+                        <td className="hit">{metrics.tn}</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </article>
-                <div className="metric-row">
-                  <article>
-                    <b>
-                      Confusion Matrix (test, threshold {threshold.toFixed(2)}){" "}
-                    </b>
-                    <table>
-                      <thead>
-                        <tr>
-                          <th />
-                          <th>Predicted +</th>
-                          <th>Predicted −</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <th>Actual +</th>
-                          <td>{metrics.tp}</td>
-                          <td>{metrics.fn}</td>
-                        </tr>
-                        <tr>
-                          <th>Actual −</th>
-                          <td>{metrics.fp}</td>
-                          <td>{metrics.tn}</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </article>
-                  <article>
-                    <b>
-                      Key Metrics <Info />
-                    </b>
-                    {cardMetrics.map(([n, v], i) => (
-                      <label key={n}>
-                        {n}
-                        <strong>{(v * 100).toFixed(1)}%</strong>
+
+                <article className="lr-card">
+                  <span className="lr-card-title">
+                    Key Metrics
+                    <Info />
+                  </span>
+                  <div className="lr-bars">
+                    {bars.map(([label, value], i) => (
+                      <label key={label}>
+                        {label}
+                        <strong>{(value * 100).toFixed(1)}%</strong>
                         <i>
                           <em
-                            style={{ width: `${v * 100}%` }}
-                            className={`m${i}`}
+                            className={`b${i + 1}`}
+                            style={{ width: `${value * 100}%` }}
                           />
                         </i>
                       </label>
                     ))}
-                  </article>
-                  <article>
-                    <b>
-                      Probability Overview <Info />
-                    </b>
-                    <dl>
-                      <dt>Test samples / classes</dt>
-                      <dd>
-                        {model
-                          ? `${model.split.nTest} / ${model.split.nClasses}`
-                          : "Train first"}
-                      </dd>
-                      <dt>Mean test P (positive)</dt>
-                      <dd>
-                        {(
-                          testScores
-                            .filter((_, i) => model?.split.testY[i])
-                            .reduce((a, b) => a + b, 0) /
-                          (testScores.filter((_, i) => model?.split.testY[i])
-                            .length || 1)
-                        ).toFixed(2)}
-                      </dd>
-                      <dt>Mean test P (negative)</dt>
-                      <dd>
-                        {(
-                          testScores
-                            .filter((_, i) => model && !model.split.testY[i])
-                            .reduce((a, b) => a + b, 0) /
-                          (testScores.filter(
-                            (_, i) => model && !model.split.testY[i],
-                          ).length || 1)
-                        ).toFixed(2)}
-                      </dd>
-                      <dt>Test ROC-AUC</dt>
-                      <dd>{roc ? roc.auc.toFixed(3) : "—"}</dd>
-                      <dt>Test PR-AUC</dt>
-                      <dd>{pr != null ? pr.toFixed(3) : "—"}</dd>
-                    </dl>
-                    <div className="histogram">
-                      {testScores.slice(0, 22).map((p, i) => (
-                        <i key={i} style={{ height: `${12 + p * 45}px` }} />
-                      ))}
+                  </div>
+                </article>
+
+                <article className="lr-card">
+                  <span className="lr-card-title">
+                    Probability Overview
+                    <Info />
+                  </span>
+                  <dl className="lr-stats">
+                    <dt>Mean P (Positive)</dt>
+                    <dd>{mean(posScores).toFixed(2)}</dd>
+                    <dt>Mean P (Negative)</dt>
+                    <dd>{mean(negScores).toFixed(2)}</dd>
+                    <dt>Min / Max Probability</dt>
+                    <dd>
+                      {allScores.length
+                        ? `${Math.min(...allScores).toFixed(2)} / ${Math.max(...allScores).toFixed(2)}`
+                        : "—"}
+                    </dd>
+                    <dt>Test ROC-AUC / PR-AUC</dt>
+                    <dd>
+                      {roc ? roc.auc.toFixed(3) : "—"} /{" "}
+                      {pr != null ? pr.toFixed(3) : "—"}
+                    </dd>
+                  </dl>
+                  <div className="lr-histogram">
+                    <ProbabilityHistogram
+                      scores={allScores}
+                      threshold={threshold}
+                    />
+                    <div style={{ textAlign: "center", fontSize: 10, color: "var(--lab-muted)" }}>
+                      P(Positive)
                     </div>
-                  </article>
-                  <article>
+                  </div>
+                </article>
+
+                <article className="lr-card">
+                  <span className="lr-card-title">
+                    Odds Insight
+                    <Info />
+                  </span>
+                  <div className="lr-odds-row">
+                    Odds at Threshold
                     <b>
-                      Odds Insight <Info />
+                      {(threshold / Math.max(1e-6, 1 - threshold)).toFixed(2)} :
+                      1
                     </b>
-                    <p>
-                      Odds at threshold {threshold.toFixed(2)}{" "}
-                      <strong>
-                        {(threshold / Math.max(1e-6, 1 - threshold)).toFixed(2)}{" "}
-                        : 1
-                      </strong>
-                    </p>
-                    <p>
-                      Live inspector at x={predX}: z={inspectZ.toFixed(3)}, sigmoid(z)={inspectP.toFixed(3)},
-                      threshold={threshold.toFixed(2)}, class={inspectClass}. The dashed line is the
-                      chosen threshold; z=0 is P=0.5, which matches the boundary only when threshold=0.5.
-                    </p>
-                    <p>
-                      Standardized odds ratios (exp(coefficient)), holding other included features
-                      constant — not a causal claim:{" "}
-                      {oddsRatios.map((r, i) => `x${i + 1}=${r.toFixed(2)}`).join(", ") || "—"}
-                    </p>
-                    <label>
-                      Exam score
-                      <input
-                        aria-label="Prediction exam score"
-                        type="number"
-                        value={predX}
-                        onChange={(e) => setPredX(Number(e.target.value))}
-                      />
-                    </label>
-                  </article>
-                </div>
-                {model && (
-                  <ClassificationDiagnosticsPanel
-                    algorithm="Logistic regression"
-                    dataset={current.name}
-                    samples={rows.length}
-                    features={model.split.trainX[0]?.length ?? 1}
-                    classes={model.split.nClasses}
-                    split={`stratified ${model.split.nTrain}/${model.split.nTest}`}
-                    seed={42}
-                    state={trained ? "TRAINED" : "STALE — RETRAIN REQUIRED"}
-                    scoreKind="probability"
-                    train={trainMetrics ? { accuracy: trainMetrics.accuracy, f1: trainMetrics.f1 } : undefined}
-                    test={metrics}
-                    rocAuc={roc?.auc}
-                    prAuc={pr}
-                    baselineAccuracy={baseline?.accuracy}
-                    sweep={sweep}
-                    suitability="Learns a linear log-odds surface. Works on linearly separable or overlapping classes; fails on XOR without extra features. Threshold changes labels without retraining."
-                  />
-                )}
-              </>
-            )}
-          </div>
-          <aside className="lr-controls">
-            <article>
-              <header>
-                <i>1</i>
-                <b>Controls</b>
-              </header>
-              <label>
-                Decision Threshold
-                <input
-                  className="control-value"
-                  aria-label="Decision threshold value"
-                  type="number"
-                  min="0.05"
-                  max="0.95"
-                  step="0.01"
-                  value={threshold}
-                  onChange={(e) => setThreshold(Number(e.target.value))}
+                  </div>
+                  <p className="lr-odds-sub">(P = {threshold.toFixed(2)})</p>
+                  <div className="lr-odds-row">
+                    Odds at Mean (Positive)
+                    <b>
+                      {(
+                        mean(posScores) / Math.max(1e-6, 1 - mean(posScores))
+                      ).toFixed(2)}{" "}
+                      : 1
+                    </b>
+                  </div>
+                  <div className="lr-odds-row">
+                    Odds at Mean (Negative)
+                    <b>
+                      {(
+                        mean(negScores) / Math.max(1e-6, 1 - mean(negScores))
+                      ).toFixed(2)}{" "}
+                      : 1
+                    </b>
+                  </div>
+                  <label className="lr-inline-field">
+                    Inspect {current.feature}
+                    <input
+                      aria-label="Prediction feature value"
+                      type="number"
+                      value={predX}
+                      onChange={(e) => setPredX(Number(e.target.value))}
+                    />
+                  </label>
+                  <p className="lr-odds-sub" style={{ textAlign: "left", margin: 0 }}>
+                    z = {inspectZ.toFixed(2)} · P = {inspectP.toFixed(3)} ·
+                    class {inspectClass}
+                  </p>
+                  <div className="lr-callout">
+                    <Lightbulb />
+                    <span>
+                      Odds &gt; 1 favor the positive class. Odds &lt; 1 favor
+                      the negative class.
+                    </span>
+                  </div>
+                </article>
+              </div>
+
+              {model && (
+                <ClassificationDiagnosticsPanel
+                  algorithm="Logistic regression"
+                  dataset={current.name}
+                  samples={rows.length}
+                  features={model.split.trainX[0]?.length ?? 1}
+                  classes={model.split.nClasses}
+                  split={`stratified ${model.split.nTrain}/${model.split.nTest}`}
+                  seed={42}
+                  state={trained ? "TRAINED" : "STALE — RETRAIN REQUIRED"}
+                  scoreKind="probability"
+                  train={
+                    trainMetrics
+                      ? {
+                          accuracy: trainMetrics.accuracy,
+                          f1: trainMetrics.f1,
+                        }
+                      : undefined
+                  }
+                  test={metrics}
+                  rocAuc={roc?.auc}
+                  prAuc={pr}
+                  baselineAccuracy={baseline?.accuracy}
+                  sweep={sweep}
+                  suitability="Learns a linear log-odds surface. Works on linearly separable or overlapping classes; fails on XOR without extra features. Threshold changes labels without retraining."
                 />
+              )}
+            </>
+          )}
+        </div>
+
+        <aside className="lr-rail" aria-label="Lab settings">
+          <section>
+            <header>
+              <i>1</i>
+              <b>Controls</b>
+            </header>
+            <div className="lr-field">
+              <span>
+                Decision Threshold
+                <b>{Math.round(threshold * 100)}</b>
+              </span>
+              <div className="lr-slider">
+                0
                 <input
                   aria-label="Decision threshold"
                   type="range"
-                  min="0.05"
-                  max="0.95"
-                  step="0.01"
-                  value={threshold}
-                  onChange={(e) => setThreshold(Number(e.target.value))}
+                  min="5"
+                  max="95"
+                  step="1"
+                  value={Math.round(threshold * 100)}
+                  onChange={(e) => setThreshold(Number(e.target.value) / 100)}
                 />
-                <small>Classify as Positive if P(Admit) ≥ threshold</small>
-              </label>
-              <hr />
-              <b>View</b>
-              <div className="view-buttons">
-                {(["probability", "logodds", "both"] as const).map((v) => (
-                  <button
-                    key={v}
-                    className={view === v ? "active" : ""}
-                    onClick={() => setView(v)}
-                  >
-                    {v === "logodds"
-                      ? "Log-Odds"
-                      : v[0].toUpperCase() + v.slice(1)}
-                  </button>
-                ))}
+                100
               </div>
-            </article>
-            <article>
-              <header>
-                <i>2</i>
-                <b>Dataset</b>
-              </header>
+              <small>Classify as Positive if P(Positive) ≥ threshold</small>
+            </div>
+            <b>View</b>
+            <div className="lr-segmented">
+              {(
+                [
+                  ["probability", "Probability"],
+                  ["logodds", "Log-Odds"],
+                  ["both", "Both"],
+                ] as const
+              ).map(([key, label]) => (
+                <button
+                  key={key}
+                  className={view === key ? "active" : ""}
+                  aria-pressed={view === key}
+                  onClick={() => setView(key)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section>
+            <header>
+              <i>2</i>
+              <b>Dataset</b>
+            </header>
+            <div className="lr-dataset-pick">
+              <span>
+                <strong>{current.name}</strong>
+                {current.source === "Recommended" && (
+                  <em className="lr-badge">Recommended</em>
+                )}
+              </span>
+              <small>
+                N = {rows.length} samples • {featureCount} feature
+                {featureCount > 1 ? "s" : ""}
+              </small>
+              <ChevronDown />
               <select
                 aria-label="Dataset"
                 value={dataset}
@@ -778,100 +1084,109 @@ export default function LogisticRegressionPage() {
                 <option value="imbalanced">Imbalanced 90/10</option>
                 <option value="severe">Severe imbalance 95/5</option>
                 <option value="xor">XOR (linear cannot solve)</option>
-                {imported && <option value="imported">Imported CSV</option>}
+                {imported && <option value="imported">{importedLabel}</option>}
               </select>
-              <small>N = {rows.length} samples • 1 feature</small>
-              <div className="dataset-workflow">
-                <Link to="/ml/lab/dataset-manager">Go to datasets page</Link>
-                <button
-                  onClick={() => {
-                    setDataLoaded(true);
-                    setStatus(`${current.name} loaded and ready for training`);
-                  }}
-                >
-                  Load
-                </button>
+            </div>
+
+            <div className="lr-button-row">
+              <button
+                onClick={() =>
+                  choose(dataset === "admissions" ? "overlap" : "admissions")
+                }
+              >
+                <RefreshCw />
+                Switch Dataset
+              </button>
+              <button onClick={() => fileRef.current?.click()}>
+                <Upload />
+                Upload CSV
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".csv"
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  if (!f) return;
+                  try {
+                    const p = parseCsv(await f.text());
+                    setImported(p);
+                    setImportedLabel(
+                      f.name.replace(/\.csv$/i, "") || "Imported CSV",
+                    );
+                    setRows(p);
+                    setDataset("imported");
+                    setPredX(medianX(p));
+                    setStatus(`Imported ${p.length} rows`);
+                  } catch (err) {
+                    setStatus(
+                      err instanceof Error ? err.message : "Import failed",
+                    );
+                  }
+                }}
+              />
+            </div>
+
+            <div className="lr-button-row">
+              <Link to="/ml/lab/dataset-manager">Dataset Manager</Link>
+              <button
+                onClick={() => {
+                  setDataLoaded(true);
+                  setStatus(`${current.name} loaded and ready for training`);
+                }}
+              >
+                Load
+              </button>
+            </div>
+
+            <dl className="lr-facts">
+              <div>
+                <dt>Feature</dt>
+                <dd>{current.feature}</dd>
               </div>
               <div>
-                <button
-                  onClick={() =>
-                    choose(dataset === "admissions" ? "xor" : "admissions")
-                  }
-                >
-                  <RefreshCw />
-                  Switch Dataset
-                </button>
-                <button onClick={() => fileRef.current?.click()}>
-                  <Upload />
-                  Upload CSV
-                </button>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept=".csv"
-                  onChange={async (e) => {
-                    const f = e.target.files?.[0];
-                    if (!f) return;
-                    try {
-                      const p = parseCsv(await f.text());
-                      setImported(p);
-                      setRows(p);
-                      setDataset("imported");
-                      setStatus(`Imported ${p.length} rows`);
-                    } catch (err) {
-                      setStatus(
-                        err instanceof Error ? err.message : "Import failed",
-                      );
-                    }
-                  }}
-                />
+                <dt>Type</dt>
+                <dd>Numeric</dd>
               </div>
-              {dataLoaded && (
-                <div className="dataset-next-steps">
-                  <b>Next steps</b>
-                  <Link to="/ml/supervised/logistic-regression">Visualize</Link>
+              <div>
+                <dt>Range</dt>
+                <dd>
+                  {fmtTick(xMin)} – {fmtTick(xMax)}
+                </dd>
+              </div>
+              <div>
+                <dt>Positive Rate</dt>
+                <dd>{(positive * 100).toFixed(0)}%</dd>
+              </div>
+            </dl>
+
+            {dataLoaded && (
+              <div className="lr-next-steps">
+                <b>Next steps</b>
+                <div>
                   <Link to="/ml/lab/algorithm-comparison">Dashboard</Link>
                   <Link to="/ml/preprocessing/missing-values">Statistics</Link>
                   <Link to="/ml/lab/dataset-manager">Data Grid</Link>
                 </div>
-              )}
-              <dl>
-                <dt>Feature</dt>
-                <dd>{current.feature}</dd>
-                <dt>Type</dt>
-                <dd>Numeric</dd>
-                <dt>Range</dt>
-                <dd>
-                  {Math.min(...rows.map((v) => v.x))} –{" "}
-                  {Math.max(...rows.map((v) => v.x))}
-                </dd>
-                <dt>Positive Rate</dt>
-                <dd>{(positive * 100).toFixed(0)}%</dd>
-              </dl>
-            </article>
-            <article>
-              <header>
-                <i>3</i>
-                <b>Model</b>
-                <button className="model-reset" onClick={reset}>
-                  Reset
-                </button>
-              </header>
-              <label>
+              </div>
+            )}
+          </section>
+
+          <section>
+            <header>
+              <i>3</i>
+              <b>Model</b>
+              <button className="reset" onClick={reset}>
+                Reset
+              </button>
+            </header>
+            <div className="lr-field">
+              <span>
                 Regularization (L2)
-                <input
-                  className="control-value"
-                  aria-label="L2 regularization value"
-                  type="number"
-                  min="0.01"
-                  max="10"
-                  step="0.01"
-                  value={l2}
-                  onChange={(e) => {
-                    setL2(Number(e.target.value));
-                    setTrained(false);
-                  }}
-                />
+                <b>{l2.toFixed(1)}</b>
+              </span>
+              <div className="lr-slider">
+                0.01
                 <input
                   aria-label="L2 regularization"
                   type="range"
@@ -884,37 +1199,45 @@ export default function LogisticRegressionPage() {
                     setTrained(false);
                   }}
                 />
-              </label>
-              <button className="train" onClick={retrain}>
-                <Play />
-                Train Model
-              </button>
-              <div className="model-status">
-                <b>
-                  Model Status{" "}
-                  <span>{trained ? "● Trained" : "○ Pending"}</span>
-                </b>
-                <small>{status}</small>
-                {trained && <Check />}
+                10
               </div>
-            </article>
-          </aside>
-        </section>
-        <footer className="active-dataset">
-          <b>
-            Active Dataset: <span>{current.name}</span>
-          </b>
-          <i />
-          Samples: {rows.length}
-          <i />
-          Features: 1<i />
-          Positive Rate: {(positive * 100).toFixed(0)}%
-          <button onClick={() => setTab("Dataset")}>
-            <Calculator />
-            View Dataset
-          </button>
-        </footer>
-      </main>
+            </div>
+            <button className="lr-train" onClick={retrain}>
+              <Play />
+              Train Model
+            </button>
+            <div className="lr-status">
+              <b>
+                Model Status
+                <span>{trained ? "● Trained" : "○ Pending"}</span>
+              </b>
+              <small>
+                {status}
+                {trained && <Check />}
+              </small>
+            </div>
+          </section>
+        </aside>
+      </section>
+
+      <footer className="lr-statusbar">
+        <b>
+          Active Dataset: <strong>{current.name}</strong>
+          {current.source === "Recommended" && (
+            <em className="lr-badge">Recommended</em>
+          )}
+        </b>
+        <span className="sep" />
+        Samples: {rows.length}
+        <span className="sep" />
+        Features: {featureCount}
+        <span className="sep" />
+        Positive Rate: {(positive * 100).toFixed(0)}%
+        <button onClick={() => setTab("Dataset")}>
+          <Table2 />
+          View Dataset
+        </button>
+      </footer>
     </div>
   );
 }

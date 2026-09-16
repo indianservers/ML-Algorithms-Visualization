@@ -110,15 +110,18 @@ export function AlgorithmDatasetLoader({ route, category }: { route: string; cat
 
   useEffect(() => {
     let mounted = true;
-    Promise.resolve().then(() => {
+    const applyActive = () => {
       if (!mounted) return;
       const active = loadActiveDataset(route);
       setActiveDataset(active);
       setActiveId(active?.id ?? null);
       setEditableDataset(active ? cloneLoadedDataset(active) : (loaded ? cloneLoadedDataset(loaded) : null));
-    });
+    };
+    Promise.resolve().then(applyActive);
+    window.addEventListener('ml:algorithm-dataset-loaded', applyActive);
     return () => {
       mounted = false;
+      window.removeEventListener('ml:algorithm-dataset-loaded', applyActive);
     };
   }, [loaded, route]);
 

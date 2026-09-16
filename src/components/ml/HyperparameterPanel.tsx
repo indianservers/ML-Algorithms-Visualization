@@ -43,7 +43,7 @@ export const HyperparameterPanel: React.FC<HyperparameterPanelProps> = ({ params
 
   return (
     <Card title="Hyperparameters" className="" actions={<Settings size={14} className="text-gray-400" />}>
-      <div className="space-y-4">
+      <div className="space-y-4" data-guide="algo-params">
         {(presets.length > 0 || params.length > 0) && (
           <div className="flex flex-wrap items-center gap-2">
             {presets.map(preset => (
@@ -68,7 +68,7 @@ export const HyperparameterPanel: React.FC<HyperparameterPanelProps> = ({ params
         )}
         <div className="space-y-3">
           {params.map(param => (
-            <div key={param.key}>
+            <div key={param.key} data-guide={`hp-${param.key}`}>
               <div className="flex items-center justify-between mb-1">
                 <label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 dark:text-gray-300">
                   {param.label}

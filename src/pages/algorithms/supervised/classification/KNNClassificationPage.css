@@ -1,19 +1,19 @@
 .knn-page {
-  --bg: #06101f;
-  --panel: #0b1930;
-  --panel2: #0d1d37;
-  --line: #213957;
-  --muted: #8fa5c4;
-  --text: #e8efff;
+  --bg: #07111e;
+  --panel: var(--glow-panel);
+  --panel2: var(--glow-panel-raised);
+  --line: var(--glow-line);
+  --muted: var(--glow-muted);
+  --text: var(--glow-text);
   position: fixed;
   inset: 0;
-  background: var(--bg);
+  background: var(--glow-page);
   color: var(--text);
-  font:
-    14px Inter,
-    system-ui,
-    sans-serif;
+  font: var(--glow-font);
   overflow: hidden;
+}
+.knn-page.light {
+  filter: var(--glow-light-lift);
 }
 .knn-page * {
   box-sizing: border-box;
@@ -251,7 +251,7 @@
 }
 .knn-header h1 {
   margin: 0;
-  font-size: 29px;
+  font-size: 25px;
   letter-spacing: -0.6px;
 }
 .knn-header > section {
@@ -288,7 +288,7 @@
   height: 54px;
   width: 176px;
   border: 1px solid #72591d;
-  border-radius: 8px;
+  border-radius: var(--glow-radius);
   background: #251f12;
   display: flex;
   align-items: center;
@@ -312,9 +312,9 @@
 .knn-header > button {
   width: 37px;
   height: 37px;
-  border: 1px solid #263d5b;
-  background: #0c1a30;
-  border-radius: 7px;
+  border: 1px solid var(--glow-line-strong);
+  background: var(--glow-panel);
+  border-radius: var(--glow-radius);
   margin-left: 8px;
   display: grid;
   place-items: center;
@@ -326,7 +326,6 @@
   display: flex;
   align-items: stretch;
   padding-left: 16px;
-  background: #071326;
 }
 .knn-tabs > div {
   display: flex;
@@ -356,9 +355,9 @@
   height: 37px;
   width: 214px;
   margin: auto 8px auto auto;
-  border: 1px solid #29415f;
-  border-radius: 6px;
-  background: #0c1a31;
+  border: 1px solid var(--glow-line-strong);
+  border-radius: var(--glow-radius);
+  background: var(--glow-panel);
   display: flex;
   align-items: center;
   padding: 0 9px;
@@ -383,7 +382,7 @@
   height: 37px;
   margin: auto 16px auto 0;
   border: 1px solid #31527c !important;
-  border-radius: 6px;
+  border-radius: var(--glow-radius);
   background: #102645 !important;
   color: #b9dcff;
   display: flex;
@@ -393,11 +392,11 @@
   font-size: 12px !important;
 }
 .knn-workspace {
-  height: 730px;
-  padding: 10px 16px;
+  min-height: 730px;
+  padding: 12px 16px;
   display: grid;
-  grid-template-columns: minmax(700px, 951px) minmax(330px, 415px);
-  gap: 14px;
+  grid-template-columns: minmax(700px, 951px) minmax(280px, 340px);
+  gap: 12px;
 }
 .knn-center {
   min-width: 0;
@@ -406,9 +405,14 @@
 .knn-wide-card,
 .knn-lower > article,
 .knn-controls {
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: linear-gradient(145deg, var(--panel), var(--panel2));
+  border: 1px solid var(--glow-line);
+  border-radius: var(--glow-radius);
+  background: var(--glow-panel);
+}
+.knn-controls {
+  border-color: var(--glow-line-strong);
+  border-radius: var(--glow-radius-lg);
+  background: var(--glow-panel-raised);
 }
 .knn-plot-card,
 .knn-wide-card {
@@ -417,7 +421,7 @@
 }
 .knn-card-title {
   height: 51px;
-  border-bottom: 1px solid #213a58;
+  border-bottom: 1px solid var(--glow-line);
   display: flex;
   align-items: center;
   padding: 0 16px;
@@ -467,10 +471,67 @@
   width: 100% !important;
   height: 422px !important;
   cursor: crosshair;
+  touch-action: none;
+}
+.knn-chart:focus-visible {
+  outline: 2px solid #3d8cff;
+  outline-offset: -2px;
+}
+.knn-chart.tool-move {
+  cursor: grab;
+}
+.knn-chart.tool-paint {
+  cursor: copy;
+}
+.knn-chart.tool-erase {
+  cursor: not-allowed;
+}
+.knn-chart circle {
+  cursor: inherit;
 }
 .knn-chart text {
   fill: #7990ae;
   font-size: 10px;
+}
+/* The aurora surface has to live inside the SVG so it stays clipped to the
+   plot rect; the colours still come from the shared glow tokens. */
+.knn-chart .aurora-teal-core {
+  stop-color: var(--glow-canvas-teal);
+}
+.knn-chart .aurora-teal-edge {
+  stop-color: var(--glow-canvas-teal);
+  stop-opacity: 0;
+}
+.knn-chart .aurora-purple-core {
+  stop-color: var(--glow-canvas-purple);
+}
+.knn-chart .aurora-purple-mid {
+  stop-color: var(--glow-canvas-purple-mid);
+}
+.knn-chart .aurora-purple-deep {
+  stop-color: var(--glow-canvas-purple-deep);
+}
+.knn-chart .knn-plot-frame {
+  fill: none;
+  stroke: var(--glow-canvas-line);
+}
+.knn-chart .knn-plot-surface {
+  isolation: isolate;
+}
+.knn-chart .knn-plot-base {
+  fill: url(#knn-aurora-purple);
+}
+.knn-chart .knn-plot-wash {
+  fill: url(#knn-aurora-teal);
+}
+.knn-chart .knn-plot-grid {
+  stroke: var(--glow-canvas-grid);
+}
+/* Screening the class regions keeps the aurora underneath readable instead of
+   flattening it to navy, and the boundary still steps as a hue change. */
+.knn-chart .knn-plot-regions {
+  mix-blend-mode: screen;
+  opacity: 0.72;
 }
 .knn-lower {
   height: 232px;
@@ -548,7 +609,7 @@
   width: 68px;
   height: 68px;
   border-radius: 50%;
-  background: #0b1930;
+  background: var(--glow-panel);
   display: grid;
   place-content: center;
   text-align: center;
@@ -645,8 +706,9 @@
   gap: 5px;
 }
 .knn-controls {
-  height: 100%;
-  overflow: hidden;
+  align-self: start;
+  max-height: calc(100vh - 24px);
+  overflow: auto;
 }
 .knn-controls-title {
   height: 66px;
@@ -680,9 +742,9 @@
   margin-left: auto;
   width: 30px;
   height: 30px;
-  border: 1px solid #314866;
-  background: #0e203b;
-  border-radius: 5px;
+  border: 1px solid #35455a;
+  background: var(--glow-panel);
+  border-radius: 4px;
   display: grid;
   place-items: center;
 }
@@ -711,19 +773,19 @@
   margin-top: 5px;
   width: 100%;
   height: 30px;
-  border: 1px solid #2d4667;
-  border-radius: 5px;
-  background: #08162a;
+  border: 1px solid #35455a;
+  border-radius: 4px;
+  background: var(--glow-panel);
   padding: 0 8px;
   font-family: ui-monospace, monospace;
 }
 .knn-reset-point {
   width: 100%;
-  height: 29px;
+  height: 32px;
   margin-top: 9px;
-  border: 1px solid #2a4d76;
-  background: #102542;
-  border-radius: 5px;
+  border: 1px solid #35455a;
+  background: var(--glow-panel);
+  border-radius: 4px;
   color: #73c8ff;
   font-size: 10px;
   display: flex;
@@ -735,23 +797,91 @@
   height: 36px;
   display: grid;
   grid-template-columns: 42px 1fr 42px;
-  border: 1px solid #2b4668;
-  border-radius: 6px;
+  border: 1px solid #334359;
+  border-radius: 4px;
   overflow: hidden;
 }
 .knn-stepper button {
   border: 0;
-  background: #112743;
+  background: var(--glow-inset);
   display: grid;
   place-items: center;
 }
+.knn-stepper button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.knn-tools {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.knn-tools button {
+  height: 52px;
+  display: grid;
+  place-items: center;
+  gap: 4px;
+  border: 1px solid #35455a;
+  border-radius: 4px;
+  background: var(--glow-panel);
+  color: #9db0ca;
+  font-size: 9px;
+}
+.knn-tools button.active {
+  border-color: var(--glow-accent);
+  background: #102b50;
+  color: #dceaff;
+  box-shadow: var(--glow-accent-ring);
+}
+.knn-tools svg {
+  width: 15px;
+  height: 15px;
+}
+.knn-tool-hint {
+  margin: 9px 0 0;
+  color: #7f94b0;
+  font-size: 9px;
+  line-height: 1.5;
+}
+.knn-class-picker {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+.knn-class-picker button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid #35455a;
+  border-radius: 4px;
+  background: var(--glow-panel);
+  color: #a9bbd2;
+  font-size: 9px;
+  text-align: left;
+}
+.knn-class-picker button.active {
+  background: #102b50;
+  color: #eaf3ff;
+  box-shadow: 0 0 5px currentcolor;
+}
+.knn-class-picker b {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.knn-neighbors > div.hovered {
+  background: #12294a;
+}
 .knn-stepper input {
   border: 0;
-  border-left: 1px solid #2b4668;
-  border-right: 1px solid #2b4668;
-  background: #08172b;
+  border-inline: 1px solid #334359;
+  background: var(--glow-inset);
   text-align: center;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
 }
 .knn-controls input[type="range"] {
@@ -776,15 +906,15 @@
 }
 .knn-metric-options button {
   height: 65px;
-  border: 1px solid #2a405e;
-  border-radius: 6px;
-  background: #0a172b;
+  border: 1px solid #35455a;
+  border-radius: 4px;
+  background: var(--glow-panel);
   padding: 6px 4px;
 }
 .knn-metric-options button.active {
-  border-color: #3a91ff;
+  border-color: var(--glow-accent);
   background: #102b50;
-  box-shadow: inset 0 0 0 1px #317fe4;
+  box-shadow: var(--glow-accent-ring);
 }
 .knn-metric-options i {
   display: grid;
@@ -867,12 +997,12 @@
   margin-top: 3px;
 }
 .knn-status {
-  position: absolute;
-  left: 16px;
-  right: 16px;
-  bottom: 0;
-  height: 40px;
-  border-top: 1px solid var(--line);
+  height: 41px;
+  margin: 4px 16px 20px;
+  padding: 0 20px;
+  border: 1px solid var(--glow-line);
+  border-radius: var(--glow-radius);
+  background: var(--glow-panel);
   display: flex;
   align-items: center;
   font-size: 10px;
@@ -937,8 +1067,8 @@
 .knn-table-wrap {
   height: 370px;
   overflow: auto;
-  border: 1px solid #213a58;
-  border-radius: 5px;
+  border: 1px solid var(--glow-line);
+  border-radius: var(--glow-radius);
 }
 .knn-dataset-card table {
   width: 100%;
@@ -947,7 +1077,7 @@
 .knn-dataset-card th {
   position: sticky;
   top: 0;
-  background: #10213b;
+  background: var(--glow-inset);
   color: #8095b1;
   font-size: 9px;
   text-align: left;
@@ -962,8 +1092,8 @@
 .knn-dataset-card td select {
   width: 100%;
   height: 25px;
-  background: #08162a;
-  border: 1px solid #29425f;
+  background: var(--glow-panel);
+  border: 1px solid #35455a;
   border-radius: 4px;
   padding: 0 6px;
 }
@@ -999,8 +1129,8 @@
 .knn-training-flow b {
   width: 170px;
   height: 67px;
-  border: 1px solid #294868;
-  border-radius: 7px;
+  border: 1px solid var(--glow-line-strong);
+  border-radius: var(--glow-radius);
   display: grid;
   place-content: center;
   color: #5dbfff;
@@ -1039,9 +1169,9 @@
 }
 .knn-metric-grid article {
   height: 105px;
-  border: 1px solid #294360;
-  border-radius: 7px;
-  background: #0a172a;
+  border: 1px solid var(--glow-line-strong);
+  border-radius: var(--glow-radius);
+  background: var(--glow-panel);
   display: grid;
   place-content: center;
   text-align: center;
@@ -1089,9 +1219,9 @@
 }
 .knn-compare-grid article {
   height: 290px;
-  border: 1px solid #294361;
-  border-radius: 8px;
-  background: #09172b;
+  border: 1px solid var(--glow-line-strong);
+  border-radius: var(--glow-radius);
+  background: var(--glow-panel);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1099,8 +1229,8 @@
   cursor: pointer;
 }
 .knn-compare-grid article.active {
-  border-color: #358eff;
-  box-shadow: 0 0 25px #1f76e52a;
+  border-color: var(--glow-accent);
+  box-shadow: var(--glow-accent-ring);
 }
 .knn-compare-grid svg {
   width: 35px;
@@ -1134,9 +1264,9 @@
 }
 .knn-explain-card article {
   height: 280px;
-  border: 1px solid #294361;
-  border-radius: 8px;
-  background: #09172b;
+  border: 1px solid var(--glow-line-strong);
+  border-radius: var(--glow-radius);
+  background: var(--glow-panel);
   padding: 28px;
 }
 .knn-explain-card article > b {
@@ -1151,15 +1281,15 @@
 }
 .knn-toast {
   position: fixed;
-  right: 24px;
-  bottom: 24px;
   z-index: 20;
-  padding: 11px 18px;
-  background: #1761bd;
-  border: 1px solid #5faeff;
-  border-radius: 7px;
-  box-shadow: 0 12px 30px #0009;
-  font-size: 12px;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 18px;
+  border: 1px solid var(--glow-toast-line);
+  border-radius: var(--glow-radius);
+  background: var(--glow-toast-bg);
+  color: white;
 }
 @media (max-width: 1200px) {
   .knn-page {
@@ -1211,12 +1341,6 @@
   }
   .knn-lower > article {
     height: 220px;
-  }
-  .knn-status {
-    position: relative;
-    left: auto;
-    right: auto;
-    padding: 0 16px;
   }
   .knn-home {
     position: static;
@@ -1316,7 +1440,7 @@
     display: block;
   }
   .knn-status {
-    margin: 0 9px;
+    margin: 4px 9px 16px;
   }
   .knn-status p {
     display: none;

@@ -12,7 +12,7 @@ export const AlgorithmIntroduction: React.FC<AlgorithmIntroductionProps> = ({ al
   const [open, setOpen] = React.useState(() => typeof window === 'undefined' ? true : window.matchMedia('(min-width: 768px)').matches);
 
   return (
-    <section data-learning-explanation className="mt-4 rounded-xl border border-blue-200 bg-blue-50/70 p-4 dark:border-blue-900/70 dark:bg-blue-950/20" aria-label={`${algorithm.label} introduction`}>
+    <section data-guide="algo-idea" data-learning-explanation className="mt-4 rounded-xl border border-blue-200 bg-blue-50/70 p-4 dark:border-blue-900/70 dark:bg-blue-950/20" aria-label={`${algorithm.label} introduction`}>
       <div className="flex items-start gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-blue-600 shadow-sm dark:bg-gray-900 dark:text-blue-300">
           <BookOpen size={18} />
@@ -40,7 +40,7 @@ export const AlgorithmIntroduction: React.FC<AlgorithmIntroductionProps> = ({ al
                   </p>
                   {intro.useWhen}
                 </div>
-                <div className="rounded-lg bg-white/75 p-3 text-xs leading-5 text-gray-700 dark:bg-gray-900/40 dark:text-gray-300">
+                <div className="rounded-lg bg-white/75 p-3 text-xs leading-5 text-gray-700 dark:bg-gray-900/40 dark:text-gray-300" data-guide="algo-watch">
                   <p className="mb-1 flex items-center gap-2 font-bold text-gray-900 dark:text-white">
                     <Eye size={14} className="text-blue-600 dark:text-blue-300" />
                     Watch for

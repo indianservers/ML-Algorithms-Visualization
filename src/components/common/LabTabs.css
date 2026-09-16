@@ -1,0 +1,120 @@
+.lab-tab-hidden {
+  display: none !important;
+}
+
+/* Lesson dashboards position their panels absolutely for the all-panels tab.
+   Focusing a single tab reflows the survivors so nothing leaves a hole. */
+.lab-tab-focus {
+  position: static !important;
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  align-content: start;
+  gap: 14px;
+  height: auto !important;
+  min-height: 0 !important;
+}
+.lab-tab-focus > * {
+  position: relative !important;
+  inset: auto !important;
+  width: auto !important;
+  max-width: none !important;
+  grid-area: auto !important;
+  transform: none !important;
+}
+.lab-tab-focus > nav,
+.lab-tab-focus > h1,
+.lab-tab-focus > h2,
+.lab-tab-focus > .lab-tab-lesson {
+  grid-column: 1 / -1 !important;
+  height: auto !important;
+}
+
+.lab-tab-focus > [class*="-data"],
+.lab-tab-focus > [class*="-visual"],
+.lab-tab-focus > [class*="-viz"],
+.lab-tab-focus > [class*="-stage"],
+.lab-tab-focus > [class*="-work"],
+.lab-tab-focus > [class*="-plot"],
+.lab-tab-focus > [class*="-canvas"] {
+  grid-column: 1 / -1 !important;
+}
+.lab-tab-focus > nav {
+  position: relative !important;
+}
+
+.lab-tab-lesson {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px 18px;
+  align-content: start;
+  border: 1px solid var(--border, rgba(127, 143, 175, 0.35));
+  border-radius: 8px;
+  background: var(--panel, rgba(127, 143, 175, 0.06));
+  padding: 16px 18px 20px;
+}
+.lab-tab-lesson > header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.lab-tab-lesson > header b {
+  font-size: 15px;
+}
+.lab-tab-lesson > header span {
+  font-size: 11px;
+  opacity: 0.7;
+}
+.lab-tab-lesson h3 {
+  font-size: 11px;
+  letter-spacing: 0.35px;
+  text-transform: uppercase;
+  opacity: 0.75;
+  margin: 0 0 6px;
+}
+.lab-tab-lesson p {
+  margin: 0 0 8px;
+  line-height: 1.6;
+}
+.lab-tab-lesson ul {
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.65;
+}
+.lab-tab-lesson pre {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: rgba(127, 143, 175, 0.14);
+  overflow: auto;
+  white-space: pre-wrap;
+  line-height: 1.55;
+}
+.lab-tab-formula {
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: rgba(127, 143, 175, 0.14);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.lab-tab-tip {
+  border-left: 2px solid currentColor;
+  padding-left: 10px;
+  opacity: 0.8;
+}
+.lab-tab-peers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.lab-tab-peers a,
+.lab-tab-peers span {
+  border: 1px solid var(--border, rgba(127, 143, 175, 0.35));
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  color: inherit;
+  text-decoration: none;
+}
+.lab-tab-peers a:hover {
+  border-color: currentColor;
+}

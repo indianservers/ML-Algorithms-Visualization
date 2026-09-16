@@ -5,6 +5,10 @@ import {
   binaryMetrics,
   precisionRecallCurve,
 } from "../../../lib/math/metrics";
+import {
+  LabLessonPanel,
+  useLabTabs,
+} from "../../../components/common/LabTabs";
 import "./PrecisionRecallApprovedPage.css";
 
 type ScoreDataset = {
@@ -118,7 +122,7 @@ export default function PrecisionRecallApprovedPage() {
   const [customDataset, setCustomDataset] = useState<ScoreDataset | null>(null);
   const [threshold, setThreshold] = useState(0.37);
   const [bins, setBins] = useState(50);
-  const [tab, setTab] = useState("Visualize");
+  const { tab, setTab, panel, layout, lesson } = useLabTabs("Visualize", "Visualize", ["Learn", "Compare", "Explain"]);
   const [showIso, setShowIso] = useState(true);
   const [showBaseline, setShowBaseline] = useState(true);
   const [showPoint, setShowPoint] = useState(true);
@@ -329,25 +333,26 @@ export default function PrecisionRecallApprovedPage() {
             setMessage("View saved");
           }}>⌘ Save View</button>
         </div>
-        <nav className="pr-tabs">
+        <nav className="pr-tabs" role="tablist" aria-label="Precision-recall sections">
           {["▤ Learn", "▧ Visualize", "▤ Dataset", "◇ Transform", "♧ Train", "›", "▥ Metrics", "⌘ Compare", "│", "♙ Explain"].map((item) => {
             const name = item.replace(/^[^A-Za-z]+/, "");
             if (item === "›" || item === "│") return <i key={item}>{item}</i>;
-            return <button className={tab === name ? "active" : ""} onClick={() => setTab(name)} key={item}>{item}</button>;
+            return <button role="tab" aria-selected={tab === name} className={tab === name ? "active" : ""} onClick={() => setTab(name)} key={item}>{item}</button>;
           })}
         </nav>
       </header>
 
       <main className="pr-main">
-        <section className="pr-intro panel">
+        {lesson && <LabLessonPanel tab={tab} route="/ml/evaluation/precision-recall-curve" />}
+        <section className={`pr-intro panel${panel("Dataset", "Transform", "Train", "Metrics")}`}>
           <article><b>OBJECTIVE</b><p>Understand the precision-recall trade-off across classification thresholds and identify the best threshold for your use case.</p></article>
           <article><b>HOW IT WORKS</b><p>Each point on the curve is computed at a specific threshold. Moving the threshold changes precision and recall.</p></article>
           <article><b>PROGRESS</b><p>Interact with the threshold slider to see how the curve, predictions, and metrics update in real time.</p></article>
           <div className="pr-progress"><span>100%</span></div>
         </section>
 
-        <section className="pr-work-row">
-          <article className="panel pr-distribution">
+        <section className={`pr-work-row${layout}`}>
+          <article className={`panel pr-distribution${panel("Dataset", "Transform")}`}>
             <h2>Score Distribution <small>ⓘ</small></h2>
             <div className="dist-legend">
               <span className="positive">● Positive (Actual)</span><b>{formatCount(current.positiveCount)} ({(prevalence * 100).toFixed(1)}%)</b>
@@ -375,7 +380,7 @@ export default function PrecisionRecallApprovedPage() {
             <p className="predicted">Positives Predicted: <b>{formatCount(current.predictedPositive)} ({(current.predictedPositive / dataset.actual.length * 100).toFixed(1)}%)</b> Actual Positives: <b>{formatCount(current.positiveCount)} ({(prevalence * 100).toFixed(1)}%)</b></p>
           </article>
 
-          <article className="panel pr-curve">
+          <article className={`panel pr-curve${panel("Train")}`}>
             <h2>Precision-Recall Curve <small>ⓘ</small></h2>
             <label><input type="checkbox" checked={showIso} onChange={(event) => setShowIso(event.target.checked)} /> Show iso-F1 lines</label>
             <svg viewBox="0 0 510 290" role="img" aria-label="Precision-recall curve">
@@ -395,7 +400,7 @@ export default function PrecisionRecallApprovedPage() {
             <div className="curve-legend"><span>━ PR Curve (AP = {ap.toFixed(3)})</span><span>● Operating Point (Threshold = {threshold.toFixed(2)})</span><button onClick={() => setMessage("Zoom reset")}>⟳ Reset Zoom</button></div>
           </article>
 
-          <article className="panel pr-operating">
+          <article className={`panel pr-operating${panel("Metrics")}`}>
             <h2>Operating Point (Threshold = {threshold.toFixed(2)}) <small>ⓘ</small></h2>
             <div className="metric-grid">
               <div><span>Precision</span><strong>{current.precision.toFixed(3)}</strong></div>
@@ -409,21 +414,21 @@ export default function PrecisionRecallApprovedPage() {
           </article>
         </section>
 
-        <section className="pr-lower-row">
-          <article className="panel imbalance"><h2>Class Imbalance Context <small>ⓘ</small></h2><div className="donut" style={{ "--positive-share": `${prevalence * 360}deg` } as React.CSSProperties}><b>{(prevalence * 100).toFixed(1)}%</b></div><div className="imbalance-legend"><span className="positive">● {dataset.positiveName}</span><b>{formatCount(current.positiveCount)} ({(prevalence * 100).toFixed(1)}%)</b><span className="negative">● {dataset.negativeName}</span><b>{formatCount(current.negativeCount)} ({((1 - prevalence) * 100).toFixed(1)}%)</b></div><p>High class imbalance makes accuracy misleading. Precision-Recall Curve is the right tool.</p></article>
-          <article className="panel suggestions"><h2>Threshold Suggestions <small>ⓘ</small></h2>{[
+        <section className={`pr-lower-row${layout}`}>
+          <article className={`panel imbalance${panel("Dataset")}`}><h2>Class Imbalance Context <small>ⓘ</small></h2><div className="donut" style={{ "--positive-share": `${prevalence * 360}deg` } as React.CSSProperties}><b>{(prevalence * 100).toFixed(1)}%</b></div><div className="imbalance-legend"><span className="positive">● {dataset.positiveName}</span><b>{formatCount(current.positiveCount)} ({(prevalence * 100).toFixed(1)}%)</b><span className="negative">● {dataset.negativeName}</span><b>{formatCount(current.negativeCount)} ({((1 - prevalence) * 100).toFixed(1)}%)</b></div><p>High class imbalance makes accuracy misleading. Precision-Recall Curve is the right tool.</p></article>
+          <article className={`panel suggestions${panel("Transform", "Metrics")}`}><h2>Threshold Suggestions <small>ⓘ</small></h2>{[
             ["Max F1 Score", suggestions.maxF1, "blue"],
             ["High Recall (≥ 0.80)", suggestions.highRecall, "green"],
             ["High Precision (≥ 0.50)", suggestions.highPrecision, "amber"],
           ].map(([label, metric, color]) => { const item = metric as { threshold: number; precision: number; recall: number }; return <button key={label as string} onClick={() => setThreshold(Number(item.threshold.toFixed(2)))}><i className={color as string}>✓</i><span>{label as string}<small>Threshold: {item.threshold.toFixed(2)}</small></span><em>Precision: {item.precision.toFixed(3)} Recall: {item.recall.toFixed(3)}</em></button>; })}</article>
-          <article className="panel summary"><h2>PR AUC Summary <small>ⓘ</small></h2><div><span>Average Precision (AP)<strong>{ap.toFixed(3)}</strong></span><span>Baseline (Prevalence)<strong>{prevalence.toFixed(3)}</strong></span></div><hr /><p>Model lift over baseline<strong>{(ap / Math.max(.0001, prevalence)).toFixed(2)}×</strong></p></article>
-          <article className="panel trend"><h2>Threshold Impact Trend <small>ⓘ</small></h2><table><thead><tr><th>Threshold</th><th>Precision</th><th>Recall</th><th>F1 Score</th><th>Pos Pred %</th></tr></thead><tbody>{trends.map((row, index) => <tr className={index === 2 ? "active" : ""} key={`${row.threshold}-${index}`} onClick={() => setThreshold(row.threshold)}><td>{row.threshold.toFixed(2)}</td><td>{row.precision.toFixed(3)} <i style={{width:`${row.precision * 30}px`}} /></td><td>{row.recall.toFixed(3)} <i style={{width:`${row.recall * 30}px`}} /></td><td>{row.f1.toFixed(3)} <i style={{width:`${row.f1 * 30}px`}} /></td><td>{(row.predictedPositive / dataset.actual.length * 100).toFixed(1)}%</td></tr>)}</tbody></table></article>
+          <article className={`panel summary${panel("Train", "Metrics")}`}><h2>PR AUC Summary <small>ⓘ</small></h2><div><span>Average Precision (AP)<strong>{ap.toFixed(3)}</strong></span><span>Baseline (Prevalence)<strong>{prevalence.toFixed(3)}</strong></span></div><hr /><p>Model lift over baseline<strong>{(ap / Math.max(.0001, prevalence)).toFixed(2)}×</strong></p></article>
+          <article className={`panel trend${panel("Train", "Metrics")}`}><h2>Threshold Impact Trend <small>ⓘ</small></h2><table><thead><tr><th>Threshold</th><th>Precision</th><th>Recall</th><th>F1 Score</th><th>Pos Pred %</th></tr></thead><tbody>{trends.map((row, index) => <tr className={index === 2 ? "active" : ""} key={`${row.threshold}-${index}`} onClick={() => setThreshold(row.threshold)}><td>{row.threshold.toFixed(2)}</td><td>{row.precision.toFixed(3)} <i style={{width:`${row.precision * 30}px`}} /></td><td>{row.recall.toFixed(3)} <i style={{width:`${row.recall * 30}px`}} /></td><td>{row.f1.toFixed(3)} <i style={{width:`${row.f1 * 30}px`}} /></td><td>{(row.predictedPositive / dataset.actual.length * 100).toFixed(1)}%</td></tr>)}</tbody></table></article>
         </section>
       </main>
 
       <aside className="pr-controls">
-        <section className="panel"><h2>Dataset <small>ⓘ</small></h2><select aria-label="Dataset" value={customDataset ? "custom" : datasetIndex} onChange={(event) => event.target.value !== "custom" && changeDataset(Number(event.target.value))}>{customDataset && <option value="custom">{customDataset.name}</option>}{datasets.map((item, index) => <option value={index} key={item.name}>● {item.name}</option>)}</select><p>Binary classification • {prevalence < .1 ? "Highly imbalanced" : "Imbalanced"}<br /><b>{formatCount(dataset.actual.length)} rows • {dataset.featureCount} features • {(prevalence * 100).toFixed(1)}% positive</b></p><div><button onClick={() => changeDataset((datasetIndex + 1) % datasets.length)}>⇄ Switch Dataset</button><button onClick={() => uploadRef.current?.click()}>⇧ Upload Dataset</button><input hidden ref={uploadRef} type="file" accept=".csv" onChange={(event) => upload(event.target.files?.[0])} /></div><hr /><label>Positive Class<select aria-label="Positive Class" value={dataset.positiveName} onChange={() => setMessage("Positive class selected")}><option>{dataset.positiveName} (1)</option></select></label></section>
-        <section className="panel"><h2>Controls</h2><label>Threshold<div className="control-line"><input aria-label="Control Threshold" type="range" min="0.01" max="0.99" step="0.01" value={threshold} onInput={(event) => setThreshold(Number(event.currentTarget.value))} onChange={(event) => setThreshold(Number(event.target.value))} /><input aria-label="Control threshold value" type="number" min="0.01" max="0.99" step="0.01" value={threshold} onChange={(event) => setThreshold(Math.max(.01, Math.min(.99, Number(event.target.value))))} /></div></label><label>Smoothing (Bins) <small>ⓘ</small><select aria-label="Smoothing Bins" value={bins} onChange={(event) => setBins(Number(event.target.value))}>{[20,35,50,75].map((value) => <option key={value}>{value}</option>)}</select></label><label className="check"><input type="checkbox" checked={showBaseline} onChange={(event) => setShowBaseline(event.target.checked)} /> Show PR AUC Baseline (Prevalence)</label><p className="baseline-key">Baseline (No Skill): {prevalence.toFixed(3)} <span>– – –</span></p><hr /><b>Display Options</b><label className="check"><input type="checkbox" checked={showIso} onChange={(event) => setShowIso(event.target.checked)} /> Show iso-F1 lines <small>ⓘ</small></label><label className="check"><input type="checkbox" checked={showPoint} onChange={(event) => setShowPoint(event.target.checked)} /> Show operating point <small>ⓘ</small></label><label className="check"><input type="checkbox" checked={showConfidence} onChange={(event) => setShowConfidence(event.target.checked)} /> Show confidence bands <small>ⓘ</small></label></section>
+        <section className={`panel${panel("Dataset")}`}><h2>Dataset <small>ⓘ</small></h2><select aria-label="Dataset" value={customDataset ? "custom" : datasetIndex} onChange={(event) => event.target.value !== "custom" && changeDataset(Number(event.target.value))}>{customDataset && <option value="custom">{customDataset.name}</option>}{datasets.map((item, index) => <option value={index} key={item.name}>● {item.name}</option>)}</select><p>Binary classification • {prevalence < .1 ? "Highly imbalanced" : "Imbalanced"}<br /><b>{formatCount(dataset.actual.length)} rows • {dataset.featureCount} features • {(prevalence * 100).toFixed(1)}% positive</b></p><div><button onClick={() => changeDataset((datasetIndex + 1) % datasets.length)}>⇄ Switch Dataset</button><button onClick={() => uploadRef.current?.click()}>⇧ Upload Dataset</button><input hidden ref={uploadRef} type="file" accept=".csv" onChange={(event) => upload(event.target.files?.[0])} /></div><hr /><label>Positive Class<select aria-label="Positive Class" value={dataset.positiveName} onChange={() => setMessage("Positive class selected")}><option>{dataset.positiveName} (1)</option></select></label></section>
+        <section className={`panel${panel("Transform", "Train", "Metrics")}`}><h2>Controls</h2><label>Threshold<div className="control-line"><input aria-label="Control Threshold" type="range" min="0.01" max="0.99" step="0.01" value={threshold} onInput={(event) => setThreshold(Number(event.currentTarget.value))} onChange={(event) => setThreshold(Number(event.target.value))} /><input aria-label="Control threshold value" type="number" min="0.01" max="0.99" step="0.01" value={threshold} onChange={(event) => setThreshold(Math.max(.01, Math.min(.99, Number(event.target.value))))} /></div></label><label>Smoothing (Bins) <small>ⓘ</small><select aria-label="Smoothing Bins" value={bins} onChange={(event) => setBins(Number(event.target.value))}>{[20,35,50,75].map((value) => <option key={value}>{value}</option>)}</select></label><label className="check"><input type="checkbox" checked={showBaseline} onChange={(event) => setShowBaseline(event.target.checked)} /> Show PR AUC Baseline (Prevalence)</label><p className="baseline-key">Baseline (No Skill): {prevalence.toFixed(3)} <span>– – –</span></p><hr /><b>Display Options</b><label className="check"><input type="checkbox" checked={showIso} onChange={(event) => setShowIso(event.target.checked)} /> Show iso-F1 lines <small>ⓘ</small></label><label className="check"><input type="checkbox" checked={showPoint} onChange={(event) => setShowPoint(event.target.checked)} /> Show operating point <small>ⓘ</small></label><label className="check"><input type="checkbox" checked={showConfidence} onChange={(event) => setShowConfidence(event.target.checked)} /> Show confidence bands <small>ⓘ</small></label></section>
         <Link className="advanced-link" reloadDocument to="?advanced=1">Open compact PR lab →</Link>
       </aside>
 

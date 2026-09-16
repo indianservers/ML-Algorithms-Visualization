@@ -1,126 +1,118 @@
-/* RootLayout already provides the suite sidebar. Hide each lesson's native
-   sidebar and collapse the grid track it reserved so content does not sit
-   behind an empty column. */
+/* Nested algorithm labs live inside RootLayout. Do not treat them as a
+   second full-screen app (fixed/inset), and do not keep a column for the
+   lesson's own sidebar once the suite sidebar is showing. */
+
+#main-content [class*="-page"],
+#main-content [class*="-shell"],
+#main-content [class*="-approved"] {
+  position: relative !important;
+  inset: auto !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  min-height: 100vh;
+  overflow: visible !important;
+  /* Several lessons still pin their own header/rail/footer with position:fixed
+     and top:0. A transform makes this root their containing block, so they land
+     inside the page instead of over the suite's Home bar. */
+  transform: translateZ(0);
+}
+
+#main-content [class*="-shell"],
+#main-content [class*="-shell"].collapsed,
+#main-content [class*="-shell"].sidebar-collapsed {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+#main-content [class*="-page"] > main,
+#main-content [class*="-shell"] > main,
+#main-content [class*="-approved"] > main,
+#main-content .mlr-main,
+#main-content .gb-body > main,
+#main-content .gb-main,
+#main-content .slr-main,
+#main-content .poly-main,
+#main-content .ridge-main,
+#main-content .lasso-main,
+#main-content .elastic-main,
+#main-content .tree-main,
+#main-content .svr-main,
+#main-content .rf-main {
+  position: relative !important;
+  inset: auto !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: 0 !important;
+  margin-left: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  min-height: 100vh;
+  overflow: visible !important;
+}
+
 main aside[class$="-side"]:not([class*="control"]):not([class*="right"]):not(
     [class*="inspector"]
   ) {
   display: none !important;
 }
 
-.mlr-shell,
-.poly-shell,
-.ridge-shell,
-.lasso-shell,
-.elastic-shell,
-.tree-shell,
-.slr-shell,
-.slr-shell.collapsed {
-  grid-template-columns: minmax(0, 1fr) !important;
-  height: auto !important;
-  min-height: 100% !important;
-  overflow: visible !important;
-}
-
 .ma-page {
-  grid-template-columns: 0 minmax(0, 1fr) 282px !important;
+  grid-template-columns: minmax(0, 1fr) 282px !important;
 }
 .hw-page {
-  grid-template-columns: 0 minmax(0, 1fr) 297px !important;
+  grid-template-columns: minmax(0, 1fr) 297px !important;
 }
 .es-page {
-  grid-template-columns: 0 minmax(0, 1fr) 354px !important;
+  grid-template-columns: minmax(0, 1fr) 354px !important;
 }
 .pr-page {
-  grid-template-columns: 0 minmax(0, 1fr) 290px !important;
+  grid-template-columns: minmax(0, 1fr) 290px !important;
 }
 .rm-page {
-  grid-template-columns: 0 minmax(0, 1fr) 257px !important;
+  grid-template-columns: minmax(0, 1fr) 257px !important;
 }
 .lf-page {
-  grid-template-columns: 0 minmax(0, 1fr) 330px !important;
+  grid-template-columns: minmax(0, 1fr) 330px !important;
 }
 .rf-page {
-  grid-template-columns: 0 minmax(0, 1fr) 244px !important;
+  grid-template-columns: minmax(0, 1fr) 244px !important;
 }
 .ar-page {
-  grid-template-columns: 0 minmax(0, 1fr) 332px !important;
+  grid-template-columns: minmax(0, 1fr) 332px !important;
 }
 .od-page {
-  grid-template-columns: 0 minmax(0, 1fr) 263px !important;
+  grid-template-columns: minmax(0, 1fr) 263px !important;
 }
 .mv-page {
-  grid-template-columns: 0 minmax(0, 1fr) 386px !important;
+  grid-template-columns: minmax(0, 1fr) 386px !important;
 }
 .sc-page {
-  grid-template-columns: 0 minmax(0, 1fr) 274px !important;
+  grid-template-columns: minmax(0, 1fr) 274px !important;
 }
 .bv-page {
-  grid-template-columns: 0 minmax(0, 1fr) 278px !important;
+  grid-template-columns: minmax(0, 1fr) 278px !important;
 }
 .fs-page {
-  grid-template-columns: 0 405px 514px minmax(0, 1fr) !important;
+  grid-template-columns: 405px 514px minmax(0, 1fr) !important;
 }
 .ce-page {
-  grid-template-columns: 0 214px minmax(0, 1fr) 327px !important;
+  grid-template-columns: 214px minmax(0, 1fr) 327px !important;
 }
 .gf-page {
-  grid-template-columns: 0 minmax(0, 1fr) 306px !important;
+  grid-template-columns: minmax(0, 1fr) 306px !important;
 }
 .ad-page {
-  grid-template-columns: 0 minmax(0, 1fr) 248px !important;
+  grid-template-columns: minmax(0, 1fr) 248px !important;
 }
 .pf-page,
 .pf-page.collapsed {
-  grid-template-columns: 0 245px 359px 510px minmax(0, 1fr) !important;
-}
-
-.ma-page,
-.hw-page,
-.es-page,
-.pr-page,
-.rm-page,
-.lf-page,
-.rf-page,
-.ar-page,
-.od-page,
-.mv-page,
-.sc-page,
-.bv-page,
-.fs-page,
-.ce-page,
-.gf-page,
-.ad-page,
-.pf-page,
-.ql-approved {
-  height: auto !important;
-  min-height: 100% !important;
-  overflow: visible !important;
-}
-
-.cnn-page,
-.mlp-page,
-.pc-page,
-.lstm-page,
-.gru-page,
-.rnn-page,
-.nnp-page,
-.bp-page,
-.mha-page,
-.transfer-page,
-.few-page,
-.attention-page,
-.builder-page,
-.ae-page,
-.ts-page,
-.ld-page,
-.um-page,
-.kp-page,
-.cv-page,
-.split-page,
-.cm-page,
-.roc-page,
-.bv-page {
-  padding-left: 12px !important;
+  grid-template-columns: 245px 359px 510px minmax(0, 1fr) !important;
 }
 
 aside.mlr-sidebar,
@@ -147,7 +139,10 @@ aside.km-nav,
 aside.hc-nav,
 aside.ql-rail,
 aside.builder-side,
-aside.attention-side {
+aside.attention-side,
+aside.lstm-side,
+aside.gbc-nav,
+aside.ada-nav {
   display: none !important;
 }
 
@@ -157,6 +152,101 @@ aside.attention-side {
 .slr-brand,
 .poly-brand,
 .mlr-brand,
-.tree-brand {
+.tree-brand,
+.lr-brand,
+.knn-brand,
+.nb-brand,
+.dt-brand,
+.rfc-brand,
+.svmc-brand {
   display: none !important;
+}
+
+.suite-page-continuation {
+  margin: 0;
+  padding: 20px 24px 28px;
+  border-top: 1px solid #d5e0ef;
+  background: inherit;
+}
+
+.dark .suite-page-continuation {
+  border-top-color: #24344d;
+}
+
+.suite-page-continuation > * {
+  max-width: none !important;
+  margin: 0 !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.suite-page-continuation > * + * {
+  margin-top: 20px !important;
+}
+
+/* Keep lab control docks beside the canvas instead of overlaying it. */
+#main-content [class*="-page"]:has(> aside[class*="controls"]),
+#main-content [class*="-shell"]:has(> aside[class*="controls"]),
+#main-content [class*="-approved"]:has(> aside[class*="controls"]) {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 340px) !important;
+  gap: 12px !important;
+  padding: 12px !important;
+}
+
+#main-content [class*="-page"] > aside[class*="controls"],
+#main-content [class*="-shell"] > aside[class*="controls"],
+#main-content [class*="-approved"] > aside[class*="controls"] {
+  position: relative !important;
+  inset: auto !important;
+  top: auto !important;
+  right: auto !important;
+  left: auto !important;
+  width: 100% !important;
+  max-width: 340px;
+  height: auto !important;
+  max-height: calc(100vh - 24px);
+  overflow: auto !important;
+  z-index: 2;
+}
+
+/* LSTM: suite chrome already supplies the 2-col dock. Keep title/tabs/cell
+   in the wide column instead of parking them in the 340px inspector. */
+.lstm-page:not(:has(> aside.lstm-controls)) {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+.lstm-page > .lstm-head,
+.lstm-page > .lstm-tabs,
+.lstm-page > footer {
+  grid-column: 1 / -1 !important;
+}
+#main-content .lstm-page > main {
+  grid-column: 1 !important;
+  min-height: 0 !important;
+}
+.lstm-page:not(:has(> aside.lstm-controls)) > main {
+  grid-column: 1 / -1 !important;
+}
+.lstm-page > .lstm-controls {
+  grid-column: 2 !important;
+}
+
+@media (max-width: 980px) {
+  #main-content [class*="-page"]:has(> aside[class*="controls"]),
+  #main-content [class*="-shell"]:has(> aside[class*="controls"]),
+  #main-content [class*="-approved"]:has(> aside[class*="controls"]) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  #main-content [class*="-page"] > aside[class*="controls"],
+  #main-content [class*="-shell"] > aside[class*="controls"],
+  #main-content [class*="-approved"] > aside[class*="controls"] {
+    max-width: none;
+  }
+
+  #main-content .lstm-page > main,
+  .lstm-page > .lstm-controls {
+    grid-column: 1 / -1 !important;
+  }
 }

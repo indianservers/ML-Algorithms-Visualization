@@ -59,7 +59,7 @@ export const MetricsPanel: React.FC<MetricsPanelProps> = ({ metrics, title = 'Me
         </button>
       }
     >
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3" data-guide="algo-metrics">
         {metrics.map((m, i) => (
           <div key={i} className="result-change bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2.5">
             <div className="mb-1 flex items-center justify-between gap-2">

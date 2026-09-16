@@ -4,31 +4,20 @@ import { navigationData } from '../../data/navigation';
 import { Badge } from './Badge';
 import type { BadgeType } from '../../data/navigation';
 import { useSidebarCategoryState } from '../../stores/uiStore';
+import { searchAlgorithmsByCategory } from '../../lib/search/algorithmSearchIndex';
 import {
   getAllAlgorithms,
   getCategoryProgress,
   getFavoriteRoutes,
   getImplementationStatus,
   getRecentRoutes,
+  type ImplementationStatus,
 } from '../../data/implementationStatus';
 import {
-  TrendingUp, GitBranch, Network, Minimize2, Brain, BarChart2, Filter,
-  Activity, MessageSquare, Eye, Star, Play, Lightbulb, Zap, Layers,
-  FlaskConical, Upload, ChevronDown, ChevronRight, Search, X, Home,
-  Sigma, BookOpen, Map, Database,
+  ChevronDown, ChevronRight, Search, X, Home,
+  BookOpen, Map, Database, Star, Brain,
 } from 'lucide-react';
-
-const iconMap: Record<string, React.ReactNode> = {
-  TrendingUp: <TrendingUp size={15} />, GitBranch: <GitBranch size={15} />,
-  Network: <Network size={15} />, Minimize2: <Minimize2 size={15} />,
-  Brain: <Brain size={15} />, BarChart2: <BarChart2 size={15} />,
-  Filter: <Filter size={15} />, Activity: <Activity size={15} />,
-  MessageSquare: <MessageSquare size={15} />, Eye: <Eye size={15} />,
-  Star: <Star size={15} />, Play: <Play size={15} />,
-  Lightbulb: <Lightbulb size={15} />, Zap: <Zap size={15} />,
-  Layers: <Layers size={15} />, Sigma: <Sigma size={15} />,
-  Upload: <Upload size={15} />, FlaskConical: <FlaskConical size={15} />,
-};
+import { AlgorithmGlyph, CategoryGlyph } from './AlgorithmGlyph';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -41,8 +30,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, onNavigat
   const location = useLocation();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
-  const [badgeFilter, setBadgeFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState<ImplementationStatus | 'All'>('All');
+  const [badgeFilter, setBadgeFilter] = useState<BadgeType | 'All'>('All');
   const [favoriteRoutes, setFavoriteRoutes] = useState<string[]>(() => getFavoriteRoutes());
   const [recentRoutes, setRecentRoutes] = useState<string[]>(() => getRecentRoutes());
   const [recentOpen, setRecentOpen] = useState(() => localStorage.getItem('ml-suite-recent-open') !== 'false');
@@ -62,7 +51,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, onNavigat
     .filter(Boolean)
     .slice(0, 5);
   const filtersActive = search.trim() || statusFilter !== 'All' || badgeFilter !== 'All';
-  const stageLevels = ['Beginner', 'Intermediate', 'Advanced'];
+  const stageLevels: BadgeType[] = ['Beginner', 'Intermediate', 'Advanced'];
 
   React.useEffect(() => {
     const refresh = () => {
@@ -86,21 +75,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, onNavigat
     localStorage.setItem('ml-suite-recent-open', String(recentOpen));
   }, [recentOpen]);
 
-  const filteredNav = useMemo(() => {
-    const statusMatch = (route: string) => statusFilter === 'All' || getImplementationStatus(route) === statusFilter;
-    const badgeMatch = (badge: string) => badgeFilter === 'All' || badge === badgeFilter;
-    const q = search.toLowerCase();
-    return navigationData
-      .map(cat => ({
-        ...cat,
-        items: cat.items.filter(item =>
-          statusMatch(item.route) &&
-          badgeMatch(item.badge) &&
-          (!search.trim() || item.label.toLowerCase().includes(q) || cat.category.toLowerCase().includes(q) || item.badge.toLowerCase().includes(q) || getImplementationStatus(item.route).toLowerCase().includes(q))
-        ),
-      }))
-      .filter(cat => cat.items.length > 0);
-  }, [search, statusFilter, badgeFilter]);
+  const filteredNav = useMemo(
+    () => searchAlgorithmsByCategory(search, { status: statusFilter, badge: badgeFilter }),
+    [search, statusFilter, badgeFilter],
+  );
 
   if (collapsed) {
     return (
@@ -123,7 +101,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, onNavigat
             className="grid min-h-10 min-w-10 place-items-center rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
             title={`${cat.category} (${getCategoryProgress(cat.category).implemented}/${getCategoryProgress(cat.category).total})`}
           >
-            {iconMap[cat.icon] ?? <Layers size={15} />}
+            <CategoryGlyph category={cat.category} icon={cat.icon} size={16} />
           </button>
         ))}
       </div>
@@ -163,14 +141,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, onNavigat
           )}
         </div>
         <div className="grid grid-cols-2 gap-2 mt-2">
-          <select value={statusFilter} onChange={event => setStatusFilter(event.target.value)} className="min-h-10 rounded-md border border-gray-200 bg-gray-50 px-2 py-2 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+          <select value={statusFilter} onChange={event => setStatusFilter(event.target.value as ImplementationStatus | 'All')} className="min-h-10 rounded-md border border-gray-200 bg-gray-50 px-2 py-2 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
             <option>All</option>
             <option>Implemented</option>
             <option>Educational</option>
             <option>Concept</option>
             <option>Scaffold</option>
           </select>
-          <select value={badgeFilter} onChange={event => setBadgeFilter(event.target.value)} className="min-h-10 rounded-md border border-gray-200 bg-gray-50 px-2 py-2 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+          <select value={badgeFilter} onChange={event => setBadgeFilter(event.target.value as BadgeType | 'All')} className="min-h-10 rounded-md border border-gray-200 bg-gray-50 px-2 py-2 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
             <option>All</option>
             {badgeOptions.map(option => <option key={option}>{option}</option>)}
           </select>
@@ -245,7 +223,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, onNavigat
           <div className="mx-2 mt-2 rounded-lg border border-yellow-200 bg-yellow-50/70 p-2 dark:border-yellow-900/60 dark:bg-yellow-950/20">
             <p className="mb-1 px-1 text-[10px] font-bold uppercase tracking-wide text-yellow-700 dark:text-yellow-300">Pinned</p>
             {favoriteItems.map(item => item && (
-              <NavLink key={item.route} to={item.route} onClick={onNavigate} className="flex min-h-10 items-center justify-between rounded px-2 py-2 text-xs text-yellow-900 hover:bg-yellow-100 dark:text-yellow-100 dark:hover:bg-yellow-900/30">
+              <NavLink key={item.route} to={item.route} onClick={onNavigate} className="flex min-h-10 items-center gap-2 rounded px-2 py-2 text-xs text-yellow-900 hover:bg-yellow-100 dark:text-yellow-100 dark:hover:bg-yellow-900/30">
+                <AlgorithmGlyph route={item.route} label={item.label} size={16} />
                 <span className="truncate">{item.label}</span>
                 <Star size={11} className="fill-current" />
               </NavLink>
@@ -263,11 +242,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, onNavigat
               {recentOpen ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
             </button>
             {recentOpen && recentItems.map(item => item && (
-              <NavLink key={item.route} to={item.route} onClick={onNavigate} className="block min-h-10 rounded px-2 py-2 text-xs text-gray-700 hover:bg-white dark:text-gray-300 dark:hover:bg-gray-700">
+              <NavLink key={item.route} to={item.route} onClick={onNavigate} className="flex min-h-10 items-start gap-2 rounded px-2 py-2 text-xs text-gray-700 hover:bg-white dark:text-gray-300 dark:hover:bg-gray-700">
+                <AlgorithmGlyph route={item.route} label={item.label} size={16} />
+                <span className="min-w-0">
                 <span className="block leading-snug">{item.label}</span>
                 <span className="mt-1 flex flex-wrap gap-1">
                   {getImplementationStatus(item.route) !== 'Implemented' && <Badge type={getImplementationStatus(item.route)} size="sm" />}
                   <Badge type={item.badge as BadgeType} size="sm" />
+                </span>
                 </span>
               </NavLink>
             ))}
@@ -291,7 +273,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, onNavigat
                 className={`w-full flex min-h-10 items-center gap-2 mx-2 px-3 py-2 rounded-md text-xs font-semibold transition-colors ${hasActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'} hover:bg-gray-50 dark:hover:bg-gray-800`}
                 style={{ width: 'calc(100% - 16px)' }}
               >
-                <span className="shrink-0">{iconMap[cat.icon] ?? <Layers size={13} />}</span>
+                <span className="shrink-0"><CategoryGlyph category={cat.category} icon={cat.icon} size={16} /></span>
                 <span className="flex-1 text-left truncate">{cat.category}</span>
                 <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-500 dark:bg-gray-800 dark:text-gray-400">
                   {progress.implemented}/{progress.total}
@@ -308,13 +290,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, onNavigat
                       to={item.route}
                       onClick={onNavigate}
                       className={({ isActive }) =>
-                        `block min-h-10 mx-2 px-3 py-2 rounded-md text-xs transition-colors ${isActive ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium' : status === 'Scaffold' ? 'text-red-700 bg-red-50/70 hover:bg-red-100 dark:text-red-300 dark:bg-red-900/10 dark:hover:bg-red-900/20' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`
+                        `flex min-h-10 items-start gap-2 mx-2 px-3 py-2 rounded-md text-xs transition-colors ${isActive ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-medium' : status === 'Scaffold' ? 'text-red-700 bg-red-50/70 hover:bg-red-100 dark:text-red-300 dark:bg-red-900/10 dark:hover:bg-red-900/20' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`
                       }
                     >
+                      <AlgorithmGlyph route={item.route} label={item.label} size={16} />
+                      <span className="min-w-0">
                       <span className="block whitespace-normal break-words leading-snug">{item.label}</span>
                       <span className="mt-1.5 flex flex-wrap items-center gap-1">
                         {status !== 'Implemented' && <Badge type={status} size="sm" />}
                         <Badge type={item.badge as BadgeType} size="sm" />
+                      </span>
                       </span>
                     </NavLink>
                     );

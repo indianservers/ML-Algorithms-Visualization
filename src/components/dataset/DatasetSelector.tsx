@@ -27,6 +27,7 @@ export const DatasetSelector: React.FC<DatasetSelectorProps> = ({
   };
 
   return (
+    <div data-guide="algo-dataset">
     <Tabs
       tabs={[
         { id: 'sample', label: 'Sample Data', icon: <Database size={12} /> },
@@ -81,5 +82,6 @@ export const DatasetSelector: React.FC<DatasetSelectorProps> = ({
         </div>
       )}
     </Tabs>
+    </div>
   );
 };

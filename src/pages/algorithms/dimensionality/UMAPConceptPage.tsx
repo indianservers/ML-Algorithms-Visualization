@@ -6,6 +6,11 @@ import {
   type UMAPMetric,
 } from "../../../lib/algorithms/dimensionality/umap";
 import { getDimensionalityDataset } from "../../../lib/dimensionality/dimensionalityDatasets";
+import {
+  LAB_TABS,
+  LabLessonPanel,
+  useLabTabs,
+} from "../../../components/common/LabTabs";
 import "./UMAPConceptPage.css";
 type Sample = { values: number[]; label: number };
 type Dataset =
@@ -47,8 +52,12 @@ const BUILT = {
     imported: "Imported Data",
   };
 export default function UMAPConceptPage() {
-  const [tab, setTab] = useState("Visualize"),
-    [dataset, setDataset] = useState<Dataset>("digits"),
+  const { tab, setTab, panel, lesson } = useLabTabs(
+    "Visualize",
+    "Visualize",
+    ["Learn", "Compare", "Explain"],
+  );
+  const [dataset, setDataset] = useState<Dataset>("digits"),
     [samples, setSamples] = useState<Sample[]>(BUILT.digits),
     [imported, setImported] = useState<Sample[]>([]),
     [neighbors, setNeighbors] = useState(15),
@@ -232,17 +241,11 @@ export default function UMAPConceptPage() {
         </div>
       </header>
       <main>
-        <nav>
-          {[
-            "Learn",
-            "Visualize",
-            "Dataset",
-            "Build / Train",
-            "Metrics",
-            "Compare",
-            "Explain",
-          ].map((n) => (
+        <nav role="tablist" aria-label="UMAP sections">
+          {LAB_TABS.map((n) => (
             <button
+              role="tab"
+              aria-selected={tab === n}
               className={tab === n ? "active" : ""}
               onClick={() => setTab(n)}
               key={n}
@@ -251,7 +254,15 @@ export default function UMAPConceptPage() {
             </button>
           ))}
         </nav>
-        <section className="um-panels">
+        {lesson && (
+          <LabLessonPanel
+            tab={tab}
+            route="/ml/dimensionality-reduction/umap-concept"
+          />
+        )}
+        <section
+          className={`um-panels${panel("Dataset", "Build / Train")}`}
+        >
           <article>
             <h3>
               <i>1</i> Fuzzy Neighborhood Graph <span>(High-D)</span>
@@ -317,7 +328,9 @@ export default function UMAPConceptPage() {
             </aside>
           </article>
         </section>
-        <section className="um-results">
+        <section
+          className={`um-results${panel("Build / Train", "Metrics")}`}
+        >
           <article>
             <h3>Topology Preservation</h3>
             <div>

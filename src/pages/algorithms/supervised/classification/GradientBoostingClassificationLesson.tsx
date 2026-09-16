@@ -30,6 +30,7 @@ import {
 import { binaryMetrics, logLoss } from "../../../../lib/math/metrics";
 import { classificationSplit } from "../../../../lib/classification/classificationEval";
 import { trainGradientBoostingClassification } from "../../../../lib/algorithms/classification/gradientBoostingClassification";
+import { useTheme } from "../../../../stores/uiStore";
 import "./GradientBoostingClassificationPage.css";
 
 type Point = { x: number; y: number; label: number };
@@ -138,7 +139,8 @@ export default function GradientBoostingClassificationLesson() {
   const [query, setQuery] = useState({ x: 0.25, y: 0.1 }),
     [trained, setTrained] = useState("Ready"),
     [toast, setToast] = useState("");
-  const [lightTheme, setLightTheme] = useState(false);
+  const { theme, toggleTheme } = useTheme();
+  const lightTheme = theme === "light";
   const uploadRef = useRef<HTMLInputElement>(null);
   const X = useMemo(() => points.map((p) => [p.x, p.y]), [points]),
     y = useMemo(() => points.map((p) => p.label), [points]);
@@ -701,7 +703,7 @@ export default function GradientBoostingClassificationLesson() {
           </button>
           <button
             aria-label="Toggle theme"
-            onClick={() => setLightTheme((value) => !value)}
+            onClick={toggleTheme}
           >
             <Moon />
           </button>

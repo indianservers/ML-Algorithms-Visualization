@@ -942,7 +942,7 @@ export function KMeansAdvancedWorkbench() {
           </Card>
 
           <Card title="Load Dataset" icon={<Upload size={14} />}>
-            <div className="grid grid-cols-1 gap-2 text-sm">
+            <div className="grid grid-cols-1 gap-2 text-sm" data-guide="algo-dataset">
               <button
                 onClick={() => loadPointDataset("students")}
                 className={`rounded px-3 py-2 text-left font-semibold ${mode === "points" && source === "students" ? "bg-blue-600 text-white" : "border border-gray-200 dark:border-gray-700"}`}
@@ -1335,6 +1335,7 @@ export function KMeansAdvancedWorkbench() {
                 : "Centroids, Assignments, and Movement Path"
             }
           >
+            <div data-guide="algo-visualize">
             {canShowClusters ? (
               <ResponsiveContainer width="100%" height={390}>
                 <ScatterChart>
@@ -1373,6 +1374,7 @@ export function KMeansAdvancedWorkbench() {
                   : `Add at least ${k} ${mode === "images" ? "images" : "points"} to cluster.`}
               </div>
             )}
+            </div>
           </Card>
 
           {mode === "images" && (

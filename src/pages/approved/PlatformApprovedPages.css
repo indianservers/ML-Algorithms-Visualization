@@ -395,6 +395,17 @@
   font-size: 24px;
   margin: 3px 0;
 }
+.pp-catalog > header input {
+  flex: 0 1 320px;
+  height: 36px;
+  margin: 0 12px;
+  padding: 0 12px;
+  background: #09152a;
+  border: 1px solid #243650;
+  border-radius: 5px;
+  color: inherit;
+  font: inherit;
+}
 .pp-catalog > header button {
   height: 36px;
   padding: 0 16px;
@@ -417,15 +428,27 @@
   background: #0a172b;
 }
 .pp-catalog article h3 {
-  color: #69a4ff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #e8f0ff;
+  font-size: 14px;
 }
 .pp-catalog article a {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  gap: 12px;
   color: #d9e3f0;
   text-decoration: none;
-  padding: 7px 0;
+  padding: 8px 0;
   border-bottom: 1px solid #192a43;
+}
+.pp-catalog article a > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
 }
 .pp-catalog article a:hover {
   color: #65a4ff;

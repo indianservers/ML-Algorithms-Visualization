@@ -7,6 +7,11 @@ import {
   type ActivationFn,
   type PerceptronStep,
 } from "../../../lib/algorithms/neural/perceptron";
+import {
+  LAB_TABS,
+  LabLessonPanel,
+  useLabTabs,
+} from "../../../components/common/LabTabs";
 import "./PerceptronPage.css";
 
 type Point = { x: number; y: number; label: number };
@@ -180,7 +185,11 @@ function MiniPlot({ points }: { points: Point[] }) {
 }
 
 export default function PerceptronPage() {
-  const [tab, setTab] = useState("Visualize");
+  const { tab, setTab, panel, layout, lesson } = useLabTabs(
+    "Visualize",
+    "Visualize",
+    ["Learn", "Compare", "Explain"],
+  );
   const [dataset, setDataset] = useState<DatasetKey>("linear");
   const [points, setPoints] = useState<Point[]>(BUILT_IN.linear);
   const [imported, setImported] = useState<Point[]>([]);
@@ -362,18 +371,12 @@ export default function PerceptronPage() {
             the classes.
           </p>
         </div>
-        <nav>
-          {[
-            "Learn",
-            "Visualize",
-            "Dataset",
-            "Build / Train",
-            "Metrics",
-            "Compare",
-            "Explain",
-          ].map((item) => (
+        <nav role="tablist" aria-label="Perceptron sections">
+          {LAB_TABS.map((item) => (
             <button
               key={item}
+              role="tab"
+              aria-selected={tab === item}
               className={tab === item ? "active" : ""}
               onClick={() => setTab(item)}
             >
@@ -391,8 +394,11 @@ export default function PerceptronPage() {
           </button>
         </section>
       </header>
-      <main>
-        <section className="pc-model panel">
+      <main className={layout.trim()}>
+        {lesson && (
+          <LabLessonPanel tab={tab} route="/ml/deep-learning/perceptron" />
+        )}
+        <section className={`pc-model panel${panel("Build / Train")}`}>
           <h3>PERCEPTRON MODEL ⓘ</h3>
           <label>
             Activation:{" "}
@@ -460,7 +466,7 @@ export default function PerceptronPage() {
             <p className="formula">ŷ = 1 if (w·x + b) ≥ θ, else 0</p>
           </div>
         </section>
-        <section className="pc-decision panel">
+        <section className={`pc-decision panel${panel("Metrics")}`}>
           <h3>DECISION BOUNDARY ⓘ</h3>
           <div className="legend">
             <i /> Class 0 <i /> Class 1 <i /> Boundary
@@ -499,7 +505,7 @@ export default function PerceptronPage() {
             </label>
           </footer>
         </section>
-        <aside className="pc-controls panel">
+        <aside className={`pc-controls panel${panel("Build / Train")}`}>
           <nav>
             <button className="active">Parameters</button>
             <button onClick={() => setToast("Dataset controls below")}>
@@ -645,7 +651,7 @@ export default function PerceptronPage() {
             </button>
           </footer>
         </aside>
-        <section className="pc-dataset panel">
+        <section className={`pc-dataset panel${panel("Dataset")}`}>
           <h3>DATASET PREVIEW ⓘ</h3>
           <select
             value={dataset}
@@ -688,7 +694,7 @@ export default function PerceptronPage() {
           </button>
           <input ref={fileRef} type="file" accept=".csv" onChange={upload} />
         </section>
-        <section className="pc-progress panel">
+        <section className={`pc-progress panel${panel("Build / Train")}`}>
           <h3>TRAINING PROGRESS ⓘ</h3>
           <div className="progress-stats">
             <p>
@@ -746,7 +752,7 @@ export default function PerceptronPage() {
             <p>Train the model to inspect genuine epoch updates.</p>
           )}
         </section>
-        <section className="pc-metrics panel">
+        <section className={`pc-metrics panel${panel("Metrics")}`}>
           <h3>METRICS ⓘ</h3>
           <div className="metric-cards">
             {[
@@ -774,7 +780,7 @@ export default function PerceptronPage() {
             <b>{confusion.tp}</b>
           </div>
         </section>
-        <section className="pc-summary panel">
+        <section className={`pc-summary panel${panel("Metrics", "Dataset")}`}>
           <h3>MODEL SUMMARY ⓘ</h3>
           <p>w = [ {weights.map((value) => value.toFixed(2)).join(", ")} ]</p>
           <p>b = {bias.toFixed(2)}</p>

@@ -4,19 +4,20 @@ type Theme = 'light' | 'dark';
 export type TrainingMode = 'manual' | 'auto';
 export type TrainingSpeed = 'slow' | 'normal' | 'fast';
 
-const THEME_KEY = 'ml-suite-theme';
+// v3 re-baselines the default to dark so the labs match the redesign mockups.
+const THEME_KEY = 'ml-suite-theme-v3';
 const SIDEBAR_KEY = 'ml-suite-sidebar-collapsed';
 const TRAINING_MODE_KEY = 'ml-suite-training-mode';
 const TRAINING_SPEED_KEY = 'ml-suite-training-speed';
 const EXPANDED_CATEGORIES_KEY = 'ml-suite-expanded-categories';
 const PRACTICE_MODE_KEY = 'ml-suite-practice-mode';
 const TEACHER_MODE_KEY = 'ml-suite-teacher-mode';
+const GUIDE_MODE_KEY = 'ml-suite-guide-mode';
 
 export function useTheme() {
   const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem(THEME_KEY) as Theme | null;
-    if (saved) return saved;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    const saved = localStorage.getItem(THEME_KEY);
+    return saved === 'light' ? 'light' : 'dark';
   });
 
   useEffect(() => {
@@ -26,7 +27,7 @@ export function useTheme() {
   }, [theme]);
 
   const toggleTheme = useCallback(() => setTheme(t => t === 'dark' ? 'light' : 'dark'), []);
-  return { theme, toggleTheme };
+  return { theme, setTheme, toggleTheme };
 }
 
 export function useSidebarState() {
@@ -130,4 +131,36 @@ export function useTeacherMode() {
 
   const toggleTeacherMode = useCallback(() => setTeacherModeState(value => !value), []);
   return { teacherMode, toggleTeacherMode };
+}
+
+let guideModeValue = typeof localStorage !== "undefined" && localStorage.getItem(GUIDE_MODE_KEY) === "true";
+const guideListeners = new Set<() => void>();
+
+function publishGuideMode(next: boolean) {
+  guideModeValue = next;
+  if (typeof document !== "undefined") document.documentElement.classList.toggle("guide-mode", next);
+  if (typeof localStorage !== "undefined") localStorage.setItem(GUIDE_MODE_KEY, String(next));
+  window.dispatchEvent(new CustomEvent("ml:guide-mode-changed", { detail: { guideMode: next } }));
+  for (const listener of guideListeners) listener();
+}
+
+export function useGuideMode() {
+  const [guideMode, setGuideModeState] = useState(guideModeValue);
+
+  useEffect(() => {
+    const sync = () => setGuideModeState(guideModeValue);
+    guideListeners.add(sync);
+    sync();
+    return () => {
+      guideListeners.delete(sync);
+    };
+  }, []);
+
+  const setGuideMode = useCallback((next: boolean) => {
+    publishGuideMode(next);
+  }, []);
+  const toggleGuideMode = useCallback(() => {
+    publishGuideMode(!guideModeValue);
+  }, []);
+  return { guideMode, setGuideMode, toggleGuideMode };
 }

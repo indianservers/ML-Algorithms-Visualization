@@ -629,7 +629,7 @@ export default function ConceptAlgorithmPage({ config }: { config: AlgorithmModu
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[360px_1fr]">
         <div className="space-y-4">
           <Card title="Dataset Input Panel" icon={<Database size={14} />}>
-            <div className="space-y-3 text-xs text-gray-600 dark:text-gray-300">
+            <div className="space-y-3 text-xs text-gray-600 dark:text-gray-300" data-guide="algo-dataset">
               <select value={datasetId} onChange={event => setDatasetId(event.target.value)} className="w-full rounded border border-gray-200 bg-white px-2 py-2 dark:border-gray-700 dark:bg-gray-900">
                 {algorithmDatasets.map(dataset => <option key={dataset.id} value={dataset.id}>{dataset.name}</option>)}
                 {uploadedRows.length > 0 && <option value="uploaded">{uploadName}</option>}
@@ -654,7 +654,7 @@ export default function ConceptAlgorithmPage({ config }: { config: AlgorithmModu
           </Card>
 
           <Card title="Hyperparameters" icon={<Settings2 size={14} />}>
-            <div className="space-y-2">
+            <div className="space-y-2" data-guide="algo-params">
               {config.hyperparameters.map(param => {
                 const item = hyperparamParts(param);
                 return (
@@ -696,11 +696,11 @@ export default function ConceptAlgorithmPage({ config }: { config: AlgorithmModu
 
         <div className="space-y-4">
           <Card title="Algorithm Explanation">
-            <p className="text-sm leading-6 text-gray-600 dark:text-gray-300">{cleanGeneratedCopy(config)}</p>
+            <p className="text-sm leading-6 text-gray-600 dark:text-gray-300" data-guide="algo-idea">{cleanGeneratedCopy(config)}</p>
           </Card>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <Card title={config.chartTitle}>{renderChart()}</Card>
+            <Card title={config.chartTitle}><div data-guide="algo-visualize">{renderChart()}</div></Card>
             <Card title={demoComputation.title}>
               <div className="space-y-3">
                 <p className="text-sm leading-6 text-gray-600 dark:text-gray-300">{demoComputation.summary}</p>
@@ -746,7 +746,7 @@ export default function ConceptAlgorithmPage({ config }: { config: AlgorithmModu
               </div>
             </Card>
             <Card title="Metrics Panel">
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2" data-guide="algo-metrics">
                 {liveMetrics.map(item => {
                   return (
                   <div key={item.label} className="rounded bg-gray-50 p-2 dark:bg-gray-900">

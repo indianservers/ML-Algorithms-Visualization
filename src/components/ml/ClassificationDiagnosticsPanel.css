@@ -1,9 +1,10 @@
 .cdp {
   margin: 1rem 0;
   padding: 1rem 1.1rem;
-  border: 1px solid var(--border, #2a3344);
+  border: 1px solid var(--lab-line, var(--border, #2a3344));
   border-radius: 12px;
-  background: color-mix(in srgb, var(--surface, #121826) 92%, transparent);
+  background: var(--lab-panel, var(--surface, #121826));
+  color: var(--lab-text, inherit);
 }
 .cdp header {
   display: flex;

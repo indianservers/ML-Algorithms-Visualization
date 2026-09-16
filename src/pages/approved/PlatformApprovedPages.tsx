@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { AlgorithmGlyph, CategoryGlyph, GlyphTile } from "../../components/common/AlgorithmGlyph";
 import { normalizeNavLabel, resolveNavRoute } from "../../lib/labNavigation";
-import { navigationData } from "../../data/navigation";
+import { searchAlgorithmsByCategory } from "../../lib/search/algorithmSearchIndex";
+import { searchDocuments } from "../../lib/search/matchAlgorithms";
+import { useTheme } from "../../stores/uiStore";
 import DatasetLibrary from "./DatasetLibraryApproved";
 import "./PlatformApprovedPages.css";
 
@@ -123,6 +126,10 @@ const algorithms = [
   "Transformer",
   "Autoencoder",
 ];
+const matrixRows = algorithms.map((label, index) => {
+  const paradigm = index < 10 ? "Classical ML" : "Deep Learning";
+  return { label, index, paradigm, document: { name: label, category: paradigm } };
+});
 const categoryCatalogFilters: Record<string, string[]> = {
   "Supervised Learning": [
     "Supervised - Regression",
@@ -771,7 +778,16 @@ function Sitemap({ act }: { act: (x: string) => void }) {
     </>
   );
 }
-function Matrix({ act }: { act: (x: string) => void }) {
+function Matrix({
+  act,
+  query,
+  onQuery,
+}: {
+  act: (x: string) => void;
+  query: string;
+  onQuery: (value: string) => void;
+}) {
+  const rows = searchDocuments(matrixRows, query, (row) => row.document).map((hit) => hit.item);
   return (
     <>
       <nav className="pp-tabs">
@@ -808,6 +824,8 @@ function Matrix({ act }: { act: (x: string) => void }) {
             <input
               aria-label="Search algorithms"
               placeholder="Search algorithms..."
+              value={query}
+              onChange={(event) => onQuery(event.target.value)}
             />
             {[
               "All Paradigms",
@@ -820,7 +838,14 @@ function Matrix({ act }: { act: (x: string) => void }) {
                 {x}⌄
               </button>
             ))}
-            <button onClick={() => act("Clear filters")}>Clear</button>
+            <button
+              onClick={() => {
+                onQuery("");
+                act("Clear filters");
+              }}
+            >
+              Clear
+            </button>
           </div>
           <header>
             {[
@@ -836,10 +861,10 @@ function Matrix({ act }: { act: (x: string) => void }) {
               <span key={x}>{x}</span>
             ))}
           </header>
-          {algorithms.map((x, i) => (
+          {rows.map(({ label: x, index: i, paradigm }) => (
             <p key={x}>
               <b>{x}</b>
-              <span>{i < 10 ? "Classical ML" : "Deep Learning"}</span>
+              <span>{paradigm}</span>
               <em>● {80 + i}%</em>
               <i>▮▮▮▮▮▮▮▮ {18 + (i % 7)}/24</i>
               <small>{i > 9 ? "GPU" : "CPU"}</small>
@@ -852,6 +877,12 @@ function Matrix({ act }: { act: (x: string) => void }) {
               <button onClick={() => act(`${x} actions`)}>•••</button>
             </p>
           ))}
+          {rows.length === 0 && (
+            <div className="pp-empty">
+              No algorithms match “{query.trim()}”.{" "}
+              <button onClick={() => onQuery("")}>Clear search</button>
+            </div>
+          )}
         </main>
         <aside className="card">
           <h3>
@@ -952,20 +983,32 @@ export default function PlatformApprovedPage({ page }: { page: PlatformPage }) {
     "Resume Lesson": "/ml/supervised/svm-classification",
   };
   const [catalogFilter, setCatalogFilter] = useState<string | null>(null);
+  const [catalogQuery, setCatalogQuery] = useState("");
+  const [matrixQuery, setMatrixQuery] = useState("");
   const [headerSearch, setHeaderSearch] = useState("");
   const [datasetCommand, setDatasetCommand] = useState<string | null>(null);
   const [datasetShelf, setDatasetShelf] = useState("Dataset Library");
   const [collapsed, setCollapsed] = useState(false);
-  const [lightTheme, setLightTheme] = useState(false);
+  const { theme, toggleTheme } = useTheme();
+  const lightTheme = theme === "light";
   const openCatalog = (filter: string | null) => {
     setCatalogFilter(filter);
     setCatalogOpen(true);
   };
-  const catalogGroups = catalogFilter
-    ? navigationData.filter((group) =>
-        categoryCatalogFilters[catalogFilter]?.includes(group.category),
-      )
-    : navigationData;
+  const closeCatalog = () => {
+    setCatalogOpen(false);
+    setCatalogQuery("");
+  };
+  const searchCatalog = (value: string) => {
+    setCatalogQuery(value);
+    if (value.trim()) setCatalogOpen(true);
+  };
+  const catalogGroups = searchAlgorithmsByCategory(catalogQuery, {
+    categories: catalogFilter ? categoryCatalogFilters[catalogFilter] : undefined,
+  });
+  const catalogMatches = catalogGroups.reduce((total, group) => total + group.items.length, 0);
+  const activeSearch =
+    page === "datasets" ? headerSearch : page === "matrix" ? matrixQuery : catalogQuery;
   const datasetCommands = new Set([
     "Browse",
     "Preview",
@@ -999,11 +1042,11 @@ export default function PlatformApprovedPage({ page }: { page: PlatformPage }) {
       return;
     }
     if (x === "Theme") {
-      setLightTheme((value) => !value);
+      toggleTheme();
       return;
     }
     if (x === "Profile" || x === "Search") {
-      setStatus(x === "Profile" ? "Signed in as Alex Morgan · Explorer" : `Search: ${headerSearch || "type a query"}`);
+      setStatus(x === "Profile" ? "Signed in as Alex Morgan · Explorer" : `Search: ${activeSearch || "type a query"}`);
       return;
     }
     if (x === "All algorithms" || x === "Learning Paths") {
@@ -1028,6 +1071,7 @@ export default function PlatformApprovedPage({ page }: { page: PlatformPage }) {
       if (event.key !== "Escape") return;
       setSideOpen(false);
       setCatalogOpen(false);
+      setCatalogQuery("");
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
@@ -1053,7 +1097,12 @@ export default function PlatformApprovedPage({ page }: { page: PlatformPage }) {
         >
           <div>
             <div className="pp-mobile-nav-tools">
-              <input placeholder="Search algorithms..." />
+              <input
+                aria-label="Search algorithms"
+                placeholder="Search algorithms..."
+                value={catalogQuery}
+                onChange={(event) => searchCatalog(event.target.value)}
+              />
               <a href="/ml/lab/dataset-manager">Dataset Manager</a>
             </div>
             <Side
@@ -1102,8 +1151,14 @@ export default function PlatformApprovedPage({ page }: { page: PlatformPage }) {
           title={titles[page][0]}
           subtitle={titles[page][1]}
           onAction={act}
-          search={page === "datasets" ? headerSearch : undefined}
-          onSearch={page === "datasets" ? setHeaderSearch : undefined}
+          search={activeSearch}
+          onSearch={
+            page === "datasets"
+              ? setHeaderSearch
+              : page === "matrix"
+                ? setMatrixQuery
+                : searchCatalog
+          }
         />
       )}
       {page === "home" && (
@@ -1111,6 +1166,8 @@ export default function PlatformApprovedPage({ page }: { page: PlatformPage }) {
           <input
             aria-label="Search algorithms"
             placeholder="Search algorithms, topics, experiments..."
+            value={catalogQuery}
+            onChange={(event) => searchCatalog(event.target.value)}
             onKeyDown={(event) => { if (event.key === "Enter") openCatalog(null); }}
           />
           <button onClick={() => act("Datasets")}>▤ Datasets</button>
@@ -1139,7 +1196,7 @@ export default function PlatformApprovedPage({ page }: { page: PlatformPage }) {
         ) : page === "sitemap" ? (
           <Sitemap act={act} />
         ) : (
-          <Matrix act={act} />
+          <Matrix act={act} query={matrixQuery} onQuery={setMatrixQuery} />
         )}
       </div>
       <footer className="pp-status">
@@ -1163,21 +1220,44 @@ export default function PlatformApprovedPage({ page }: { page: PlatformPage }) {
                   : "All Algorithms, Lessons, Labs & Tools"}
               </h2>
             </div>
-            <button onClick={() => setCatalogOpen(false)}>Close ×</button>
+            <input
+              aria-label="Search the catalog"
+              placeholder="Search algorithms, topics, tags..."
+              value={catalogQuery}
+              onChange={(event) => setCatalogQuery(event.target.value)}
+            />
+            <button onClick={closeCatalog}>Close ×</button>
           </header>
-          <div className={catalogGroups.length <= 2 ? "pp-catalog-narrow" : undefined}>
-            {catalogGroups.map((group) => (
-              <article key={group.category}>
-                <h3>{group.category}</h3>
-                {group.items.map((item) => (
-                  <a href={item.route} key={item.route}>
-                    <span>{item.label}</span>
-                    <small>{item.badge}</small>
-                  </a>
-                ))}
-              </article>
-            ))}
-          </div>
+          {catalogMatches === 0 ? (
+            <p className="pp-empty">
+              No algorithms match “{catalogQuery.trim()}”.{" "}
+              <button onClick={() => setCatalogQuery("")}>Clear search</button>
+            </p>
+          ) : (
+            <div className={catalogGroups.length <= 2 ? "pp-catalog-narrow" : undefined}>
+              {catalogGroups.map((group) => (
+                <article key={group.category}>
+                  <h3>
+                    <GlyphTile>
+                      <CategoryGlyph category={group.category} size={18} />
+                    </GlyphTile>
+                    {group.category}
+                  </h3>
+                  {group.items.map((item) => (
+                    <a href={item.route} key={item.route}>
+                      <span>
+                        <GlyphTile>
+                          <AlgorithmGlyph route={item.route} label={item.label} size={18} />
+                        </GlyphTile>
+                        {item.label}
+                      </span>
+                      <small>{item.badge}</small>
+                    </a>
+                  ))}
+                </article>
+              ))}
+            </div>
+          )}
         </section>
       )}
     </div>

@@ -21,6 +21,7 @@ import {
   Trash2,
   Undo2,
   Upload,
+  ExternalLink,
 } from "lucide-react";
 import {
   Bar,
@@ -302,6 +303,11 @@ export default function DatasetManagerPage() {
   const [history, setHistory] = useState<DraftDataset[]>([]);
   const [redoHistory, setRedoHistory] = useState<DraftDataset[]>([]);
   const [message, setMessage] = useState("");
+  const [loadedTarget, setLoadedTarget] = useState<{
+    route: string;
+    label: string;
+    name: string;
+  } | null>(null);
   const [error, setError] = useState("");
   const [savedSearch, setSavedSearch] = useState("");
   const [versionHistory, setVersionHistory] = useState<VersionRecord[]>(() => {
@@ -640,8 +646,13 @@ export default function DatasetManagerPage() {
   const handleSaveAndLoad = async () => {
     const dataset = await handleSave(selectedSavedId ? "update" : "new");
     setActiveDataset(dataset, algorithmRoute);
+    setLoadedTarget({
+      route: algorithmRoute,
+      label: selectedAlgorithm.label,
+      name: dataset.name,
+    });
     setMessage(
-      `${dataset.name} saved and loaded for ${selectedAlgorithm.label}.`,
+      `${dataset.name} is attached to ${selectedAlgorithm.label}. Open the algorithm page to train on this dataset.`,
     );
   };
 
@@ -1211,6 +1222,21 @@ export default function DatasetManagerPage() {
                 >
                   Save & Load for Selected Algorithm
                 </button>
+                {loadedTarget && (
+                  <InfoBox type="success" title="Loaded for algorithm">
+                    <p>
+                      {loadedTarget.name} is attached to{" "}
+                      {loadedTarget.label}.
+                    </p>
+                    <Link
+                      to={loadedTarget.route}
+                      className="mt-2 inline-flex min-h-10 items-center gap-2 rounded bg-emerald-700 px-3 py-2 font-bold text-white hover:bg-emerald-800"
+                    >
+                      <ExternalLink size={14} />
+                      Open {loadedTarget.label}
+                    </Link>
+                  </InfoBox>
+                )}
                 {message && <InfoBox type="success">{message}</InfoBox>}
                 {error && <InfoBox type="error">{error}</InfoBox>}
               </div>
@@ -1303,7 +1329,7 @@ export default function DatasetManagerPage() {
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {[
                 {
-                  label: "Visualize",
+                  label: `Open ${selectedAlgorithm.label}`,
                   to: selectedAlgorithm.route,
                   icon: LineChart,
                 },
@@ -1322,11 +1348,15 @@ export default function DatasetManagerPage() {
                   to: "/ml/lab/dataset-manager",
                   icon: Grid3X3,
                 },
-              ].map(({ label, to, icon: Icon }) => (
+              ].map(({ label, to, icon: Icon }, index) => (
                 <Link
                   key={label}
                   to={to}
-                  className="inline-flex min-h-10 items-center justify-center gap-2 rounded border border-gray-200 px-3 py-2 text-sm font-semibold hover:border-blue-300 hover:bg-blue-50 dark:border-gray-700 dark:hover:bg-blue-950/30"
+                  className={`inline-flex min-h-10 items-center justify-center gap-2 rounded border px-3 py-2 text-sm font-semibold ${
+                    index === 0 && loadedTarget
+                      ? "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-700"
+                      : "border-gray-200 hover:border-blue-300 hover:bg-blue-50 dark:border-gray-700 dark:hover:bg-blue-950/30"
+                  }`}
                 >
                   <Icon size={15} />
                   {label}

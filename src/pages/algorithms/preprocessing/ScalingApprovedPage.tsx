@@ -1,7 +1,6 @@
 /* eslint-disable no-irregular-whitespace */
 import { useMemo, useRef, useState } from 'react';
 import { useLabNavigate } from '../../../lib/labNavigation';
-import { useLabNavigate } from '../../../lib/labNavigation';
 import { mean, median, quantile, std } from '../../../lib/math/statistics';
 import './ScalingApprovedPage.css';
 

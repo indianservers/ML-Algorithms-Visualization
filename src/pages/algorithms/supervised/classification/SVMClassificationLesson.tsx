@@ -25,7 +25,6 @@ import {
 import {
   datasetAPerfectBinary,
   datasetBOverlappingBinary,
-  datasetBOverlappingBinary,
   datasetCXor,
   datasetDTwoMoons,
   datasetECircles,
@@ -37,6 +36,7 @@ import {
   type SvmKernel,
 } from "../../../../lib/algorithms/classification/svmClassification";
 import "./SVMClassificationPage.css";
+import { useTheme } from "../../../../stores/uiStore";
 
 type Point = { x: number; y: number; label: number };
 type Dataset = "moons" | "linear" | "circles" | "xor" | "overlap" | "imported";
@@ -95,7 +95,8 @@ export default function SVMClassificationLesson() {
   const [query, setQuery] = useState({ x: 0.2, y: 0.1 });
   const [trained, setTrained] = useState("Ready");
   const [toast, setToast] = useState("");
-  const [lightTheme, setLightTheme] = useState(false);
+  const { theme, toggleTheme } = useTheme();
+  const lightTheme = theme === "light";
   const uploadRef = useRef<HTMLInputElement>(null);
   const split = useMemo(() => {
     try {
@@ -652,7 +653,7 @@ export default function SVMClassificationLesson() {
           {lightTheme ? "Light" : "Dark"}{" "}
           <button
             aria-label="Toggle theme"
-            onClick={() => setLightTheme((value) => !value)}
+            onClick={toggleTheme}
           >
             {lightTheme ? "◐" : "☼"}
           </button>

@@ -31,6 +31,7 @@ import {
   type SvrKernel,
 } from "../../../../lib/algorithms/regression/supportVectorRegression";
 import "./SupportVectorRegressionPage.css";
+import { useTheme } from "../../../../stores/uiStore";
 
 type Row = { x: number; y: number; temp: number; humidity: number };
 type DatasetKey = "bike" | "energy" | "housing" | "synthetic" | "quadratic" | "piecewise" | "imported";
@@ -311,9 +312,10 @@ export default function SupportVectorRegressionPage() {
     [gamma, setGamma] = useState(1),
     [margins, setMargins] = useState(true),
     [trained, setTrained] = useState(true),
-    [message, setMessage] = useState("Ready to visualize and explore."),
-    [dark, setDark] = useState(true),
-    [collapsed, setCollapsed] = useState(false),
+    [message, setMessage] = useState("Ready to visualize and explore.");
+  const { theme, toggleTheme } = useTheme();
+  const dark = theme === "dark";
+  const [collapsed, setCollapsed] = useState(false),
     [px, setPx] = useState(5);
   const fileRef = useRef<HTMLInputElement>(null),
     sample = rows.slice(0, 160);
@@ -414,7 +416,7 @@ export default function SupportVectorRegressionPage() {
             <BookOpen size={18} />
             Docs
           </button>
-          <button aria-label="Toggle theme" onClick={() => setDark((v) => !v)}>
+          <button aria-label="Toggle theme" onClick={toggleTheme}>
             {dark ? <Sun /> : <Moon />}
           </button>
           <b>ML</b>

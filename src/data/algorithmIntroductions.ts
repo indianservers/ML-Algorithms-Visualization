@@ -101,6 +101,11 @@ const routeIntro: Record<string, Partial<AlgorithmIntroduction>> = {
   '/ml/supervised/polynomial-regression': {
     summary: 'Polynomial regression extends linear regression with curved feature terms so it can fit nonlinear trends.',
   },
+  '/ml/supervised/gradient-boosting-regression': {
+    summary: 'Gradient boosting regression starts with a simple guess (usually the mean), then adds a sequence of small trees that each learn the leftover errors. The final prediction is the sum of that first guess plus every scaled tree.',
+    useWhen: 'Use it when the target is a number, relationships are nonlinear, and you want strong accuracy from many weak learners rather than one deep tree.',
+    watchFor: 'Watch the learning rate (how big each correction is), the number of trees, tree depth, and the train/test gap. Fast learning plus many deep trees memorizes noise.',
+  },
   '/ml/supervised/logistic-regression': {
     summary: 'Logistic regression learns a linear scoring rule and turns it into class probabilities for classification.',
   },

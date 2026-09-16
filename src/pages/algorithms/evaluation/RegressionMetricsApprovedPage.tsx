@@ -2,6 +2,10 @@ import { useMemo, useRef, useState, type CSSProperties } from "react";
 import { useLabNavigate } from "../../../lib/labNavigation";
 import { Link } from "react-router-dom";
 import { mae, mse, rSquared, rmse } from "../../../lib/math/metrics";
+import {
+  LabLessonPanel,
+  useLabTabs,
+} from "../../../components/common/LabTabs";
 import "./RegressionMetricsApprovedPage.css";
 
 type RegressionDataset = {
@@ -93,7 +97,7 @@ export default function RegressionMetricsApprovedPage() {
   const [datasetIndex, setDatasetIndex] = useState(0);
   const [customDataset, setCustomDataset] = useState<RegressionDataset | null>(null);
   const [model, setModel] = useState("Random Forest Regressor");
-  const [tab, setTab] = useState("Visualize");
+  const { tab, setTab, panel, layout, lesson } = useLabTabs("Visualize", "Visualize", ["Learn", "Explain"]);
   const [showOutliers, setShowOutliers] = useState(true);
   const [showZero, setShowZero] = useState(true);
   const [equalAxes, setEqualAxes] = useState(false);
@@ -261,7 +265,7 @@ export default function RegressionMetricsApprovedPage() {
         <label className="rm-dataset-head">Sample Dataset<select aria-label="Sample Dataset" value={customDataset ? "custom" : datasetIndex} onChange={(event) => event.target.value !== "custom" && selectDataset(Number(event.target.value))}>{customDataset && <option value="custom">{customDataset.name}</option>}{datasets.map((item, index) => <option value={index} key={item.name}>{item.name}</option>)}</select><small>{dataset.actual.length.toLocaleString("en-US")} rows • {dataset.features} features</small></label>
         <button className="rm-upload" onClick={() => uploadRef.current?.click()}>⇧ Upload Dataset</button>
         <input hidden ref={uploadRef} type="file" accept=".csv" onChange={(event) => upload(event.target.files?.[0])} />
-        <nav className="rm-tabs">{["▤ Learn", "▥ Visualize", "▤ Dataset", "✣ Transform", "♧ Train", "▥ Metrics", "⌁ Compare", "♙ Explain"].map((item) => { const name = item.replace(/^[^A-Za-z]+/, ""); return <button className={tab === name ? "active" : ""} onClick={() => setTab(name)} key={item}>{item}</button>; })}</nav>
+        <nav className="rm-tabs" role="tablist" aria-label="Regression metrics sections">{["▤ Learn", "▥ Visualize", "▤ Dataset", "✣ Transform", "♧ Train", "▥ Metrics", "⌁ Compare", "♙ Explain"].map((item) => { const name = item.replace(/^[^A-Za-z]+/, ""); return <button role="tab" aria-selected={tab === name} className={tab === name ? "active" : ""} onClick={() => setTab(name)} key={item}>{item}</button>; })}</nav>
       </header>
 
       <main className="rm-main">

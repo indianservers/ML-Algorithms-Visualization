@@ -1,0 +1,26 @@
+.ml-glyph {
+  display: block;
+  flex-shrink: 0;
+}
+.ml-glyph-tile {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(8, 22, 46, 0.92);
+  border: 1px solid rgba(80, 130, 200, 0.18);
+  flex-shrink: 0;
+}
+.ml-glyph-tile-lg {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+.ml-glyph-tile-sm {
+  width: 20px;
+  height: 20px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}

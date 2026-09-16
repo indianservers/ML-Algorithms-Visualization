@@ -110,6 +110,32 @@ export function datasetFThreeBlobs(): ClassPoint[] {
   ];
 }
 
+/**
+ * Blobs for an arbitrary number of classes, with centres spread evenly around
+ * a circle so every class stays separable as `classCount` grows.
+ */
+export function datasetMultiClassBlobs(
+  classCount: number,
+  perClass = 26,
+  seed = 401,
+  spread = 0.62,
+): ClassPoint[] {
+  const classes = Math.max(2, Math.min(8, Math.round(classCount)));
+  const ring = classes <= 3 ? 2.2 : 1.05 * classes;
+  return Array.from({ length: classes }, (_, label) => {
+    const angle = (label / classes) * Math.PI * 2 - Math.PI / 2;
+    return cloud(
+      Math.cos(angle) * ring,
+      Math.sin(angle) * ring,
+      label,
+      perClass,
+      seed + label * 37,
+      spread,
+      spread,
+    );
+  }).flat();
+}
+
 export function datasetHImbalanced(): ClassPoint[] {
   return [
     ...cloud(-1.2, 0, 0, 90, 71, 1.4, 1.2),

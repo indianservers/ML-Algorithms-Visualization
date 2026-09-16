@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import PlatformApprovedPage from "./approved/PlatformApprovedPages";
+import HomeLanding from "./HomeLanding";
 import {
   Activity,
   Brain,
@@ -578,9 +579,8 @@ function HomePageOriginal() {
 
 export default function HomePage() {
   const location = useLocation();
-  return new URLSearchParams(location.search).get("advanced") === "1" ? (
-    <HomePageOriginal />
-  ) : (
-    <PlatformApprovedPage page="home" />
-  );
+  const variant = new URLSearchParams(location.search).get("advanced");
+  if (variant === "1") return <HomePageOriginal />;
+  if (variant === "legacy") return <PlatformApprovedPage page="home" />;
+  return <HomeLanding />;
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   Bell, Bookmark, BookOpen, Boxes, BrainCircuit, ChartNoAxesCombined, ChevronDown,
   ChevronRight, CircleHelp, Database, Download, FileChartColumn, FlaskConical,
@@ -13,10 +13,13 @@ import { formatR2, inferenceRow, modelLifecycle, regressionMetrics, splitRegress
 import { varianceInflationFactors } from '../../../../lib/regression/regressionDiagnostics';
 import { RegressionDiagnosticsPanel } from '../../../../components/ml/RegressionDiagnosticsPanel';
 import { datasetHHousing, datasetIMulticollinearity, datasetJIrrelevantFeatures, datasetNConstantFeature } from '../../../../lib/regression/regressionDatasets';
+import { useTheme } from '../../../../stores/uiStore';
+import { useActiveLoadedDataset } from '../../../../lib/timeSeries/useActiveTimeSeries';
+import type { LoadedAlgorithmDataset } from '../../../../data/algorithmDatasets';
 import './MultipleLinearRegressionPage.css';
 
 type Row = Record<string, number>;
-type DatasetKey = 'housing' | 'energy' | 'collinear' | 'sparse' | 'labHousing' | 'constantFeat';
+type DatasetKey = 'housing' | 'energy' | 'collinear' | 'sparse' | 'labHousing' | 'constantFeat' | 'loaded';
 type TabId = 'learn' | 'visualize' | 'dataset' | 'train' | 'metrics' | 'compare' | 'explain';
 
 type DatasetDefinition = {
@@ -29,7 +32,7 @@ type DatasetDefinition = {
   units: string;
 };
 
-const DATASETS: Record<DatasetKey, DatasetDefinition> = {
+const DATASETS: Record<Exclude<DatasetKey, 'loaded'>, DatasetDefinition> = {
   housing: {
     label: 'Housing Prices (Sample)', target: 'price', targetLabel: 'Price ($)', units: '$',
     features: ['area_sqft', 'bedrooms', 'bathrooms', 'age_years'],
@@ -74,6 +77,34 @@ const DATASETS: Record<DatasetKey, DatasetDefinition> = {
   },
 };
 
+function definitionFromLoaded(dataset: LoadedAlgorithmDataset): DatasetDefinition | null {
+  const columns = dataset.columns.filter(Boolean);
+  if (columns.length < 2 || dataset.data.length < 3) return null;
+  const target = dataset.target && columns.includes(dataset.target)
+    ? dataset.target
+    : columns[columns.length - 1];
+  if (!target) return null;
+  const features = columns.filter((column) => column !== target);
+  if (!features.length) return null;
+  const rows = dataset.data.map((row) => {
+    const next: Row = {};
+    for (const column of columns) {
+      const value = Number(row[column]);
+      next[column] = Number.isFinite(value) ? value : 0;
+    }
+    return next;
+  });
+  return {
+    label: dataset.name,
+    target,
+    targetLabel: target,
+    features,
+    labels: Object.fromEntries(columns.map((column) => [column, column])),
+    rows,
+    units: '',
+  };
+}
+
 const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
   { id: 'learn', label: 'Learn', icon: <BookOpen /> }, { id: 'visualize', label: 'Visualize', icon: <ChartNoAxesCombined /> },
   { id: 'dataset', label: 'Dataset', icon: <Database /> }, { id: 'train', label: 'Train', icon: <BrainCircuit /> },
@@ -110,8 +141,11 @@ const formatNumber = (value: number, digits = 0) => Number.isFinite(value) ? val
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
 export default function MultipleLinearRegressionPage() {
+  const location = useLocation();
+  const handoff = useActiveLoadedDataset(location.pathname);
   const [datasetKey, setDatasetKey] = React.useState<DatasetKey>('housing');
-  const definition = DATASETS[datasetKey];
+  const [customDefinition, setCustomDefinition] = React.useState<DatasetDefinition | null>(null);
+  const definition = customDefinition ?? DATASETS[datasetKey === 'loaded' ? 'housing' : datasetKey];
   const [rows, setRows] = React.useState<Row[]>(() => DATASETS.housing.rows.map(row => ({ ...row })));
   const [selectedFeatures, setSelectedFeatures] = React.useState<string[]>(() => [...DATASETS.housing.features]);
   const initialFit = fitRows(DATASETS.housing.rows, DATASETS.housing, DATASETS.housing.features, 0.2, 42);
@@ -132,7 +166,8 @@ export default function MultipleLinearRegressionPage() {
   const [training, setTraining] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
   const [shared, setShared] = React.useState(false);
-  const [lightTheme, setLightTheme] = React.useState(false);
+  const { theme, toggleTheme } = useTheme();
+  const lightTheme = theme === 'light';
   const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
   const [lockedPrediction, setLockedPrediction] = React.useState<number | null>(null);
   const [selectedRow, setSelectedRow] = React.useState(0);
@@ -149,6 +184,32 @@ export default function MultipleLinearRegressionPage() {
       setLastTrainKey(JSON.stringify({ rows: nextRows, features, testSize: size, seed: nextSeed }));
     }
   }, [seed, testSize]);
+
+  const applyLoaded = React.useCallback((dataset: LoadedAlgorithmDataset) => {
+    const next = definitionFromLoaded(dataset);
+    if (!next) return;
+    setCustomDefinition(next);
+    setDatasetKey('loaded');
+    setRows(next.rows.map((row) => ({ ...row })));
+    setSelectedFeatures([...next.features]);
+    applyModel(next.rows, next, next.features);
+    const mid = next.rows[Math.floor(next.rows.length / 2)] ?? next.rows[0];
+    setInputs(Object.fromEntries(next.features.map((feature) => [feature, mid[feature]])));
+    setXFeature(next.features[0]);
+    setYFeature(next.features[1] ?? next.features[0]);
+    setColorFeature(next.features[2] ?? next.features[0]);
+    setSelectedRow(0);
+    setActiveTab('dataset');
+  }, [applyModel]);
+
+  const appliedHandoffKey = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!handoff) return;
+    const key = `${handoff.id}:${handoff.data.length}:${handoff.target ?? ''}`;
+    if (appliedHandoffKey.current === key) return;
+    appliedHandoffKey.current = key;
+    applyLoaded(handoff);
+  }, [handoff, applyLoaded]);
 
   const predict = React.useCallback((row: Row, values = coefficients) => {
     const mapped = inferenceRow(row, selectedFeatures);
@@ -194,9 +255,22 @@ export default function MultipleLinearRegressionPage() {
   }, [applyModel, rows, definition, selectedFeatures]);
 
   const switchDataset = (key: DatasetKey) => {
-    const next = DATASETS[key];
+    if (key === 'loaded' && customDefinition) {
+      setRows(customDefinition.rows.map(row => ({ ...row })));
+      setSelectedFeatures([...customDefinition.features]);
+      applyModel(customDefinition.rows, customDefinition, customDefinition.features);
+      setInputs(Object.fromEntries(customDefinition.features.map(feature => [feature, customDefinition.rows[Math.floor(customDefinition.rows.length / 2)][feature]])));
+      setXFeature(customDefinition.features[0]);
+      setYFeature(customDefinition.features[1] ?? customDefinition.features[0]);
+      setColorFeature(customDefinition.features[2] ?? customDefinition.features[0]);
+      setSelectedRow(0);
+      setLockedPrediction(null);
+      return;
+    }
+    const next = DATASETS[key === 'loaded' ? 'housing' : key];
     const features = [...next.features];
-    setDatasetKey(key);
+    setCustomDefinition(null);
+    setDatasetKey(key === 'loaded' ? 'housing' : key);
     setRows(next.rows.map(row => ({ ...row })));
     setSelectedFeatures(features);
     applyModel(next.rows, next, features);
@@ -296,7 +370,7 @@ export default function MultipleLinearRegressionPage() {
       <main className="mlr-main">
         <header className="mlr-header">
           <div><p>Supervised Learning <ChevronRight /> Regression <ChevronRight /></p><h1>Multiple Linear Regression <CircleHelp /></h1><small>Model a target using multiple input features. Explore the regression plane, coefficients, and residuals.</small></div>
-          <div className="mlr-header-actions"><button onClick={() => setLightTheme(value => !value)}><Moon /> {lightTheme ? 'Dark Theme' : 'Light Theme'} <ChevronDown /></button><CircleHelp /><Bell /><span>MM</span></div>
+          <div className="mlr-header-actions"><button onClick={toggleTheme}><Moon /> {lightTheme ? 'Dark Theme' : 'Light Theme'} <ChevronDown /></button><CircleHelp /><Bell /><span>MM</span></div>
         </header>
         <nav className="mlr-tabs" aria-label="Lesson views">
           <div>{tabs.map(tab => <button key={tab.id} className={activeTab === tab.id ? 'active' : ''} onClick={() => setActiveTab(tab.id)}>{tab.icon}{tab.label}</button>)}</div>
@@ -405,7 +479,7 @@ type TabProps = { activeTab: TabId; definition: DatasetDefinition; datasetKey: D
 
 function TabView(props: TabProps) {
   const { activeTab, definition } = props;
-  if (activeTab === 'dataset') return <section className="mlr-tab-panel"><PanelHeader title="Dataset Workspace" subtitle="Edit training rows live, load another built-in dataset, or import a compatible CSV." /><div className="mlr-dataset-actions"><select aria-label="Dataset source" value={props.datasetKey} onChange={event=>props.onDataset(event.target.value as DatasetKey)}><option value="housing">Housing Prices</option><option value="energy">Energy Demand</option><option value="collinear">Multicollinear</option><option value="sparse">Irrelevant features</option><option value="labHousing">Lab housing</option><option value="constantFeat">Constant feature</option></select><button onClick={props.onAddRow}><Plus/>Add Row</button><button onClick={props.onDeleteRow} disabled={props.rows.length<=definition.features.length+1}><Trash2/>Remove Selected</button><button onClick={props.onUpload}><Upload/>Upload CSV</button><button onClick={props.onReset}><RotateCcw/>Reset Data</button></div><div className="mlr-table-wrap"><table><thead><tr><th>#</th>{[...definition.features,definition.target].map(field=><th key={field}>{definition.labels[field]}</th>)}</tr></thead><tbody>{props.rows.map((row,index)=><tr key={index} className={props.selectedRow===index?'selected':''} onClick={()=>props.onSelectRow(index)}><td>{index+1}</td>{[...definition.features,definition.target].map(field=><td key={field}><input aria-label={`Row ${index+1} ${definition.labels[field]}`} type="number" value={row[field]} onChange={event=>props.onRow(index,field,Number(event.target.value))}/></td>)}</tr>)}</tbody></table></div></section>;
+  if (activeTab === 'dataset') return <section className="mlr-tab-panel"><PanelHeader title="Dataset Workspace" subtitle="Edit training rows live, load another built-in dataset, or import a compatible CSV." /><div className="mlr-dataset-actions"><select aria-label="Dataset source" value={props.datasetKey} onChange={event=>props.onDataset(event.target.value as DatasetKey)}><option value="housing">Housing Prices</option><option value="energy">Energy Demand</option><option value="collinear">Multicollinear</option><option value="sparse">Irrelevant features</option><option value="labHousing">Lab housing</option><option value="constantFeat">Constant feature</option>{props.datasetKey === 'loaded' && <option value="loaded">{definition.label} (loaded)</option>}</select><button onClick={props.onAddRow}><Plus/>Add Row</button><button onClick={props.onDeleteRow} disabled={props.rows.length<=definition.features.length+1}><Trash2/>Remove Selected</button><button onClick={props.onUpload}><Upload/>Upload CSV</button><button onClick={props.onReset}><RotateCcw/>Reset Data</button></div><div className="mlr-table-wrap"><table><thead><tr><th>#</th>{[...definition.features,definition.target].map(field=><th key={field}>{definition.labels[field]}</th>)}</tr></thead><tbody>{props.rows.map((row,index)=><tr key={index} className={props.selectedRow===index?'selected':''} onClick={()=>props.onSelectRow(index)}><td>{index+1}</td>{[...definition.features,definition.target].map(field=><td key={field}><input aria-label={`Row ${index+1} ${definition.labels[field]}`} type="number" value={row[field]} onChange={event=>props.onRow(index,field,Number(event.target.value))}/></td>)}</tr>)}</tbody></table></div></section>;
   if (activeTab === 'train') return <section className="mlr-tab-panel"><PanelHeader title="Train the Model" subtitle="Fit ordinary least squares to the current editable dataset using the shared normal-equation engine." /><div className="mlr-training-stage"><BrainCircuit/><h2>{props.training?'Optimizing coefficients…':'Ready to train'}</h2><p>{props.rows.length} samples · train {props.nTrain ?? '—'} · test {props.nTest ?? '—'} · features: {(props.selectedFeatures ?? definition.features).length} · target: {definition.targetLabel}</p>{props.fitError && <p>{props.fitError}</p>}<label>Test fraction <input type="number" min={0.1} max={0.5} step={0.05} value={props.testSize ?? 0.2} onChange={event => props.onTestSize?.(Number(event.target.value))} /></label><label>Seed <input type="number" value={props.seed ?? 42} onChange={event => props.onSeed?.(Number(event.target.value))} /></label><button onClick={props.onTrain} disabled={props.training}><Play/>{props.training?'Training…':'Train Model'}</button><button onClick={props.onReset}><RotateCcw/>Reset Experiment</button></div></section>;
   if (activeTab === 'metrics') {
     const features = props.selectedFeatures ?? definition.features;

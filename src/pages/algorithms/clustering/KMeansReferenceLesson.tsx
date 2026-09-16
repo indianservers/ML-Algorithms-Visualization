@@ -11,6 +11,7 @@ import {
   FileText,
   FlaskConical,
   HelpCircle,
+  Maximize2,
   Moon,
   Network,
   Notebook,
@@ -22,6 +23,8 @@ import {
   Sparkles,
   Sun,
   Trash2,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
 import { kmeans, kmeansWithRestarts } from "../../../lib/algorithms/clustering/kmeans";
 import {
@@ -32,11 +35,42 @@ import {
   datasetGNoisyBlobs,
   datasetIElongated,
 } from "../../../lib/clustering/clusteringDatasets";
-import { scatterPercents } from "../../../lib/clustering/clusteringEval";
 import "./KMeansReferenceLesson.css";
+import { useTheme } from "../../../stores/uiStore";
 
 type Shape = "blobs" | "rings" | "mixed" | "elongated" | "four";
 type Tool = "select" | "add" | "remove";
+type Camera = { minX: number; maxX: number; minY: number; maxY: number };
+
+function fitCamera(samples: Array<{ x: number; y: number }>, pad = 0.28): Camera {
+  const xs = samples.map((sample) => sample.x);
+  const ys = samples.map((sample) => sample.y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const spanX = Math.max(1, maxX - minX);
+  const spanY = Math.max(1, maxY - minY);
+  return {
+    minX: minX - spanX * pad,
+    maxX: maxX + spanX * pad,
+    minY: minY - spanY * pad,
+    maxY: maxY + spanY * pad,
+  };
+}
+
+function zoomCamera(base: Camera, zoom: number): Camera {
+  const cx = (base.minX + base.maxX) / 2;
+  const cy = (base.minY + base.maxY) / 2;
+  const halfX = (base.maxX - base.minX) / 2 / zoom;
+  const halfY = (base.maxY - base.minY) / 2 / zoom;
+  return {
+    minX: cx - halfX,
+    maxX: cx + halfX,
+    minY: cy - halfY,
+    maxY: cy + halfY,
+  };
+}
 type Props = { onAdvanced: () => void };
 const COLORS = [
   "#24c6e8",
@@ -77,10 +111,12 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
     [speed, setSpeed] = useState(1),
     [playing, setPlaying] = useState(false),
     [tool, setTool] = useState<Tool>("select"),
+    [zoom, setZoom] = useState(1),
     [manual, setManual] = useState<number[][] | null>(null),
     [dragging, setDragging] = useState<number | null>(null),
-    [toast, setToast] = useState(""),
-    [light, setLight] = useState(false);
+    [toast, setToast] = useState("");
+  const { theme, toggleTheme } = useTheme();
+  const light = theme === "light";
   const navigate = useNavigate();
   const go = (label: string) => {
     const route = resolveNavRoute(label);
@@ -127,11 +163,13 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
     setPoints(makePoints(next));
     setStep(0);
     setManual(null);
+    setZoom(1);
   };
   const changeK = (next: number) => {
     setK(Math.max(2, Math.min(MAX_K, Math.min(next, Math.max(2, points.length)))));
     setManual(null);
     setStep(10_000);
+    setZoom(1);
   };
   const plotSamples = useMemo(
     () => [
@@ -140,24 +178,17 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
     ],
     [points, centroids],
   );
-  const plotAt = (x: number, y: number) => scatterPercents(x, y, plotSamples, 0.16);
+  const fitted = useMemo(() => fitCamera(plotSamples), [plotSamples]);
+  const camera = useMemo(() => zoomCamera(fitted, zoom), [fitted, zoom]);
+  const plotAt = (x: number, y: number) => ({
+    left: ((x - camera.minX) / Math.max(1e-6, camera.maxX - camera.minX)) * 100,
+    top: ((camera.maxY - y) / Math.max(1e-6, camera.maxY - camera.minY)) * 100,
+  });
   const coords = (event: React.PointerEvent | React.MouseEvent) => {
     const rect = plotRef.current!.getBoundingClientRect();
-    const xs = plotSamples.map((sample) => sample.x);
-    const ys = plotSamples.map((sample) => sample.y);
-    const minX = Math.min(...xs);
-    const maxX = Math.max(...xs);
-    const minY = Math.min(...ys);
-    const maxY = Math.max(...ys);
-    const spanX = Math.max(1e-6, maxX - minX);
-    const spanY = Math.max(1e-6, maxY - minY);
-    const left = minX - spanX * 0.16;
-    const right = maxX + spanX * 0.16;
-    const bottom = minY - spanY * 0.16;
-    const top = maxY + spanY * 0.16;
     return [
-      left + ((event.clientX - rect.left) / rect.width) * (right - left),
-      top - ((event.clientY - rect.top) / rect.height) * (top - bottom),
+      camera.minX + ((event.clientX - rect.left) / rect.width) * (camera.maxX - camera.minX),
+      camera.maxY - ((event.clientY - rect.top) / rect.height) * (camera.maxY - camera.minY),
     ];
   };
   const interact = (event: React.PointerEvent | React.MouseEvent) => {
@@ -196,7 +227,7 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
         <button onClick={() => go("Help")}>
           <HelpCircle /> Help
         </button>
-        <button onClick={() => setLight(!light)}>
+        <button onClick={toggleTheme}>
           {light ? <Moon /> : <Sun />}
         </button>
         <i>AI</i>
@@ -305,7 +336,7 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
                   key={`glow-${i}`}
                   cx={left}
                   cy={top}
-                  r="28"
+                  r="12"
                   fill={`url(#g${i})`}
                 />
               );
@@ -395,7 +426,32 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                setZoom((value) => Math.min(6, Number((value * 1.25).toFixed(2))));
+              }}
+            >
+              <ZoomIn /> Zoom In
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setZoom((value) => Math.max(0.5, Number((value / 1.25).toFixed(2))));
+              }}
+            >
+              <ZoomOut /> Zoom Out
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setZoom(1);
+              }}
+            >
+              <Maximize2 /> Fit Canvas
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
                 setManual(null);
+                setZoom(1);
               }}
             >
               <RefreshCw /> Reset View

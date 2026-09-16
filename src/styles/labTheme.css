@@ -1,0 +1,178 @@
+/* Shared design tokens for the algorithm lab pages.
+   Values are sampled from the ML_AI_Redesign_Checkpoint_74 mockups so every
+   algorithm page can share one palette instead of hard-coding hex per page.
+   Dark is the default; the light values keep the pages usable when a learner
+   flips the theme toggle. */
+
+:root {
+  --lab-bg: #eef4ff;
+  --lab-bg-elevated: #ffffff;
+  --lab-panel: #ffffff;
+  --lab-panel-2: #f5f8fe;
+  --lab-panel-3: #eaf0fb;
+  --lab-inset: #f2f6fd;
+  --lab-line: #c9d6ea;
+  --lab-line-soft: #dde6f4;
+  --lab-text: #16223d;
+  --lab-text-strong: #0b1526;
+  --lab-muted: #5d6f8d;
+  --lab-muted-2: #7d8ba4;
+
+  --lab-cyan: #0f8f9c;
+  --lab-cyan-soft: rgba(15, 143, 156, 0.12);
+  --lab-green: #0e9f70;
+  --lab-green-soft: rgba(14, 159, 112, 0.12);
+  --lab-red: #d94437;
+  --lab-red-soft: rgba(217, 68, 55, 0.12);
+  --lab-blue: #1c5ffa;
+  --lab-blue-hover: #0f4ce0;
+  --lab-amber: #a9720a;
+  --lab-purple: #7b3fd0;
+  --lab-indigo: #3b37d6;
+
+  --lab-radius: 8px;
+  --lab-radius-sm: 6px;
+  --lab-shadow: 0 1px 2px rgba(15, 30, 60, 0.08);
+}
+
+:root.dark {
+  --lab-bg: #020817;
+  --lab-bg-elevated: #060d1f;
+  --lab-panel: #0b1326;
+  --lab-panel-2: #0d1427;
+  --lab-panel-3: #060d1f;
+  --lab-inset: #071023;
+  --lab-line: #192134;
+  --lab-line-soft: #131b2c;
+  --lab-text: #e1e4ea;
+  --lab-text-strong: #f4f7fc;
+  --lab-muted: #8a99b5;
+  --lab-muted-2: #64748b;
+
+  --lab-cyan: #1ce0f0;
+  --lab-cyan-soft: rgba(28, 224, 240, 0.12);
+  --lab-green: #16df9f;
+  --lab-green-soft: rgba(22, 223, 159, 0.12);
+  --lab-red: #ff6459;
+  --lab-red-soft: rgba(255, 100, 89, 0.14);
+  --lab-blue: #1c5ffa;
+  --lab-blue-hover: #3b7bff;
+  --lab-amber: #f0c93f;
+  --lab-purple: #9952e7;
+  --lab-indigo: #6b66ff;
+
+  --lab-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* Aurora glow surface shared by the interactive 2-D lab canvases (K-Means,
+   KNN). These are additive tokens: a page only picks them up by referencing
+   them, so adding them cannot shift a lesson that still uses --lab-* above.
+   The values are the K-Means lesson's, which is the approved reference. */
+:root {
+  --glow-page: radial-gradient(circle at 60% 5%, #142238, #07111e 52%);
+  --glow-canvas-line: #3a4f78;
+  --glow-canvas-radius: 10px;
+  --glow-canvas-grid: rgb(255 255 255 / 0.06);
+  --glow-canvas-teal: #128a96;
+  --glow-canvas-purple: #7a22b8;
+  --glow-canvas-purple-mid: #3b1570;
+  --glow-canvas-purple-deep: #14082c;
+  --glow-canvas:
+    repeating-linear-gradient(0deg, transparent 0 79px, var(--glow-canvas-grid) 80px),
+    repeating-linear-gradient(90deg, transparent 0 99px, var(--glow-canvas-grid) 100px),
+    radial-gradient(ellipse 85% 90% at 16% 55%, var(--glow-canvas-teal) 0%, transparent 52%),
+    radial-gradient(
+      ellipse 80% 95% at 84% 42%,
+      var(--glow-canvas-purple) 0%,
+      var(--glow-canvas-purple-mid) 48%,
+      var(--glow-canvas-purple-deep) 100%
+    );
+
+  --glow-panel: #0a1625;
+  --glow-panel-raised: #0b1725;
+  --glow-inset: #101c2c;
+  --glow-line: #344358;
+  --glow-line-strong: #35445a;
+  --glow-line-soft: #304058;
+  --glow-radius: 5px;
+  --glow-radius-lg: 6px;
+
+  --glow-overlay: #0a1626dd;
+  --glow-overlay-line: #33445b;
+
+  --glow-text: #f4f6f9;
+  --glow-muted: #a9b3c2;
+  --glow-font:
+    12px Inter,
+    system-ui,
+    sans-serif;
+
+  --glow-accent: #3183ff;
+  --glow-accent-ring: 0 0 5px #2371e7;
+  --glow-marker-ring: 0 0 18px currentColor;
+  --glow-toast-bg: #12305a;
+  --glow-toast-line: #3b74bc;
+
+  /* The lessons are authored against the dark palette; the light theme lifts
+     the whole surface rather than re-specifying every colour. */
+  --glow-light-lift: brightness(1.17);
+}
+
+/* Top bar that replaces the mockup's left lesson rail. */
+.lab-topbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  flex-shrink: 0;
+  /* #main-content is an isolated stacking context that paints after this nav,
+     so the bar needs its own layer to stay clickable above lesson chrome. */
+  position: relative;
+  z-index: 10;
+  padding: 0 14px;
+  background: var(--lab-bg-elevated);
+  border-bottom: 1px solid var(--lab-line);
+  color: var(--lab-text);
+  font:
+    600 13px Inter,
+    system-ui,
+    sans-serif;
+}
+
+.lab-topbar a,
+.lab-topbar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 0 11px;
+  border: 1px solid transparent;
+  border-radius: var(--lab-radius-sm);
+  background: transparent;
+  color: var(--lab-muted);
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.lab-topbar a:hover,
+.lab-topbar button:hover {
+  background: var(--lab-panel);
+  border-color: var(--lab-line);
+  color: var(--lab-text);
+}
+
+.lab-topbar a.primary {
+  background: var(--lab-cyan-soft);
+  border-color: color-mix(in srgb, var(--lab-cyan) 40%, transparent);
+  color: var(--lab-cyan);
+}
+
+.lab-topbar svg {
+  width: 15px;
+  height: 15px;
+}
+
+.lab-topbar .spacer {
+  margin-left: auto;
+}

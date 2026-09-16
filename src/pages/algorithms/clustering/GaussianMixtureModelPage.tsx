@@ -14,6 +14,10 @@ import {
   gmmInformationCriteria,
   projectPca2d,
 } from "../../../lib/clustering/clusteringEval";
+import {
+  LabLessonPanel,
+  useLabTabs,
+} from "../../../components/common/LabTabs";
 import "./GaussianMixtureModelPage.css";
 
 type Point = { x: number; y: number };
@@ -79,7 +83,11 @@ const LABELS: Record<Dataset, string> = {
 };
 
 export default function GaussianMixtureModelPage() {
-  const [tab, setTab] = useState("Visualize"),
+  const { tab, setTab, panel, layout, lesson } = useLabTabs(
+      "Visualize",
+      "Visualize",
+      ["Learn", "Compare", "Explain"],
+    ),
     [sideTab, setSideTab] = useState("EM Algorithm"),
     [dataset, setDataset] = useState<Dataset>("anisotropic"),
     [points, setPoints] = useState<Point[]>(BUILT.anisotropic),
@@ -273,15 +281,15 @@ export default function GaussianMixtureModelPage() {
           <Settings />
         </button>
       </header>
-      <main>
-        <header>
+      <main className={layout.trim()}>
+        <header className={panel("Dataset", "Train", "Metrics").trim()}>
           <b>♙ Objective</b>
           <span>
             Understand how GMM represents data as a weighted sum of Gaussians
             and how EM learns the parameters.
           </span>
         </header>
-        <nav>
+        <nav role="tablist" aria-label="Gaussian Mixture Model sections">
           {[
             "Learn",
             "Visualize",
@@ -292,6 +300,8 @@ export default function GaussianMixtureModelPage() {
             "Explain",
           ].map((name) => (
             <button
+              role="tab"
+              aria-selected={tab === name}
               className={tab === name ? "active" : ""}
               onClick={() => setTab(name)}
               key={name}
@@ -300,7 +310,13 @@ export default function GaussianMixtureModelPage() {
             </button>
           ))}
         </nav>
-        <section className="gm-viz">
+        {lesson && (
+          <LabLessonPanel
+            tab={tab}
+            route="/ml/clustering/gaussian-mixture-model"
+          />
+        )}
+        <section className={`gm-viz${panel("Train")}`}>
           <header>
             <h2>Mixture Visualization ⓘ</h2>
             <select>
@@ -377,7 +393,7 @@ export default function GaussianMixtureModelPage() {
             point for the nearest component.
           </footer>
         </section>
-        <section className="gm-cards">
+        <section className={`gm-cards${panel("Metrics")}`}>
           <article>
             <h3>Component Parameters (θ)</h3>
             <div className="head">
@@ -485,7 +501,7 @@ export default function GaussianMixtureModelPage() {
           </article>
         </section>
       </main>
-      <aside className="gm-em">
+      <aside className={`gm-em${panel("Train")}`}>
         <nav>
           <button
             className={sideTab === "EM Algorithm" ? "active" : ""}
@@ -677,7 +693,7 @@ export default function GaussianMixtureModelPage() {
           </>
         )}
       </aside>
-      <aside className="gm-data">
+      <aside className={`gm-data${panel("Dataset")}`}>
         <h2>Dataset</h2>
         <small>Active Dataset</small>
         <article>

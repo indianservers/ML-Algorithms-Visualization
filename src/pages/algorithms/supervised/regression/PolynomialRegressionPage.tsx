@@ -44,6 +44,7 @@ import {
 } from "../../../../lib/algorithms/regression/linearRegression";
 import { mae, mse, rmse, rSquared } from "../../../../lib/math/metrics";
 import "./PolynomialRegressionPage.css";
+import { useTheme } from "../../../../stores/uiStore";
 
 type Point = { x: number; y: number };
 type Tab =
@@ -486,9 +487,9 @@ export default function PolynomialRegressionPage() {
     [datasetId, setDatasetId] = useState<DatasetId>("sine"),
     [rows, setRows] = useState<Point[]>(() => sineRows(0.1)),
     [interactive, setInteractive] = useState(true),
-    [training, setTraining] = useState(false),
-    [theme, setTheme] = useState<"dark" | "light">("dark"),
-    [quickOpen, setQuickOpen] = useState(false),
+    [training, setTraining] = useState(false);
+  const { theme, toggleTheme } = useTheme();
+  const [quickOpen, setQuickOpen] = useState(false),
     [predictionX, setPredictionX] = useState(0),
     [chartFocused, setChartFocused] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null),
@@ -602,7 +603,7 @@ export default function PolynomialRegressionPage() {
           <div className="poly-header-actions">
             <button
               aria-label="Toggle theme"
-              onClick={() => setTheme((v) => (v === "dark" ? "light" : "dark"))}
+              onClick={toggleTheme}
             >
               {theme === "dark" ? <Sun /> : <Moon />}
             </button>

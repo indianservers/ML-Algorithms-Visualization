@@ -44,7 +44,7 @@ export const LearningPanel: React.FC<LearningPanelProps> = ({ sections, defaultO
   }, [expanded, storageKey]);
 
   return (
-    <div data-learning-explanation className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 border border-blue-200 dark:border-blue-800 rounded-xl">
+    <div data-guide="algo-idea" data-learning-explanation className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 border border-blue-200 dark:border-blue-800 rounded-xl">
       <button
         onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between px-4 py-3 text-left"
