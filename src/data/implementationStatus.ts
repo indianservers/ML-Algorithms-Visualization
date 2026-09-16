@@ -160,6 +160,7 @@ const conceptRoutes = new Set(
 );
 
 export function getImplementationStatus(route: string): ImplementationStatus {
+  if (route === '/ml/terms-studio' || route.startsWith('/ml/terms-studio/')) return 'Educational';
   if (implementedRoutes.has(route)) return 'Implemented';
   if (route === '/ml/clustering/gaussian-mixture-model' || route === '/ml/clustering/optics') return 'Educational';
   if (conceptRoutes.has(route)) return 'Concept';

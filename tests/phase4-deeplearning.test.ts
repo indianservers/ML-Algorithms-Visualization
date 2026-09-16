@@ -1,6 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { trainPerceptron } from "../src/lib/algorithms/neural/perceptron";
-import { trainMLP, forwardMLP } from "../src/lib/algorithms/neural/mlp";
+import {
+  createMLPState,
+  featureImportanceMLP,
+  findLearningRates,
+  forwardMLP,
+  reinitNeuron,
+  shouldEarlyStop,
+  stepMLP,
+  trainMLP,
+} from "../src/lib/algorithms/neural/mlp";
+import {
+  expandFeatures,
+  makePlaygroundData,
+  shuffleLabels,
+} from "../src/lib/algorithms/neural/nnPlayground";
 import { convolve2d, maxPool2d } from "../src/lib/algorithms/neural/cnn";
 import { runRNN } from "../src/lib/algorithms/neural/rnn";
 import { runLSTM } from "../src/lib/algorithms/neural/lstm";
@@ -87,6 +101,78 @@ describe("Phase 4 deep learning mathematics", () => {
     expect(predictions[1]).toBeGreaterThan(0.5);
     expect(predictions[2]).toBeGreaterThan(0.5);
     expect(predictions[3]).toBeLessThan(0.5);
+  });
+
+  it("expands playground features and steps the live trainer", () => {
+    expect(expandFeatures(2, 3, ["x1", "x2", "x1x2"])).toEqual([2, 3, 6]);
+    const X = [
+      [0, 0],
+      [0, 1],
+      [1, 0],
+      [1, 1],
+      [0.1, 0.1],
+      [0.9, 0.95],
+    ];
+    const y = [0, 1, 1, 0, 0, 0];
+    const options = {
+      hidden: [4],
+      activation: "tanh" as const,
+      learningRate: 0.15,
+      epochs: 1,
+      batchSize: 3,
+      l2: 0,
+      optimizer: "sgd" as const,
+      useBias: true,
+      seed: 4,
+    };
+    let state = createMLPState(X, y, options);
+    const before = state.weights[0][0][0];
+    state = stepMLP(state, options);
+    expect(state.epoch).toBe(1);
+    expect(state.trainLoss).toHaveLength(1);
+    expect(state.weights[0][0][0]).not.toBe(before);
+  });
+
+  it("imbalances playground shapes and can shuffle labels", () => {
+    const skewed = makePlaygroundData("moons", 0.05, 3, 100, 0.2);
+    expect(skewed.filter((p) => p.label === 1)).toHaveLength(20);
+    const mixed = shuffleLabels(skewed, 9);
+    expect(mixed.some((p, i) => p.label !== skewed[i]?.label)).toBe(true);
+  });
+
+  it("re-inits a neuron, scores features, finds η, and early-stops", () => {
+    const X = [
+      [0, 0],
+      [0, 1],
+      [1, 0],
+      [1, 1],
+      [0.2, 0.1],
+      [0.8, 0.9],
+    ];
+    const y = [0, 1, 1, 0, 0, 1];
+    const options = {
+      hidden: [3],
+      activation: "relu" as const,
+      learningRate: 0.05,
+      epochs: 1,
+      batchSize: 3,
+      l2: 0,
+      optimizer: "sgd" as const,
+      useBias: true,
+      seed: 8,
+    };
+    const state = createMLPState(X, y, options);
+    const before = state.weights[0][0][1];
+    const next = reinitNeuron(state, 0, 1, 44);
+    expect(next.weights[0][0][1]).not.toBe(before);
+    const importance = featureImportanceMLP(state);
+    expect(importance).toHaveLength(2);
+    expect(Math.abs(importance.reduce((s, v) => s + v, 0) - 1)).toBeLessThan(1e-6);
+    const sweep = findLearningRates(X, y, options, [0.01, 0.1], 8);
+    expect(sweep).toHaveLength(2);
+    expect(sweep[0]?.rate).toBe(0.01);
+    expect(shouldEarlyStop([0.7, 0.6, 0.5, 0.48, 0.5, 0.52, 0.55, 0.58, 0.61, 0.64, 0.67, 0.7, 0.73, 0.76])).toBe(true);
+    expect(shouldEarlyStop([0.6, 0.5, 0.4])).toBe(false);
   });
 
   it("matches the known 3×3 convolution and max-pool outputs", () => {

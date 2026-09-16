@@ -15,6 +15,17 @@
   transform-origin: top left;
 }
 
+/* Playground uses its own 4-row grid. Scaling the host makes tab
+   hit-targets miss the visible buttons. */
+.lab-fit-host:has(.nnp-page) {
+  overflow: hidden;
+}
+.lab-fit-host:has(.nnp-page) .lab-fit-inner {
+  height: 100% !important;
+  overflow: hidden !important;
+  zoom: 1 !important;
+}
+
 #main-content [class*="-page"],
 #main-content [class*="-shell"],
 #main-content [class*="-approved"] {
@@ -166,6 +177,7 @@ aside.ql-rail,
 aside.builder-side,
 aside.attention-side,
 aside.lstm-side,
+aside.nnp-side,
 aside.gbc-nav,
 aside.ada-nav {
   display: none !important;
@@ -272,6 +284,38 @@ aside.ada-nav {
 .lstm-page > .lstm-controls {
   grid-column: 2 !important;
 }
+#main-content .nnp-page {
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  grid-template-areas: "head head" "tabs tabs" "main side" "foot foot" !important;
+  grid-template-rows: auto auto minmax(280px, 1fr) auto !important;
+}
+#main-content .nnp-page:not(:has(> aside.nnp-controls)),
+#main-content .nnp-page.lesson {
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-areas: "head" "tabs" "main" "foot" !important;
+}
+#main-content .nnp-page > .nnp-head {
+  grid-area: head !important;
+}
+#main-content .nnp-page > .nnp-tabs {
+  grid-area: tabs !important;
+}
+#main-content .nnp-page > main {
+  grid-area: main !important;
+  grid-column: auto !important;
+  min-height: 280px !important;
+  overflow: auto !important;
+}
+#main-content .nnp-page > .nnp-controls {
+  grid-area: side !important;
+  grid-column: auto !important;
+}
+#main-content .nnp-page > footer,
+#main-content .nnp-page > .nnp-foot {
+  grid-area: foot !important;
+}
 
 @media (max-width: 980px) {
   #main-content
@@ -304,5 +348,25 @@ aside.ada-nav {
   #main-content .lstm-page > main,
   .lstm-page > .lstm-controls {
     grid-column: 1 / -1 !important;
+  }
+
+  #main-content .nnp-page {
+    overflow: auto !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas: "head" "tabs" "main" "side" "foot" !important;
+    grid-template-rows: auto auto minmax(320px, auto) auto auto !important;
+  }
+  #main-content .nnp-page.lesson,
+  #main-content .nnp-page:not(:has(> aside.nnp-controls)) {
+    grid-template-areas: "head" "tabs" "main" "foot" !important;
+    grid-template-rows: auto auto minmax(320px, 1fr) auto !important;
+  }
+  #main-content .nnp-page > main {
+    grid-area: main !important;
+    min-height: 320px !important;
+  }
+  #main-content .nnp-page > .nnp-controls {
+    grid-area: side !important;
+    max-height: 46vh;
   }
 }

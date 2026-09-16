@@ -850,6 +850,13 @@ const categoryDrawings: Record<string, Draw> = {
   Probabilistic: (id) => drawings["naive-bayes"](id),
   Deployment: (id) => drawings["model-export"](id),
   Lab: (id) => drawings["experiment-workspace"](id),
+  "Terms Studio": (id) => (
+    <>
+      {grad(`${id}a`, "#ffb347", "#2ee6ff")}
+      <path d="M8 7h16v18H8Z" stroke={`url(#${id}a)`} strokeWidth="1.8" />
+      <path d="M11 12h10M11 16h8M11 20h6" stroke="#ffb347" strokeWidth="1.5" />
+    </>
+  ),
 };
 
 const lucideToCategory: Record<string, string> = {
@@ -871,6 +878,7 @@ const lucideToCategory: Record<string, string> = {
   Sigma: "Probabilistic",
   Upload: "Deployment",
   FlaskConical: "Lab",
+  BookMarked: "Terms Studio",
 };
 
 function slugFromRoute(route: string) {

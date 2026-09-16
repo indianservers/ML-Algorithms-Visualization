@@ -782,6 +782,7 @@ const categoryArt: Record<string, keyof typeof art> = {
   Probabilistic: "gauss",
   Deployment: "deploy",
   Lab: "grid",
+  "Terms Studio": "text",
 };
 
 /** Route slug -> art key, for routes whose slug is not itself an art key. */

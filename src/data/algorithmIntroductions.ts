@@ -79,6 +79,10 @@ const categoryIntro: Record<string, Omit<AlgorithmIntroduction, 'summary'>> = {
     useWhen: 'Use it when comparing experiments, managing datasets, saving results, or preparing reports.',
     watchFor: 'Watch reproducibility, consistent metrics, dataset versions, random seeds, and notes that explain why results changed.',
   },
+  'Terms Studio': {
+    useWhen: 'Use it when a short ML word (ReLU, loss, epoch, softmax) is blocking the rest of a lesson.',
+    watchFor: 'Watch that the analogy matches the math, then open the linked lab and try the same idea on data.',
+  },
 };
 
 const routeIntro: Record<string, Partial<AlgorithmIntroduction>> = {
@@ -122,7 +126,7 @@ const routeIntro: Record<string, Partial<AlgorithmIntroduction>> = {
     summary: 'A perceptron is the smallest useful neural classifier: it learns a linear boundary from mistakes.',
   },
   '/ml/deep-learning/nn-playground': {
-    summary: 'The neural network playground shows how hidden layers, activations, and learning rate shape a learned decision boundary.',
+    summary: 'A live neural-net sandbox: play epochs, hover neurons, toggle features, and grade the boundary on a held-out test set.',
   },
   '/ml/evaluation/confusion-matrix': {
     summary: 'A confusion matrix breaks classification results into correct and incorrect counts for each class.',

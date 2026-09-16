@@ -506,6 +506,11 @@ function HomePageOriginal() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {[
             {
+              label: "NN Playground",
+              to: "/ml/deep-learning/nn-playground",
+              badge: "Interactive",
+            },
+            {
               label: "Linear Regression",
               to: "/ml/supervised/simple-linear-regression",
               badge: "Beginner",
@@ -519,11 +524,6 @@ function HomePageOriginal() {
               label: "PCA",
               to: "/ml/dimensionality-reduction/pca",
               badge: "Intermediate",
-            },
-            {
-              label: "Neural Network",
-              to: "/ml/deep-learning/nn-playground",
-              badge: "Interactive",
             },
             {
               label: "Logistic Regression",

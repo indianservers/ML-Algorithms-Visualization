@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import {
   Activity,
   ArrowRight,
+  BookMarked,
   BookOpen,
   Boxes,
   ChevronDown,
@@ -125,12 +126,30 @@ const groups: Group[] = [
     icon: <Sparkles />,
     categories: ["Deep Learning"],
     featured: [
+      card("/ml/deep-learning/nn-playground", "Live trainer — play, paint, test", "Beginner", "NN Playground", "feedforward-nn"),
       card("/ml/deep-learning/mlp", "Basic neural networks", "Beginner", "Feedforward NN", "feedforward-nn"),
       card("/ml/deep-learning/cnn", "Image classification", "Intermediate"),
       card("/ml/deep-learning/rnn", "Sequential data", "Intermediate"),
       card("/ml/deep-learning/lstm", "Long-term memory", "Intermediate"),
       card("/ml/deep-learning/transformer-attention", "Attention mechanism", "Advanced", "Transformer"),
       card("/ml/deep-learning/multi-head-attention", "Parallel attention heads", "Advanced", "Multi-Head Attention"),
+    ],
+  },
+  {
+    id: "terms-studio",
+    title: "Terms Studio",
+    blurb: "Understand the words behind the algorithms",
+    tone: "purple",
+    icon: <BookMarked />,
+    categories: ["Terms Studio"],
+    featured: [
+      card("/ml/terms-studio", "The whole glossary in one studio", "Beginner", "Terms Studio"),
+      card("/ml/terms-studio/gradient-descent", "Walk downhill on the error hill", "Beginner", "Gradient Descent"),
+      card("/ml/terms-studio/relu", "The default hidden-layer switch", "Beginner", "ReLU"),
+      card("/ml/terms-studio/softmax", "Scores that add up to 100%", "Beginner", "Softmax"),
+      card("/ml/terms-studio/dropout", "Randomly mute neurons while practicing", "Beginner", "Dropout"),
+      card("/ml/terms-studio/backpropagation", "Walk the error backward", "Beginner", "Backpropagation"),
+      card("/ml/terms-studio/overfitting", "Memorizing homework vs learning", "Beginner", "Overfitting"),
     ],
   },
 ];
@@ -167,6 +186,14 @@ const miniCategories = [
     icon: <Gamepad2 />,
     category: "Reinforcement Learning",
     route: "/ml/reinforcement-learning/q-learning-grid-world",
+  },
+  {
+    title: "Terms Studio",
+    blurb: "Understand ReLU, loss, epochs...",
+    tone: "amber",
+    icon: <BookMarked />,
+    category: "Terms Studio",
+    route: "/ml/terms-studio",
   },
 ] as const;
 
@@ -330,6 +357,10 @@ export default function HomeLanding() {
         </label>
 
         <nav className="hl-nav-links" aria-label="Primary">
+          <Link to="/ml/terms-studio">
+            <BookMarked />
+            Terms
+          </Link>
           <Link to="/documentation">
             <BookOpen />
             Learn
@@ -384,16 +415,17 @@ export default function HomeLanding() {
           <p className="hl-hero-tag">Learn. Visualize. Experiment. Build Intuition.</p>
           <p className="hl-hero-lede">
             Interactive implementations of {items.length}+ machine learning algorithms with real-time
-            visualizations, datasets and hands-on experiments.
+            visualizations, datasets and hands-on experiments. Start in the Neural
+            Network Playground — a live trainer you can pause, paint, and grade.
           </p>
           <div className="hl-hero-cta">
-            <Link to="/ml/supervised/simple-linear-regression" className="hl-btn-primary">
-              <Play />
-              Start Learning
+            <Link to="/ml/terms-studio" className="hl-btn-primary">
+              <BookMarked />
+              Open Terms Studio
             </Link>
-            <Link to="/sitemap" className="hl-btn-ghost">
-              Explore All Algorithms
-              <ArrowRight />
+            <Link to="/ml/deep-learning/nn-playground" className="hl-btn-ghost">
+              <Play />
+              Open Playground
             </Link>
           </div>
         </div>
@@ -422,6 +454,60 @@ export default function HomeLanding() {
           <span className="hl-pill hl-pill-train">Train</span>
           <span className="hl-pill hl-pill-predict">Predict</span>
         </div>
+      </section>
+
+      <section className="hl-spotlight" aria-labelledby="hl-spotlight-title">
+        <div className="hl-spotlight-copy">
+          <p className="hl-spotlight-kicker">Featured lab</p>
+          <h2 id="hl-spotlight-title">Neural Network Playground</h2>
+          <p>
+            Train a live net in the browser. Pause epochs, paint points, flip
+            features, and let a held-out test set grade the boundary — more
+            than a static color field.
+          </p>
+          <ul>
+            <li>Play / Pause / Step with train and test loss</li>
+            <li>Click-to-draw data and neuron feature maps</li>
+            <li>Compare a linear net against your architecture</li>
+          </ul>
+          <Link to="/ml/deep-learning/nn-playground" className="hl-btn-primary">
+            <Play />
+            Launch playground
+          </Link>
+        </div>
+        <Link to="/ml/deep-learning/nn-playground" className="hl-spotlight-art" aria-label="Open Neural Network Playground">
+          <AlgorithmArt
+            route="/ml/deep-learning/nn-playground"
+            category="Deep Learning"
+            artKey="feedforward-nn"
+          />
+          <span>Live · browser trainable</span>
+        </Link>
+      </section>
+
+      <section className="hl-spotlight hl-spotlight-terms" aria-labelledby="hl-terms-title">
+        <div className="hl-spotlight-copy">
+          <p className="hl-spotlight-kicker">Special module</p>
+          <h2 id="hl-terms-title">Terms Studio</h2>
+          <p>
+            New to the jargon? Open a classroom for the words themselves — ReLU,
+            gradient descent, softmax, dropout, epochs — each with a plain-English
+            story, a worked example, and a knob you can turn.
+          </p>
+          <ul>
+            <li>42 beginner pages for the ideas behind the algorithms</li>
+            <li>Everyday analogies, then the tiny bit of math</li>
+            <li>Interactive examples, then a door into the matching lab</li>
+          </ul>
+          <Link to="/ml/terms-studio" className="hl-btn-primary">
+            <BookMarked />
+            Enter Terms Studio
+          </Link>
+        </div>
+        <Link to="/ml/terms-studio" className="hl-spotlight-art" aria-label="Open Terms Studio">
+          <AlgorithmArt route="/ml/terms-studio" category="Terms Studio" />
+          <span>Understand the words</span>
+        </Link>
       </section>
 
       <section className="hl-catalog">

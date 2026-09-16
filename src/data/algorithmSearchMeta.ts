@@ -1,3 +1,5 @@
+import { termsStudioSearchMeta } from './termsStudio';
+
 // Hand-authored search metadata for the algorithm catalogue. Keyed by the same
 // route slugs used in `navigation.ts` so the two files stay in lock step; every
 // other searchable field (label, category, difficulty badge) is derived from
@@ -91,6 +93,10 @@ export const categorySearchMeta: Record<string, CategorySearchMeta> = {
   Lab: {
     section: 'Lab & Workspaces',
     tags: ['lab', 'workspace', 'experiment', 'tooling'],
+  },
+  'Terms Studio': {
+    section: 'Terms Studio · Understand the words',
+    tags: ['glossary', 'terms', 'beginner', 'concepts', 'studio'],
   },
 };
 
@@ -280,9 +286,9 @@ export const algorithmSearchMeta: Record<string, AlgorithmSearchMeta> = {
     tags: ['neuron', 'hidden layers', 'activation', 'backpropagation', 'relu'],
   },
   '/ml/deep-learning/nn-playground': {
-    description: 'Interactive sandbox for wiring up and training a network in the browser.',
-    synonyms: ['neural network playground', 'nn playground', 'network sandbox'],
-    tags: ['playground', 'interactive', 'training', 'hyperparameters', 'sandbox'],
+    description: 'Live neural-net sandbox: play/pause epochs, clickable neurons, engineered features, test points, and click-to-draw data.',
+    synonyms: ['neural network playground', 'nn playground', 'network sandbox', 'tensorflow playground'],
+    tags: ['playground', 'interactive', 'training', 'hyperparameters', 'sandbox', 'decision boundary'],
   },
   '/ml/deep-learning/cnn': {
     description: 'Convolution and pooling layers that learn spatial features from images.',
@@ -792,4 +798,5 @@ export const algorithmSearchMeta: Record<string, AlgorithmSearchMeta> = {
     synonyms: ['report builder', 'report generator', 'export report'],
     tags: ['reporting', 'export', 'charts', 'documentation'],
   },
+  ...termsStudioSearchMeta,
 };
