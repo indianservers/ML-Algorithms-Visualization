@@ -183,6 +183,7 @@ const HyperparameterTuningEnginePage = lazy(() => import('../pages/algorithms/la
 
 const TermsStudioHubPage = lazy(() => import('../pages/termsStudio/TermsStudioHubPage'));
 const TermsStudioTermPage = lazy(() => import('../pages/termsStudio/TermsStudioTermPage'));
+const TermsStudioCategoryPage = lazy(() => import('../pages/termsStudio/TermsStudioCategoryPage'));
 
 export const router = createBrowserRouter([
   {
@@ -350,6 +351,13 @@ export const router = createBrowserRouter([
       { path: 'ml/lab/dataset-intelligence', element: <DatasetIntelligencePage /> },
       { path: 'ml/lab/tuning-engine', element: <HyperparameterTuningEnginePage /> },
       { path: 'ml/terms-studio', element: <TermsStudioHubPage /> },
+      { path: 'ml/terms-studio/topic/:id', element: <TermsStudioCategoryPage /> },
+      { path: 'ml/terms-studio/topic/optimization', element: <TermsStudioCategoryPage /> },
+      { path: 'ml/terms-studio/topic/activations', element: <TermsStudioCategoryPage /> },
+      { path: 'ml/terms-studio/topic/losses', element: <TermsStudioCategoryPage /> },
+      { path: 'ml/terms-studio/topic/regularization', element: <TermsStudioCategoryPage /> },
+      { path: 'ml/terms-studio/topic/neural', element: <TermsStudioCategoryPage /> },
+      { path: 'ml/terms-studio/topic/data-math', element: <TermsStudioCategoryPage /> },
       { path: 'ml/terms-studio/:slug', element: <TermsStudioTermPage /> },
       { path: 'ml/terms-studio/gradient-descent', element: <TermsStudioTermPage /> },
       { path: 'ml/terms-studio/sgd-mini-batch', element: <TermsStudioTermPage /> },
@@ -393,6 +401,16 @@ export const router = createBrowserRouter([
       { path: 'ml/terms-studio/feature-scaling', element: <TermsStudioTermPage /> },
       { path: 'ml/terms-studio/train-val-test', element: <TermsStudioTermPage /> },
       { path: 'ml/terms-studio/cross-validation', element: <TermsStudioTermPage /> },
+      { path: 'ml/terms-studio/residual-connection', element: <TermsStudioTermPage /> },
+      { path: 'ml/terms-studio/attention', element: <TermsStudioTermPage /> },
+      { path: 'ml/terms-studio/embedding', element: <TermsStudioTermPage /> },
+      { path: 'ml/terms-studio/temperature', element: <TermsStudioTermPage /> },
+      { path: 'ml/terms-studio/learning-curve', element: <TermsStudioTermPage /> },
+      { path: 'ml/terms-studio/baseline', element: <TermsStudioTermPage /> },
+      { path: 'ml/terms-studio/data-leakage', element: <TermsStudioTermPage /> },
+      { path: 'ml/terms-studio/cosine-similarity', element: <TermsStudioTermPage /> },
+      { path: 'ml/terms-studio/padding', element: <TermsStudioTermPage /> },
+      { path: 'ml/terms-studio/token', element: <TermsStudioTermPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

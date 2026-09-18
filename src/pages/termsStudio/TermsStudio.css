@@ -444,10 +444,169 @@
   gap: 10px;
 }
 
+.ts-meeting,
+.ts-caption,
+.ts-units {
+  margin: 8px 0 0;
+  color: var(--ts-muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.ts-caption {
+  padding-top: 8px;
+  border-top: 1px dashed var(--ts-line);
+  font-weight: 600;
+}
+
+.ts-units {
+  font-size: 12px;
+}
+
+.ts-lang,
+.ts-filters,
+.ts-toc,
+.ts-demo-tools,
+.ts-walk {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.ts-toc a,
+.ts-lang button,
+.ts-filters button,
+.ts-demo-tools button,
+.ts-walk button,
+.ts-side-card select {
+  border: 1px solid var(--ts-line);
+  background: var(--ts-card);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  color: inherit;
+}
+
+.ts-lang .is-on,
+.ts-filters .is-on,
+.ts-toc a:hover,
+.ts-chip.is-learned,
+.ts-card.is-learned,
+.ts-nav-terms a.is-learned {
+  border-color: #fb923c;
+  background: var(--ts-amber-soft);
+}
+
+.ts-break {
+  border-color: #fb7185 !important;
+  color: #be123c;
+}
+
+.ts-progress {
+  max-width: 520px;
+  margin: 0 0 16px;
+}
+
+.ts-progress p {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--ts-muted);
+}
+
+.ts-progress i {
+  display: block;
+  height: 8px;
+  border-radius: 999px;
+  background: #ea580c;
+}
+
+.ts-sixty,
+.ts-recap {
+  margin: 0 0 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--ts-line);
+  border-radius: 16px;
+  background: var(--ts-card);
+}
+
+.ts-sixty h2,
+.ts-recap h2 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.ts-sixty-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ts-sixty-grid em {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ts-amber);
+}
+
+.ts-sixty-grid p,
+.ts-remember,
+.ts-quiz p,
+.ts-compare p {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.ts-symbols {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.ts-compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.ts-side-card select {
+  width: 100%;
+  border-radius: 10px;
+  margin-top: 8px;
+}
+
+.ts-walk p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ts-muted);
+}
+
 @media (max-width: 900px) {
   .ts-layout,
   .ts-pair,
-  .ts-metric-pair {
+  .ts-metric-pair,
+  .ts-sixty-grid,
+  .ts-compare {
     grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  .ts-toc,
+  .ts-lang,
+  .ts-nav-terms,
+  .ts-demo,
+  .ts-demo-chrome,
+  aside .ts-labs {
+    display: none !important;
+  }
+  .terms-studio {
+    background: white;
+    padding: 0;
   }
 }

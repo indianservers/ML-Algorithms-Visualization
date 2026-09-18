@@ -1,4 +1,5 @@
 import type { BadgeType, NavItem } from './navigation';
+import { termsStudioNewLessons } from './termsStudioNewTerms';
 
 export type TermCategoryId =
   | 'optimization'
@@ -129,6 +130,11 @@ export interface TermEnhance {
 export type TermLanguage = 'default' | 'simple' | 'hindi';
 
 export const TERMS_STUDIO_HUB_ROUTE = '/ml/terms-studio';
+export const TERMS_STUDIO_TOPIC_ROUTE = '/ml/terms-studio/topic';
+
+export function categoryRoute(id: TermCategoryId): string {
+  return `${TERMS_STUDIO_TOPIC_ROUTE}/${id}`;
+}
 
 export const termCategories: TermCategory[] = [
   { id: 'optimization', title: 'Optimization', blurb: 'How a model takes steps to get less wrong', tone: 'amber' },
@@ -1834,6 +1840,8 @@ export const termsStudioLessons: TermLesson[] = [
   },
 ];
 
+termsStudioLessons.push(...termsStudioNewLessons);
+
 const termBySlug = new Map(termsStudioLessons.map((term) => [term.slug, term]));
 
 export function getTermLesson(slug: string): TermLesson | undefined {
@@ -1884,6 +1892,14 @@ export const termsStudioSearchMeta: Record<string, { description: string; synony
         description: term.blurb,
         synonyms: term.synonyms,
         tags: term.tags,
+      },
+    ]),
+    ...termCategories.map((category) => [
+      categoryRoute(category.id),
+      {
+        description: category.blurb,
+        synonyms: [category.title, category.id, 'terms topic'],
+        tags: ['studio', 'topic', category.id],
       },
     ]),
   ]);

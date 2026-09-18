@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   CartesianGrid,
   ComposedChart,
@@ -13,7 +13,7 @@ import {
 } from 'recharts';
 import type { TermDemoKind } from '../../data/termsStudio';
 
-type DemoProps = { kind: TermDemoKind; variant?: string };
+type DemoProps = { kind: TermDemoKind; variant?: string; caption?: string; unitsNote?: string };
 
 const tooltip = {
   contentStyle: { fontSize: 12, borderRadius: 8 },
@@ -167,16 +167,85 @@ function walkHill(start: number, lr: number, steps: number, noisy = false, momen
   return path;
 }
 
+function useWalk(total: number, captions: string[]) {
+  const [step, setStep] = useState(total);
+  const [playing, setPlaying] = useState(false);
+  useEffect(() => {
+    if (!playing) return undefined;
+    const id = window.setInterval(() => {
+      setStep((current) => {
+        if (current >= total) {
+          setPlaying(false);
+          return total;
+        }
+        return current + 1;
+      });
+    }, 320);
+    return () => window.clearInterval(id);
+  }, [playing, total]);
+  return {
+    step,
+    playing,
+    caption: captions[Math.min(step, captions.length - 1)] ?? captions[captions.length - 1],
+    play: () => {
+      setStep(0);
+      setPlaying(true);
+    },
+    pause: () => setPlaying(false),
+    reset: () => {
+      setPlaying(false);
+      setStep(total);
+    },
+  };
+}
+
+function WalkToolbar({
+  playing,
+  caption,
+  onPlay,
+  onPause,
+}: {
+  playing: boolean;
+  caption?: string;
+  onPlay: () => void;
+  onPause: () => void;
+}) {
+  return (
+    <div className="ts-walk">
+      <button type="button" onClick={playing ? onPause : onPlay}>
+        {playing ? 'Pause walk' : 'Play walk'}
+      </button>
+      {caption && <p>{caption}</p>}
+    </div>
+  );
+}
+
 function LearningRateDemo() {
   const [lr, setLr] = useState(0.15);
   const [start, setStart] = useState(-1.5);
   const path = walkHill(start, lr, 18);
+  const walk = useWalk(path.length - 1, [
+    'Feel the slope under your feet.',
+    'Take a small step downhill.',
+    'If the stride is huge you jump over the valley.',
+    'The valley lives at x = 2. That is the destination.',
+  ]);
+  const shown = path.slice(0, walk.step + 1);
   const curve = Array.from({ length: 61 }, (_, i) => {
     const x = -3 + i * 0.15;
     return { x, y: (x - 2) ** 2 + 0.4 };
   });
   return (
     <div className="ts-demo">
+      <WalkToolbar playing={walk.playing} caption={walk.caption} onPlay={walk.play} onPause={walk.pause} />
+      <div className="ts-demo-tools">
+        <button type="button" className="ts-break" onClick={() => { setLr(1.05); walk.reset(); }}>
+          Break it
+        </button>
+        <button type="button" onClick={() => { setLr(0.15); setStart(-1.5); walk.reset(); }}>
+          Reset
+        </button>
+      </div>
       <div className="ts-slider-grid">
         <Slider label="Learning rate" value={lr} min={0.02} max={1.1} step={0.01} onChange={setLr} />
         <Slider label="Start x" value={start} min={-3} max={5} step={0.1} onChange={setStart} />
@@ -189,12 +258,12 @@ function LearningRateDemo() {
             <YAxis tick={{ fontSize: 11 }} />
             <Tooltip {...tooltip} />
             <Line type="monotone" dataKey="y" stroke="#94a3b8" dot={false} name="loss hill" />
-            <Line data={path} type="monotone" dataKey="loss" stroke="#2563eb" name="walk" dot={{ r: 3 }} />
+            <Line data={shown} type="monotone" dataKey="loss" stroke="#2563eb" name="walk" dot={{ r: 3 }} />
           </LineChart>
         </ResponsiveContainer>
       </div>
       <p className="ts-demo-readout">
-        Last x = <strong>{(path[path.length - 1]?.x ?? 0).toFixed(2)}</strong> (the valley is at 2)
+        Last x = <strong>{(shown[shown.length - 1]?.x ?? 0).toFixed(2)}</strong> (the valley is at 2)
       </p>
     </div>
   );
@@ -852,74 +921,475 @@ function SplitDemo({ variant }: { variant?: string }) {
   );
 }
 
-export function TermDemo({ kind, variant }: DemoProps) {
+function OverlayActivationDemo() {
+  const [show, setShow] = useState({ relu: true, leaky: true, sigmoid: false });
+  const data = useMemo(
+    () => Array.from({ length: 81 }, (_, i) => {
+      const x = -4 + i * 0.1;
+      return {
+        x,
+        relu: Math.max(0, x),
+        leaky: x > 0 ? x : 0.1 * x,
+        sigmoid: 1 / (1 + Math.exp(-x)),
+      };
+    }),
+    [],
+  );
+  return (
+    <div className="ts-demo">
+      <div className="ts-choice">
+        {(['relu', 'leaky', 'sigmoid'] as const).map((key) => (
+          <button
+            key={key}
+            type="button"
+            className={show[key] ? 'is-on' : ''}
+            onClick={() => setShow((current) => ({ ...current, [key]: !current[key] }))}
+          >
+            {key}
+          </button>
+        ))}
+      </div>
+      <div className="ts-chart">
+        <ResponsiveContainer width="100%" height={220}>
+          <LineChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <XAxis dataKey="x" tick={{ fontSize: 11 }} />
+            <YAxis tick={{ fontSize: 11 }} />
+            <Tooltip {...tooltip} />
+            {show.relu && <Line type="monotone" dataKey="relu" stroke="#2563eb" dot={false} />}
+            {show.leaky && <Line type="monotone" dataKey="leaky" stroke="#d97706" dot={false} />}
+            {show.sigmoid && <Line type="monotone" dataKey="sigmoid" stroke="#7c3aed" dot={false} />}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+function OverlayLossDemo() {
+  const [residual, setResidual] = useState(2);
+  const mse = residual ** 2;
+  const mae = Math.abs(residual);
+  const huber = Math.abs(residual) <= 1 ? 0.5 * residual ** 2 : Math.abs(residual) - 0.5;
+  const data = Array.from({ length: 41 }, (_, i) => {
+    const r = -4 + i * 0.2;
+    return {
+      r,
+      mse: r * r,
+      mae: Math.abs(r),
+      huber: Math.abs(r) <= 1 ? 0.5 * r * r : Math.abs(r) - 0.5,
+    };
+  });
+  return (
+    <div className="ts-demo">
+      <Slider label="Residual (truth − guess)" value={residual} min={-4} max={4} step={0.1} onChange={setResidual} />
+      <div className="ts-metric-pair">
+        <div><em>MSE</em><strong>{mse.toFixed(2)}</strong></div>
+        <div><em>MAE</em><strong>{mae.toFixed(2)}</strong></div>
+        <div><em>Huber</em><strong>{huber.toFixed(2)}</strong></div>
+      </div>
+      <div className="ts-chart">
+        <ResponsiveContainer width="100%" height={220}>
+          <LineChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <XAxis dataKey="r" tick={{ fontSize: 11 }} />
+            <YAxis tick={{ fontSize: 11 }} />
+            <Tooltip {...tooltip} />
+            <Line type="monotone" dataKey="mse" stroke="#2563eb" dot={false} />
+            <Line type="monotone" dataKey="mae" stroke="#d97706" dot={false} />
+            <Line type="monotone" dataKey="huber" stroke="#059669" dot={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+function ResidualDemo() {
+  const [skip, setSkip] = useState(1);
+  const [edit, setEdit] = useState(0.4);
+  const [layers, setLayers] = useState(4);
+  let signal = 1;
+  const bars = Array.from({ length: layers }, (_, i) => {
+    signal = skip ? signal + edit * 0.3 : signal * 0.55;
+    return { i: i + 1, v: signal };
+  });
+  return (
+    <div className="ts-demo">
+      <div className="ts-demo-tools">
+        <button type="button" className="ts-break" onClick={() => { setSkip(0); setLayers(8); }}>Break it</button>
+        <button type="button" onClick={() => { setSkip(1); setEdit(0.4); setLayers(4); }}>Reset</button>
+      </div>
+      <Slider label="Skip connection" value={skip} min={0} max={1} step={1} onChange={setSkip} />
+      <Slider label="Block edit F(x)" value={edit} min={-1} max={1} step={0.1} onChange={setEdit} />
+      <Slider label="Depth" value={layers} min={2} max={8} step={1} onChange={setLayers} />
+      <div className="ts-bars">
+        {bars.map((bar) => (
+          <div key={bar.i} className="ts-bar-row">
+            <span>L{bar.i}</span>
+            <i style={{ width: `${Math.min(100, Math.abs(bar.v) * 50)}%` }} />
+            <em>{bar.v.toFixed(2)}</em>
+          </div>
+        ))}
+      </div>
+      <p className="ts-demo-readout">{skip ? 'y = x + F(x). The original signal can survive.' : 'No skip: each layer multiplies. The start fades.'}</p>
+    </div>
+  );
+}
+
+function AttentionDemo() {
+  const [match, setMatch] = useState(2);
+  const [temp, setTemp] = useState(1);
+  const labels = ['not', 'very', 'good'];
+  const scores = [0.2, 0.3, match];
+  const shifted = scores.map((score) => Math.exp(score / temp));
+  const total = shifted.reduce((sum, value) => sum + value, 0);
+  const shares = shifted.map((value) => value / total);
+  return (
+    <div className="ts-demo">
+      <Slider label={'How much “not” matches “good”'} value={match} min={-1} max={4} step={0.1} onChange={setMatch} />
+      <Slider label="Temperature" value={temp} min={0.3} max={3} step={0.1} onChange={setTemp} />
+      <div className="ts-bars">
+        {labels.map((label, i) => (
+          <div key={label} className="ts-bar-row">
+            <span>{label}</span>
+            <i style={{ width: `${(shares[i] ?? 0) * 100}%` }} />
+            <em>{((shares[i] ?? 0) * 100).toFixed(0)}%</em>
+          </div>
+        ))}
+      </div>
+      <p className="ts-demo-readout">The bars are where “not” looks. They always add to 100%.</p>
+    </div>
+  );
+}
+
+function EmbeddingDemo() {
+  const [catX, setCatX] = useState(0.9);
+  const [dogX, setDogX] = useState(0.75);
+  const cat = { x: catX, y: 0.25 };
+  const dog = { x: dogX, y: 0.32 };
+  const car = { x: -0.7, y: 0.1 };
+  const cosine = (a: { x: number; y: number }, b: { x: number; y: number }) => {
+    const dot = a.x * b.x + a.y * b.y;
+    const na = Math.hypot(a.x, a.y);
+    const nb = Math.hypot(b.x, b.y);
+    return na * nb === 0 ? 0 : dot / (na * nb);
+  };
+  return (
+    <div className="ts-demo">
+      <Slider label="Move “cat” on the map" value={catX} min={-1} max={1} step={0.05} onChange={setCatX} />
+      <Slider label="Move “dog”" value={dogX} min={-1} max={1} step={0.05} onChange={setDogX} />
+      <div className="ts-metric-pair">
+        <div><em>cos(cat, dog)</em><strong>{cosine(cat, dog).toFixed(2)}</strong></div>
+        <div><em>cos(cat, car)</em><strong>{cosine(cat, car).toFixed(2)}</strong></div>
+      </div>
+      <p className="ts-demo-readout">Nearby seats mean similar use. Car should stay in another room.</p>
+    </div>
+  );
+}
+
+function LearningCurveDemo() {
+  const [story, setStory] = useState(0);
+  const stories = [
+    Array.from({ length: 8 }, (_, n) => ({ n, train: 1.1 - n * 0.02, val: 1.12 - n * 0.015 })),
+    Array.from({ length: 8 }, (_, n) => ({ n, train: 0.9 - n * 0.1, val: 0.85 - n * 0.02 })),
+    Array.from({ length: 8 }, (_, n) => ({ n, train: 1.0 - n * 0.1, val: 1.05 - n * 0.095 })),
+  ];
+  const labels = ['Underfit (both high)', 'Overfit (gap grows)', 'Healthy (together)'];
+  return (
+    <div className="ts-demo">
+      <div className="ts-choice">
+        {labels.map((label, i) => (
+          <button key={label} type="button" className={story === i ? 'is-on' : ''} onClick={() => setStory(i)}>
+            {label}
+          </button>
+        ))}
+      </div>
+      <div className="ts-chart">
+        <ResponsiveContainer width="100%" height={220}>
+          <LineChart data={stories[story]}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <XAxis dataKey="n" tick={{ fontSize: 11 }} />
+            <YAxis tick={{ fontSize: 11 }} />
+            <Tooltip {...tooltip} />
+            <Line type="monotone" dataKey="train" stroke="#2563eb" name="train" />
+            <Line type="monotone" dataKey="val" stroke="#e11d48" name="validation" />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+function BaselineDemo() {
+  const [ham, setHam] = useState(95);
+  const majority = ham;
+  const fancy = Math.min(99, ham + 1.2);
+  return (
+    <div className="ts-demo">
+      <Slider label="% ham in the mailbox" value={ham} min={50} max={99} step={1} onChange={setHam} />
+      <div className="ts-bars">
+        <div className="ts-bar-row">
+          <span>Majority</span>
+          <i style={{ width: `${majority}%`, background: '#94a3b8' }} />
+          <em>{majority}%</em>
+        </div>
+        <div className="ts-bar-row">
+          <span>Fancy net</span>
+          <i style={{ width: `${fancy}%` }} />
+          <em>{fancy.toFixed(1)}%</em>
+        </div>
+      </div>
+      <p className="ts-demo-readout">Beat the grey bar. A 1-point win on a 95% mailbox is a shrug unless spam recall moved.</p>
+    </div>
+  );
+}
+
+function LeakageDemo() {
+  const [leak, setLeak] = useState(0);
+  const honest = 0.72;
+  const magic = leak ? 0.99 : honest;
+  return (
+    <div className="ts-demo">
+      <Slider label="Leak the label into a feature" value={leak} min={0} max={1} step={1} onChange={setLeak} />
+      <div className="ts-metric-pair">
+        <div><em>Validation score</em><strong>{(magic * 100).toFixed(0)}%</strong></div>
+        <div><em>Monday-morning score</em><strong>{leak ? '61%' : '71%'}</strong></div>
+      </div>
+      <p className="ts-demo-readout">{leak ? 'The backpack had the exam. Production does not.' : 'No leak. The two scores stay honest neighbors.'}</p>
+    </div>
+  );
+}
+
+function CosineDemo() {
+  const [angle, setAngle] = useState(45);
+  const [scale, setScale] = useState(1);
+  const rad = (angle * Math.PI) / 180;
+  const a = { x: 1, y: 0 };
+  const b = { x: Math.cos(rad) * scale, y: Math.sin(rad) * scale };
+  const dot = a.x * b.x + a.y * b.y;
+  const cosine = dot / (Math.hypot(a.x, a.y) * Math.hypot(b.x, b.y));
+  return (
+    <div className="ts-demo">
+      <Slider label="Angle (degrees)" value={angle} min={0} max={180} step={5} onChange={setAngle} />
+      <Slider label="Stretch the second arrow" value={scale} min={0.3} max={4} step={0.1} onChange={setScale} />
+      <div className="ts-metric-pair">
+        <div><em>Dot product</em><strong>{dot.toFixed(2)}</strong></div>
+        <div><em>Cosine</em><strong>{cosine.toFixed(2)}</strong></div>
+      </div>
+      <p className="ts-demo-readout">Stretch changes the dot. Cosine stays with the angle.</p>
+    </div>
+  );
+}
+
+function PaddingDemo() {
+  const [len, setLen] = useState(2);
+  const [mask, setMask] = useState(1);
+  const words = ['see', 'you', 'later'].slice(0, len);
+  const pads = Array.from({ length: 3 - len }, () => 'PAD');
+  const tokens = [...words, ...pads];
+  const raw = tokens.map((token) => (token === 'PAD' ? (mask ? 0 : 0.25) : 0.9 / len));
+  const total = raw.reduce((sum, value) => sum + value, 0) || 1;
+  const shares = raw.map((value) => value / total);
+  return (
+    <div className="ts-demo">
+      <Slider label="Real words" value={len} min={1} max={3} step={1} onChange={setLen} />
+      <Slider label="Mask PAD" value={mask} min={0} max={1} step={1} onChange={setMask} />
+      <div className="ts-split-grid">
+        {tokens.map((token, i) => (
+          <span key={`${token}-${i}`} className={token === 'PAD' ? 'is-val' : 'is-train'}>{token}</span>
+        ))}
+      </div>
+      <div className="ts-bars">
+        {tokens.map((token, i) => (
+          <div key={`${token}-bar-${i}`} className="ts-bar-row">
+            <span>{token}</span>
+            <i style={{ width: `${(shares[i] ?? 0) * 100}%` }} />
+            <em>{((shares[i] ?? 0) * 100).toFixed(0)}%</em>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TokenDemo() {
+  const [text, setText] = useState('unbelievable');
+  const pieces = text.trim()
+    ? text
+      .toLowerCase()
+      .replace(/[^a-z\s]/g, '')
+      .match(/.{1,4}/g) ?? []
+    : [];
+  return (
+    <div className="ts-demo">
+      <label className="ts-slider">
+        <span>Type a word</span>
+        <input value={text} onChange={(event) => setText(event.target.value.slice(0, 24))} />
+      </label>
+      <div className="ts-split-grid">
+        {pieces.map((piece, i) => (
+          <span key={`${piece}-${i}`} className="is-train">{piece}<small> #{i + 10}</small></span>
+        ))}
+      </div>
+      <p className="ts-demo-readout">{pieces.length} token{pieces.length === 1 ? '' : 's'} — that is the bill, not the word count.</p>
+    </div>
+  );
+}
+
+function DemoChrome({
+  caption,
+  unitsNote,
+  children,
+}: {
+  caption?: string;
+  unitsNote?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="ts-demo-chrome">
+      {children}
+      {caption && <p className="ts-caption">{caption}</p>}
+      {unitsNote && <p className="ts-units">{unitsNote}</p>}
+    </div>
+  );
+}
+
+export function TermDemo({ kind, variant, caption, unitsNote }: DemoProps) {
+  let body: ReactNode;
   switch (kind) {
     case 'activation':
-      return <ActivationDemo variant={variant} />;
+      body = <ActivationDemo variant={variant} />;
+      break;
     case 'softmax':
-      return <SoftmaxDemo />;
+      body = <SoftmaxDemo />;
+      break;
     case 'learning-rate':
     case 'gradient-walk':
-      return <GradientWalkDemo />;
+      body = <GradientWalkDemo />;
+      break;
     case 'sgd':
-      return <SgdDemo />;
+      body = <SgdDemo />;
+      break;
     case 'momentum':
-      return <MomentumDemo />;
+      body = <MomentumDemo />;
+      break;
     case 'adam':
-      return <AdamDemo />;
+      body = <AdamDemo />;
+      break;
     case 'schedule':
-      return <ScheduleDemo />;
+      body = <ScheduleDemo />;
+      break;
     case 'clipping':
-      return <ClippingDemo variant={variant} />;
+      body = <ClippingDemo variant={variant} />;
+      break;
     case 'saddle':
-      return <SaddleDemo />;
+      body = <SaddleDemo />;
+      break;
     case 'loss-compare':
-      return <LossCompareDemo />;
+      body = <LossCompareDemo />;
+      break;
     case 'cross-entropy':
-      return <CrossEntropyDemo variant={variant} />;
+      body = <CrossEntropyDemo variant={variant} />;
+      break;
     case 'hinge':
-      return <HingeDemo />;
+      body = <HingeDemo />;
+      break;
     case 'kl':
-      return <KlDemo />;
+      body = <KlDemo />;
+      break;
     case 'contrastive':
-      return <ContrastiveDemo />;
+      body = <ContrastiveDemo />;
+      break;
     case 'dropout':
-      return <DropoutDemo />;
+      body = <DropoutDemo />;
+      break;
     case 'weight-decay':
-      return <WeightDecayDemo />;
+      body = <WeightDecayDemo />;
+      break;
     case 'batch-norm':
-      return <BatchNormDemo />;
+      body = <BatchNormDemo />;
+      break;
     case 'early-stop':
-      return <EarlyStopDemo />;
+      body = <EarlyStopDemo />;
+      break;
     case 'augmentation':
-      return <AugmentationDemo />;
+      body = <AugmentationDemo />;
+      break;
     case 'neuron':
-      return <NeuronDemo />;
+      body = <NeuronDemo />;
+      break;
     case 'forward':
-      return <ForwardDemo />;
+      body = <ForwardDemo />;
+      break;
     case 'backprop':
-      return <BackpropDemo />;
+      body = <BackpropDemo />;
+      break;
     case 'chain-rule':
-      return <ChainRuleDemo />;
+      body = <ChainRuleDemo />;
+      break;
     case 'init':
-      return <InitDemo />;
+      body = <InitDemo />;
+      break;
     case 'epochs':
-      return <EpochsDemo />;
+      body = <EpochsDemo />;
+      break;
     case 'overfit':
-      return <OverfitDemo />;
+      body = <OverfitDemo />;
+      break;
     case 'bias-variance':
-      return <BiasVarianceDemo />;
+      body = <BiasVarianceDemo />;
+      break;
     case 'dot-product':
-      return <DotProductDemo />;
+      body = <DotProductDemo />;
+      break;
     case 'norm':
-      return <NormDemo />;
+      body = <NormDemo />;
+      break;
     case 'onehot':
-      return <OneHotDemo />;
+      body = <OneHotDemo />;
+      break;
     case 'scaling':
-      return <ScalingDemo />;
+      body = <ScalingDemo />;
+      break;
     case 'split':
-      return <SplitDemo variant={variant} />;
+      body = <SplitDemo variant={variant} />;
+      break;
+    case 'residual':
+      body = <ResidualDemo />;
+      break;
+    case 'attention':
+      body = <AttentionDemo />;
+      break;
+    case 'embedding':
+      body = <EmbeddingDemo />;
+      break;
+    case 'learning-curve':
+      body = <LearningCurveDemo />;
+      break;
+    case 'baseline':
+      body = <BaselineDemo />;
+      break;
+    case 'leakage':
+      body = <LeakageDemo />;
+      break;
+    case 'cosine':
+      body = <CosineDemo />;
+      break;
+    case 'padding':
+      body = <PaddingDemo />;
+      break;
+    case 'token':
+      body = <TokenDemo />;
+      break;
+    case 'overlay-activation':
+      body = <OverlayActivationDemo />;
+      break;
+    case 'overlay-loss':
+      body = <OverlayLossDemo />;
+      break;
     default:
-      return <p className="ts-demo-readout">Play with the numbers in the worked example beside this panel.</p>;
+      body = <p className="ts-demo-readout">Play with the numbers in the worked example beside this panel.</p>;
   }
+  return <DemoChrome caption={caption} unitsNote={unitsNote}>{body}</DemoChrome>;
 }
