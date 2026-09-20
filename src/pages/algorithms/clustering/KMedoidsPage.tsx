@@ -122,11 +122,7 @@ const TABS: Tab[] = [
   "explain",
 ];
 export default function KMedoidsPage() {
-  const { tab, setTab, panel, layout, lesson } = useLabTabs(
-      "visualize",
-      "visualize",
-      ["learn", "compare", "explain"],
-    ),
+  const { tab, setTab, panel, layout, lesson } = useLabTabs("learn"),
     [dataKey, setDataKey] = useState<DataKey>("mall"),
     [points, setPoints] = useState<Point[]>(BUILT.mall),
     [imported, setImported] = useState<Point[]>([]),
@@ -397,7 +393,7 @@ export default function KMedoidsPage() {
         </article>
       </aside>
       <main className={layout.trim()}>
-        <header className={panel("dataset", "train", "metrics").trim()}>
+        <header className={panel("visualize", "dataset", "train", "metrics").trim()}>
           <h1>
             K - Medoids <em>Robust Clustering</em>
           </h1>
@@ -422,8 +418,8 @@ export default function KMedoidsPage() {
           ))}
         </nav>
         {lesson && <LabLessonPanel tab={tab} route="/ml/clustering/k-medoids" />}
-        <section className={`kmed-plot${panel("train", "dataset")}`}>
-          <div className="k-label">k = {k} ✎</div>
+        <section className={`kmed-plot${panel("visualize", "train", "dataset")}`}>
+          <div className="k-label">k = {safeK} ✎ medoids = real points</div>
           {points.map((p, i) => {
             const cluster = active.assignments[i] ?? 0,
               medoid = medoidSet.has(i);
@@ -616,7 +612,7 @@ export default function KMedoidsPage() {
             </b>
           </article>
         </section>
-        <footer className={`kmed-tip${panel("train", "dataset", "metrics")}`}>
+        <footer className={`kmed-tip${panel("visualize", "train", "dataset", "metrics")}`}>
           ⓘ K-Medoids minimizes total dissimilarity using actual data points as
           centers — making it robust to outliers and suitable for any distance
           metric.
@@ -637,12 +633,14 @@ export default function KMedoidsPage() {
             Reset
           </button>
         </h3>
-        <label>K (Number of Clusters)</label>
+        <label title="How many actual observations are chosen as medoids.">K (Number of Clusters)</label>
         <div className="stepper">
           <button aria-label="Decrease clusters" onClick={() => setK(Math.max(2, k - 1))}>−</button>
           <b>{k}</b>
           <button aria-label="Increase clusters" onClick={() => setK(Math.max(2, Math.min(MAX_K, Math.min(k + 1, Math.max(2, points.length)))))}>＋</button>
         </div>
+        {k !== safeK ? <p>k was clamped to {safeK} (cannot exceed the number of points).</p> : null}
+        <p>Filled rings are medoids — they are observations in the dataset, not averaged centroids.</p>
         <label>Distance Metric</label>
         <select
           aria-label="Distance Metric"

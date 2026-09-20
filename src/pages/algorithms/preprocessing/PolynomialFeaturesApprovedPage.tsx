@@ -7,6 +7,7 @@ import {
   type NumericRow,
 } from "../../../lib/preprocessing/polynomialFeatures";
 import "./PolynomialFeaturesApprovedPage.css";
+import { LabLessonOrWork, labHide } from "../../../components/common/LabTabs";
 
 const TABS = [
   "Learn",
@@ -250,7 +251,8 @@ export default function PolynomialFeaturesApprovedPage() {
         </section>
       </header>
       <main className="pf-main">
-        <section className="pf-input panel">
+        <LabLessonOrWork tab={tab} route="/ml/preprocessing/polynomial-features">
+        <section className={`pf-input panel${labHide(tab, "Dataset", "Transform")}`}>
           <h2>INPUT FEATURES　ⓘ</h2>
           <p>Select numeric features to expand</p>
           {available.slice(0, 4).map((name, i) => (
@@ -285,7 +287,7 @@ export default function PolynomialFeaturesApprovedPage() {
           </button>
         </section>
         <i className="arrow a1">➜</i>
-        <section className="pf-expanded panel">
+        <section className={`pf-expanded panel${labHide(tab, "Visualize", "Transform")}`}>
           <h2>EXPANDED POLYNOMIAL FEATURES　ⓘ</h2>
           <div className="degree">
             Degree{" "}
@@ -325,7 +327,7 @@ export default function PolynomialFeaturesApprovedPage() {
           ))}
         </section>
         <i className="arrow a2">➜</i>
-        <section className="pf-matrix panel">
+        <section className={`pf-matrix panel${labHide(tab, "Dataset")}`}>
           <h2>TRANSFORMATION MATRIX　ϕ　ⓘ</h2>
           <p>Each row is a sample, each column is an expanded feature</p>
           <div className="table">
@@ -375,7 +377,7 @@ export default function PolynomialFeaturesApprovedPage() {
             </span>
           </footer>
         </section>
-        <section className="pf-compare panel">
+        <section className={`pf-compare panel${labHide(tab, "Visualize", "Metrics")}`}>
           <h2>MODEL FIT COMPARISON　ⓘ</h2>
           <p>
             Performance improves as complexity increases (watch for
@@ -446,7 +448,7 @@ export default function PolynomialFeaturesApprovedPage() {
             </small>
           </aside>
         </section>
-        <section className="pf-example panel">
+        <section className={`pf-example panel${labHide(tab, "Visualize")}`}>
           <h2>LEARN BY EXAMPLE　ⓘ</h2>
           <p>Try different settings and see how features expand.</p>
           <label>
@@ -458,8 +460,9 @@ export default function PolynomialFeaturesApprovedPage() {
             </select>
           </label>
         </section>
+        </LabLessonOrWork>
       </main>
-      <aside className="pf-settings">
+      <aside className={`pf-settings${labHide(tab, "Train", "Transform")}`}>
         <section>
           <h2>TRANSFORM SETTINGS　ⓘ</h2>
           <label>
@@ -573,7 +576,7 @@ export default function PolynomialFeaturesApprovedPage() {
           <a href="?advanced=1">Open original lab →</a>
         </footer>
       </aside>
-      <section className="pf-insights">
+      <section className={`pf-insights${labHide(tab, "Metrics")}`}>
         <article>
           <h2>KEY INSIGHTS　ⓘ</h2>
           <div>

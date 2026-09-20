@@ -44,7 +44,7 @@ export const termsStudioEnhanceNew: Record<string, Patch> = {
     needFirst: ['softmax', 'dot-product', 'token'],
     readNext: ['residual-connection', 'temperature'],
     searchAliases: ['qkv', 'self-attention', 'transformer'],
-    diagramCaption: 'Raise the match to “good.” The share bar should jump there. Raise T and the bars flatten.',
+    diagramCaption: 'Pick a query, then follow Query → Key matching → Softmax → Value mixing. Raise the “good” match and watch the contextualized word change.',
     myths: [{ myth: 'Attention means the model understands.', fact: 'It is a weighted mix of numbers. Useful, not magic.' }],
     classroomScript: ['“not” asks a question.', '“good” matches.', 'Most of the mix is “good.”', 'Now we can represent “not-good.”'],
     beforeAfter: { before: 'Every word is averaged with every other word.', after: '“not” can look at “good” on purpose.' },

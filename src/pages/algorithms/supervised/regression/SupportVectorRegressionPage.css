@@ -5,15 +5,15 @@
   --line: #1b3151;
   --text: #dbe6ff;
   --muted: #8fa2c3;
-  position: fixed;
-  inset: 0;
+  position: relative;
+  min-height: 100%;
   background: var(--bg);
   color: var(--text);
   font:
     14px Inter,
     system-ui,
     sans-serif;
-  overflow: hidden;
+  overflow: auto;
 }
 .svr-page * {
   box-sizing: border-box;
@@ -210,12 +210,15 @@
   transform: rotate(90deg);
 }
 .svr-main {
-  position: absolute;
-  left: 268px;
-  right: 0;
-  top: 68px;
-  bottom: 0;
-  overflow: hidden;
+  position: relative;
+  left: auto;
+  right: auto;
+  top: auto;
+  bottom: auto;
+  margin-left: 268px;
+  margin-top: 68px;
+  overflow: auto;
+  min-height: calc(100vh - 68px);
 }
 .svr-main.wide {
   left: 44px;

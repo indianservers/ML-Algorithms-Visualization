@@ -8,6 +8,7 @@ import {
 } from "../../../lib/timeSeries/movingAverage";
 import { TIME_SERIES_CATALOG } from "../../../lib/timeSeries/timeSeriesDatasets";
 import { useActiveTimeSeries } from "../../../lib/timeSeries/useActiveTimeSeries";
+import { LabLessonOrWork, labHide } from "../../../components/common/LabTabs";
 import "./MovingAverageApprovedPage.css";
 
 type Point = { time: string; value: number };
@@ -83,7 +84,7 @@ export default function MovingAverageApprovedPage() {
       name: string;
       points: Point[];
     } | null>(null),
-    [tab, setTab] = useState("Visualize"),
+    [tab, setTab] = useState("Learn"),
     [windowSize, setWindowSize] = useState(24),
     [alignment, setAlignment] = useState<MovingAverageAlignment>("trailing"),
     [lag, setLag] = useState(0),
@@ -240,7 +241,7 @@ export default function MovingAverageApprovedPage() {
           </button>
         ))}
       </nav>
-      <section className="ma-toolbar">
+      <section className={`ma-toolbar${labHide(tab, "Dataset")}`}>
         <label>
           Dataset{" "}
           <select
@@ -282,7 +283,8 @@ export default function MovingAverageApprovedPage() {
         </div>
       </section>
       <main className="ma-main">
-        <section className="chart raw">
+        <LabLessonOrWork tab={tab} route="/ml/time-series/moving-average">
+        <section className={`chart raw${labHide(tab, "Visualize", "Train", "Transform")}`}>
           <h2>Raw Signal & Moving Average　ⓘ</h2>
           <div className="legend">
             <span>— Raw Load</span>
@@ -333,7 +335,7 @@ export default function MovingAverageApprovedPage() {
               : "N/A until the window is full"}
           </p>
         </section>
-        <section className="chart residual">
+        <section className={`chart residual${labHide(tab, "Visualize", "Train", "Transform")}`}>
           <h2>Residual (Raw − Moving Average)</h2>
           <svg viewBox="0 0 920 95" role="img" aria-label="Residual chart">
             <line x1="45" x2="910" y1="48" y2="48" />
@@ -345,7 +347,7 @@ export default function MovingAverageApprovedPage() {
             )}
           </svg>
         </section>
-        <section className="chart abs-residual">
+        <section className={`chart abs-residual${labHide(tab, "Visualize", "Train", "Transform")}`}>
           <h2>Absolute Residual</h2>
           <svg
             viewBox="0 0 920 95"
@@ -359,8 +361,9 @@ export default function MovingAverageApprovedPage() {
             />
           </svg>
         </section>
+        </LabLessonOrWork>
       </main>
-      <aside className="ma-controls">
+      <aside className={`ma-controls${labHide(tab, "Train", "Transform", "Visualize")}`}>
         <label>
           WINDOW (n)
           <span>
@@ -455,7 +458,7 @@ export default function MovingAverageApprovedPage() {
         <button onClick={reset}>↻　Reset</button>
         <a href="?advanced=1">Open original lab →</a>
       </aside>
-      <section className="ma-insights">
+      <section className={`ma-insights${labHide(tab, "Metrics")}`}>
         <article>
           <h2>✥　Key Insight</h2>
           <p>

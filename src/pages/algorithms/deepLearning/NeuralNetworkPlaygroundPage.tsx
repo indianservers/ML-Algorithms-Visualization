@@ -52,6 +52,7 @@ import {
   type PlaygroundPoint,
 } from "../../../lib/algorithms/neural/nnPlayground";
 import "./NeuralNetworkPlaygroundPage.css";
+import "./NeuralNetworkPlaygroundPage.mobile.css";
 
 const LR_PRESETS = [0.0001, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1];
 const WORLD = { x0: -2.4, x1: 2.4, y0: -1.85, y1: 1.85 };
@@ -254,7 +255,7 @@ export default function NeuralNetworkPlaygroundPage() {
   const [params, setParams] = useSearchParams();
   const { tab, setTab } = useLabTabs(
     tabFromQuery(params.get("tab")),
-    "Visualize",
+    "",
     [],
   );
   const chooseTab = (next: string) => {
@@ -1359,6 +1360,16 @@ export default function NeuralNetworkPlaygroundPage() {
                   Discretize
                 </label>
               </header>
+              <p className="nnp-mobile-only nnp-mobile-status">
+                {playing ? "Training" : "Paused"} · epoch {state.epoch} · train{" "}
+                {trainLoss.toFixed(3)} · test {testLoss.toFixed(3)}
+              </p>
+              <div className="nnp-mobile-only nnp-mobile-legend">
+                <span className="nnp-swatch c0">Class 0</span>
+                <span className="nnp-swatch c1">Class 1</span>
+                <span>Solid = train</span>
+                <span>Hollow = test</span>
+              </div>
               <Field
                 points={points}
                 holdout={holdout}
@@ -1381,8 +1392,11 @@ export default function NeuralNetworkPlaygroundPage() {
                 onProbe={setProbe}
               />
               <footer>
-                <span>
+                <span className="nnp-field-hint">
                   Drag paints class {paint}. Shift-drag deletes. Wheel zooms.
+                </span>
+                <span className="nnp-mobile-only">
+                  Tap to paint class {paint}. Two-finger scroll the page.
                 </span>
                 <div className="nnp-field-tools">
                   <button type="button" onClick={() => setPaint(paint ? 0 : 1)}>

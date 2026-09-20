@@ -3,6 +3,7 @@ import { useLabNavigate } from "../../../lib/labNavigation";
 import { recurrentForecast } from "../../../lib/timeSeries/recurrentForecast";
 import { TIME_SERIES_CATALOG, seriesValues } from "../../../lib/timeSeries/timeSeriesDatasets";
 import { useActiveTimeSeries } from "../../../lib/timeSeries/useActiveTimeSeries";
+import { LabLessonOrWork, labHide } from "../../../components/common/LabTabs";
 import "./GRUForecastingApprovedPage.css";
 
 const DATA = [
@@ -82,7 +83,7 @@ export default function GRUForecastingApprovedPage() {
     [custom, setCustom] = useState<{ name: string; values: number[] } | null>(
       null,
     ),
-    [tab, setTab] = useState("Visualize"),
+    [tab, setTab] = useState("Learn"),
     [run, setRun] = useState("GRU-Run-042"),
     [lookback, setLookback] = useState(96),
     [horizon, setHorizon] = useState(24),
@@ -239,7 +240,7 @@ export default function GRUForecastingApprovedPage() {
         <button onClick={() => act("Theme")}>◔</button>
         <button onClick={() => act("Profile")}>MM</button>
       </header>
-      <section className="gf-toolbar card">
+      <section className={`gf-toolbar card${labHide(tab, "Dataset", "Train")}`}>
         <label>
           Dataset
           <select
@@ -306,7 +307,8 @@ export default function GRUForecastingApprovedPage() {
         </button>
       </section>
       <main className="gf-main">
-        <section className="gf-chart card">
+        <LabLessonOrWork tab={tab} route="/ml/time-series/gru-forecasting">
+        <section className={`gf-chart card${labHide(tab, "Visualize", "Train")}`}>
           <header>
             <b>
               Forecast vs Actual <small>(Rolling Origin)</small>
@@ -370,7 +372,7 @@ export default function GRUForecastingApprovedPage() {
           </svg>
           <footer>May 12 May 14 May 16 May 18 May 20 May 21</footer>
         </section>
-        <section className="gf-gates card">
+        <section className={`gf-gates card${labHide(tab, "Visualize", "Train")}`}>
           <h3>Gate Activity Over Time ⓘ</h3>
           <p>{result.architecture}</p>
           {result.dataWarning ? <p>{result.dataWarning}</p> : null}
@@ -383,7 +385,7 @@ export default function GRUForecastingApprovedPage() {
           <Heat values={resets} color="orange" />
           <footer>Gate Value 0 ━━━━━ 0.5 ━━━━━ 1.0</footer>
         </section>
-        <section className="gf-mechanics card">
+        <section className={`gf-mechanics card${labHide(tab, "Visualize", "Train")}`}>
           <h3>
             Gated Recurrent Mechanics <small>(How GRU Decides)</small>
           </h3>
@@ -428,7 +430,7 @@ export default function GRUForecastingApprovedPage() {
             ))}
           </div>
         </section>
-        <section className="gf-progress card">
+        <section className={`gf-progress card${labHide(tab, "Train")}`}>
           <h3>Progress</h3>
           <div>
             <span>
@@ -443,7 +445,7 @@ export default function GRUForecastingApprovedPage() {
             </b>
           </div>
         </section>
-        <section className="gf-metrics card">
+        <section className={`gf-metrics card${labHide(tab, "Metrics")}`}>
           <h3>
             Key Metrics <small>(Test Set)</small>
           </h3>
@@ -464,7 +466,7 @@ export default function GRUForecastingApprovedPage() {
           </div>
           <small>vs Naive Seasonal</small>
         </section>
-        <section className="gf-compare card">
+        <section className={`gf-compare card${labHide(tab, "Metrics")}`}>
           <h3>
             Model Comparison <small>(Horizon = {horizon})</small>
           </h3>
@@ -482,7 +484,7 @@ export default function GRUForecastingApprovedPage() {
             </p>
           ))}
         </section>
-        <section className="gf-error card">
+        <section className={`gf-error card${labHide(tab, "Metrics")}`}>
           <h3>
             Error Distribution <small>(Test Set)</small>
           </h3>
@@ -500,8 +502,9 @@ export default function GRUForecastingApprovedPage() {
             Std Dev <b>12.68</b>
           </p>
         </section>
+        </LabLessonOrWork>
       </main>
-      <aside className="gf-config card">
+      <aside className={`gf-config card${labHide(tab, "Train", "Transform", "Visualize")}`}>
         <h3>⌄ Model Configuration ⌁</h3>
         <label>
           Architecture

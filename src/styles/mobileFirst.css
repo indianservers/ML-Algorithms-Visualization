@@ -1,0 +1,306 @@
+/* Mobile-only suite overlay. Existing desktop CSS files are not edited.
+   Rules apply only under 900px so 1440+ layouts stay as they are. */
+
+@media (max-width: 1366px) {
+  #main-content [class*="-page"]:not(.nnp-page),
+  #main-content [class*="-shell"],
+  #main-content [class*="-approved"] {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  #main-content [class*="-workspace"],
+  #main-content [class*="-stage"],
+  #main-content [class*="-work-row"] {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 900px) {
+  /* Do not let FitToViewport shrink a desktop mockup onto a phone. */
+  .lab-fit-host {
+    height: 100% !important;
+    min-height: 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .lab-fit-inner {
+    height: auto !important;
+    min-height: 100% !important;
+    width: 100% !important;
+    zoom: 1 !important;
+    overflow: visible !important;
+  }
+
+  .lab-topbar,
+  .lab-topbar-compact {
+    height: auto !important;
+    min-height: 48px;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 6px 8px;
+    padding-top: calc(6px + env(safe-area-inset-top, 0px));
+  }
+
+  .lab-topbar a,
+  .lab-topbar button {
+    min-height: 40px;
+    padding: 0 10px;
+    font-size: 13px;
+  }
+
+  .lab-topbar svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .lab-topbar .spacer {
+    display: none;
+  }
+
+  /* Stack every algorithm / approved / shell page. Playground keeps its own file. */
+  #main-content [class*="-page"]:not(.nnp-page),
+  #main-content [class*="-shell"],
+  #main-content [class*="-approved"] {
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: auto !important;
+    grid-template-areas: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 100% !important;
+    overflow: visible !important;
+    padding: 10px 12px calc(20px + env(safe-area-inset-bottom, 0px)) !important;
+    font-size: 14px;
+  }
+
+  #main-content [class*="-page"]:not(.nnp-page) > *,
+  #main-content [class*="-shell"] > *,
+  #main-content [class*="-approved"] > * {
+    grid-column: 1 / -1 !important;
+    grid-row: auto !important;
+    grid-area: auto !important;
+    position: relative !important;
+    inset: auto !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: auto !important;
+    min-width: 0 !important;
+  }
+
+  #main-content [class*="-page"]:not(.nnp-page) > main,
+  #main-content [class*="-shell"] > main,
+  #main-content [class*="-approved"] > main {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  #main-content [class*="-page"] > aside[class*="controls"],
+  #main-content [class*="-shell"] > aside[class*="controls"],
+  #main-content [class*="-approved"] > aside[class*="controls"] {
+    max-width: none !important;
+    max-height: none !important;
+    order: 3;
+  }
+
+  .ma-page,
+  .hw-page,
+  .es-page,
+  .pr-page,
+  .rm-page,
+  .lf-page,
+  .rf-page,
+  .ar-page,
+  .od-page,
+  .mv-page,
+  .sc-page,
+  .bv-page,
+  .fs-page,
+  .ce-page,
+  .gf-page,
+  .ad-page,
+  .pf-page,
+  .pf-page.collapsed,
+  .km-page,
+  .cnn-page,
+  .lstm-page,
+  .slr-shell,
+  .slr-shell.collapsed {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  #main-content .pp-page {
+    height: auto !important;
+    overflow: visible !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  #main-content [class*="-workspace"],
+  #main-content [class*="-stage"],
+  #main-content [class*="-work-row"],
+  #main-content [class*="-lower-row"],
+  #main-content [class*="-intro"],
+  #main-content [class*="-split"],
+  #main-content [class*="-dock"],
+  #main-content [class*="-pair"],
+  #main-content [class*="-layout"] {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+  }
+
+  #main-content [class*="-tabs"],
+  #main-content [role="tablist"],
+  #main-content nav[aria-label] {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 0;
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+  }
+
+  #main-content [role="tablist"] button,
+  #main-content [role="tab"],
+  #main-content [class*="-tabs"] button,
+  #main-content nav[aria-label] button {
+    height: 44px !important;
+    min-height: 44px !important;
+    min-width: auto !important;
+    padding: 0 14px !important;
+    font-size: 13px !important;
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    white-space: nowrap;
+  }
+
+  #main-content button,
+  #main-content [class*="-transport"] button,
+  #main-content [class*="-presets"] button,
+  #main-content [class*="-toolbar"] button,
+  #main-content [class*="-controls"] button,
+  #main-content [class*="-controls"] select,
+  #main-content [class*="-controls"] input[type="number"] {
+    min-height: 40px;
+  }
+
+  #main-content input[type="range"] {
+    width: 100%;
+    min-height: 36px;
+    accent-color: #4c9bff;
+  }
+
+  #main-content [class*="-head"],
+  #main-content [class*="-header"],
+  #main-content [class*="-title"],
+  #main-content [class*="-brand"] {
+    height: auto !important;
+    max-height: none !important;
+    flex-wrap: wrap;
+  }
+
+  #main-content h1 {
+    font-size: clamp(18px, 5.4vw, 24px);
+    line-height: 1.2;
+  }
+
+  #main-content canvas,
+  #main-content svg.recharts-surface,
+  #main-content [class*="-plot"],
+  #main-content [class*="-canvas"],
+  #main-content [class*="-chart"],
+  #main-content [class*="-field"] {
+    max-width: 100%;
+  }
+
+  #main-content [class*="-plot-card"],
+  #main-content [class*="-wide-card"],
+  #main-content [class*="-chart-card"],
+  #main-content [class*="-visual"],
+  #main-content [class*="-viz"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 220px;
+  }
+
+  #main-content table {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .lab-tab-focus,
+  .lab-tab-lesson,
+  .lab-guide-split,
+  .lab-guide-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  #main-content [class*="-metrics"],
+  #main-content [class*="-statgrid"],
+  #main-content [class*="-cards"] {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .home-landing {
+    padding-bottom: env(safe-area-inset-bottom, 12px);
+  }
+
+  .hl-nav {
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 52px;
+  }
+
+  .hl-nav a,
+  .hl-nav button {
+    min-height: 40px;
+  }
+
+  .hl-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hl-spotlights {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .terms-studio {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+}
+
+@media (max-width: 520px) {
+  #main-content [class*="-metrics"],
+  #main-content [class*="-statgrid"],
+  #main-content [class*="-cards"],
+  .hl-cards,
+  .hl-stats {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .lab-topbar a,
+  .lab-topbar button {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useLabNavigate } from "../../../lib/labNavigation";
 import { Upload } from "lucide-react";
 import { rocCurve } from "../../../lib/math/metrics";
+import { LabLessonOrWork, labHide } from "../../../components/common/LabTabs";
 import "./ROCAUCApprovedPage.css";
 
 const makeScores = (n: number, quality: number, seed: number) => {
@@ -73,7 +74,7 @@ export default function ROCAUCApprovedPage() {
     [threshold, setThreshold] = useState(0.41),
     [curveMode, setCurveMode] = useState<"roc" | "pr">("roc"),
     [model, setModel] = useState("Logistic Regression"),
-    [tab, setTab] = useState("Visualize"),
+    [tab, setTab] = useState("Learn"),
     [message, setMessage] = useState("Trained");
   const go = useLabNavigate();
   const fileRef = useRef<HTMLInputElement>(null),
@@ -224,7 +225,8 @@ export default function ROCAUCApprovedPage() {
         </nav>
       </header>
       <main>
-        <section className="roc-summary panel">
+        <LabLessonOrWork tab={tab} route="/ml/evaluation/roc-auc">
+        <section className={`roc-summary panel${labHide(tab, "Metrics")}`}>
           <article>
             <b>OBJECTIVE</b>
             <p>
@@ -256,7 +258,7 @@ export default function ROCAUCApprovedPage() {
             </article>
           ))}
         </section>
-        <section className="roc-work panel">
+        <section className={`roc-work panel${labHide(tab, "Visualize")}`}>
           <div className="curve">
             <h2>
               ROC Curve ⓘ{" "}
@@ -343,7 +345,7 @@ export default function ROCAUCApprovedPage() {
             </div>
           </div>
         </section>
-        <section className="walk panel">
+        <section className={`walk panel${labHide(tab, "Train", "Visualize")}`}>
           <h2>Threshold Walkthrough ⓘ</h2>
           <div>
             {[0.05, 0.25, best.threshold, 0.75, 0.95].map((t) => {
@@ -377,7 +379,7 @@ export default function ROCAUCApprovedPage() {
             })}
           </div>
         </section>
-        <section className="roc-info panel">
+        <section className={`roc-info panel${labHide(tab, "Metrics")}`}>
           {[
             [
               "AUC Interpretation",
@@ -402,8 +404,9 @@ export default function ROCAUCApprovedPage() {
             </article>
           ))}
         </section>
+        </LabLessonOrWork>
       </main>
-      <aside className="roc-controls">
+      <aside className={`roc-controls${labHide(tab, "Train", "Dataset", "Transform", "Visualize")}`}>
         <section className="panel threshold">
           <h2>Threshold ⓘ</h2>
           <b>{threshold.toFixed(2)}</b>

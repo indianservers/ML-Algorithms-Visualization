@@ -1,10 +1,10 @@
 .ts-page {
-  min-height: 941px;
-  overflow: hidden;
+  min-height: 100%;
+  overflow: visible;
   background: radial-gradient(circle at 58% 0, #0c172c, #040b18 62%);
   color: #f3f6fb;
   font:
-    12px Inter,
+    14px/1.5 Inter,
     system-ui,
     sans-serif;
 }
@@ -80,14 +80,17 @@
   color: #7f8fff;
 }
 .ts-head {
-  position: absolute;
-  left: 246px;
-  right: 20px;
-  top: 0;
-  height: 71px;
+  position: relative;
+  left: auto;
+  right: auto;
+  top: auto;
+  min-height: 71px;
+  height: auto;
   display: flex;
   align-items: center;
-  gap: 20px;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  padding: 10px 4px 12px;
   border-bottom: 1px solid #17283e;
 }
 .ts-head h1 {
@@ -120,40 +123,51 @@
   vertical-align: middle;
 }
 .ts-page > main {
-  position: absolute;
-  left: 237px;
-  right: 406px;
-  top: 71px;
+  position: relative;
+  left: auto;
+  right: auto;
+  top: auto;
+  min-width: 0;
 }
 .ts-page > main > nav {
   height: 44px;
   display: flex;
 }
 .ts-page > main > nav button {
-  width: 90px;
+  width: auto;
+  min-width: 88px;
   border: 0;
   border-bottom: 2px solid transparent;
   background: transparent;
-  color: #abb6c6;
+  color: #d5deee;
+  font-size: 14px;
 }
 .ts-page > main > nav button.active {
   border-color: #4e82f8;
   color: #f4f7fb;
 }
 .ts-work {
-  height: 568px;
+  height: auto;
+  min-height: 568px;
   border: 1px solid #263850;
   border-radius: 8px;
   background: #071427;
 }
 .ts-work > header {
-  height: 50px;
-  padding: 12px 17px;
+  height: auto;
+  min-height: 50px;
+  padding: 12px 17px 16px;
 }
 .ts-work > header h2 {
-  display: inline;
-  margin: 0;
-  font-size: 15px;
+  display: block;
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+.ts-work > header p {
+  margin: 0 0 8px;
+  max-width: 90ch;
+  color: #d5deee;
+  font-size: 14px;
 }
 .ts-work > header button {
   float: right;
@@ -334,11 +348,11 @@
   border-radius: 50%;
 }
 .ts-controls {
-  position: fixed;
-  right: 20px;
-  top: 115px;
-  width: 367px;
-  height: 806px;
+  position: relative;
+  right: auto;
+  top: auto;
+  width: auto;
+  height: auto;
   border: 1px solid #263850;
   border-radius: 8px;
   background: #071427;
@@ -357,9 +371,11 @@
 }
 .ts-controls > label {
   display: block;
-  height: 70px;
+  height: auto;
+  min-height: 70px;
   padding: 14px 18px;
-  color: #b7c1ce;
+  color: #d5deee;
+  font-size: 14px;
 }
 .ts-controls label > input[type="number"] {
   float: right;

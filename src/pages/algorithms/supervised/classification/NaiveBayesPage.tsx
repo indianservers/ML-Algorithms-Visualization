@@ -1,5 +1,7 @@
 import React, { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { LabProgressMeter } from "../../../../components/common/LabChrome";
+import { LabLessonPanel } from "../../../../components/common/LabTabs";
 import {
   BarChart3,
   BookOpen,
@@ -349,7 +351,6 @@ export default function NaiveBayesPage() {
     setShowPoints(true);
     setTrained("Gaussian Naive Bayes");
     setToast("");
-    setTab("visualize");
   };
   const upload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -620,7 +621,11 @@ export default function NaiveBayesPage() {
   );
 
   const tabPanel = () => {
-    if (tab === "visualize" || tab === "learn") return workflow;
+    if (tab === "learn")
+      return (
+        <LabLessonPanel tab="Learn" route="/ml/supervised/naive-bayes" />
+      );
+    if (tab === "visualize") return workflow;
     if (tab === "dataset")
       return (
         <section className="nb-generic nb-data">
@@ -804,7 +809,15 @@ export default function NaiveBayesPage() {
                     ? "Estimate class prevalence from the current data."
                     : "Give every class equal starting probability."}
                 </p>
-                <button>Use priors</button>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setPriorMode(mode as "empirical" | "uniform");
+                  }}
+                >
+                  Use priors
+                </button>
               </article>
             ))}
           </div>
@@ -917,10 +930,7 @@ export default function NaiveBayesPage() {
           </div>
           <section>
             <label>LESSON PROGRESS</label>
-            <i>
-              <b />
-            </i>
-            <strong>62%</strong>
+            <LabProgressMeter />
           </section>
           <article>
             <b>OBJECTIVE</b>

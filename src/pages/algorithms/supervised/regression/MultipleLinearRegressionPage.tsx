@@ -1,10 +1,10 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import {
-  Bell, Bookmark, BookOpen, Boxes, BrainCircuit, ChartNoAxesCombined, ChevronDown,
-  ChevronRight, CircleHelp, Database, Download, FileChartColumn, FlaskConical,
-  FolderOpen, GitCompareArrows, Home, Lightbulb, Menu, Moon, Play, Plus, RotateCcw,
-  Save, Share2, SlidersHorizontal, Trash2, Upload, Waypoints,
+  Bookmark, BookOpen, BrainCircuit, ChartNoAxesCombined, ChevronDown,
+  ChevronRight, CircleHelp, Database, Download, FileChartColumn,
+  GitCompareArrows, Lightbulb, Play, Plus, RotateCcw,
+  Save, Share2, Trash2, Upload,
 } from 'lucide-react';
 import { energyDemandDataset, housingDataset } from '../../../../data/sampleDatasets';
 import { multipleLinearRegressionDiagnostics } from '../../../../lib/algorithms/regression/linearRegression';
@@ -13,6 +13,7 @@ import { formatR2, inferenceRow, modelLifecycle, regressionMetrics, splitRegress
 import { varianceInflationFactors } from '../../../../lib/regression/regressionDiagnostics';
 import { RegressionDiagnosticsPanel } from '../../../../components/ml/RegressionDiagnosticsPanel';
 import { datasetHHousing, datasetIMulticollinearity, datasetJIrrelevantFeatures, datasetNConstantFeature } from '../../../../lib/regression/regressionDatasets';
+import { saveCurrentView } from '../../../../lib/labWorkspace';
 import { useTheme } from '../../../../stores/uiStore';
 import { useActiveLoadedDataset } from '../../../../lib/timeSeries/useActiveTimeSeries';
 import type { LoadedAlgorithmDataset } from '../../../../data/algorithmDatasets';
@@ -112,14 +113,6 @@ const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
   { id: 'explain', label: 'Explain', icon: <Lightbulb /> },
 ];
 
-const sideGroups = [
-  ['LEARN', [['Topics', BookOpen], ['Guided Paths', Waypoints], ['Playground', FlaskConical]]],
-  ['MODELS', [['Regression', ChartNoAxesCombined], ['Classification', Boxes], ['Clustering', Waypoints], ['Time Series', ChartNoAxesCombined]]],
-  ['DATA', [['Datasets', Database], ['Uploads', Upload]]],
-  ['EXPERIMENTS', [['Workspaces', FolderOpen], ['Runs', Play], ['Artifacts', FlaskConical]]],
-  ['RESOURCES', [['Docs', BookOpen], ['Cheatsheets', FileChartColumn]]],
-] as const;
-
 function fitRows(rows: Row[], definition: DatasetDefinition, features: string[], testSize: number, seed: number) {
   const used = features.length ? features : definition.features;
   const y = rows.map(row => row[definition.target]);
@@ -166,9 +159,9 @@ export default function MultipleLinearRegressionPage() {
   const [training, setTraining] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
   const [shared, setShared] = React.useState(false);
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const lightTheme = theme === 'light';
-  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
+  const fileRef = React.useRef<HTMLInputElement>(null);
   const [lockedPrediction, setLockedPrediction] = React.useState<number | null>(null);
   const [selectedRow, setSelectedRow] = React.useState(0);
   const [testSize, setTestSize] = React.useState(0.2);
@@ -288,17 +281,36 @@ export default function MultipleLinearRegressionPage() {
   }, [definition]);
 
   const resetAll = React.useCallback(() => {
-    const features = [...definition.features];
+    const home = DATASETS.housing;
+    const features = [...home.features];
+    setDatasetKey('housing');
+    setCustomDefinition(null);
     setSelectedFeatures(features);
-    setRows(definition.rows.map(row => ({ ...row })));
-    applyModel(definition.rows, definition, features);
-    resetView();
-  }, [definition, resetView, applyModel]);
+    setRows(home.rows.map(row => ({ ...row })));
+    applyModel(home.rows, home, features);
+    setSeed(42);
+    setTestSize(0.2);
+    setSelectedRow(0);
+    setLockedPrediction(null);
+    setAutoUpdate(true);
+    setInputs(Object.fromEntries(home.features.map(feature => [feature, home.rows[Math.floor(home.rows.length / 2)][feature]])));
+    setXFeature(home.features[0]);
+    setYFeature(home.features[1] ?? home.features[0]);
+    setColorFeature(home.features[2] ?? home.features[0]);
+    setShowPlane(true);
+    setShowPoints(true);
+    setShowResiduals(true);
+  }, [applyModel]);
 
   React.useEffect(() => {
-    const onTrain = () => train(); const onReset = () => resetAll();
-    window.addEventListener('ml:train', onTrain); window.addEventListener('ml:reset', onReset);
-    return () => { window.removeEventListener('ml:train', onTrain); window.removeEventListener('ml:reset', onReset); };
+    const onTrain = () => train();
+    const onReset = () => resetAll();
+    window.addEventListener('ml:train', onTrain);
+    window.addEventListener('ml:reset', onReset);
+    return () => {
+      window.removeEventListener('ml:train', onTrain);
+      window.removeEventListener('ml:reset', onReset);
+    };
   }, [train, resetAll]);
 
   const updateCoefficient = (index: number, value: number) => {
@@ -355,6 +367,7 @@ export default function MultipleLinearRegressionPage() {
 
   const saveView = () => {
     localStorage.setItem('mlr.savedView', JSON.stringify({ datasetKey, xFeature, yFeature, colorFeature, showPlane, showPoints, showResiduals }));
+    saveCurrentView('/ml/supervised/multiple-linear-regression', { datasetKey, xFeature, yFeature });
     setSaved(true); window.setTimeout(() => setSaved(false), 1400);
   };
 
@@ -365,12 +378,10 @@ export default function MultipleLinearRegressionPage() {
   };
 
   return (
-    <div className={`mlr-shell${lightTheme ? ' light' : ''}${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
-      <MlrSidebar collapsed={sidebarCollapsed} onCollapse={() => setSidebarCollapsed(value => !value)} />
+    <div className={`mlr-shell${lightTheme ? ' light' : ''}`}>
       <main className="mlr-main">
         <header className="mlr-header">
           <div><p>Supervised Learning <ChevronRight /> Regression <ChevronRight /></p><h1>Multiple Linear Regression <CircleHelp /></h1><small>Model a target using multiple input features. Explore the regression plane, coefficients, and residuals.</small></div>
-          <div className="mlr-header-actions"><button onClick={toggleTheme}><Moon /> {lightTheme ? 'Dark Theme' : 'Light Theme'} <ChevronDown /></button><CircleHelp /><Bell /><span>MM</span></div>
         </header>
         <nav className="mlr-tabs" aria-label="Lesson views">
           <div>{tabs.map(tab => <button key={tab.id} className={activeTab === tab.id ? 'active' : ''} onClick={() => setActiveTab(tab.id)}>{tab.icon}{tab.label}</button>)}</div>
@@ -397,14 +408,6 @@ export default function MultipleLinearRegressionPage() {
   );
 }
 
-function MlrSidebar({ collapsed, onCollapse }: { collapsed: boolean; onCollapse: () => void }) {
-  return <aside className="mlr-sidebar">
-    <Link to="/" className="mlr-brand"><span>M</span><strong>Mega ML<small>AI Observatory</small></strong></Link>
-    <nav><Link to="/"><Home />Home</Link><span><SlidersHorizontal />Dashboard</span>{sideGroups.map(([title, items]) => <section key={title}><h3>{title}</h3>{items.map(([label, Icon]) => <React.Fragment key={label}><span className={label === 'Regression' ? 'selected' : ''}><Icon />{label}{label === 'Regression' && <ChevronDown />}</span>{label === 'Regression' && <div className="mlr-subnav"><span>Linear Regression</span><strong>Multiple Linear Regression</strong><span>Polynomial Regression</span><span>Ridge Regression</span><span>Lasso Regression</span></div>}</React.Fragment>)}</section>)}</nav>
-    <button className="mlr-collapse" onClick={onCollapse}><Menu />{collapsed ? 'Expand' : 'Collapse'}</button>
-  </aside>;
-}
-
 type VisualizeProps = {
   definition: DatasetDefinition; rows: Row[]; predictions: number[]; residuals: number[]; coefficients: number[]; trained: number[]; inputs: Row;
   predictedValue: number; residualStd: number; score: number; metricRmse: number; xFeature: string; yFeature: string; colorFeature: string;
@@ -425,7 +428,7 @@ function VisualizeView(props: VisualizeProps) {
       <div className="mlr-feature-bar"><div><small>Choose features (showing 2 of {definition.features.length})</small><span><label>X Axis <select value={props.xFeature} onChange={event => props.onXFeature(event.target.value)}>{definition.features.map(feature => <option key={feature} value={feature}>{definition.labels[feature]}</option>)}</select></label><label>Y Axis <select value={props.yFeature} onChange={event => props.onYFeature(event.target.value)}>{definition.features.map(feature => <option key={feature} value={feature}>{definition.labels[feature]}</option>)}</select></label><label>Color by <select value={props.colorFeature} onChange={event => props.onColorFeature(event.target.value)}>{definition.features.map(feature => <option key={feature} value={feature}>{definition.labels[feature]}</option>)}</select></label></span></div><div className="mlr-color-key"><small>{definition.labels[props.colorFeature]}</small><span><i />Low <i />Mid <i />High <i />Max</span></div><button onClick={props.onResetView}><RotateCcw />Reset View</button></div>
       <div className="mlr-plot-wrap"><div className="mlr-plot-legend"><Toggle label="Fitted surface" checked={props.showPlane} onChange={props.onShowPlane} /><Toggle label="Data Points" checked={props.showPoints} onChange={props.onShowPoints} /><Toggle label="Residuals" checked={props.showResiduals} onChange={props.onShowResiduals} /><hr /><p>R² (train) <b>{formatR2(props.trainR2)}</b></p><p>R² (test) <b>{formatR2(props.testR2)}</b></p><p>RMSE <b>{formatNumber(props.metricRmse, 1)}</b></p></div><Regression3D definition={definition} rows={rows} predictions={predictions} xFeature={props.xFeature} yFeature={props.yFeature} colorFeature={props.colorFeature} showPlane={props.showPlane} showPoints={props.showPoints} showResiduals={props.showResiduals} predict={props.predict} /><div className="mlr-rotate-hint">Drag to rotate · Scroll to zoom · Shift + Drag to pan ⓘ</div></div>
     </section>
-    <section className="mlr-model-card"><h3>Model Equation</h3><p className="mlr-equation">ŷ = β₀ + β₁x₁ + …</p><div>{definition.features.map(feature => <label key={feature} style={{ display: 'inline-flex', gap: 6, marginRight: 12, fontSize: 12 }}><input type="checkbox" checked={(props.selectedFeatures ?? definition.features).includes(feature)} onChange={() => props.onToggleFeature?.(feature)} />{definition.labels[feature]}</label>)}</div></section>
+    <section className="mlr-model-card"><h3>Model Equation</h3><p className="mlr-equation">{`ŷ = ${formatNumber(coefficients[0], 2)}` + (props.selectedFeatures ?? definition.features).map((feature, index) => ` + ${formatNumber(coefficients[index + 1] ?? 0, 2)}·${definition.labels[feature]}`).join("")}</p><div>{definition.features.map(feature => <label key={feature} style={{ display: 'inline-flex', gap: 6, marginRight: 12, fontSize: 12 }}><input type="checkbox" checked={(props.selectedFeatures ?? definition.features).includes(feature)} onChange={() => props.onToggleFeature?.(feature)} />{definition.labels[feature]}</label>)}</div></section>
     <section className="mlr-coeff-card"><h3>Coefficients <CircleHelp /></h3><div className="mlr-coeff-head"><span>Feature</span><span>Coefficient (β)</span><span>Std. Error</span><span>t-stat</span></div>{['Intercept', ...(props.selectedFeatures ?? definition.features)].map((feature, index) => <div className="mlr-coeff-row" key={feature}><span style={{ '--accent': ['#6284ff','#23c8e3','#52d58d','#9ce56c','#ff8b55'][index] } as React.CSSProperties}>{index === 0 ? 'Intercept (β₀)' : `${definition.labels[feature]} (β${index})`}</span><b>{formatNumber(coefficients[index], 2)}</b><span>{formatNumber(props.stdErrors?.[index] ?? Number.NaN, 2)}</span><span>{formatNumber(props.tStats?.[index] ?? Number.NaN, 2)}</span></div>)}<div className="mlr-adjust-title"><b>Adjust Coefficients (live) <CircleHelp /></b><button onClick={() => trained.forEach((value, index) => props.onCoefficient(index, value))}>Reset to Trained</button></div>{coefficients.map((coefficient, index) => { const span = Math.max(Math.abs(trained[index]) * 1.8, 1); return <label className="mlr-coeff-slider" key={index}><span>β{index} <small>{index === 0 ? 'Intercept' : definition.labels[definition.features[index - 1]]}</small></span><input aria-label={`Coefficient beta ${index}`} type="range" min={trained[index] - span} max={trained[index] + span} step={span / 100} value={coefficient} onChange={event => props.onCoefficient(index, Number(event.target.value))} /><input aria-label={`Coefficient beta ${index} value`} type="number" step="any" value={Number(coefficient.toFixed(4))} onChange={event => props.onCoefficient(index, Number(event.target.value))} /></label>;})}</section>
     <section className="mlr-mini-card mlr-dataset-card"><h3>Dataset <CircleHelp /></h3><b>{definition.label}</b><hr /><p>Samples <span>{rows.length}</span></p><p>Features <span>{definition.features.length}</span></p><p>Target <span>{definition.targetLabel}</span></p><p>Source <span>{definition === DATASETS.housing ? 'Built-in' : 'Synthetic'}</span></p><div><button onClick={props.onDataset}>View Dataset</button><button onClick={props.onUpload}><Upload />Upload CSV</button></div></section>
     <section className="mlr-mini-card mlr-histogram"><h3>Residual Analysis <CircleHelp /></h3><ResidualHistogram residuals={residuals} /><aside><p>Mean <b>{formatNumber(residuals.reduce((a,b)=>a+b,0)/residuals.length,1)}</b></p><p>Std. Dev. <b>{formatNumber(props.residualStd,1)}</b></p><p>Min <b>{formatNumber(Math.min(...residuals),1)}</b></p><p>Max <b>{formatNumber(Math.max(...residuals),1)}</b></p></aside></section>

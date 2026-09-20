@@ -9,6 +9,7 @@ import {
 import { useActiveTimeSeries } from "../../../lib/timeSeries/useActiveTimeSeries";
 import { anomalyBenchmark } from "../../../lib/timeSeries/forecastDiagnostics";
 import { getTimeSeriesDataset, seriesValues, TIME_SERIES_CATALOG } from "../../../lib/timeSeries/timeSeriesDatasets";
+import { LabLessonOrWork, labHide } from "../../../components/common/LabTabs";
 import "./TimeSeriesAnomalyDetectionApprovedPage.css";
 
 type DataSet = { name: string; signal: string; unit: string; values: number[] };
@@ -104,7 +105,7 @@ export default function TimeSeriesAnomalyDetectionApprovedPage() {
     [custom, setCustom] = useState<{ name: string; values: number[] } | null>(
       null,
     );
-  const [tab, setTab] = useState("Visualize"),
+  const [tab, setTab] = useState("Learn"),
     [model, setModel] = useState("Rolling Z-score"),
     [sensitivity, setSensitivity] = useState(2.5);
   const [windowSize, setWindowSize] = useState(6),
@@ -318,7 +319,8 @@ export default function TimeSeriesAnomalyDetectionApprovedPage() {
         </nav>
       </section>
       <main className="ad-main">
-        <section className="ad-toolbar">
+        <LabLessonOrWork tab={tab} route="/ml/time-series/anomaly-detection">
+        <section className={`ad-toolbar${labHide(tab, "Visualize", "Train", "Transform")}`}>
           <label>
             Signal
             <select aria-label="Signal">
@@ -366,7 +368,7 @@ export default function TimeSeriesAnomalyDetectionApprovedPage() {
             </button>
           ))}
         </section>
-        <section className="ad-chart">
+        <section className={`ad-chart${labHide(tab, "Visualize", "Train")}`}>
           <svg
             viewBox="0 0 960 226"
             preserveAspectRatio="none"
@@ -457,7 +459,7 @@ export default function TimeSeriesAnomalyDetectionApprovedPage() {
             <em>● Anomaly</em> <mark>● Context Anomaly</mark> <b>● Normal</b>
           </footer>
         </section>
-        <section className="ad-summary card">
+        <section className={`ad-summary card${labHide(tab, "Metrics")}`}>
           <header>
             <b>Streaming Summary</b>
             <small>Updated now</small>
@@ -481,7 +483,7 @@ export default function TimeSeriesAnomalyDetectionApprovedPage() {
             ))}
           </div>
         </section>
-        <section className="ad-timeline card">
+        <section className={`ad-timeline card${labHide(tab, "Metrics")}`}>
           <header>
             <b>
               Anomaly Timeline <small>(Last 24h)</small>
@@ -507,7 +509,7 @@ export default function TimeSeriesAnomalyDetectionApprovedPage() {
             <b>● Context ({contexts.length})</b>
           </footer>
         </section>
-        <section className="ad-alerts card">
+        <section className={`ad-alerts card${labHide(tab, "Metrics")}`}>
           <header>
             <b>Recent Alerts</b>
             <button onClick={() => setStatus("All alerts opened")}>
@@ -532,7 +534,7 @@ export default function TimeSeriesAnomalyDetectionApprovedPage() {
             </article>
           ))}
         </section>
-        <section className="ad-insight card">
+        <section className={`ad-insight card${labHide(tab, "Metrics")}`}>
           <article>
             <h3>✦ Insight</h3>
             <b>{highs.length} high severity anomalies detected</b>
@@ -595,8 +597,9 @@ export default function TimeSeriesAnomalyDetectionApprovedPage() {
             </p>
           </article>
         </section>
+        </LabLessonOrWork>
       </main>
-      <aside className="ad-controls">
+      <aside className={`ad-controls${labHide(tab, "Train", "Transform", "Visualize")}`}>
         <section className="card">
           <h2>Detection Controls ⓘ</h2>
           {bench ? (

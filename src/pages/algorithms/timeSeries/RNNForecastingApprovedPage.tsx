@@ -6,6 +6,7 @@ import {
 } from "../../../lib/timeSeries/recurrentForecast";
 import { TIME_SERIES_CATALOG, seriesValues } from "../../../lib/timeSeries/timeSeriesDatasets";
 import { useActiveTimeSeries } from "../../../lib/timeSeries/useActiveTimeSeries";
+import { LabLessonOrWork, labHide } from "../../../components/common/LabTabs";
 import "./RNNForecastingApprovedPage.css";
 
 const DATASETS = [
@@ -290,7 +291,8 @@ export default function RNNForecastingApprovedPage() {
         </nav>
       </section>
       <main className="rf-main">
-        <section className="rf-overview">
+        <LabLessonOrWork tab={tab} route="/ml/time-series/rnn-forecasting">
+        <section className={`rf-overview${labHide(tab, "Visualize", "Train")}`}>
           <aside>
             <article>
               <h3>◎ OBJECTIVE</h3>
@@ -359,7 +361,7 @@ export default function RNNForecastingApprovedPage() {
             </footer>
           </article>
         </section>
-        <section className="rf-rolling card">
+        <section className={`rf-rolling card${labHide(tab, "Visualize", "Train")}`}>
           <header>
             <b>
               ROLLING FORECAST <small>(Latest window)</small>
@@ -391,7 +393,7 @@ export default function RNNForecastingApprovedPage() {
             May 11 May 12 May 13 May 14 May 15 May 16 May 17 May 18
           </footer>
         </section>
-        <section className="rf-diagnostics">
+        <section className={`rf-diagnostics${labHide(tab, "Metrics", "Train")}`}>
           <article className="card rf-hidden">
             <h3>HIDDEN STATE TRACE</h3>
             <p>Activations of the last hidden layer over time.</p>
@@ -459,7 +461,7 @@ export default function RNNForecastingApprovedPage() {
             <footer>1 6 12 18 24</footer>
           </article>
         </section>
-        <section className="rf-bottom">
+        <section className={`rf-bottom${labHide(tab, "Dataset", "Metrics")}`}>
           <article className="card">
             <h3>DATASET SUMMARY</h3>
             <div>
@@ -501,8 +503,9 @@ export default function RNNForecastingApprovedPage() {
             ))}
           </article>
         </section>
+        </LabLessonOrWork>
       </main>
-      <aside className="rf-controls">
+      <aside className={`rf-controls${labHide(tab, "Train", "Transform", "Visualize")}`}>
         <section className="card">
           <h3>FORECAST CONTROLS</h3>
           <label>

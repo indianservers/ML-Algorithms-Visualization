@@ -1,5 +1,7 @@
 import React, { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { LabProgressMeter } from "../../../../components/common/LabChrome";
+import { LabLessonPanel } from "../../../../components/common/LabTabs";
 import {
   BarChart3,
   BookOpen,
@@ -285,7 +287,6 @@ export default function RandomForestClassificationPage() {
     setTrained("Ready");
   };
   const reset = () => {
-    setTab("visualize");
     setDatasetId("iris");
     setRows(
       BASE.map((row) => ({ features: [...row.features], label: row.label })),
@@ -537,7 +538,14 @@ export default function RandomForestClassificationPage() {
     </>
   );
   const panel = () => {
-    if (tab === "visualize" || tab === "learn") return visual;
+    if (tab === "learn")
+      return (
+        <LabLessonPanel
+          tab="Learn"
+          route="/ml/supervised/random-forest-classification"
+        />
+      );
+    if (tab === "visualize") return visual;
     if (tab === "dataset")
       return (
         <section className="rfc-generic rfc-data">
@@ -885,10 +893,7 @@ export default function RandomForestClassificationPage() {
           </div>
           <aside>
             <span>LESSON PROGRESS</span>
-            <i>
-              <b />
-            </i>
-            <strong>65%</strong>
+            <LabProgressMeter />
             <button onClick={() => setToast("Documentation panel ready")}>
               <FileText /> Docs
             </button>

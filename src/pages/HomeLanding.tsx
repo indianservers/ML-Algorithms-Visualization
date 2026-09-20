@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Activity,
   ArrowRight,
@@ -135,23 +135,6 @@ const groups: Group[] = [
       card("/ml/deep-learning/multi-head-attention", "Parallel attention heads", "Advanced", "Multi-Head Attention"),
     ],
   },
-  {
-    id: "terms-studio",
-    title: "Terms Studio",
-    blurb: "Understand the words behind the algorithms",
-    tone: "purple",
-    icon: <BookMarked />,
-    categories: ["Terms Studio"],
-    featured: [
-      card("/ml/terms-studio", "The whole glossary in one studio", "Beginner", "Terms Studio"),
-      card("/ml/terms-studio/gradient-descent", "Walk downhill on the error hill", "Beginner", "Gradient Descent"),
-      card("/ml/terms-studio/relu", "The default hidden-layer switch", "Beginner", "ReLU"),
-      card("/ml/terms-studio/softmax", "Scores that add up to 100%", "Beginner", "Softmax"),
-      card("/ml/terms-studio/dropout", "Randomly mute neurons while practicing", "Beginner", "Dropout"),
-      card("/ml/terms-studio/backpropagation", "Walk the error backward", "Beginner", "Backpropagation"),
-      card("/ml/terms-studio/overfitting", "Memorizing homework vs learning", "Beginner", "Overfitting"),
-    ],
-  },
 ];
 
 const miniCategories = [
@@ -187,15 +170,50 @@ const miniCategories = [
     category: "Reinforcement Learning",
     route: "/ml/reinforcement-learning/q-learning-grid-world",
   },
+] as const;
+
+type Spotlight = {
+  id: string;
+  kicker: string;
+  title: string;
+  blurb: string;
+  cta: string;
+  route: string;
+  artLabel: string;
+  tone: "navy" | "amber";
+  icon: React.ReactNode;
+  category: string;
+  artKey?: ArtKey;
+};
+
+/** Compact featured tiles. Append here when adding more home spotlights. */
+const spotlights: Spotlight[] = [
   {
+    id: "playground",
+    kicker: "Featured lab",
+    title: "Neural Network Playground",
+    blurb: "Train a live net — pause epochs, paint points, and grade the boundary.",
+    cta: "Launch playground",
+    route: "/ml/deep-learning/nn-playground",
+    artLabel: "Live · browser trainable",
+    tone: "navy",
+    icon: <Play />,
+    category: "Deep Learning",
+    artKey: "feedforward-nn",
+  },
+  {
+    id: "terms-studio",
+    kicker: "Special module",
     title: "Terms Studio",
-    blurb: "Understand ReLU, loss, epochs...",
+    blurb: "Plain-English stories for ReLU, softmax, dropout, and the rest of the jargon.",
+    cta: "Enter Terms Studio",
+    route: "/ml/terms-studio",
+    artLabel: "Understand the words",
     tone: "amber",
     icon: <BookMarked />,
     category: "Terms Studio",
-    route: "/ml/terms-studio",
   },
-] as const;
+];
 
 const FILTERS: Array<Level | "All"> = ["All", "Beginner", "Intermediate", "Advanced"];
 
@@ -278,9 +296,13 @@ function AlgorithmCard({ item, enterIndex = -1 }: { item: Card; enterIndex?: num
 }
 
 export default function HomeLanding() {
+  const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const [query, setQuery] = React.useState("");
   const [level, setLevel] = React.useState<Level | "All">("All");
+  const [navOpen, setNavOpen] = React.useState(false);
+  const [navIndex, setNavIndex] = React.useState(0);
+  const navRef = React.useRef<HTMLLabelElement>(null);
 
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>({});
   const [openMinis, setOpenMinis] = React.useState<Record<string, boolean>>({});
@@ -325,6 +347,26 @@ export default function HomeLanding() {
     visible.reduce((sum, entry) => sum + entry.cards.length, 0) +
     minis.reduce((sum, entry) => sum + (entry.forced ? entry.cards.length : 0), 0);
 
+  const navHits = React.useMemo(
+    () => (query.trim() ? searchAlgorithms(query, { limit: 8 }) : []),
+    [query],
+  );
+
+  React.useEffect(() => {
+    const onDoc = (event: MouseEvent) => {
+      if (navRef.current && event.target instanceof Node && !navRef.current.contains(event.target)) {
+        setNavOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  const openHit = (route: string) => {
+    setNavOpen(false);
+    navigate(route);
+  };
+
   const stats = [
     { value: `${items.length}+`, label: "Algorithms", icon: <BookOpen />, tone: "blue" },
     { value: `${allSampleDatasets.length}+`, label: "Datasets", icon: <Database />, tone: "indigo" },
@@ -345,15 +387,68 @@ export default function HomeLanding() {
           </span>
         </Link>
 
-        <label className="hl-nav-search">
+        <label className="hl-nav-search" ref={navRef}>
           <Search />
           <input
             type="search"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setNavOpen(true);
+              setNavIndex(0);
+            }}
+            onFocus={() => setNavOpen(true)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                setNavOpen(false);
+                return;
+              }
+              if (event.key === "ArrowDown") {
+                event.preventDefault();
+                setNavIndex((index) => Math.min(index + 1, Math.max(navHits.length - 1, 0)));
+                return;
+              }
+              if (event.key === "ArrowUp") {
+                event.preventDefault();
+                setNavIndex((index) => Math.max(index - 1, 0));
+                return;
+              }
+              if (event.key === "Enter") {
+                const hit = navHits[navIndex] ?? navHits[0];
+                if (hit) {
+                  event.preventDefault();
+                  openHit(hit.route);
+                }
+              }
+            }}
             placeholder="Search algorithms, topics, or experiment..."
             aria-label="Search algorithms, topics, or experiments"
+            aria-expanded={navOpen && query.trim().length > 0}
+            aria-controls="hl-search-results"
+            role="combobox"
+            autoComplete="off"
           />
+          {navOpen && query.trim() ? (
+            <ul id="hl-search-results" className="hl-search-pop" role="listbox">
+              {navHits.length === 0 ? (
+                <li className="hl-search-empty">No algorithms or terms matched “{query.trim()}”.</li>
+              ) : (
+                navHits.map((hit, index) => (
+                  <li key={hit.route} role="option" aria-selected={index === navIndex}>
+                    <Link
+                      to={hit.route}
+                      className={index === navIndex ? "is-active" : ""}
+                      onMouseEnter={() => setNavIndex(index)}
+                      onClick={() => setNavOpen(false)}
+                    >
+                      <strong>{hit.label}</strong>
+                      <em>{hit.category}</em>
+                    </Link>
+                  </li>
+                ))
+              )}
+            </ul>
+          ) : null}
         </label>
 
         <nav className="hl-nav-links" aria-label="Primary">
@@ -456,58 +551,24 @@ export default function HomeLanding() {
         </div>
       </section>
 
-      <section className="hl-spotlight" aria-labelledby="hl-spotlight-title">
-        <div className="hl-spotlight-copy">
-          <p className="hl-spotlight-kicker">Featured lab</p>
-          <h2 id="hl-spotlight-title">Neural Network Playground</h2>
-          <p>
-            Train a live net in the browser. Pause epochs, paint points, flip
-            features, and let a held-out test set grade the boundary — more
-            than a static color field.
-          </p>
-          <ul>
-            <li>Play / Pause / Step with train and test loss</li>
-            <li>Click-to-draw data and neuron feature maps</li>
-            <li>Compare a linear net against your architecture</li>
-          </ul>
-          <Link to="/ml/deep-learning/nn-playground" className="hl-btn-primary">
-            <Play />
-            Launch playground
-          </Link>
-        </div>
-        <Link to="/ml/deep-learning/nn-playground" className="hl-spotlight-art" aria-label="Open Neural Network Playground">
-          <AlgorithmArt
-            route="/ml/deep-learning/nn-playground"
-            category="Deep Learning"
-            artKey="feedforward-nn"
-          />
-          <span>Live · browser trainable</span>
-        </Link>
-      </section>
-
-      <section className="hl-spotlight hl-spotlight-terms" aria-labelledby="hl-terms-title">
-        <div className="hl-spotlight-copy">
-          <p className="hl-spotlight-kicker">Special module</p>
-          <h2 id="hl-terms-title">Terms Studio</h2>
-          <p>
-            New to the jargon? Open a classroom for the words themselves — ReLU,
-            gradient descent, softmax, dropout, epochs — each with a plain-English
-            story, a worked example, and a knob you can turn.
-          </p>
-          <ul>
-            <li>42 beginner pages for the ideas behind the algorithms</li>
-            <li>Everyday analogies, then the tiny bit of math</li>
-            <li>Interactive examples, then a door into the matching lab</li>
-          </ul>
-          <Link to="/ml/terms-studio" className="hl-btn-primary">
-            <BookMarked />
-            Enter Terms Studio
-          </Link>
-        </div>
-        <Link to="/ml/terms-studio" className="hl-spotlight-art" aria-label="Open Terms Studio">
-          <AlgorithmArt route="/ml/terms-studio" category="Terms Studio" />
-          <span>Understand the words</span>
-        </Link>
+      <section className="hl-spotlights" aria-label="Featured labs">
+        {spotlights.map((spot) => (
+          <article key={spot.id} className={`hl-spot tone-${spot.tone}`}>
+            <div className="hl-spot-copy">
+              <p className="hl-spot-kicker">{spot.kicker}</p>
+              <h2>{spot.title}</h2>
+              <p>{spot.blurb}</p>
+              <Link to={spot.route} className="hl-btn-primary">
+                {spot.icon}
+                {spot.cta}
+              </Link>
+            </div>
+            <Link to={spot.route} className="hl-spot-art" aria-label={spot.title}>
+              <AlgorithmArt route={spot.route} category={spot.category} artKey={spot.artKey} />
+              <span>{spot.artLabel}</span>
+            </Link>
+          </article>
+        ))}
       </section>
 
       <section className="hl-catalog">

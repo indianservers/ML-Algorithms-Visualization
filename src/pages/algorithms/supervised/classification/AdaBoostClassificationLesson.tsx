@@ -26,6 +26,9 @@ import {
 } from "../../../../lib/classification/classificationDatasets";
 import { binaryMetrics } from "../../../../lib/math/metrics";
 import { trainAdaBoostClassification } from "../../../../lib/algorithms/classification/adaBoostClassification";
+import { LabProgressMeter } from "../../../../components/common/LabChrome";
+import { LabLessonPanel } from "../../../../components/common/LabTabs";
+import { exportWorkspaceReport } from "../../../../lib/labWorkspace";
 import "./AdaBoostClassificationPage.css";
 
 type Point = { x: number; y: number; label: number };
@@ -169,7 +172,6 @@ export default function AdaBoostClassificationLesson() {
     setTrained("Ready");
   };
   const reset = () => {
-    setTab("visualize");
     setDataset("spiral");
     setPoints(BUILT.spiral.map((p) => ({ ...p })));
     setRounds(6);
@@ -451,18 +453,25 @@ export default function AdaBoostClassificationLesson() {
             </b>
           </p>
         </article>
-        <article>
-          <h3>Algorithm At a Glance</h3>
+        <article className="ada-glance">
+          <h3>Round story</h3>
           <p>
-            ▦ Initialize Equal weights → ♧ Train Weak Learner → ◉ Compute Error
-            and α → ◎ Update Weights → ✦ Aggregate Votes
+            Misclassified points gain weight. The next stump is trained on those
+            weights. α is that stump’s vote in the final sign(Σ α h) ensemble.
           </p>
         </article>
       </section>
     </>
   );
   const content = () => {
-    if (tab === "visualize" || tab === "learn") return visualization;
+    if (tab === "learn")
+      return (
+        <LabLessonPanel
+          tab="Learn"
+          route="/ml/supervised/adaboost-classification"
+        />
+      );
+    if (tab === "visualize") return visualization;
     if (tab === "dataset")
       return (
         <section className="ada-generic ada-data">
@@ -675,16 +684,21 @@ export default function AdaBoostClassificationLesson() {
         </Link>
         <section>
           <span>Lesson Progress</span>
-          <i>
-            <b />
-          </i>
-          <strong>6 / 8</strong>
+          <LabProgressMeter />
         </section>
         <p>
           <b>Objective</b> Understand how AdaBoost combines weak learners by
           focusing on hard examples.
         </p>
-        <button onClick={() => setToast("Report exported")}>
+        <button
+          onClick={() =>
+            exportWorkspaceReport({
+              title: "AdaBoost Classification",
+              route: "/ml/supervised/adaboost-classification",
+              tab,
+            })
+          }
+        >
           <Download /> Export Report
         </button>
         <MoreVertical />

@@ -1,6 +1,7 @@
 .um-page {
   min-height: 941px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: radial-gradient(circle at 58% 0, #0c172b, #030a17 65%);
   color: #eef3fa;
   font:
@@ -511,4 +512,10 @@
     display: block;
     margin-top: 8px;
   }
+}
+.um-busy {
+  margin: 8px 16px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--lab-cyan, #4be8ea) 16%, transparent);
 }

@@ -20,13 +20,13 @@ import {
 import { AlgorithmGlyph, CategoryGlyph } from './AlgorithmGlyph';
 
 interface SidebarProps {
-  collapsed: boolean;
-  onToggle: () => void;
+  collapsed?: boolean;
+  onToggle?: () => void;
   onNavigate?: () => void;
   drawer?: boolean;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, onNavigate, drawer = false }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle = () => undefined, onNavigate, drawer = false }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
@@ -82,7 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, onNavigat
 
   if (collapsed) {
     return (
-      <div className="h-full min-h-0 w-14 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col items-center overflow-y-auto py-4 gap-4 shrink-0">
+      <div className="h-full min-h-0 w-14 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col items-center overflow-y-auto py-4 gap-4 shrink-0" data-lab-duplicate-nav={drawer ? undefined : 'true'}>
         <button onClick={onToggle} className="min-h-10 min-w-10 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500" aria-label="Expand navigation">
           <ChevronRight size={18} />
         </button>
@@ -109,7 +109,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle, onNavigat
   }
 
   return (
-    <div className={`${drawer ? 'w-[min(292px,calc(100vw-32px))]' : 'w-72'} h-full min-h-0 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col shrink-0 overflow-hidden`}>
+      <div className={`${drawer ? 'w-[min(292px,calc(100vw-32px))]' : 'w-72'} h-full min-h-0 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col shrink-0 overflow-hidden`} data-lab-duplicate-nav={drawer ? undefined : 'true'}>
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
         <NavLink to="/" onClick={onNavigate} className="flex min-w-0 items-center gap-2">

@@ -1,6 +1,7 @@
 .kp-page {
   min-height: 1024px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: radial-gradient(circle at 55% 0, #0a1429, #020817 60%);
   color: #f5f7fb;
   font:

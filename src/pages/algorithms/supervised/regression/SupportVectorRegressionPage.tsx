@@ -16,7 +16,7 @@ import {
   Sun,
   Upload,
 } from "lucide-react";
-import { energyDemandDataset, housingDataset } from "../../../../data/sampleDatasets";
+import { LabLessonPanel } from "../../../../components/common/LabTabs";
 import { mae, mse, rSquared } from "../../../../lib/math/metrics";
 import {
   datasetAPerfectPositive,
@@ -541,7 +541,12 @@ export default function SupportVectorRegressionPage() {
         </nav>
         <section className="workspace">
           <div className="content">
-            {tab === "Dataset" ? (
+            {tab === "Learn" ? (
+              <LabLessonPanel
+                tab="Learn"
+                route="/ml/supervised/support-vector-regression"
+              />
+            ) : tab === "Dataset" ? (
               <DataPanel rows={rows} setRows={setRows} />
             ) : tab !== "Visualize" ? (
               generic

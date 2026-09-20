@@ -4,6 +4,7 @@ import { autocorrelation, fitArima, inspectDifference } from "../../../lib/timeS
 import { TIME_SERIES_CATALOG, seriesValues } from "../../../lib/timeSeries/timeSeriesDatasets";
 import { chronologicalSplit } from "../../../lib/timeSeries/timeSeriesSplit";
 import { useActiveTimeSeries } from "../../../lib/timeSeries/useActiveTimeSeries";
+import { LabLessonOrWork, labHide } from "../../../components/common/LabTabs";
 import "./ARIMAConceptApprovedPage.css";
 
 const AIR = [
@@ -227,7 +228,7 @@ function numberColumn(values: number[], width = 12) {
 }
 
 export default function ARIMAConceptApprovedPage() {
-  const [tab, setTab] = useState("Visualize"),
+  const [tab, setTab] = useState("Learn"),
     [dataset, setDataset] = useState(0),
     [custom, setCustom] = useState<{ name: string; values: number[] } | null>(
       null,
@@ -413,7 +414,8 @@ export default function ARIMAConceptApprovedPage() {
         </nav>
       </header>
       <main className="ar-main">
-        <section className="ar-dataset card">
+        <LabLessonOrWork tab={tab} route="/ml/time-series/arima-concept">
+        <section className={`ar-dataset card${labHide(tab, "Dataset")}`}>
           <i>✈</i>
           <label>
             Dataset
@@ -453,7 +455,7 @@ export default function ARIMAConceptApprovedPage() {
             onChange={(e) => upload(e.target.files?.[0])}
           />
         </section>
-        <section className="ar-meta card">
+        <section className={`ar-meta card${labHide(tab, "Dataset")}`}>
           <span>
             <i>▥</i>
             <small>Frequency</small>
@@ -475,7 +477,7 @@ export default function ARIMAConceptApprovedPage() {
             <b>{selected.target}</b>
           </span>
         </section>
-        <section className="ar-timeseries card">
+        <section className={`ar-timeseries card${labHide(tab, "Visualize", "Train")}`}>
           <header>
             <b>Time Series</b>
             <span>
@@ -490,7 +492,7 @@ export default function ARIMAConceptApprovedPage() {
             1950 · 1952 · 1954 · 1956 · 1958 · 1960
           </div>
         </section>
-        <section className="ar-decomp card">
+        <section className={`ar-decomp card${labHide(tab, "Visualize", "Train")}`}>
           <header>
             <b>Decomposition (Additive)</b>
             <span>
@@ -503,7 +505,7 @@ export default function ARIMAConceptApprovedPage() {
             <SeriesChart values={residualDisplay} />
           </div>
         </section>
-        <section className="ar-difference card">
+        <section className={`ar-difference card${labHide(tab, "Visualize", "Train", "Transform")}`}>
           <h3>Differencing (d)</h3>
           <div className="ar-diff-buttons">
             <button onClick={() => setDiffView(Math.min(2, diffView + 1))}>
@@ -524,7 +526,7 @@ export default function ARIMAConceptApprovedPage() {
           </div>
           <span>✓ Recommended</span>
         </section>
-        <section className="ar-correlation card">
+        <section className={`ar-correlation card${labHide(tab, "Visualize", "Train")}`}>
           <header>
             <b>Original (d = 0)</b>
             <em>Non-stationary</em>
@@ -536,7 +538,7 @@ export default function ARIMAConceptApprovedPage() {
             n={values.length}
           />
         </section>
-        <section className="ar-correlation ar-diff-corr card">
+        <section className={`ar-correlation ar-diff-corr card${labHide(tab, "Visualize", "Train")}`}>
           <header>
             <b>Differenced (d = {diffView})</b>
             <em>Visual diagnostic only — not an ADF test</em>
@@ -544,7 +546,7 @@ export default function ARIMAConceptApprovedPage() {
           <Correlation title="ACF" values={diffFit.acf} n={diffFit.differenced.length} />
           <Correlation title="PACF" values={diffFit.pacf} n={diffFit.differenced.length} />
         </section>
-        <section className="ar-forecast-panel card">
+        <section className={`ar-forecast-panel card${labHide(tab, "Visualize", "Train")}`}>
           <header>
             <b>Forecast</b>
             <span>
@@ -559,7 +561,7 @@ export default function ARIMAConceptApprovedPage() {
             upper={seasonalUpper}
           />
         </section>
-        <section className="ar-residual card">
+        <section className={`ar-residual card${labHide(tab, "Metrics")}`}>
           <aside>
             <b>Residual Diagnostics</b>
             <small>
@@ -577,7 +579,7 @@ export default function ARIMAConceptApprovedPage() {
             <SeriesChart values={fit.residuals} />
           </div>
         </section>
-        <section className="ar-insights">
+        <section className={`ar-insights${labHide(tab, "Metrics")}`}>
           <article>
             <i>♨</i>
             <div>
@@ -624,8 +626,9 @@ export default function ARIMAConceptApprovedPage() {
             </div>
           </article>
         </section>
+        </LabLessonOrWork>
       </main>
-      <aside className="ar-controls">
+      <aside className={`ar-controls${labHide(tab, "Train", "Transform", "Visualize")}`}>
         <section className="card">
           <h2>ARIMA Controls</h2>
           <h3>Order Selection</h3>

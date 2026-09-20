@@ -4,9 +4,9 @@
   --line: #20334e;
   --text: #e9effd;
   --muted: #9aabc4;
-  position: fixed;
-  inset: 0;
-  overflow: hidden;
+  position: relative;
+  min-height: 100%;
+  overflow: auto;
   background: var(--bg);
   color: var(--text);
   font:
@@ -182,11 +182,13 @@
   color: #afbed3;
 }
 .nb-page > main {
-  position: absolute;
-  left: 275px;
-  right: 0;
-  top: 0;
-  bottom: 0;
+  position: relative;
+  left: auto;
+  right: auto;
+  top: auto;
+  bottom: auto;
+  margin-left: 275px;
+  min-height: 100vh;
 }
 .nb-header {
   height: 78px;
@@ -690,8 +692,9 @@
   margin-top: 22px !important;
 }
 .nb-controls {
-  height: 646px;
-  overflow: hidden;
+  height: auto;
+  min-height: 0;
+  overflow: auto;
   padding-top: 0;
 }
 .nb-controls > section:nth-child(1) {
@@ -1077,7 +1080,8 @@
     z-index: 5;
   }
   .nb-page > main {
-    left: 210px;
+    margin-left: 210px;
+    left: auto;
     overflow: auto;
   }
   .nb-header > div {

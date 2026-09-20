@@ -9,6 +9,7 @@ import {
   type MLPResult,
 } from "../../../lib/algorithms/neural/mlp";
 import "./MLPPage.css";
+import { LabLessonOrWork, labHide } from "../../../components/common/LabTabs";
 
 type Point = { x: number; y: number; label: number };
 type Dataset = "moons" | "circles" | "xor" | "spiral" | "imported";
@@ -258,7 +259,7 @@ function Curves({ result }: { result: MLPResult }) {
 }
 
 export default function MLPPage() {
-  const [tab, setTab] = useState("Visualize"),
+  const [tab, setTab] = useState("Learn"),
     [dataset, setDataset] = useState<Dataset>("moons"),
     [points, setPoints] = useState<Point[]>(BUILT.moons),
     [imported, setImported] = useState<Point[]>([]),
@@ -464,7 +465,7 @@ export default function MLPPage() {
             </button>
           ))}
         </nav>
-        <section>
+        <section className={labHide(tab, "Dataset").trim()}>
           <label>
             Dataset
             <select
@@ -501,7 +502,8 @@ export default function MLPPage() {
         </section>
       </header>
       <main>
-        <section className="mlp-diagram panel">
+        <LabLessonOrWork tab={tab} route="/ml/deep-learning/mlp">
+        <section className={`mlp-diagram panel${labHide(tab, "Visualize", "Train")}`}>
           <h3>Network Diagram</h3>
           <small>→ Signal Flow</small>
           <Network
@@ -523,7 +525,7 @@ export default function MLPPage() {
             <button onClick={() => setSelected([0, 0])}>Reset View</button>
           </footer>
         </section>
-        <section className="mlp-activation panel">
+        <section className={`mlp-activation panel${labHide(tab, "Visualize", "Train")}`}>
           <h3>Activation Inspector ⓘ</h3>
           <label>
             Select a neuron
@@ -569,14 +571,14 @@ export default function MLPPage() {
                 : "f(z) = 1 / (1 + e⁻ᶻ)"}
           </code>
         </section>
-        <section className="mlp-boundary-card panel">
+        <section className={`mlp-boundary-card panel${labHide(tab, "Visualize", "Train")}`}>
           <h3>Decision Boundary ⓘ</h3>
           <Boundary points={points} result={result} activation={activation} />
           <footer>
             <i /> Class 0 <i /> Class 1 ─ Decision Boundary
           </footer>
         </section>
-        <section className="mlp-curves-card panel">
+        <section className={`mlp-curves-card panel${labHide(tab, "Metrics", "Train")}`}>
           <h3>Training Curves ⓘ</h3>
           <select>
             <option>Loss</option>
@@ -584,7 +586,7 @@ export default function MLPPage() {
           <Curves result={result} />
           <footer>Epoch</footer>
         </section>
-        <section className="mlp-performance panel">
+        <section className={`mlp-performance panel${labHide(tab, "Metrics")}`}>
           <h3>Performance ⓘ</h3>
           {[
             ["Accuracy", accuracy],
@@ -615,8 +617,9 @@ export default function MLPPage() {
             <b>{tp}</b>
           </div>
         </section>
+        </LabLessonOrWork>
       </main>
-      <aside className="mlp-inspector panel">
+      <aside className={`mlp-inspector panel${labHide(tab, "Train", "Transform", "Visualize")}`}>
         <h2>⌘ Model Inspector</h2>
         <h3>Architecture</h3>
         <label>

@@ -305,6 +305,7 @@
 .lasso-content {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 276px;
+  align-items: start;
   gap: 14px;
   padding: 16px 24px 18px 17px;
 }

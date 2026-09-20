@@ -83,11 +83,7 @@ const LABELS: Record<Dataset, string> = {
 };
 
 export default function GaussianMixtureModelPage() {
-  const { tab, setTab, panel, layout, lesson } = useLabTabs(
-      "Visualize",
-      "Visualize",
-      ["Learn", "Compare", "Explain"],
-    ),
+  const { tab, setTab, panel, layout, lesson } = useLabTabs("Learn"),
     [sideTab, setSideTab] = useState("EM Algorithm"),
     [dataset, setDataset] = useState<Dataset>("anisotropic"),
     [points, setPoints] = useState<Point[]>(BUILT.anisotropic),
@@ -282,7 +278,7 @@ export default function GaussianMixtureModelPage() {
         </button>
       </header>
       <main className={layout.trim()}>
-        <header className={panel("Dataset", "Train", "Metrics").trim()}>
+        <header className={panel("Visualize", "Dataset", "Train", "Metrics").trim()}>
           <b>♙ Objective</b>
           <span>
             Understand how GMM represents data as a weighted sum of Gaussians
@@ -316,7 +312,7 @@ export default function GaussianMixtureModelPage() {
             route="/ml/clustering/gaussian-mixture-model"
           />
         )}
-        <section className={`gm-viz${panel("Train")}`}>
+        <section className={`gm-viz${panel("Visualize", "Train")}`}>
           <header>
             <h2>Mixture Visualization ⓘ</h2>
             <select>
@@ -501,7 +497,7 @@ export default function GaussianMixtureModelPage() {
           </article>
         </section>
       </main>
-      <aside className={`gm-em${panel("Train")}`}>
+      <aside className={`gm-em${panel("Visualize", "Train")}`}>
         <nav>
           <button
             className={sideTab === "EM Algorithm" ? "active" : ""}

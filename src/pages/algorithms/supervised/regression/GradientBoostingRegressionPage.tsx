@@ -14,6 +14,7 @@ import {
   TreePine,
   Upload,
 } from "lucide-react";
+import { LabLessonPanel } from "../../../../components/common/LabTabs";
 import {
   energyDemandDataset,
   housingDataset,
@@ -779,17 +780,24 @@ function GenericPanel({
 }) {
   if (tab === "visualize")
     return (
-      <section className="gb-panel">
-        <h2>Stage-by-Stage Prediction Explorer</h2>
-        <BuildUpChart result={result} />
-        <div className="gb-large-residual">
-          <ResidualChart
-            values={result.model.stages.at(-1)?.residualsBefore ?? []}
-            color="#8159f1"
-          />
-          <Summary result={result} names={names} />
-        </div>
-      </section>
+      <>
+        <LearnPanel
+          result={result}
+          stage={result.model.stages.length}
+          names={names}
+        />
+        <section className="gb-panel">
+          <h2>Stage-by-Stage Prediction Explorer</h2>
+          <BuildUpChart result={result} />
+          <div className="gb-large-residual">
+            <ResidualChart
+              values={result.model.stages.at(-1)?.residualsBefore ?? []}
+              color="#8159f1"
+            />
+            <Summary result={result} names={names} />
+          </div>
+        </section>
+      </>
     );
   if (tab === "train")
     return (
@@ -1369,10 +1377,9 @@ export default function GradientBoostingRegressionPage() {
           </nav>
           <div className="gb-content">
             {tab === "learn" ? (
-              <LearnPanel
-                result={result}
-                stage={Math.min(stage, result.model.stages.length)}
-                names={names}
+              <LabLessonPanel
+                tab="Learn"
+                route="/ml/supervised/gradient-boosting-regression"
               />
             ) : tab === "dataset" ? (
               <DatasetPanel

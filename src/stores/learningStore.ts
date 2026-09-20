@@ -18,6 +18,8 @@ export interface LearnerProgress {
   quizResults: QuizResult[];
   notes: LearnerNote[];
   challengeRuns: Record<string, number>;
+  /** Canonical section ids visited per algorithm route (learn, visualize, …). */
+  sectionVisits: Record<string, string[]>;
   lastUpdated: number;
 }
 
@@ -28,6 +30,7 @@ const emptyProgress: LearnerProgress = {
   quizResults: [],
   notes: [],
   challengeRuns: {},
+  sectionVisits: {},
   lastUpdated: Date.now(),
 };
 
@@ -43,6 +46,7 @@ function readProgress(): LearnerProgress {
       quizResults: Array.isArray(parsed.quizResults) ? parsed.quizResults : [],
       notes: Array.isArray(parsed.notes) ? parsed.notes : [],
       challengeRuns: parsed.challengeRuns ?? {},
+      sectionVisits: parsed.sectionVisits ?? {},
     };
   } catch {
     return emptyProgress;
@@ -59,6 +63,37 @@ function writeProgress(progress: LearnerProgress) {
 
 export function getLearnerProgress() {
   return readProgress();
+}
+
+const DEFAULT_SECTIONS = ['learn', 'visualize', 'dataset', 'train', 'metrics', 'compare', 'explain'];
+
+export function canonSectionId(section: string) {
+  const text = section.trim().toLowerCase().replace(/^[^a-z0-9]+/, '');
+  if (text === 'build / train' || text === 'build/train' || text === 'transform') return 'train';
+  return text;
+}
+
+export function markSectionVisited(route: string, section: string) {
+  const id = canonSectionId(section);
+  if (!route || !id) return readProgress();
+  const progress = readProgress();
+  const current = progress.sectionVisits[route] ?? [];
+  if (current.includes(id)) return progress;
+  progress.sectionVisits = {
+    ...progress.sectionVisits,
+    [route]: [...current, id],
+  };
+  return writeProgress(progress);
+}
+
+export function getSectionProgress(route: string, total = DEFAULT_SECTIONS.length) {
+  const visited = readProgress().sectionVisits[route] ?? [];
+  const denom = Math.max(1, total);
+  return {
+    visited,
+    total: denom,
+    percent: Math.round((Math.min(visited.length, denom) / denom) * 100),
+  };
 }
 
 export function markRouteComplete(route: string) {

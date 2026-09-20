@@ -4,12 +4,13 @@
 .lab-fit-host {
   height: 100%;
   min-height: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .lab-fit-inner {
-  height: 100%;
-  min-height: 0;
+  height: auto;
+  min-height: 100%;
   width: 100%;
   overflow: visible;
   transform-origin: top left;
@@ -37,12 +38,103 @@
   left: auto !important;
   width: 100% !important;
   max-width: 100% !important;
-  height: 100% !important;
+  height: auto !important;
+  min-height: 100% !important;
+  overflow: visible !important;
   box-sizing: border-box !important;
+  font-size: 14px;
+  line-height: 1.5;
   /* Several lessons still pin their own header/rail/footer with position:fixed
      and top:0. A transform makes this root their containing block, so they land
      inside the page instead of over the suite's Home bar. */
   transform: translateZ(0);
+}
+
+/* Tab labels like "Build / Train" were locked to 90px and clipped. */
+#main-content [role="tablist"] button,
+#main-content [role="tab"],
+#main-content nav[aria-label] button {
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  padding: 8px 12px !important;
+  font-size: 14px !important;
+  white-space: nowrap;
+  overflow: visible !important;
+}
+
+/* Educational copy was stuffed into 50px mockup headers. */
+#main-content header:has(p),
+#main-content [class*="-work"] > header,
+#main-content [class*="-head"]:has(p) {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* Learn / Compare / Explain and glossary pages are documents. Unlock the
+   100vh lock so the suite scrollbar can reach the rest of the copy. */
+#main-content .terms-studio,
+#main-content [class*="-page"]:has(.lab-tab-lesson),
+#main-content [class*="-shell"]:has(.lab-tab-lesson),
+#main-content [class*="-approved"]:has(.lab-tab-lesson) {
+  height: auto !important;
+  min-height: 100% !important;
+  overflow: visible !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: auto !important;
+  gap: 10px !important;
+  padding: 12px 18px 28px !important;
+}
+
+#main-content [class*="-page"]:has(.lab-tab-lesson) > *,
+#main-content [class*="-shell"]:has(.lab-tab-lesson) > *,
+#main-content [class*="-approved"]:has(.lab-tab-lesson) > * {
+  grid-column: 1 / -1 !important;
+  grid-row: auto !important;
+  position: relative !important;
+  inset: auto !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  width: auto !important;
+  max-width: none !important;
+  height: auto !important;
+}
+
+#main-content [class*="-page"]:has(.lab-tab-lesson) > aside,
+#main-content [class*="-shell"]:has(.lab-tab-lesson) > aside,
+#main-content [class*="-approved"]:has(.lab-tab-lesson) > aside {
+  display: none !important;
+}
+
+#main-content [class*="-page"]:has(.lab-tab-lesson) > main,
+#main-content [class*="-shell"]:has(.lab-tab-lesson) > main,
+#main-content [class*="-approved"]:has(.lab-tab-lesson) > main {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+}
+
+#main-content .lab-tab-lesson {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+  width: 100% !important;
+  max-width: none !important;
+}
+
+.lab-fit-host:has(.lab-tab-lesson),
+.lab-fit-host:has(.terms-studio) {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.lab-fit-host:has(.lab-tab-lesson) .lab-fit-inner,
+.lab-fit-host:has(.terms-studio) .lab-fit-inner {
+  height: auto;
+  min-height: 100%;
 }
 
 #main-content [class*="-shell"],
@@ -91,11 +183,44 @@
   max-width: 100%;
 }
 
+/* Lesson step strip stays at the top of every SLR view (sidebar is hidden). */
+#main-content .slr-flow {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  margin-top: 0 !important;
+}
+
 #main-content
   aside[class$="-side"]:not([class*="control"]):not([class*="right"]):not(
     [class*="inspector"]
   ) {
   display: none !important;
+}
+
+/* Dataset Library / platform pages still reserve the 238px rail after it
+   is hidden, which leaves a blank strip on the left. Collapse it. */
+#main-content .pp-page {
+  position: relative !important;
+  inset: auto !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: auto minmax(0, 1fr) auto !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+#main-content .pp-page .pp-head,
+#main-content .pp-page .pp-content,
+#main-content .pp-page .pp-status,
+#main-content .pp-page .pp-homehead {
+  grid-column: 1 !important;
+}
+
+#main-content .pp-page .pp-content {
+  padding: 12px 20px 16px;
 }
 
 .ma-page {
@@ -222,35 +347,47 @@ aside.ada-nav {
   margin-top: 20px !important;
 }
 
-/* Keep lab control docks beside the canvas instead of overlaying it.
-   Skip mockups that already reserve space with a left rail + absolute main. */
-#main-content
-  [class*="-page"]:has(> aside[class*="controls"]):not(
-    :has(> aside[class$="-side"])
-  ),
-#main-content
-  [class*="-shell"]:has(> aside[class*="controls"]):not(
-    :has(> aside[class$="-side"])
-  ),
-#main-content
-  [class*="-approved"]:has(> aside[class*="controls"]):not(
-    :has(> aside[class$="-side"])
-  ) {
+/* Keep lab control docks beside the canvas. Hidden leftover *-side rails
+   must not keep the old absolute mockup (that clipped tab and header text). */
+#main-content [class*="-page"]:has(> aside[class*="controls"]):not(:has(.lab-tab-lesson)),
+#main-content [class*="-shell"]:has(> aside[class*="controls"]):not(:has(.lab-tab-lesson)),
+#main-content [class*="-approved"]:has(> aside[class*="controls"]):not(:has(.lab-tab-lesson)) {
   display: grid !important;
   grid-template-columns: minmax(0, 1fr) minmax(260px, 340px) !important;
   gap: 12px !important;
   padding: 12px !important;
 }
 
-#main-content
-  [class*="-page"]:not(:has(> aside[class$="-side"]))
-  > aside[class*="controls"],
-#main-content
-  [class*="-shell"]:not(:has(> aside[class$="-side"]))
-  > aside[class*="controls"],
-#main-content
-  [class*="-approved"]:not(:has(> aside[class$="-side"]))
-  > aside[class*="controls"] {
+#main-content [class*="-page"]:has(> aside[class*="controls"]) > header,
+#main-content [class*="-page"]:has(> aside[class*="controls"]) > [class*="-head"],
+#main-content [class*="-page"]:has(> aside[class*="controls"]) > [class*="-title"],
+#main-content [class*="-page"]:has(> aside[class*="controls"]) > [class*="-tabs"],
+#main-content [class*="-page"]:has(> aside[class*="controls"]) > [class*="-toolbar"],
+#main-content [class*="-page"]:has(> aside[class*="controls"]) > nav,
+#main-content [class*="-shell"]:has(> aside[class*="controls"]) > header,
+#main-content [class*="-approved"]:has(> aside[class*="controls"]) > header {
+  grid-column: 1 / -1 !important;
+  position: relative !important;
+  inset: auto !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+#main-content [class*="-page"]:has(> aside[class*="controls"]) > main,
+#main-content [class*="-shell"]:has(> aside[class*="controls"]) > main,
+#main-content [class*="-approved"]:has(> aside[class*="controls"]) > main {
+  grid-column: 1 !important;
+  position: relative !important;
+  inset: auto !important;
+  width: auto !important;
+  height: auto !important;
+  min-width: 0;
+}
+
+#main-content [class*="-page"] > aside[class*="controls"],
+#main-content [class*="-shell"] > aside[class*="controls"],
+#main-content [class*="-approved"] > aside[class*="controls"] {
+  grid-column: 2 !important;
   position: relative !important;
   inset: auto !important;
   top: auto !important;
@@ -259,8 +396,8 @@ aside.ada-nav {
   width: 100% !important;
   max-width: 340px;
   height: auto !important;
-  max-height: 100%;
-  overflow: auto !important;
+  max-height: none;
+  overflow: visible !important;
   z-index: 2;
 }
 
@@ -318,30 +455,16 @@ aside.ada-nav {
 }
 
 @media (max-width: 980px) {
-  #main-content
-    [class*="-page"]:has(> aside[class*="controls"]):not(
-      :has(> aside[class$="-side"])
-    ),
-  #main-content
-    [class*="-shell"]:has(> aside[class*="controls"]):not(
-      :has(> aside[class$="-side"])
-    ),
-  #main-content
-    [class*="-approved"]:has(> aside[class*="controls"]):not(
-      :has(> aside[class$="-side"])
-    ) {
+  #main-content [class*="-page"]:has(> aside[class*="controls"]):not(:has(.lab-tab-lesson)),
+  #main-content [class*="-shell"]:has(> aside[class*="controls"]):not(:has(.lab-tab-lesson)),
+  #main-content [class*="-approved"]:has(> aside[class*="controls"]):not(:has(.lab-tab-lesson)) {
     grid-template-columns: minmax(0, 1fr) !important;
   }
 
-  #main-content
-    [class*="-page"]:not(:has(> aside[class$="-side"]))
-    > aside[class*="controls"],
-  #main-content
-    [class*="-shell"]:not(:has(> aside[class$="-side"]))
-    > aside[class*="controls"],
-  #main-content
-    [class*="-approved"]:not(:has(> aside[class$="-side"]))
-    > aside[class*="controls"] {
+  #main-content [class*="-page"] > aside[class*="controls"],
+  #main-content [class*="-shell"] > aside[class*="controls"],
+  #main-content [class*="-approved"] > aside[class*="controls"] {
+    grid-column: 1 !important;
     max-width: none;
   }
 

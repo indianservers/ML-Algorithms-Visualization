@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { useLabNavigate } from "../../../lib/labNavigation";
 import { Download, Maximize2, Upload } from "lucide-react";
 import { evaluateMulticlass } from "../../../lib/evaluation/multiclassMetrics";
+import { LabLessonOrWork, labHide } from "../../../components/common/LabTabs";
 import "./ConfusionMatrixApprovedPage.css";
 
 type Dataset = { name: string; labels: string[]; matrix: number[][] };
@@ -68,7 +69,7 @@ export default function ConfusionMatrixApprovedPage() {
     [predFilter, setPredFilter] = useState(-1),
     [view, setView] = useState<"counts" | "percent">("counts"),
     [normalize, setNormalize] = useState(false),
-    [tab, setTab] = useState("Visualize"),
+    [tab, setTab] = useState("Learn"),
     [focus, setFocus] = useState(-1),
     [samplePage, setSamplePage] = useState(0),
     [message, setMessage] = useState("Interactive"),
@@ -232,7 +233,8 @@ export default function ConfusionMatrixApprovedPage() {
         </nav>
       </header>
       <main>
-        <section className="cm-matrix panel">
+        <LabLessonOrWork tab={tab} route="/ml/evaluation/confusion-matrix">
+        <section className={`cm-matrix panel${labHide(tab, "Visualize", "Train")}`}>
           <h2>Confusion Matrix ⓘ</h2>
           <div className="matrix-tools">
             View{" "}
@@ -331,7 +333,7 @@ export default function ConfusionMatrixApprovedPage() {
             {pct(result.balancedAccuracy)}
           </footer>
         </section>
-        <section className="cm-gallery panel">
+        <section className={`cm-gallery panel${labHide(tab, "Dataset")}`}>
           <h2>
             Sample Gallery <small>(View linked samples)</small>
             <button>View All Samples</button>
@@ -374,9 +376,10 @@ export default function ConfusionMatrixApprovedPage() {
             </button>
           </div>
         </section>
+        </LabLessonOrWork>
       </main>
-      <aside className="cm-right">
-        <section className="filters panel">
+      <aside className={`cm-right${labHide(tab, "Transform", "Train", "Metrics", "Dataset")}`}>
+        <section className={`filters panel${labHide(tab, "Transform", "Train")}`}>
           <h2>
             Filters{" "}
             <button
@@ -445,7 +448,7 @@ export default function ConfusionMatrixApprovedPage() {
             />
           </label>
         </section>
-        <section className="live panel">
+        <section className={`live panel${labHide(tab, "Metrics")}`}>
           <h2>
             Live Metrics <small>(All Classes)</small>
           </h2>
@@ -514,7 +517,7 @@ export default function ConfusionMatrixApprovedPage() {
             </p>
           )}
         </section>
-        <section className="insight panel">
+        <section className={`insight panel${labHide(tab, "Metrics")}`}>
           <h2>Key Insights</h2>
           <p>
             ⚠ Most confusion occurs between visually similar classes. Review the

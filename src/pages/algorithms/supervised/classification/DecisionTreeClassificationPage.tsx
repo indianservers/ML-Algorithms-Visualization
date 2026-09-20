@@ -1,5 +1,7 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { LabProgressMeter } from "../../../../components/common/LabChrome";
+import { LabLessonPanel } from "../../../../components/common/LabTabs";
 import {
   BarChart3,
   BookOpen,
@@ -13,9 +15,11 @@ import {
   Lightbulb,
   Moon,
   Network,
+  Pause,
   Play,
   Plus,
   RefreshCw,
+  SkipForward,
   Sparkles,
   Sun,
   Upload,
@@ -132,6 +136,36 @@ const majority = (node: TreeNode) =>
       item[1] > best[1] ? item : best,
     )[0],
   );
+function countSplits(node: DisplayNode): number {
+  if (node.classLabel !== undefined || !node.left || !node.right) return 0;
+  return (
+    1 +
+    countSplits(node.left as DisplayNode) +
+    countSplits(node.right as DisplayNode)
+  );
+}
+function revealTree(node: DisplayNode, budget: number): DisplayNode {
+  if (node.classLabel !== undefined || !node.left || !node.right || budget <= 0) {
+    return {
+      samples: node.samples,
+      impurity: node.impurity,
+      classCounts: node.classCounts,
+      classLabel: node.classLabel ?? majority(node),
+    };
+  }
+  const leftSplits = countSplits(node.left as DisplayNode);
+  const leftBudget = Math.min(leftSplits, Math.max(0, budget - 1));
+  const rightBudget = Math.max(0, budget - 1 - leftBudget);
+  return {
+    ...node,
+    left: revealTree(node.left as DisplayNode, leftBudget),
+    right: revealTree(node.right as DisplayNode, rightBudget),
+  };
+}
+function currentSplit(node: DisplayNode): DisplayNode | null {
+  const items = flatten(node).filter((item) => item.node.classLabel === undefined);
+  return items.at(-1)?.node ?? null;
+}
 function prune(node: TreeNode, alpha: number): DisplayNode {
   if (node.classLabel !== undefined || !node.left || !node.right)
     return { ...node };
@@ -389,6 +423,9 @@ export default function DecisionTreeClassificationPage() {
   const [showCounts, setShowCounts] = useState(true),
     [showImpurity, setShowImpurity] = useState(true),
     [animate, setAnimate] = useState(true);
+  const [playing, setPlaying] = useState(false),
+    [revealStep, setRevealStep] = useState(99),
+    [rebuildKey, setRebuildKey] = useState(0);
   const [axes, setAxes] = useState<[number, number]>([2, 3]),
     [query, setQuery] = useState([5.8, 2.7, 4.2, 1.3]),
     [trained, setTrained] = useState("Ready"),
@@ -418,15 +455,21 @@ export default function DecisionTreeClassificationPage() {
   );
   const tree = useMemo(
     () => prune(rawTree, appliedAlpha),
-    [rawTree, appliedAlpha],
+    [rawTree, appliedAlpha, rebuildKey],
   );
-  const prediction = predictTree(tree, query),
-    path = new Set(pathFor(tree, query));
+  const splitCount = useMemo(() => countSplits(tree), [tree]);
+  const displayedTree = useMemo(
+    () => revealTree(tree, Math.min(revealStep, splitCount)),
+    [tree, revealStep, splitCount],
+  );
+  const activeSplit = currentSplit(displayedTree);
+  const prediction = predictTree(displayedTree, query),
+    path = new Set(pathFor(displayedTree, query));
   const evalX = split?.testX ?? X;
   const evalY = split?.testY ?? y;
   const predicted = useMemo(
-    () => evalX.map((row) => predictTree(tree, row)),
-    [evalX, tree],
+    () => evalX.map((row) => predictTree(displayedTree, row)),
+    [evalX, displayedTree],
   );
   const confusion = useMemo(
     () =>
@@ -462,12 +505,12 @@ export default function DecisionTreeClassificationPage() {
     };
   });
   const accuracy =
-      trainX.filter((row, index) => predictTree(tree, row) === trainY[index]).length /
+      trainX.filter((row, index) => predictTree(displayedTree, row) === trainY[index]).length /
       trainX.length,
     testAccuracy =
-      evalX.filter((row, index) => predictTree(tree, row) === evalY[index]).length /
+      evalX.filter((row, index) => predictTree(displayedTree, row) === evalY[index]).length /
       (evalX.length || 1),
-    importances = importance(tree, trainX.length),
+    importances = importance(displayedTree, trainX.length),
     impTotal = importances.reduce((a, b) => a + b, 0) || 1;
   const region = useMemo(() => {
     const xs = X.map((row) => row[axes[0]]),
@@ -484,7 +527,7 @@ export default function DecisionTreeClassificationPage() {
         const sample = query.slice();
         sample[axes[0]] = x0 + ((i + 0.5) / cols) * (x1 - x0);
         sample[axes[1]] = y0 + ((j + 0.5) / lines) * (y1 - y0);
-        cells.push({ x: i, y: j, label: predictTree(tree, sample) });
+        cells.push({ x: i, y: j, label: predictTree(displayedTree, sample) });
       }
     return {
       x0,
@@ -500,8 +543,8 @@ export default function DecisionTreeClassificationPage() {
         label: row.label,
       })),
     };
-  }, [X, axes, query, rows, tree]);
-  const splitRows = flatten(tree)
+  }, [X, axes, query, rows, displayedTree]);
+  const splitRows = flatten(displayedTree)
     .filter((item) => item.node.classLabel === undefined)
     .slice(0, 4);
   const selectDataset = (next: DatasetId) => {
@@ -515,7 +558,6 @@ export default function DecisionTreeClassificationPage() {
     setTrained("Ready");
   };
   const reset = () => {
-    setTab("visualize");
     setDatasetId("iris");
     setRows(
       BASE.map((row) => ({ features: [...row.features], label: row.label })),
@@ -529,6 +571,9 @@ export default function DecisionTreeClassificationPage() {
     setShowCounts(true);
     setShowImpurity(true);
     setAnimate(true);
+    setPlaying(false);
+    setRevealStep(0);
+    setRebuildKey((value) => value + 1);
     setAxes([2, 3]);
     setQuery([5.8, 2.7, 4.2, 1.3]);
     setTrained("Ready");
@@ -572,15 +617,76 @@ export default function DecisionTreeClassificationPage() {
       ),
     );
 
+  useEffect(() => {
+    if (playing) return;
+    setRevealStep(splitCount);
+  }, [splitCount, playing, maxDepth, minSplit, minLeaf, criterion, datasetId]);
+
+  useEffect(() => {
+    if (!playing) return;
+    const timer = window.setInterval(() => {
+      setRevealStep((current) => {
+        if (current >= splitCount) {
+          setPlaying(false);
+          return current;
+        }
+        return current + 1;
+      });
+    }, 650);
+    return () => window.clearInterval(timer);
+  }, [playing, splitCount]);
+
+  const startPlayback = () => {
+    setTab("visualize");
+    setRevealStep(0);
+    setPlaying(true);
+  };
+  const resumePlayback = () => {
+    setTab("visualize");
+    setRevealStep((current) => (current >= splitCount ? 0 : current));
+    setPlaying(true);
+  };
+  const stepPlayback = () => {
+    setPlaying(false);
+    setTab("visualize");
+    setRevealStep((current) => Math.min(splitCount, current + 1));
+  };
+  const retrainTree = () => {
+    setAppliedAlpha(alpha);
+    setRebuildKey((value) => value + 1);
+    setRevealStep(0);
+    setPlaying(true);
+    setTrained("Retrained from current data");
+    setToast("Tree rebuilt and replay started");
+  };
+
   const visualize = (
     <>
       <div className="dt-upper">
         <section className="dt-tree-card">
           <h2>
-            Decision Tree <span>Depth {treeDepth(tree)}</span>
+            Decision Tree <span>Depth {treeDepth(displayedTree)}</span>
           </h2>
+          <div className="dt-playback">
+            <button type="button" onClick={playing ? () => setPlaying(false) : startPlayback}>
+              {playing ? <Pause /> : <Play />}
+              {playing ? "Pause" : "Play"}
+            </button>
+            <button type="button" onClick={resumePlayback} disabled={playing}>
+              Resume
+            </button>
+            <button type="button" onClick={stepPlayback}>
+              <SkipForward /> Step
+            </button>
+            <small>
+              Split {Math.min(revealStep, splitCount)} / {splitCount}
+              {activeSplit?.featureIndex !== undefined
+                ? ` · ${SHORT[activeSplit.featureIndex]} ≤ ${activeSplit.threshold?.toFixed(2)} · impurity ${(activeSplit.impurity ?? 0).toFixed(3)} · n=${activeSplit.samples}`
+                : " · leaf"}
+            </small>
+          </div>
           <TreeView
-            root={tree}
+            root={displayedTree}
             showCounts={showCounts}
             showImpurity={showImpurity}
             path={path}
@@ -739,7 +845,14 @@ export default function DecisionTreeClassificationPage() {
     </>
   );
   const panel = () => {
-    if (tab === "visualize" || tab === "learn") return visualize;
+    if (tab === "learn")
+      return (
+        <LabLessonPanel
+          tab="Learn"
+          route="/ml/supervised/decision-tree-classification"
+        />
+      );
+    if (tab === "visualize") return visualize;
     if (tab === "dataset")
       return (
         <section className="dt-generic dt-data">
@@ -864,14 +977,7 @@ export default function DecisionTreeClassificationPage() {
               <span>Test accuracy</span>
             </article>
           </div>
-          <button
-            onClick={() => {
-              setTrained(
-                `Trained ${nodes(tree)} nodes at depth ${treeDepth(tree)}`,
-              );
-              setToast("Decision tree retrained");
-            }}
-          >
+          <button onClick={retrainTree}>
             <Play /> Train / Retrain Tree
           </button>
           <small>{trained}</small>
@@ -1080,11 +1186,8 @@ export default function DecisionTreeClassificationPage() {
           </div>
           <aside>
             <span>Lesson Progress</span>
-            <i>
-              <b />
-            </i>
-            <strong>62%</strong>
-            <button>
+            <LabProgressMeter />
+            <button type="button" onClick={resumePlayback}>
               Resume <Play />
             </button>
             <CircleHelp />
@@ -1282,17 +1385,22 @@ export default function DecisionTreeClassificationPage() {
                 <span>0.000</span>
                 <span>0.050</span>
               </div>
-              <button onClick={() => setAppliedAlpha(alpha)}>
+              <button
+                onClick={() => {
+                  setAppliedAlpha(alpha);
+                  setPlaying(false);
+                  setRevealStep(999);
+                  setToast(
+                    alpha > 0
+                      ? `Pruned with α = ${alpha.toFixed(3)}`
+                      : "No pruning (α = 0)",
+                  );
+                }}
+              >
                 Apply Pruning
               </button>
             </section>
-            <button
-              className="dt-retrain"
-              onClick={() => {
-                setTrained(`Trained ${nodes(tree)} nodes`);
-                setToast("Tree retrained");
-              }}
-            >
+            <button className="dt-retrain" onClick={retrainTree}>
               <RefreshCw /> Retrain Tree
             </button>
             <section className="dt-options">

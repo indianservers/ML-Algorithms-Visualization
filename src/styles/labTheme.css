@@ -33,6 +33,19 @@
   --lab-radius: 8px;
   --lab-radius-sm: 6px;
   --lab-shadow: 0 1px 2px rgba(15, 30, 60, 0.08);
+
+  --bg-app: var(--lab-bg);
+  --bg-surface: var(--lab-panel);
+  --bg-elevated: var(--lab-bg-elevated);
+  --bg-inset: var(--lab-inset);
+  --text-primary: var(--lab-text-strong);
+  --text-secondary: var(--lab-text);
+  --text-muted: var(--lab-muted);
+  --border-default: var(--lab-line);
+  --control-bg: var(--lab-panel-2);
+  --control-hover: var(--lab-panel-3);
+  --accent: var(--lab-blue);
+  --shadow: var(--lab-shadow);
 }
 
 :root.dark {
@@ -62,6 +75,19 @@
   --lab-indigo: #6b66ff;
 
   --lab-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+
+  --bg-app: var(--lab-bg);
+  --bg-surface: var(--lab-panel);
+  --bg-elevated: var(--lab-bg-elevated);
+  --bg-inset: var(--lab-inset);
+  --text-primary: var(--lab-text-strong);
+  --text-secondary: var(--lab-text);
+  --text-muted: var(--lab-muted);
+  --border-default: var(--lab-line);
+  --control-bg: var(--lab-panel-2);
+  --control-hover: var(--lab-panel-3);
+  --accent: var(--lab-blue);
+  --shadow: var(--lab-shadow);
 }
 
 /* Aurora glow surface shared by the interactive 2-D lab canvases (K-Means,
@@ -122,19 +148,19 @@
 .lab-topbar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  height: 44px;
+  gap: 6px;
+  height: 36px;
   flex-shrink: 0;
   /* #main-content is an isolated stacking context that paints after this nav,
      so the bar needs its own layer to stay clickable above lesson chrome. */
   position: relative;
   z-index: 10;
-  padding: 0 14px;
+  padding: 0 12px;
   background: var(--lab-bg-elevated);
   border-bottom: 1px solid var(--lab-line);
   color: var(--lab-text);
   font:
-    600 13px Inter,
+    600 12px Inter,
     system-ui,
     sans-serif;
 }
@@ -143,9 +169,9 @@
 .lab-topbar button {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  min-height: 32px;
-  padding: 0 11px;
+  gap: 5px;
+  min-height: 26px;
+  padding: 0 8px;
   border: 1px solid transparent;
   border-radius: var(--lab-radius-sm);
   background: transparent;
@@ -169,10 +195,128 @@
 }
 
 .lab-topbar svg {
-  width: 15px;
-  height: 15px;
+  width: 13px;
+  height: 13px;
+}
+
+.lab-topbar-compact {
+  height: 32px;
+  padding: 0 10px;
 }
 
 .lab-topbar .spacer {
   margin-left: auto;
+}
+
+html {
+  background: var(--bg-app);
+}
+html.dark,
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+html:not(.dark),
+html[data-theme="light"] {
+  color-scheme: light;
+}
+
+/* Hide nested mockup chrome that duplicates the suite top bar. */
+#main-content [data-lab-duplicate-nav="true"],
+#main-content .mlr-sidebar,
+#main-content .poly-sidebar {
+  display: none !important;
+}
+
+#main-content button[aria-label="Toggle theme"],
+#main-content button[aria-label="Toggle theme contrast"],
+#main-content button[aria-label="Theme"],
+#main-content .svmc-theme {
+  display: none !important;
+}
+
+/* Shared form contrast across Light / Dark without per-page hacks. */
+#main-content input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="hidden"]),
+#main-content select,
+#main-content textarea {
+  background-color: var(--control-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--lab-radius-sm);
+}
+
+#main-content input::placeholder,
+#main-content textarea::placeholder {
+  color: var(--text-muted);
+}
+
+#main-content input:disabled,
+#main-content select:disabled,
+#main-content textarea:disabled {
+  opacity: 0.6;
+}
+
+#main-content input:focus-visible,
+#main-content select:focus-visible,
+#main-content textarea:focus-visible,
+#main-content button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+html.dark #main-content [class*="-page"],
+html.dark #main-content [class*="-shell"],
+html.dark #main-content [class*="-approved"],
+html:not(.dark) #main-content [class*="-page"],
+html:not(.dark) #main-content [class*="-shell"],
+html:not(.dark) #main-content [class*="-approved"] {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+}
+
+html:not(.dark) #main-content [class*="-page"] header,
+html:not(.dark) #main-content [class*="-shell"] header,
+html:not(.dark) #main-content [class*="-approved"] header,
+html:not(.dark) #main-content [class*="-page"] nav,
+html:not(.dark) #main-content [class*="-shell"] nav,
+html:not(.dark) #main-content [class*="-approved"] nav,
+html:not(.dark) #main-content aside,
+html.dark #main-content aside {
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+
+#main-content [class*="-controls"],
+#main-content [class*="panel"],
+#main-content [class*="-card"] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+#main-content [class*="-equation"],
+#main-content [class*="formula"],
+#main-content [class*="-math"] {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: normal;
+  word-break: break-word;
+}
+
+#main-content canvas {
+  max-width: 100%;
+}
+
+#main-content [class*="upload"],
+#main-content [class*="dataset-bar"],
+#main-content .rfc-upload {
+  position: relative !important;
+  inset: auto !important;
+  z-index: 1;
+}
+
+body {
+  background: var(--bg-app);
+  color: var(--text-primary);
 }

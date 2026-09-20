@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { LabProgressMeter } from "../../../../components/common/LabChrome";
 import {
   Activity,
   BarChart3,
@@ -1368,7 +1369,6 @@ export default function DecisionTreeRegressionPage() {
   const [controlMode, setControlMode] = useState<"manage" | "prune">("manage");
   const [training, setTraining] = useState(false);
   const [trained, setTrained] = useState(false);
-  const [progress, setProgress] = useState(67);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [softTheme, setSoftTheme] = useState(false);
   const [inputs, setInputs] = useState(rows[0].features);
@@ -1414,7 +1414,6 @@ export default function DecisionTreeRegressionPage() {
     window.setTimeout(() => {
       setTraining(false);
       setTrained(true);
-      setProgress(71);
     }, 500);
   };
   const edit = (rowIndex: number, column: number | "target", value: number) => {
@@ -1466,11 +1465,7 @@ export default function DecisionTreeRegressionPage() {
           </div>
           <div>
             <label>
-              Lesson Progress{" "}
-              <i>
-                <b style={{ width: `${progress}%` }} />
-              </i>
-              <strong>{progress}%</strong>
+              Lesson Progress <LabProgressMeter />
             </label>
             <button aria-label="Help" onClick={() => setTab("learn")}>
               <CircleHelp size={16} />
@@ -1478,7 +1473,6 @@ export default function DecisionTreeRegressionPage() {
             <button
               aria-label="Settings"
               onClick={() => {
-                setTab("visualize");
                 setControlMode("manage");
               }}
             >

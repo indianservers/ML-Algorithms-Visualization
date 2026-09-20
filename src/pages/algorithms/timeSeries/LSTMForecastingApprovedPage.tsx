@@ -3,6 +3,7 @@ import { useLabNavigate } from "../../../lib/labNavigation";
 import { recurrentForecast } from "../../../lib/timeSeries/recurrentForecast";
 import { TIME_SERIES_CATALOG, seriesValues } from "../../../lib/timeSeries/timeSeriesDatasets";
 import { useActiveTimeSeries } from "../../../lib/timeSeries/useActiveTimeSeries";
+import { LabLessonOrWork, labHide } from "../../../components/common/LabTabs";
 import "./LSTMForecastingApprovedPage.css";
 
 const SETS = [
@@ -58,7 +59,7 @@ const path = (v: number[], w: number, h: number, lo: number, hi: number) =>
 
 export default function LSTMForecastingApprovedPage() {
   const [dataset, setDataset] = useState(0),
-    [tab, setTab] = useState("Visualize"),
+    [tab, setTab] = useState("Learn"),
     [window, setWindow] = useState(168),
     [horizon, setHorizon] = useState(168),
     [step, setStep] = useState(24),
@@ -199,7 +200,7 @@ export default function LSTMForecastingApprovedPage() {
           </div>
         </article>
       </section>
-      <section className="lf-data card">
+      <section className={`lf-data card${labHide(tab, "Dataset")}`}>
         <b>DATASET</b>
         <div>
           ⌁{" "}
@@ -229,7 +230,8 @@ export default function LSTMForecastingApprovedPage() {
         ))}
       </nav>
       <main className="lf-main">
-        <section className="lf-work card">
+        <LabLessonOrWork tab={tab} route="/ml/time-series/lstm-forecasting">
+        <section className={`lf-work card${labHide(tab, "Visualize", "Train")}`}>
           <header>
             <b>LSTM Seasonal Sequence → Multi-Step Forecast ⓘ</b>
             <select
@@ -304,7 +306,7 @@ export default function LSTMForecastingApprovedPage() {
             Hidden State
           </footer>
         </section>
-        <section className="lf-states">
+        <section className={`lf-states${labHide(tab, "Visualize", "Train")}`}>
           <article className="card" style={{ opacity: gateOn ? 1 : 0.28 }}>
             <h3>
               Gate Activations <small>(Current Step t)</small>
@@ -357,7 +359,7 @@ export default function LSTMForecastingApprovedPage() {
             </svg>
           </article>
         </section>
-        <section className="lf-insights">
+        <section className={`lf-insights${labHide(tab, "Metrics")}`}>
           <h3>KEY INSIGHTS ⓘ</h3>
           {[
             [
@@ -388,8 +390,9 @@ export default function LSTMForecastingApprovedPage() {
             </article>
           ))}
         </section>
+        </LabLessonOrWork>
       </main>
-      <aside className="lf-controls card">
+      <aside className={`lf-controls card${labHide(tab, "Train", "Transform", "Visualize", "Dataset")}`}>
         <h3>SEQUENCE & FORECAST SETTINGS</h3>
         <label>
           Input Window (past)

@@ -1,5 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { LabProgressMeter } from "../../../../components/common/LabChrome";
+import { LabLessonPanel } from "../../../../components/common/LabTabs";
 import {
   BookOpen,
   Bot,
@@ -187,7 +189,6 @@ export default function GradientBoostingClassificationLesson() {
     setTrained("Ready");
   };
   const reset = () => {
-    setTab("visualize");
     setDataset("moons");
     setPoints(BUILT.moons.map((p) => ({ ...p })));
     setEstimators(5);
@@ -444,7 +445,14 @@ export default function GradientBoostingClassificationLesson() {
     </>
   );
   const content = () => {
-    if (tab === "visualize" || tab === "learn") return visual;
+    if (tab === "learn")
+      return (
+        <LabLessonPanel
+          tab="Learn"
+          route="/ml/supervised/gradient-boosting-classification"
+        />
+      );
+    if (tab === "visualize") return visual;
     if (tab === "dataset")
       return (
         <section className="gbc-generic gbc-data">
@@ -669,15 +677,7 @@ export default function GradientBoostingClassificationLesson() {
         </Link>
         <section>
           <b>LESSON PROGRESS</b>
-          <div>
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <i
-                className={i < 5 ? "done" : i === 5 ? "current" : ""}
-                key={i}
-              />
-            ))}
-            <em>6 / 7</em>
-          </div>
+          <LabProgressMeter />
         </section>
         <article>
           <b>OBJECTIVE</b>

@@ -1,13 +1,13 @@
 .cnn-page {
   display: grid;
-  grid-template-columns: 164px minmax(0, 1fr) 286px;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
   grid-template-rows: auto auto 1fr;
   width: 100%;
   min-height: 100%;
   background: #050d1b;
   color: #eef3ff;
   font:
-    12px Inter,
+    14px/1.5 Inter,
     system-ui;
 }
 .cnn-page * {
@@ -17,18 +17,19 @@
   display: none !important;
 }
 .cnn-tabs {
-  grid-column: 2;
+  grid-column: 1;
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
   margin: 8px 8px 0;
-  padding: 6px;
+  padding: 6px 8px;
 }
 .cnn-tabs button {
   border: 0;
   border-radius: 6px;
-  padding: 7px 10px;
+  padding: 8px 12px;
   background: transparent;
+  font-size: 14px;
 }
 .cnn-tabs button.active {
   background: #142d61;
@@ -49,68 +50,39 @@
   border-radius: 8px;
   background: #0b1628;
 }
-.cnn-side {
-  grid-row: 1 / -1;
-  position: sticky;
-  top: 0;
-  align-self: start;
-  min-height: 100%;
-  width: 164px;
-  background: #071220;
-  padding: 12px 9px;
-  display: flex;
-  flex-direction: column;
-}
-.cnn-side > a {
-  font-size: 40px;
-  text-align: center;
-  color: #388dff;
-}
-.cnn-side > button {
-  height: 47px;
-  border: 0;
-  text-align: left;
-}
-.cnn-side > button.active {
-  background: #142d61;
-}
-.cnn-side section {
-  margin-top: 20px;
-}
-.cnn-side section p {
-  padding: 10px;
-  border-bottom: 1px solid #243149;
-}
-.cnn-side small {
-  display: block;
-}
-.cnn-side > select {
-  margin-top: auto;
-  height: 38px;
-}
 .cnn-head {
-  grid-column: 2 / -1;
+  grid-column: 1 / -1;
   position: relative;
-  min-height: 64px;
+  min-height: 72px;
   background: #050b17;
-  padding: 14px 28px 12px;
+  padding: 14px 20px 12px;
 }
 .cnn-head h1 {
   margin: 0;
-  font-size: 26px;
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
 }
-.cnn-head > div {
+.cnn-head .cnn-lede {
+  margin: 4px 0 0;
+  max-width: 52ch;
+  color: #9fb0c9;
+  font-size: 13px;
+}
+.cnn-head > .cnn-actions {
   position: absolute;
   right: 15px;
-  top: 17px;
+  top: 14px;
   display: flex;
-  gap: 12px;
+  align-items: center;
+  gap: 10px;
 }
 .cnn-head button,
 .cnn-head label {
   height: 36px;
   padding: 8px 13px;
   border-radius: 5px;
+  font-size: 13px;
 }
 .cnn-head button.train {
   background: #276ff0;
@@ -119,43 +91,138 @@
   width: 14px;
   vertical-align: middle;
 }
-.cnn-head span b {
-  display: block;
-  color: #33dc91;
+.cnn-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: #0d1c33;
+  border: 1px solid #2a4468;
+  font-size: 13px;
+}
+.cnn-status i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #8ea0b8;
+}
+.cnn-status.ready i {
+  background: #8ea0b8;
+}
+.cnn-status.training i {
+  background: #f5c14a;
+  box-shadow: 0 0 0 3px #f5c14a33;
+}
+.cnn-status.trained i {
+  background: #33dc91;
+}
+.cnn-status b {
+  color: #eef3ff;
+  font-weight: 650;
 }
 .cnn-page > main {
-  grid-column: 2;
+  grid-column: 1;
   min-width: 0;
   height: auto;
   padding: 0 8px 16px;
 }
-.cnn-pipeline {
-  height: 104px;
+.cnn-guide {
+  margin: 8px 0 0;
+  padding: 12px 14px;
   display: flex;
-  justify-content: space-around;
-  padding: 8px;
+  gap: 14px;
+  align-items: flex-start;
+}
+.cnn-guide b {
+  display: block;
+  font-size: 14px;
+}
+.cnn-guide p {
+  margin: 4px 0 0;
+  color: #b7c6db;
+  font-size: 13px;
+}
+.cnn-guide-kicker {
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #16325f;
+  color: #8eb6ff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.cnn-samples {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.cnn-samples button {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 13px;
+}
+.cnn-samples button.active {
+  background: #142d61;
+  outline: 1px solid #3c72ff;
+}
+.cnn-samples small {
+  color: #8ea0b8;
+  font-size: 12px;
+}
+.cnn-pipeline {
+  min-height: 118px;
+  height: auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 4px;
+  padding: 10px 8px 8px;
 }
 .cnn-pipeline button {
-  width: 94px;
+  min-width: 86px;
+  flex: 1 1 86px;
   border: 0;
   background: transparent;
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  font-size: 13px;
+  font-weight: 650;
 }
-.cnn-pipeline button b {
-  font-size: 20px;
+.cnn-pipeline button em {
+  font-style: normal;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #1a2940;
+  color: #9fb8de;
+  font-size: 12px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
 }
 .cnn-pipeline button small {
   color: #95a2b5;
-}
-.cnn-pipeline button i {
-  border-radius: 50%;
-  padding: 3px 6px;
-  background: #1a2940;
+  font-size: 11px;
+  font-weight: 500;
+  text-align: center;
 }
 .cnn-pipeline button.active {
   outline: 2px solid #3c72ff;
+  background: #102446;
+}
+.cnn-pipeline button.active em {
+  background: #276ff0;
+  color: #fff;
 }
 .cnn-flow {
   min-height: 320px;
@@ -171,7 +238,14 @@
   position: relative;
 }
 .cnn-flow article h4 {
-  font-size: 9px;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  margin: 0 0 8px;
+}
+.cnn-flow article p,
+.cnn-flow article small {
+  font-size: 13px;
+  color: #b7c6db;
 }
 .cnn-matrix {
   display: grid;
@@ -198,6 +272,21 @@
 .cnn-flow article.cnn-selected {
   width: 38%;
 }
+.cnn-guess {
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #102446;
+  color: #d7e6ff;
+  font-size: 15px;
+  font-weight: 650;
+  text-align: left;
+  line-height: 1.35;
+}
+.cnn-guess span {
+  color: #8eb6ff;
+  font-weight: 500;
+}
 .cnn-bars {
   display: flex;
   align-items: flex-end;
@@ -216,6 +305,13 @@
   grid-template-columns: repeat(6, 1fr);
   gap: 10px;
 }
+.cnn-data-hint {
+  grid-column: 1 / -1;
+  margin: 0 0 4px;
+  color: #b7c6db;
+  font-size: 14px;
+  text-align: left;
+}
 .cnn-data-grid button {
   border: 1px solid #253149;
   background: #081322;
@@ -227,7 +323,13 @@
 .cnn-data-grid span {
   display: block;
   margin-top: 6px;
-  font-size: 10px;
+  font-size: 13px;
+}
+.cnn-ok {
+  color: #33dc91;
+}
+.cnn-bad {
+  color: #ff8b8b;
 }
 .cnn-train,
 .cnn-eval {
@@ -249,6 +351,12 @@
   align-items: center;
   margin: 8px 0;
 }
+.cnn-help {
+  display: block;
+  margin: 2px 0 10px;
+  color: #8ea0b8;
+  font-size: 12px;
+}
 .cnn-train table,
 .cnn-eval table {
   width: 100%;
@@ -258,9 +366,10 @@
 .cnn-train td,
 .cnn-eval th,
 .cnn-eval td {
-  padding: 6px 8px;
+  padding: 8px 8px;
   border-bottom: 1px solid #243149;
   text-align: left;
+  font-size: 13px;
 }
 .cnn-eval tr {
   cursor: pointer;
@@ -282,6 +391,7 @@
   border-bottom: 1px solid #243149;
   text-align: left;
   vertical-align: top;
+  font-size: 13px;
 }
 .cnn-card {
   margin: 0;
@@ -292,15 +402,36 @@
 .cnn-softmax p {
   display: flex;
   justify-content: space-between;
-  padding: 8px 10px;
+  align-items: center;
+  padding: 10px 12px;
   margin: 6px 0;
   background: #081322;
+  font-size: 14px;
+}
+.cnn-softmax p.active {
+  outline: 1px solid #3c72ff;
+  background: #12284d;
+}
+.cnn-pct {
+  position: relative;
+  flex: 1;
+  height: 10px;
+  margin: 0 10px;
+  border-radius: 999px;
+  background: #1b2940;
+  overflow: hidden;
+}
+.cnn-pct span {
+  display: block;
+  height: 100%;
+  background: #4b85ee;
 }
 .cnn-flow article.dense {
-  width: 22%;
+  width: 28%;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  text-align: left;
 }
 .cnn-flow .dense > i {
   width: 12px;
@@ -309,49 +440,79 @@
   background: #9f68ed;
 }
 .cnn-flow .dense p {
-  margin: 2px;
+  margin: 2px 0;
 }
 .cnn-flow .dense p b {
-  float: right;
+  float: none;
+}
+.cnn-next {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #102033;
+  color: #c5d6ef;
+  font-size: 13px;
 }
 .cnn-flow .dense p.active {
   background: #18355f;
 }
 .cnn-flow .dense strong {
-  position: absolute;
-  bottom: 5px;
-  color: #3e8eff;
+  position: static;
+  color: #8eb6ff;
+  font-size: 14px;
 }
 .cnn-layers {
-  height: 135px;
+  height: auto;
+  min-height: 135px;
   margin-top: 8px;
   padding: 12px;
   display: flex;
   gap: 7px;
 }
 .cnn-layers h3 {
-  position: absolute;
+  position: static;
+  flex: 0 0 100%;
+  margin: 0 0 4px;
+  font-size: 13px;
 }
 .cnn-layers button {
-  margin-top: 25px;
+  margin-top: 0;
   flex: 1;
   text-align: left;
+  padding: 8px;
+  font-size: 13px;
 }
 .cnn-layers button.active {
   outline: 2px solid #3e72ff;
 }
 .cnn-layers button span {
   display: block;
+  color: #8ea0b8;
+  font-size: 12px;
 }
 .cnn-bottom {
-  height: 200px;
+  height: auto;
+  min-height: 220px;
   margin-top: 8px;
   display: grid;
-  grid-template-columns: 1.5fr 1fr 0.8fr;
+  grid-template-columns: 1.5fr 1fr 0.9fr;
 }
 .cnn-bottom article {
   padding: 12px;
   border-right: 1px solid #253149;
+}
+.cnn-bottom h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+.cnn-empty {
+  display: grid;
+  place-items: center;
+  min-height: 150px;
+  padding: 16px;
+  color: #9fb0c9;
+  text-align: center;
+  font-size: 14px;
 }
 .cnn-bottom svg {
   width: 100%;
@@ -371,11 +532,41 @@
   stroke: #31d28c;
   stroke-width: 2;
 }
+.cnn-legend {
+  display: flex;
+  gap: 14px;
+  margin: 0 0 6px;
+  color: #8ea0b8;
+  font-size: 12px;
+}
+.cnn-legend i {
+  display: inline-block;
+  width: 18px;
+  height: 3px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.cnn-legend .loss {
+  background: #4f86ff;
+}
+.cnn-legend .acc {
+  background: #31d28c;
+}
+.cnn-bottom article p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+  font-size: 13px;
+}
 .cnn-bottom article p i {
-  float: right;
-  width: 60%;
-  height: 5px;
+  float: none;
+  flex: 1;
+  width: auto;
+  height: 10px;
   background: #1b2940;
+  border-radius: 999px;
+  overflow: hidden;
 }
 .cnn-bottom article p i span {
   display: block;
@@ -383,18 +574,24 @@
   background: #4b85ee;
 }
 .cnn-inspector {
-  grid-column: 3;
+  grid-column: 2;
   grid-row: 2 / -1;
   position: sticky;
   top: 8px;
   align-self: start;
-  width: 286px;
+  width: auto;
   max-height: calc(100vh - 96px);
   margin: 8px 8px 16px 0;
   padding: 14px;
   overflow: auto;
 }
 .cnn-inspector h2 {
+  font-size: 15px;
+  margin: 0 0 4px;
+}
+.cnn-inspector .cnn-insp-sub {
+  margin: 0 0 12px;
+  color: #8ea0b8;
   font-size: 13px;
 }
 .cnn-inspector h2 button {
@@ -405,6 +602,7 @@
   justify-content: space-between;
   align-items: center;
   min-height: 42px;
+  font-size: 13px;
 }
 .cnn-inspector select {
   height: 31px;
@@ -412,6 +610,8 @@
 }
 .cnn-inspector label span {
   display: flex;
+  align-items: center;
+  gap: 6px;
 }
 .kernel-grid {
   display: grid;
@@ -432,8 +632,10 @@
   position: fixed;
   bottom: 20px;
   left: 50%;
-  padding: 10px;
+  transform: translateX(-50%);
+  padding: 10px 14px;
   background: #12305a;
+  z-index: 20;
 }
 .cnn-advanced > button {
   position: fixed;
@@ -444,21 +646,31 @@
   background: #1d67d4;
   color: white;
 }
+.cnn-views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 0;
+}
+.cnn-views button {
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+.cnn-views button.active {
+  background: #142d61;
+  outline: 1px solid #3c72ff;
+}
 @media (max-width: 1100px) {
   .cnn-page {
-    grid-template-columns: 64px minmax(0, 1fr);
-  }
-  .cnn-side {
-    width: 64px;
-  }
-  .cnn-side button {
-    font-size: 0;
+    grid-template-columns: minmax(0, 1fr);
   }
   .cnn-head,
   .cnn-tabs,
   .cnn-page > main,
   .cnn-inspector {
-    grid-column: 2;
+    grid-column: 1;
   }
   .cnn-inspector {
     grid-row: auto;
@@ -478,32 +690,21 @@
   }
 }
 @media (max-width: 760px) {
-  .cnn-page {
-    grid-template-columns: 1fr;
-  }
-  .cnn-side {
+  .cnn-head > .cnn-actions {
     position: static;
-    width: 100%;
-    min-height: 0;
-    height: auto;
-    flex-direction: row;
+    margin-top: 10px;
     flex-wrap: wrap;
-    grid-row: auto;
-  }
-  .cnn-head,
-  .cnn-tabs,
-  .cnn-page > main,
-  .cnn-inspector {
-    grid-column: 1;
-  }
-  .cnn-head > div {
-    display: none;
   }
   .cnn-pipeline {
     overflow: auto;
+    flex-wrap: nowrap;
   }
   .cnn-layers {
     overflow: auto;
+    flex-wrap: nowrap;
+  }
+  .cnn-layers h3 {
+    flex: 0 0 auto;
   }
   .cnn-bottom {
     height: auto;
@@ -511,5 +712,8 @@
   }
   .cnn-bottom article {
     min-height: 190px;
+  }
+  .cnn-data-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }

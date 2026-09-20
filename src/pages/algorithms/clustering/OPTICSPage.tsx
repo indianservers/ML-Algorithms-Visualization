@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useLabNavigate } from "../../../lib/labNavigation";
 import { Download, Save, Share2, Star, Upload } from "lucide-react";
@@ -15,7 +15,7 @@ import {
   LabLessonPanel,
   useLabTabs,
 } from "../../../components/common/LabTabs";
-import "./OPTICSPage.css";
+import { LabPipeline } from "../../../components/common/LabPipeline";
 
 type Point = { x: number; y: number };
 type Dataset = "aggregation" | "moons" | "rings" | "blobs" | "imported";
@@ -42,11 +42,7 @@ const NAMES: Record<Dataset, string> = {
 };
 
 export default function OPTICSPage() {
-  const { tab, setTab, panel, layout, lesson } = useLabTabs(
-      "Visualize",
-      "Visualize",
-      ["Learn", "Compare", "Explain"],
-    ),
+  const { tab, setTab, panel, layout, lesson } = useLabTabs("Learn"),
     [dataset, setDataset] = useState<Dataset>("aggregation"),
     [points, setPoints] = useState<Point[]>(BUILT.aggregation),
     [imported, setImported] = useState<Point[]>([]),
@@ -62,6 +58,8 @@ export default function OPTICSPage() {
     [logScale, setLogScale] = useState(true),
     [standardize, setStandardize] = useState(false),
     [selected, setSelected] = useState(0),
+    [cursor, setCursor] = useState(0),
+    [playing, setPlaying] = useState(false),
     [toast, setToast] = useState("");
   const go = useLabNavigate();
   const fileRef = useRef<HTMLInputElement>(null),
@@ -145,7 +143,26 @@ export default function OPTICSPage() {
     setShowCore(true);
     setShowPath(true);
     setLogScale(true);
+    setCursor(0);
+    setPlaying(false);
   };
+  useEffect(() => {
+    if (!playing) return undefined;
+    const timer = window.setInterval(() => {
+      setCursor((current) => {
+        const last = Math.max(0, result.ordering.length - 1);
+        if (current >= last) {
+          setPlaying(false);
+          return current;
+        }
+        return current + 1;
+      });
+    }, 220);
+    return () => window.clearInterval(timer);
+  }, [playing, result.ordering.length]);
+  const orderLen = Math.max(1, result.ordering.length);
+  const orderIndex = Math.min(Math.max(0, cursor), orderLen - 1);
+  const currentPoint = result.ordering[orderIndex] ?? selected;
   const exportLabels = () => {
     const blob = new Blob(
       [
@@ -286,7 +303,24 @@ export default function OPTICSPage() {
             </select>
           </label>
         </section>
-        <section className={`op-visuals${panel("Build / Train")}`}>
+        <section className={`op-visuals${panel("Visualize", "Build / Train")}`}>
+          <LabPipeline
+            stages={["Neighborhood", "Core distance", "Reachability order", "Valleys → clusters"]}
+            active={Math.min(3, Math.floor((orderIndex / orderLen) * 4))}
+            onSelect={(index) => {
+              setPlaying(false);
+              setCursor(Math.floor((index / 3) * (orderLen - 1)));
+            }}
+            playing={playing}
+            onPlay={() => setPlaying(true)}
+            onPause={() => setPlaying(false)}
+            onStep={() => setCursor((current) => Math.min(orderLen - 1, current + 1))}
+            onReset={() => {
+              setPlaying(false);
+              setCursor(0);
+            }}
+            note="Walk the density ordering. Valleys in the reachability plot are clusters — not a rebranded DBSCAN coloring."
+          />
           <article className="op-spatial">
             <h2>Spatial View ⓘ</h2>
             <div className="op-tools">▣ ⌕ ⊕ ✋ ⌂ ⛶</div>
@@ -311,8 +345,12 @@ export default function OPTICSPage() {
                 return (
                   <i
                     key={i}
-                    className={result.core[i] && showCore ? "core" : ""}
-                    onClick={() => setSelected(i)}
+                    className={`${result.core[i] && showCore ? "core" : ""}${i === currentPoint ? " current" : ""}`}
+                    onClick={() => {
+                      setSelected(i);
+                      const at = result.ordering.indexOf(i);
+                      if (at >= 0) setCursor(at);
+                    }}
                     style={{
                       left: `${px(point.x)}%`,
                       top: `${py(point.y)}%`,
@@ -330,26 +368,22 @@ export default function OPTICSPage() {
             <b className="op-y">Feature 2</b>
             <p>
               {fitted.error ? `${fitted.error} ` : ""}
-              Point {selected}: order {result.ordering.indexOf(selected)}, core
+              Point {currentPoint}: order {orderIndex}, core
               distance{" "}
-              {Number.isFinite(result.coreDistances[selected])
-                ? result.coreDistances[selected].toFixed(3)
+              {Number.isFinite(result.coreDistances[currentPoint])
+                ? result.coreDistances[currentPoint].toFixed(3)
                 : "∞"}
               , reachability{" "}
-              {Number.isFinite(
-                result.reachability[result.ordering.indexOf(selected)],
-              )
-                ? result.reachability[
-                    result.ordering.indexOf(selected)
-                  ].toFixed(3)
+              {Number.isFinite(result.reachability[orderIndex])
+                ? result.reachability[orderIndex].toFixed(3)
                 : "∞"}
-              , cluster {result.labels[selected] ?? "n/a"}, neighbors in max-ε{" "}
+              , cluster {result.labels[currentPoint] ?? "n/a"}, neighbors in max-ε{" "}
               {X.filter(
                 (row, j) =>
-                  j !== selected &&
+                  j !== currentPoint &&
                   Math.hypot(
-                    row[0] - X[selected][0],
-                    row[1] - X[selected][1],
+                    row[0] - X[currentPoint][0],
+                    row[1] - X[currentPoint][1],
                   ) <= (autoDistance ? 2.45 : maxDistance),
               ).length}
             </p>
@@ -370,6 +404,14 @@ export default function OPTICSPage() {
                   x2="590"
                   y1={reachY(epsilon) * 3.3}
                   y2={reachY(epsilon) * 3.3}
+                />
+                <line
+                  x1={42 + (orderIndex / orderLen) * 548}
+                  x2={42 + (orderIndex / orderLen) * 548}
+                  y1="8"
+                  y2="320"
+                  stroke="#4be8ea"
+                  strokeWidth="2"
                 />
                 {result.ordering.slice(1).map((index, order) => {
                   const prior = result.reachability[order],
@@ -444,7 +486,7 @@ export default function OPTICSPage() {
             </p>
           </aside>
         </section>
-        <p className={`op-tip${panel("Build / Train", "Dataset", "Metrics")}`}>
+        <p className={`op-tip${panel("Visualize", "Build / Train", "Dataset", "Metrics")}`}>
           OPTICS discovers the intrinsic cluster structure. Use ε (epsilon) on
           the reachability plot to extract clusters.
         </p>
@@ -459,7 +501,7 @@ export default function OPTICSPage() {
         <article>
           <h3>OPTICS Parameters</h3>
           <label>
-            MinPts (min samples) ⓘ{" "}
+            MinPts (min samples) — neighbors needed to become a core point
             <input
               aria-label="MinPts numeric"
               type="number"

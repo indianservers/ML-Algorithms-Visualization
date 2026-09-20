@@ -5,7 +5,7 @@ export type TrainingMode = 'manual' | 'auto';
 export type TrainingSpeed = 'slow' | 'normal' | 'fast';
 
 // v3 re-baselines the default to dark so the labs match the redesign mockups.
-const THEME_KEY = 'ml-suite-theme-v3';
+export const THEME_KEY = 'ml-suite-theme-v3';
 const SIDEBAR_KEY = 'ml-suite-sidebar-collapsed';
 const TRAINING_MODE_KEY = 'ml-suite-training-mode';
 const TRAINING_SPEED_KEY = 'ml-suite-training-speed';
@@ -14,19 +14,54 @@ const PRACTICE_MODE_KEY = 'ml-suite-practice-mode';
 const TEACHER_MODE_KEY = 'ml-suite-teacher-mode';
 const GUIDE_MODE_KEY = 'ml-suite-guide-mode';
 
+function readStoredTheme(): Theme {
+  if (typeof localStorage === 'undefined') return 'dark';
+  return localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark';
+}
+
+export function applyThemeClass(theme: Theme) {
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  root.classList.toggle('dark', theme === 'dark');
+  root.setAttribute('data-theme', theme);
+  root.style.colorScheme = theme;
+}
+
+let themeValue = readStoredTheme();
+const themeListeners = new Set<() => void>();
+
+if (typeof document !== 'undefined') applyThemeClass(themeValue);
+
+function publishTheme(next: Theme) {
+  themeValue = next;
+  applyThemeClass(next);
+  if (typeof localStorage !== 'undefined') localStorage.setItem(THEME_KEY, next);
+  window.dispatchEvent(new CustomEvent('ml:theme-changed', { detail: { theme: next } }));
+  for (const listener of themeListeners) listener();
+}
+
+export function getTheme() {
+  return themeValue;
+}
+
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem(THEME_KEY);
-    return saved === 'light' ? 'light' : 'dark';
-  });
+  const [theme, setThemeState] = useState<Theme>(themeValue);
 
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark');
-    localStorage.setItem(THEME_KEY, theme);
-    window.dispatchEvent(new CustomEvent('ml:theme-changed', { detail: { theme } }));
-  }, [theme]);
+    const sync = () => setThemeState(themeValue);
+    themeListeners.add(sync);
+    sync();
+    return () => {
+      themeListeners.delete(sync);
+    };
+  }, []);
 
-  const toggleTheme = useCallback(() => setTheme(t => t === 'dark' ? 'light' : 'dark'), []);
+  const setTheme = useCallback((next: Theme) => {
+    publishTheme(next);
+  }, []);
+  const toggleTheme = useCallback(() => {
+    publishTheme(themeValue === 'dark' ? 'light' : 'dark');
+  }, []);
   return { theme, setTheme, toggleTheme };
 }
 

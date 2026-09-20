@@ -309,14 +309,44 @@
   stroke-width: 2;
 }
 .pc-model-flow .formula {
-  position: absolute;
-  bottom: 18px;
-  left: 145px;
+  position: relative;
+  bottom: auto;
+  left: auto;
+  z-index: 2;
+  margin: 288px 16px 8px 88px;
   font:
     15px ui-monospace,
     SFMono-Regular,
     monospace;
-  color: #c4cede;
+  color: var(--lab-text, #c4cede);
+}
+.pc-explain-panel {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 40;
+  width: min(420px, calc(100vw - 32px));
+  padding: 16px 18px 18px;
+  border: 1px solid var(--lab-line, #33415a);
+  border-radius: 10px;
+  background: var(--lab-panel, #121d30);
+  color: var(--lab-text, #e8eef8);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+}
+.pc-explain-panel header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.pc-explain-panel h3 {
+  margin: 0;
+  font-size: 15px;
+}
+.pc-explain-panel p {
+  margin: 8px 0;
+  line-height: 1.5;
 }
 .pc-decision {
   padding: 14px 14px 12px;
@@ -799,7 +829,8 @@
     width: calc(100% - 25px);
   }
   .pc-model-flow .formula {
-    left: 25px;
+    left: auto;
+    margin-left: 25px;
   }
   .pc-decision {
     height: 500px;

@@ -1,5 +1,7 @@
 import type { BadgeType, NavItem } from './navigation';
 import { termsStudioNewLessons } from './termsStudioNewTerms';
+import { termsStudioGlossaryExtras } from './termsStudioGlossary';
+import { termsStudioPhase4Lessons, termsStudioPhase4Patches } from './termsStudioPhase4';
 
 export type TermCategoryId =
   | 'optimization'
@@ -53,7 +55,110 @@ export type TermDemoKind =
   | 'padding'
   | 'token'
   | 'overlay-activation'
-  | 'overlay-loss';
+  | 'overlay-loss'
+  | 'decision-boundary'
+  | 'confusion-matrix'
+  | 'roc-curve'
+  | 'precision-recall'
+  | 'f1-score'
+  | 'accuracy-trap'
+  | 'regularize-l1l2'
+  | 'standardize'
+  | 'minmax'
+  | 'split-percents'
+  | 'kfold-blocks'
+  | 'imbalance'
+  | 'oversample'
+  | 'undersample'
+  | 'smote'
+  | 'kernel-trick'
+  | 'support-vector'
+  | 'margin'
+  | 'entropy-gini'
+  | 'information-gain'
+  | 'pruning'
+  | 'bootstrap'
+  | 'bagging'
+  | 'boosting'
+  | 'feature-importance'
+  | 'shap-waterfall'
+  | 'label-encoding'
+  | 'euclidean'
+  | 'manhattan'
+  | 'convolution'
+  | 'filter-kernel'
+  | 'stride'
+  | 'conv-padding'
+  | 'pooling'
+  | 'feature-map'
+  | 'rnn-step'
+  | 'vanishing-grad'
+  | 'lstm-cell'
+  | 'self-attention'
+  | 'qkv'
+  | 'positional'
+  | 'transfer-compact'
+  | 'fine-tune'
+  | 'neuron-plus'
+  | 'weights-bias'
+  | 'epoch-visual'
+  | 'loss-switch'
+  | 'fit-trio';
+
+const CONCEPT_DEMO_KINDS: ReadonlySet<TermDemoKind> = new Set([
+  'decision-boundary',
+  'confusion-matrix',
+  'roc-curve',
+  'precision-recall',
+  'f1-score',
+  'accuracy-trap',
+  'regularize-l1l2',
+  'standardize',
+  'minmax',
+  'split-percents',
+  'kfold-blocks',
+  'imbalance',
+  'oversample',
+  'undersample',
+  'smote',
+  'kernel-trick',
+  'support-vector',
+  'margin',
+  'entropy-gini',
+  'information-gain',
+  'pruning',
+  'bootstrap',
+  'bagging',
+  'boosting',
+  'feature-importance',
+  'shap-waterfall',
+  'label-encoding',
+  'euclidean',
+  'manhattan',
+  'convolution',
+  'filter-kernel',
+  'stride',
+  'conv-padding',
+  'pooling',
+  'feature-map',
+  'rnn-step',
+  'vanishing-grad',
+  'lstm-cell',
+  'self-attention',
+  'qkv',
+  'positional',
+  'transfer-compact',
+  'fine-tune',
+  'neuron-plus',
+  'weights-bias',
+  'epoch-visual',
+  'loss-switch',
+  'fit-trio',
+]);
+
+export function isTermConceptKind(kind: TermDemoKind) {
+  return CONCEPT_DEMO_KINDS.has(kind);
+}
 
 export interface TermCategory {
   id: TermCategoryId;
@@ -1840,9 +1945,19 @@ export const termsStudioLessons: TermLesson[] = [
   },
 ];
 
-termsStudioLessons.push(...termsStudioNewLessons);
+termsStudioLessons.push(...termsStudioNewLessons, ...termsStudioGlossaryExtras, ...termsStudioPhase4Lessons);
 
 const termBySlug = new Map(termsStudioLessons.map((term) => [term.slug, term]));
+for (const [slug, patch] of Object.entries(termsStudioPhase4Patches)) {
+  const current = termBySlug.get(slug);
+  if (!current) continue;
+  Object.assign(current, patch, {
+    related: patch.related ?? current.related,
+    labLinks: patch.labLinks ?? current.labLinks,
+    synonyms: patch.synonyms ?? current.synonyms,
+    demo: patch.demo ?? current.demo,
+  });
+}
 
 export function getTermLesson(slug: string): TermLesson | undefined {
   return termBySlug.get(slug);

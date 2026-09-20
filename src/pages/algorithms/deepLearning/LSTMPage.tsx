@@ -80,7 +80,7 @@ function Sparkline({
 }
 
 export default function LSTMPage() {
-  const { tab, setTab } = useLabTabs("Visualize", "Visualize", []);
+  const { tab, setTab } = useLabTabs("Learn", "", []);
   const lesson = tab === "Learn" || tab === "Compare" || tab === "Explain";
   const [advanced, setAdvanced] = useState(false);
   const [dataset, setDataset] = useState<LSTMLabSequence>(LSTM_SEQUENCES[0] ?? {

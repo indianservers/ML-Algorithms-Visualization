@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   CartesianGrid,
   ComposedChart,
@@ -11,12 +11,22 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import type { TermDemoKind } from '../../data/termsStudio';
+import { isTermConceptKind, type TermDemoKind } from '../../data/termsStudio';
+
+const TermConceptDemo = lazy(() =>
+  import('./TermConceptDemos').then((mod) => ({ default: mod.TermConceptDemo })),
+);
 
 type DemoProps = { kind: TermDemoKind; variant?: string; caption?: string; unitsNote?: string };
 
 const tooltip = {
-  contentStyle: { fontSize: 12, borderRadius: 8 },
+  contentStyle: {
+    fontSize: 12,
+    borderRadius: 8,
+    background: 'var(--ts-card)',
+    border: '1px solid var(--ts-line)',
+    color: 'var(--ts-ink)',
+  },
 };
 
 function Slider({
@@ -93,7 +103,7 @@ function ActivationDemo({ variant = 'relu' }: { variant?: string }) {
       <div className="ts-chart">
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
             <XAxis dataKey="x" type="number" domain={[-4, 4]} tick={{ fontSize: 11 }} />
             <YAxis tick={{ fontSize: 11 }} />
             <Tooltip {...tooltip} />
@@ -239,11 +249,10 @@ function LearningRateDemo() {
     <div className="ts-demo">
       <WalkToolbar playing={walk.playing} caption={walk.caption} onPlay={walk.play} onPause={walk.pause} />
       <div className="ts-demo-tools">
+        <button type="button" onClick={() => { setLr(0.04); walk.reset(); }}>Too small</button>
+        <button type="button" onClick={() => { setLr(0.15); setStart(-1.5); walk.reset(); }}>Good</button>
         <button type="button" className="ts-break" onClick={() => { setLr(1.05); walk.reset(); }}>
-          Break it
-        </button>
-        <button type="button" onClick={() => { setLr(0.15); setStart(-1.5); walk.reset(); }}>
-          Reset
+          Too large
         </button>
       </div>
       <div className="ts-slider-grid">
@@ -253,7 +262,7 @@ function LearningRateDemo() {
       <div className="ts-chart">
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={curve}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
             <XAxis dataKey="x" tick={{ fontSize: 11 }} />
             <YAxis tick={{ fontSize: 11 }} />
             <Tooltip {...tooltip} />
@@ -283,7 +292,7 @@ function SgdDemo() {
       <div className="ts-chart">
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={clean}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
             <XAxis dataKey="step" tick={{ fontSize: 11 }} />
             <YAxis tick={{ fontSize: 11 }} />
             <Tooltip {...tooltip} />
@@ -307,7 +316,7 @@ function MomentumDemo() {
       <div className="ts-chart">
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={plain}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
             <XAxis dataKey="step" tick={{ fontSize: 11 }} />
             <YAxis tick={{ fontSize: 11 }} />
             <Tooltip {...tooltip} />
@@ -329,7 +338,7 @@ function AdamDemo() {
       <div className="ts-chart">
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={gd}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
             <XAxis dataKey="step" tick={{ fontSize: 11 }} />
             <YAxis tick={{ fontSize: 11 }} />
             <Tooltip {...tooltip} />
@@ -352,7 +361,7 @@ function ScheduleDemo() {
       <div className="ts-chart">
         <ResponsiveContainer width="100%" height={200}>
           <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
             <XAxis dataKey="epoch" tick={{ fontSize: 11 }} />
             <YAxis tick={{ fontSize: 11 }} />
             <Tooltip {...tooltip} />
@@ -599,7 +608,7 @@ function EarlyStopDemo() {
       <div className="ts-chart">
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
             <XAxis dataKey="epoch" tick={{ fontSize: 11 }} />
             <YAxis tick={{ fontSize: 11 }} />
             <Tooltip {...tooltip} />
@@ -779,7 +788,7 @@ function OverfitDemo() {
       <div className="ts-chart">
         <ResponsiveContainer width="100%" height={220}>
           <ComposedChart data={curve}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
             <XAxis dataKey="x" type="number" tick={{ fontSize: 11 }} />
             <YAxis dataKey="y" type="number" tick={{ fontSize: 11 }} />
             <Tooltip {...tooltip} />
@@ -952,7 +961,7 @@ function OverlayActivationDemo() {
       <div className="ts-chart">
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
             <XAxis dataKey="x" tick={{ fontSize: 11 }} />
             <YAxis tick={{ fontSize: 11 }} />
             <Tooltip {...tooltip} />
@@ -991,7 +1000,7 @@ function OverlayLossDemo() {
       <div className="ts-chart">
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
             <XAxis dataKey="r" tick={{ fontSize: 11 }} />
             <YAxis tick={{ fontSize: 11 }} />
             <Tooltip {...tooltip} />
@@ -1037,28 +1046,146 @@ function ResidualDemo() {
   );
 }
 
+const ATTENTION_WORDS = ['not', 'very', 'good'] as const;
+
+function attentionScores(queryIndex: number, matchGood: number): number[] {
+  const base = [
+    [0.8, 0.2, matchGood],
+    [0.15, 0.9, matchGood * 0.55],
+    [matchGood * 0.35, 0.35, 1.1],
+  ];
+  return base[queryIndex] ?? base[0];
+}
+
 function AttentionDemo() {
+  const [queryIndex, setQueryIndex] = useState(0);
   const [match, setMatch] = useState(2);
   const [temp, setTemp] = useState(1);
-  const labels = ['not', 'very', 'good'];
-  const scores = [0.2, 0.3, match];
+  const query = ATTENTION_WORDS[queryIndex] ?? 'not';
+  const scores = attentionScores(queryIndex, match);
   const shifted = scores.map((score) => Math.exp(score / temp));
   const total = shifted.reduce((sum, value) => sum + value, 0);
   const shares = shifted.map((value) => value / total);
+  const topIndex = shares.reduce((best, share, i) => ((shares[best] ?? 0) >= share ? best : i), 0);
+  const topWord = ATTENTION_WORDS[topIndex] ?? 'good';
+  const topShare = shares[topIndex] ?? 0;
+  const meaning =
+    topShare < 0.4
+      ? `Shares are flattening. Raise the “good” match or lower temperature so one word wins.`
+      : query === 'not' && topWord === 'good'
+        ? `“not” can now represent not-good. Most of the mix is the “good” value, so the query carries that flip.`
+        : query === 'very' && topWord === 'good'
+          ? `“very” is listening to “good” — the mix is mostly intensity plus a positive value.`
+          : `“${query}” now carries mostly “${topWord}”.`;
+
   return (
-    <div className="ts-demo">
-      <Slider label={'How much “not” matches “good”'} value={match} min={-1} max={4} step={0.1} onChange={setMatch} />
+    <div className="ts-demo ts-attn">
+      <p className="ts-attn-kicker">How attention works</p>
+      <Slider label={'How much the query matches “good”'} value={match} min={-1} max={4} step={0.1} onChange={setMatch} />
       <Slider label="Temperature" value={temp} min={0.3} max={3} step={0.1} onChange={setTemp} />
-      <div className="ts-bars">
-        {labels.map((label, i) => (
-          <div key={label} className="ts-bar-row">
-            <span>{label}</span>
-            <i style={{ width: `${(shares[i] ?? 0) * 100}%` }} />
-            <em>{((shares[i] ?? 0) * 100).toFixed(0)}%</em>
+
+      <article className="ts-attn-step">
+        <header>
+          <span>①</span>
+          <div>
+            <strong>Query</strong>
+            <p>What am I looking for?</p>
           </div>
-        ))}
-      </div>
-      <p className="ts-demo-readout">The bars are where “not” looks. They always add to 100%.</p>
+        </header>
+        <div className="ts-choice" role="group" aria-label="Query word">
+          {ATTENTION_WORDS.map((word, i) => (
+            <button key={word} type="button" className={queryIndex === i ? 'is-on' : ''} onClick={() => setQueryIndex(i)}>
+              {word}
+            </button>
+          ))}
+        </div>
+        <p className="ts-demo-readout">“{query}” asks the sentence who it should listen to.</p>
+      </article>
+
+      <div className="ts-attn-arrow" aria-hidden="true">↓</div>
+
+      <article className="ts-attn-step">
+        <header>
+          <span>②</span>
+          <div>
+            <strong>Key matching</strong>
+            <p>Which words match?</p>
+          </div>
+        </header>
+        <div className="ts-attn-keys">
+          {ATTENTION_WORDS.map((word, i) => (
+            <div key={word} className={i === topIndex ? 'is-hot' : ''}>
+              <em>{word}</em>
+              <strong>{(scores[i] ?? 0).toFixed(1)}</strong>
+              <small>Q · K</small>
+            </div>
+          ))}
+        </div>
+      </article>
+
+      <div className="ts-attn-arrow" aria-hidden="true">↓</div>
+
+      <article className="ts-attn-step">
+        <header>
+          <span>③</span>
+          <div>
+            <strong>Softmax</strong>
+            <p>Convert scores → attention %</p>
+          </div>
+        </header>
+        <div className="ts-bars">
+          {ATTENTION_WORDS.map((word, i) => (
+            <div key={word} className="ts-bar-row">
+              <span>{word}</span>
+              <i style={{ width: `${(shares[i] ?? 0) * 100}%` }} />
+              <em>{((shares[i] ?? 0) * 100).toFixed(0)}%</em>
+            </div>
+          ))}
+        </div>
+      </article>
+
+      <div className="ts-attn-arrow" aria-hidden="true">↓</div>
+
+      <article className="ts-attn-step">
+        <header>
+          <span>④</span>
+          <div>
+            <strong>Value mixing</strong>
+            <p>Combine useful information</p>
+          </div>
+        </header>
+        <div className="ts-attn-mix" aria-label="Weighted value mix">
+          {ATTENTION_WORDS.map((word, i) => (
+            <i
+              key={word}
+              style={{ width: `${(shares[i] ?? 0) * 100}%` }}
+              className={`ts-attn-slice ts-attn-slice-${word}`}
+              title={`${word} ${(shares[i] ?? 0) * 100}%`}
+            />
+          ))}
+        </div>
+        <ul className="ts-attn-legend">
+          {ATTENTION_WORDS.map((word, i) => (
+            <li key={word}>
+              <i className={`ts-attn-slice-${word}`} />
+              {word} · {((shares[i] ?? 0) * 100).toFixed(0)}% of the mix
+            </li>
+          ))}
+        </ul>
+      </article>
+
+      <div className="ts-attn-arrow" aria-hidden="true">↓</div>
+
+      <article className="ts-attn-step is-result">
+        <header>
+          <span>✓</span>
+          <div>
+            <strong>Contextualized word</strong>
+            <p>“{query}” after listening · {((topShare) * 100).toFixed(0)}% on “{topWord}”</p>
+          </div>
+        </header>
+        <p className="ts-demo-readout">{meaning} Shares always add to 100%.</p>
+      </article>
     </div>
   );
 }
@@ -1108,7 +1235,7 @@ function LearningCurveDemo() {
       <div className="ts-chart">
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={stories[story]}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
             <XAxis dataKey="n" tick={{ fontSize: 11 }} />
             <YAxis tick={{ fontSize: 11 }} />
             <Tooltip {...tooltip} />
@@ -1256,6 +1383,15 @@ function DemoChrome({
 }
 
 export function TermDemo({ kind, variant, caption, unitsNote }: DemoProps) {
+  if (isTermConceptKind(kind)) {
+    return (
+      <DemoChrome caption={caption} unitsNote={unitsNote}>
+        <Suspense fallback={<p className="ts-demo-readout">Loading visual…</p>}>
+          <TermConceptDemo kind={kind} variant={variant} />
+        </Suspense>
+      </DemoChrome>
+    );
+  }
   let body: ReactNode;
   switch (kind) {
     case 'activation':

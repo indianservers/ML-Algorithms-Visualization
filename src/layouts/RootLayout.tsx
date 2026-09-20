@@ -9,7 +9,12 @@ import {
   Compass,
   Database,
   Home,
+  BookOpenText,
   HelpCircle,
+  Menu,
+  Settings,
+  Maximize2,
+  Minimize2,
   X,
 } from "lucide-react";
 import {
@@ -19,6 +24,7 @@ import {
   rememberRoute,
 } from "../data/implementationStatus";
 import { RouteSearchModal } from "../components/common/RouteSearchModal";
+import { LabChrome } from "../components/common/LabChrome";
 import { getSeoMetadata, routeToUrl, siteConfig } from "../data/seo";
 import { VisualizationSkeleton } from "../components/common/EmptyState";
 import {
@@ -32,6 +38,7 @@ import { FitToViewport } from "../components/common/FitToViewport";
 import { useGuideMode } from "../stores/uiStore";
 import "../styles/labTheme.css";
 import "../styles/nestedLabLayout.css";
+import "../styles/mobileFirst.css";
 
 const ACTIVE_DATASETS_KEY = "mlSuite.activeAlgorithmDatasets";
 
@@ -123,26 +130,34 @@ class RouteErrorBoundary extends React.Component<
   { children: React.ReactNode },
   { error: Error | null }
 > {
-  state = { error: null };
+  state = { error: null as Error | null };
 
   static getDerivedStateFromError(error: Error) {
     return { error };
   }
 
+  componentDidCatch(error: Error) {
+    if (import.meta.env.DEV) console.error(error);
+  }
+
   render() {
     if (this.state.error) {
       return (
-        <div className="m-4 rounded-xl border border-red-200 bg-red-50 p-6 text-red-900 dark:border-red-800 dark:bg-red-950/30 dark:text-red-100">
-          <h2 className="text-lg font-bold">
-            Algorithm route failed to render
-          </h2>
-          <p className="mt-2 text-sm">
-            The lazy route boundary caught this error, so the rest of the suite
-            is still usable.
+        <div className="lab-error-card">
+          <h2>Something went wrong loading this visualization.</h2>
+          <p>
+            The rest of the suite is still usable. Retry this page or go back to
+            Home.
           </p>
-          <pre className="mt-3 overflow-auto rounded bg-white/70 p-3 text-xs dark:bg-gray-900/50">
-            {this.state.error.message}
-          </pre>
+          {import.meta.env.DEV ? (
+            <pre>{this.state.error.message}</pre>
+          ) : null}
+          <div className="lab-error-actions">
+            <button type="button" onClick={() => this.setState({ error: null })}>
+              Retry
+            </button>
+            <a href="/">Back</a>
+          </div>
         </div>
       );
     }
@@ -168,6 +183,7 @@ export const RootLayout: React.FC = () => {
   const location = useLocation();
   const [routeSearchOpen, setRouteSearchOpen] = React.useState(false);
   const [shortcutsOpen, setShortcutsOpen] = React.useState(false);
+  const [fullscreen, setFullscreen] = React.useState(false);
   const [hasRouteDataset, setHasRouteDataset] = React.useState(() =>
     hasActiveDatasetForRoute(location.pathname),
   );
@@ -346,6 +362,13 @@ export const RootLayout: React.FC = () => {
   }, [seo, currentItem, categoryRoute]);
 
   React.useEffect(() => {
+    const sync = () => setFullscreen(Boolean(document.fullscreenElement));
+    sync();
+    document.addEventListener("fullscreenchange", sync);
+    return () => document.removeEventListener("fullscreenchange", sync);
+  }, []);
+
+  React.useEffect(() => {
     if (location.pathname.startsWith("/ml/")) rememberRoute(location.pathname);
   }, [location.pathname]);
 
@@ -372,6 +395,10 @@ export const RootLayout: React.FC = () => {
         target?.isContentEditable;
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
+        if (location.pathname.startsWith("/ml/terms-studio")) {
+          window.dispatchEvent(new CustomEvent("ml:terms-search"));
+          return;
+        }
         setRouteSearchOpen(true);
         return;
       }
@@ -399,7 +426,7 @@ export const RootLayout: React.FC = () => {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [canShowGlobalTrain]);
+  }, [canShowGlobalTrain, location.pathname]);
 
   const page = (
     <AnimatePresence mode="wait" initial={false}>
@@ -422,39 +449,79 @@ export const RootLayout: React.FC = () => {
     </AnimatePresence>
   );
 
+  const chrome = (
+    <>
+      <LabChrome onSearch={() => setRouteSearchOpen(true)} />
+      <RouteSearchModal
+        open={routeSearchOpen}
+        onClose={() => setRouteSearchOpen(false)}
+      />
+      <KeyboardShortcutsModal
+        open={shortcutsOpen}
+        onClose={() => setShortcutsOpen(false)}
+      />
+    </>
+  );
+
   // Only the landing page opts out of the suite bar; it is the Home target and
-  // carries its own brand nav. Every other route keeps Home / Dataset Manager.
+  // carries its own brand nav. Search / theme still share the suite store.
   if (location.pathname === "/") {
     return (
-      <div className="h-screen min-h-0 w-full overflow-x-hidden overflow-y-auto bg-[#f1f5fe]">
+      <div
+        className="h-screen min-h-0 w-full overflow-x-hidden overflow-y-auto"
+        style={{ background: "var(--bg-app)", color: "var(--text-primary)" }}
+      >
         <RouteProgressBar />
         <GuideMode />
         {page}
+        {chrome}
       </div>
     );
   }
 
   return (
     <div
-      className={`flex h-screen w-full flex-col overflow-hidden ${theme === "dark" ? "dark" : ""}`}
-      style={{ background: "var(--lab-bg)", color: "var(--lab-text)" }}
+      className="flex h-screen w-full flex-col overflow-hidden"
+      style={{ background: "var(--bg-app)", color: "var(--text-primary)" }}
     >
       <RouteProgressBar />
       <GuideMode />
       <a href="#main-content" className="skip-link print:hidden">
         Skip to content
       </a>
-      <nav className="lab-topbar print:hidden" aria-label="Page links">
-        <Link to="/">
-          <Home />
-          Home
-        </Link>
-        <Link to="/ml/lab/dataset-manager" className="primary">
-          <Database />
-          Dataset Manager
-        </Link>
+      <nav
+        className={`lab-topbar print:hidden${location.pathname.startsWith("/ml/terms-studio") ? " lab-topbar-compact" : ""}`}
+        aria-label="Page links"
+      >
+        <button
+          type="button"
+          className="lab-topbar-menu"
+          aria-label="Menu"
+          onClick={() => window.dispatchEvent(new Event("ml:open-menu"))}
+        >
+          <Menu />
+          Menu
+        </button>
+        <span className="lab-topbar-desktop contents">
+          <Link to="/">
+            <Home />
+            Home
+          </Link>
+          <Link to="/ml/lab/dataset-manager">
+            <Database />
+            Datasets
+          </Link>
+          <Link
+            to="/ml/terms-studio"
+            className={location.pathname.startsWith("/ml/terms-studio") ? "primary" : ""}
+          >
+            <BookOpenText />
+            Terms
+          </Link>
+        </span>
         <span className="spacer" />
         <button
+          type="button"
           onClick={() => setRouteSearchOpen(true)}
           aria-label="Search algorithms and routes"
         >
@@ -462,6 +529,7 @@ export const RootLayout: React.FC = () => {
           Search
         </button>
         <button
+          type="button"
           onClick={toggleGuideMode}
           aria-pressed={guideMode}
           aria-label={guideMode ? "Close guide mode" : "Open guide mode"}
@@ -470,6 +538,25 @@ export const RootLayout: React.FC = () => {
           Guide
         </button>
         <button
+          type="button"
+          onClick={() => window.dispatchEvent(new Event("ml:open-settings"))}
+          aria-label="Settings"
+        >
+          <Settings />
+        </button>
+        <button
+          type="button"
+          aria-label={fullscreen ? "Exit fullscreen" : "Fullscreen"}
+          aria-pressed={fullscreen}
+          onClick={() => {
+            if (document.fullscreenElement) void document.exitFullscreen();
+            else void document.documentElement.requestFullscreen?.();
+          }}
+        >
+          {fullscreen ? <Minimize2 /> : <Maximize2 />}
+        </button>
+        <button
+          type="button"
           onClick={toggleTheme}
           aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
         >
@@ -479,9 +566,7 @@ export const RootLayout: React.FC = () => {
       <main
         id="main-content"
         tabIndex={-1}
-        className={`relative isolate min-h-0 flex-1 overflow-x-hidden scrollbar-thin ${
-          location.pathname.startsWith("/ml/") ? "overflow-hidden" : "overflow-y-auto"
-        }`}
+        className="relative isolate min-h-0 flex-1 overflow-x-hidden overflow-y-auto scrollbar-thin"
       >
         {location.pathname.startsWith("/ml/") ? (
           <FitToViewport>{page}</FitToViewport>
@@ -489,14 +574,7 @@ export const RootLayout: React.FC = () => {
           page
         )}
       </main>
-      <RouteSearchModal
-        open={routeSearchOpen}
-        onClose={() => setRouteSearchOpen(false)}
-      />
-      <KeyboardShortcutsModal
-        open={shortcutsOpen}
-        onClose={() => setShortcutsOpen(false)}
-      />
+      {chrome}
     </div>
   );
 };

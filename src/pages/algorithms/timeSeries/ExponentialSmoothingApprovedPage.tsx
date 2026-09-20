@@ -10,6 +10,7 @@ import {
   splitRangeLabels,
 } from "../../../lib/timeSeries/forecastDiagnostics";
 import { useActiveTimeSeries } from "../../../lib/timeSeries/useActiveTimeSeries";
+import { LabLessonOrWork, labHide } from "../../../components/common/LabTabs";
 import "./ExponentialSmoothingApprovedPage.css";
 
 type Point = { time: string; value: number };
@@ -86,7 +87,7 @@ export default function ExponentialSmoothingApprovedPage() {
       name: string;
       points: Point[];
     } | null>(null),
-    [tab, setTab] = useState("Visualize"),
+    [tab, setTab] = useState("Learn"),
     [alpha, setAlpha] = useState(0.28),
     [horizon, setHorizon] = useState(12),
     [confidence, setConfidence] = useState(0.95),
@@ -282,7 +283,8 @@ export default function ExponentialSmoothingApprovedPage() {
         </article>
       </section>
       <main className="es-main">
-        <section className="forecast">
+        <LabLessonOrWork tab={tab} route="/ml/time-series/exponential-smoothing">
+        <section className={`forecast${labHide(tab, "Visualize", "Train")}`}>
           <h2>Forecast vs Actual　ⓘ</h2>
           <div className="legend">
             <span>● Actual</span>
@@ -331,7 +333,7 @@ export default function ExponentialSmoothingApprovedPage() {
             </b>
           </aside>
         </section>
-        <section className="errors">
+        <section className={`errors${labHide(tab, "Visualize", "Train", "Metrics")}`}>
           <h2>One-step Errors　(eₜ = yₜ − ŷₜ)</h2>
           <svg viewBox="0 0 850 115" aria-label="One-step errors">
             <line x1="50" x2="840" y1="58" y2="58" />
@@ -375,8 +377,9 @@ export default function ExponentialSmoothingApprovedPage() {
             </p>
           </aside>
         </section>
+        </LabLessonOrWork>
       </main>
-      <aside className="es-controls">
+      <aside className={`es-controls${labHide(tab, "Train", "Transform", "Visualize")}`}>
         <h2>
           Model Controls{" "}
           <button onClick={() => setControlsOpen((v) => !v)}>
@@ -477,7 +480,7 @@ export default function ExponentialSmoothingApprovedPage() {
           </>
         )}
       </aside>
-      <section className="es-bottom">
+      <section className={`es-bottom${labHide(tab, "Dataset", "Metrics")}`}>
         <article>
           <h2>About Exponential Smoothing</h2>
           <p>

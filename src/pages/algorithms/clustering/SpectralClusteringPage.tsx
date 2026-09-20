@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useLabNavigate } from "../../../lib/labNavigation";
 import {
@@ -23,8 +23,12 @@ import {
 import {
   LAB_TABS,
   LabLessonPanel,
+  isLabTab,
   useLabTabs,
 } from "../../../components/common/LabTabs";
+import { LabHeatmap } from "../../../components/common/LabHeatmap";
+import { LabNodeGraph } from "../../../components/common/LabNodeGraph";
+import { LabPipeline } from "../../../components/common/LabPipeline";
 import "./SpectralClusteringPage.css";
 type Point = { x: number; y: number };
 type Dataset =
@@ -84,11 +88,7 @@ const LABELS: Record<Dataset, string> = {
   imported: "Imported Data",
 };
 export default function SpectralClusteringPage() {
-  const { tab, setTab, panel, layout, lesson } = useLabTabs(
-      "Visualize",
-      "Visualize",
-      ["Learn", "Compare", "Explain"],
-    ),
+  const { tab, setTab, panel, layout, lesson } = useLabTabs("Learn"),
     [dataset, setDataset] = useState<Dataset>("moons"),
     [points, setPoints] = useState<Point[]>(BUILT.moons),
     [imported, setImported] = useState<Point[]>([]),
@@ -103,7 +103,10 @@ export default function SpectralClusteringPage() {
     [color, setColor] = useState(true),
     [pointSize, setPointSize] = useState(4),
     [edgeOpacity, setEdgeOpacity] = useState(0.15),
-    [toast, setToast] = useState("");
+    [toast, setToast] = useState(""),
+    [stage, setStage] = useState(0),
+    [playing, setPlaying] = useState(false),
+    [picked, setPicked] = useState<number | null>(null);
   const go = useLabNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
   const X = useMemo(() => points.map((p) => [p.x, p.y]), [points]);
@@ -168,8 +171,22 @@ export default function SpectralClusteringPage() {
     setColor(true);
     setPointSize(4);
     setEdgeOpacity(0.15);
+    setStage(0);
+    setPlaying(false);
   };
-  const pct = (v: number) => ((v + 4) / 8) * 100;
+  useEffect(() => {
+    if (!playing) return undefined;
+    const timer = window.setInterval(() => {
+      setStage((current) => {
+        if (current >= 5) {
+          setPlaying(false);
+          return current;
+        }
+        return current + 1;
+      });
+    }, 900);
+    return () => window.clearInterval(timer);
+  }, [playing]);
   if (!result) {
     return (
       <div className="sp-page">
@@ -200,6 +217,22 @@ export default function SpectralClusteringPage() {
       if (weight > 0) graphEdges.push({ from: i, to: j, weight });
     }
   graphEdges.sort((a, b) => b.weight - a.weight);
+  const SPECTRAL_STAGES = [
+    "Data",
+    "Similarity Graph",
+    "Affinity Matrix",
+    "Laplacian",
+    "Eigenvector Embedding",
+    "Final Clusters",
+  ];
+  const viewStage = isLabTab(tab, "Dataset") ? 0 : stage;
+  const heatN = Math.min(16, result.affinity.length);
+  const heatIdx = matrixOrder.slice(0, heatN);
+  const affPreview = heatIdx.map((i) => heatIdx.map((j) => result.affinity[i]?.[j] ?? 0));
+  const lapPreview = heatIdx.map((i) =>
+    heatIdx.map((j) => result.unnormalizedLaplacian[i]?.[j] ?? 0),
+  );
+  const heatLabels = heatIdx.map((i) => String(i));
   return (
     <div className="sp-page">
       <header className="sp-top">
@@ -275,7 +308,7 @@ export default function SpectralClusteringPage() {
         <input ref={fileRef} type="file" accept=".csv" onChange={upload} />
       </aside>
       <main className={layout.trim()}>
-        <header className={panel("Dataset", "Build / Train", "Metrics").trim()}>
+        <header className={panel("Visualize", "Dataset", "Build / Train", "Metrics").trim()}>
           <h1>
             Spectral Clustering <em>Advanced</em> ☆
           </h1>
@@ -294,140 +327,121 @@ export default function SpectralClusteringPage() {
         {lesson && (
           <LabLessonPanel tab={tab} route="/ml/clustering/spectral-clustering" />
         )}
-        <h3 className={panel("Build / Train").trim()}>Interactive Pipeline</h3>
-        <p className={panel("Build / Train").trim()}>
-          Adjust controls and see all views update together.
-        </p>
+        <div className={panel("Visualize", "Build / Train").trim()}>
+          <LabPipeline
+            stages={SPECTRAL_STAGES}
+            active={viewStage}
+            onSelect={(index) => {
+              setPlaying(false);
+              setStage(index);
+            }}
+            playing={playing}
+            onPlay={() => setPlaying(true)}
+            onPause={() => setPlaying(false)}
+            onStep={() => setStage((current) => Math.min(5, current + 1))}
+            onReset={() => {
+              setPlaying(false);
+              setStage(0);
+            }}
+            note="Data → graph → affinity → Laplacian → eigenvectors → clusters. Edges are the strongest similarities only."
+          />
+        </div>
         <section
-          className={`sp-panels${panel("Dataset", "Build / Train")}${layout}`}
+          className={`sp-panels${panel("Visualize", "Dataset", "Build / Train")}${layout}`}
         >
-          <article>
-            <header>
-              <b>① Similarity Graph ⓘ</b>
-              <select>
-                <option>Force Atlas 2</option>
-                <option>Circular</option>
-              </select>
-            </header>
-            <div className="graph">
-              {points.slice(0, 80).map((p, i) => (
-                <i
-                  key={i}
-                  style={{
-                    left: `${pct(p.x)}%`,
-                    top: `${pct(p.y)}%`,
-                    background: color ? COLORS[result.labels[i]] : "#8fa0b5",
-                    width: pointSize,
-                    height: pointSize,
-                    boxShadow: weights
-                      ? `0 0 0 2px ${COLORS[result.labels[i]]}55`
-                      : "none",
-                  }}
+          {(viewStage === 0 || viewStage === 1 || viewStage === 5) && (
+            <article>
+              <header>
+                <b>
+                  {viewStage === 0
+                    ? "① Data"
+                    : viewStage === 1
+                      ? "② Similarity graph (thinned edges)"
+                      : "⑥ Final clusters"}
+                </b>
+              </header>
+              <div className="graph">
+                <LabNodeGraph
+                  points={points.slice(0, graphCount)}
+                  edges={graphEdges}
+                  colors={viewStage === 5 && color ? COLORS : ["#8fa0b5"]}
+                  labels={viewStage === 5 ? result.labels : points.map(() => 0)}
+                  selected={picked}
+                  onSelect={setPicked}
+                  showEdges={viewStage >= 1 && weights}
+                  maxEdges={Math.min(48, neighbors * 3)}
                 />
-              ))}
-              {weights &&
-                graphEdges.slice(0, 70).map((edge, i) => {
-                  const a = points[edge.from],
-                    b = points[edge.to];
-                  return (
-                    <svg
-                      key={i}
-                      style={{
-                        opacity: edgeOpacity * (0.35 + edge.weight * 0.65),
-                      }}
-                    >
-                      <line
-                        x1={`${pct(a.x)}%`}
-                        y1={`${pct(a.y)}%`}
-                        x2={`${pct(b.x)}%`}
-                        y2={`${pct(b.y)}%`}
-                      />
-                    </svg>
-                  );
-                })}
-            </div>
-            <footer>
-              {sizes.map((_, k) => (
-                <span key={k}>
-                  <i style={{ background: COLORS[k] }} />
-                  Cluster {k + 1}
-                </span>
-              ))}
-              <label>
-                Show Weights{" "}
-                <input
-                  type="checkbox"
-                  checked={weights}
-                  onChange={(e) => setWeights(e.target.checked)}
-                />
-              </label>
-            </footer>
-          </article>
-          <article className={panel("Build / Train").trim()}>
-            <header>
-              <b>② Adjacency (Affinity) Matrix ⓘ</b>
-              <select>
-                <option>Reorder by Cluster</option>
-                <option>Original Order</option>
-              </select>
-            </header>
-            <div className="matrix">
-              {Array.from({ length: 900 }, (_, i) => {
-                const rowIndex = Math.round(
-                    (Math.floor(i / 30) / 29) * (matrixOrder.length - 1),
-                  ),
-                  columnIndex = Math.round(
-                    ((i % 30) / 29) * (matrixOrder.length - 1),
-                  ),
-                  r = matrixOrder[rowIndex],
-                  c = matrixOrder[columnIndex],
-                  v = result.affinity[r]?.[c] || 0;
-                return (
+              </div>
+              <footer>
+                {viewStage === 5 &&
+                  sizes.map((_, k) => (
+                    <span key={k}>
+                      <i style={{ background: COLORS[k] }} />
+                      Cluster {k + 1}
+                    </span>
+                  ))}
+                <label>
+                  Show Weights{" "}
+                  <input
+                    type="checkbox"
+                    checked={weights}
+                    onChange={(e) => setWeights(e.target.checked)}
+                  />
+                </label>
+              </footer>
+            </article>
+          )}
+          {(viewStage === 2 || viewStage === 3) && (
+            <article>
+              <header>
+                <b>
+                  {viewStage === 2
+                    ? "③ Affinity matrix (16×16 preview, cluster order)"
+                    : "④ Unnormalized Laplacian L = D − A (preview)"}
+                </b>
+              </header>
+              <LabHeatmap
+                matrix={viewStage === 2 ? affPreview : lapPreview}
+                rowLabels={heatLabels}
+                colLabels={heatLabels}
+                signed={viewStage === 3}
+                selected={
+                  picked != null && heatIdx.includes(picked)
+                    ? { r: heatIdx.indexOf(picked), c: heatIdx.indexOf(picked) }
+                    : null
+                }
+                onSelect={(cell) => setPicked(heatIdx[cell.r] ?? null)}
+                caption="Preview of strongest-block samples so the grid stays readable."
+              />
+              <footer>
+                n = {points.length} · Density ={" "}
+                {(result.density * 100).toFixed(2)}% ·{" "}
+                <b>{symmetrize ? "Symmetric ✓" : "Directed"}</b>
+              </footer>
+            </article>
+          )}
+          {viewStage === 4 && (
+            <article>
+              <header>
+                <b>⑤ Eigenvector embedding (first two coordinates)</b>
+              </header>
+              <div className="embed">
+                {result.embedding.map((p, i) => (
                   <i
                     key={i}
                     style={{
-                      background: `hsl(${280 - v * 220} 80% ${12 + v * 55}%)`,
+                      left: `${50 + (p[0] || 0) * 40}%`,
+                      top: `${50 - (p[1] || 0) * 40}%`,
+                      background: "#8fa0b5",
+                      width: pointSize,
+                      height: pointSize,
                     }}
                   />
-                );
-              })}
-            </div>
-            <footer>
-              n = {points.length} · Density ={" "}
-              {(result.density * 100).toFixed(2)}% ·{" "}
-              <b>{symmetrize ? "Symmetric ✓" : "Directed"}</b>
-            </footer>
-          </article>
-          <article className={panel("Build / Train").trim()}>
-            <header>
-              <b>③ Graph Cut Embedding (2D) ⓘ</b>
-              <select>
-                <option>2D (k={clusters})</option>
-              </select>
-            </header>
-            <div className="embed">
-              {result.embedding.map((p, i) => (
-                <i
-                  key={i}
-                  style={{
-                    left: `${(p[0] + 1) * 50 + points[i].x * 1.6}%`,
-                    top: `${(1 - (p[1] || 0)) * 50 + points[i].y * 1.6}%`,
-                    background: color ? COLORS[result.labels[i]] : "#8fa0b5",
-                    width: pointSize,
-                    height: pointSize,
-                  }}
-                />
-              ))}
-            </div>
-            <footer>
-              {sizes.map((_, k) => (
-                <span key={k}>
-                  <i style={{ background: COLORS[k] }} />
-                  Cluster {k + 1}
-                </span>
-              ))}
-            </footer>
-          </article>
+                ))}
+              </div>
+              <footer>Uncolored on purpose — clustering happens after this map.</footer>
+            </article>
+          )}
         </section>
         <section className={`sp-results${panel("Metrics")}`}>
           <h2>
@@ -509,7 +523,7 @@ export default function SpectralClusteringPage() {
             <option value="binary">Binary kNN</option>
           </select>
           <label>
-            σ (sigma)
+            σ (sigma) — RBF width for the similarity graph
             <input
               aria-label="Sigma numeric"
               type="number"

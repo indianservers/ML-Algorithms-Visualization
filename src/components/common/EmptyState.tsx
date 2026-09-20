@@ -3,10 +3,10 @@ import { Inbox } from 'lucide-react';
 
 export function EmptyState({ title = 'No results yet', message = 'Run the tool or adjust the inputs to generate results.', action }: { title?: string; message?: string; action?: ReactNode }) {
   return (
-    <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center dark:border-gray-700 dark:bg-gray-900/50">
-      <Inbox size={22} className="mx-auto mb-2 text-gray-400" />
-      <p className="text-sm font-bold text-gray-800 dark:text-gray-100">{title}</p>
-      <p className="mx-auto mt-1 max-w-md text-xs leading-5 text-gray-500 dark:text-gray-400">{message}</p>
+    <div className="rounded-lg border border-dashed p-6 text-center" style={{ borderColor: 'var(--border-default)', background: 'var(--bg-inset)', color: 'var(--text-primary)' }}>
+      <Inbox size={22} className="mx-auto mb-2" style={{ color: 'var(--text-muted)' }} />
+      <p className="text-sm font-bold">{title}</p>
+      <p className="mx-auto mt-1 max-w-md text-xs leading-5" style={{ color: 'var(--text-secondary)' }}>{message}</p>
       {action && <div className="mt-3">{action}</div>}
     </div>
   );

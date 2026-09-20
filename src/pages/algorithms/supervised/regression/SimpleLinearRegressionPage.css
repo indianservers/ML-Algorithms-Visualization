@@ -33,7 +33,7 @@
 .slr-shell.collapsed .slr-outline-head { justify-content:center; }
 .slr-shell.collapsed .slr-outline-head button { transform:rotate(180deg); }
 
-.slr-main { min-width:0; height:100%; overflow:auto; padding:18px 24px 22px 26px; }
+.slr-main { min-width:0; height:100%; overflow:auto; padding:12px 24px 22px 26px; }
 .slr-header { min-height:72px; display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
 .slr-title-row { display:flex; align-items:center; gap:14px; }
 .slr-title-row h1 { margin:0; font-size:26px; letter-spacing:-.6px; }
@@ -45,7 +45,7 @@
 .slr-progress b { font-size:13px; white-space:nowrap; }
 .slr-progress button { height:40px; margin-left:8px; padding:0 16px; display:flex; align-items:center; gap:10px; border:1px solid #1d3763; border-radius:8px; background:#0b1730; color:#e5ebf6; cursor:pointer; }
 
-.slr-mobile-steps { display:none; gap:8px; overflow:auto; padding:4px 0 10px; }
+.slr-mobile-steps { display:none !important; gap:8px; overflow:auto; padding:4px 0 10px; }
 .slr-mobile-steps button { flex:0 0 auto; height:36px; padding:0 12px; border:1px solid #213454; border-radius:999px; background:#0b1730; color:#d5deee; font-size:12px; cursor:pointer; white-space:nowrap; }
 .slr-mobile-steps button.active { border-color:#3478ff; background:#15356d; color:white; }
 
@@ -176,7 +176,7 @@
 .slr-choices button.good { border-color:#2d8a58; background:#123322; color:#7ee0a8; }
 .slr-choices button.bad { border-color:#8a3a2d; background:#331812; color:#ffb09c; }
 
-.slr-flow { min-height:70px; margin-top:17px; padding:8px 12px; display:flex; align-items:stretch; border-radius:8px; overflow:auto; }
+.slr-flow { min-height:70px; margin:0 0 14px; padding:8px 12px; display:flex; align-items:stretch; border-radius:8px; overflow:auto; position:sticky; top:0; z-index:8; }
 .slr-flow button { min-height:62px; flex:1 1 140px; display:flex; align-items:center; gap:10px; border:0; background:transparent; color:#e8edf6; text-align:left; cursor:pointer; }
 .slr-flow button.active { padding-left:12px; border:1px solid #3778ff; border-radius:7px; background:linear-gradient(100deg,#123775aa,#11295b66); }
 .slr-flow button b { width:32px; height:32px; flex:0 0 auto; display:grid; place-items:center; border:1px solid #586a86; border-radius:50%; font-size:13px; }

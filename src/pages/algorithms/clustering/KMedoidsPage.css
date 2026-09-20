@@ -5,7 +5,8 @@
   --muted: #a4afc2;
   min-height: 1024px;
   width: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: radial-gradient(circle at 55% 0, #14223b, #060e1e 48%);
   color: #f5f7fb;
   font:

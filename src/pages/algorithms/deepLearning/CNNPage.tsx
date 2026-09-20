@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import * as tf from "@tensorflow/tfjs";
-import { Link } from "react-router-dom";
 import { Play, RotateCcw } from "lucide-react";
 import TensorFlowDeepLearningLab from "../shared/TensorFlowDeepLearningLab";
 import {
@@ -30,17 +29,18 @@ import {
 import "./CNNPage.css";
 
 const LABELS = ["horizontal bar", "vertical bar"] as const;
+const LABEL_PLAIN = ["a horizontal line", "a vertical line"] as const;
 const STAGES = [
-  { id: "input", icon: "▧", name: "Input", detail: "8×8×1", number: 0 },
-  { id: "conv1", icon: "▣", name: "Conv2D", detail: "32 Filters", number: 1 },
-  { id: "relu1", icon: "⌁", name: "ReLU", detail: "", number: 2 },
-  { id: "pool1", icon: "▦", name: "MaxPool", detail: "2×2", number: 3 },
-  { id: "conv2", icon: "▣", name: "Conv2D", detail: "64 Filters", number: 4 },
-  { id: "relu2", icon: "⌁", name: "ReLU", detail: "", number: 5 },
-  { id: "pool2", icon: "▦", name: "MaxPool", detail: "2×2", number: 6 },
-  { id: "flatten", icon: "⠿", name: "Flatten", detail: "256", number: 7 },
-  { id: "dense", icon: "⌘", name: "Dense", detail: "128", number: 8 },
-  { id: "softmax", icon: "◇", name: "Softmax", detail: "2 Classes", number: 9 },
+  { id: "input", name: "Picture", tech: "Input", detail: "tiny 8×8 image", number: 1 },
+  { id: "conv1", name: "Find edges", tech: "Conv2D", detail: "32 stamps", number: 2 },
+  { id: "relu1", name: "Keep positives", tech: "ReLU", detail: "drop negatives", number: 3 },
+  { id: "pool1", name: "Shrink", tech: "MaxPool", detail: "keep strongest", number: 4 },
+  { id: "conv2", name: "Find shapes", tech: "Conv2D", detail: "64 stamps", number: 5 },
+  { id: "relu2", name: "Keep positives", tech: "ReLU", detail: "drop negatives", number: 6 },
+  { id: "pool2", name: "Shrink again", tech: "MaxPool", detail: "2×2 leftover", number: 7 },
+  { id: "flatten", name: "Unroll", tech: "Flatten", detail: "256 numbers", number: 8 },
+  { id: "dense", name: "Mix", tech: "Dense", detail: "128 neurons", number: 9 },
+  { id: "softmax", name: "Guess", tech: "Softmax", detail: "2 choices", number: 10 },
 ] as const;
 
 type StageId = (typeof STAGES)[number]["id"];
@@ -58,45 +58,58 @@ const VIEWS: Array<[View, string]> = [
 
 const STAGE_COPY: Record<StageId, { purpose: string; does: string }> = {
   input: {
-    purpose: "One grayscale 8×8 pattern. This is the only tensor the network sees.",
-    does: "Change the sample seed to swap horizontal vs vertical bars and watch every later map move.",
+    purpose: "This is the only picture the network sees: 8×8 gray pixels. Bright = ink, dark = paper.",
+    does: "Switch Horizontal / Vertical above. Every later map updates from this one picture.",
   },
   conv1: {
-    purpose: "32 learned 3×3 filters slide over the image and each produce an 8×8 map.",
-    does: "Edit the selected 3×3 kernel. Edge filters light up bars; a blur kernel washes them out.",
+    purpose: "A 3×3 stamp slides over the picture. Each stamp hunts for one tiny edge.",
+    does: "Change the 9 numbers. An edge stamp lights up the bar; a blur stamp washes it out.",
   },
   relu1: {
-    purpose: "ReLU zeroes negative detections so the next layer only sees “this pattern was found.”",
-    does: "Compare sparsity with the Conv2D map. Dark cells are exact zeros, not small noise.",
+    purpose: "Keep the “I found it” scores. Anything below zero becomes exactly zero.",
+    does: "Dark cells are true zeros — not faint noise. Compare with the previous green map.",
   },
   pool1: {
-    purpose: "2×2 max-pool keeps the strongest response in each window and halves height and width.",
-    does: "A bar that was 8 pixels tall becomes a 4×4 glow. Location gets cheaper; presence stays.",
+    purpose: "Look at every 2×2 patch and keep only the brightest cell. The picture shrinks.",
+    does: "An 8-pixel bar becomes a 4×4 glow. Where it is matters less; that it exists still does.",
   },
   conv2: {
-    purpose: "64 filters look at all 32 pooled channels at once, so they can combine edges into motifs.",
-    does: "Cycle filters 1–64. Each map is a real depth-wise sum, not a copied thumbnail.",
+    purpose: "Now 64 stamps look at all 32 earlier maps at once, so they can join edges into shapes.",
+    does: "Flip through detectors 1–64. Each map is a real mix of the previous layer, not a copy.",
   },
   relu2: {
-    purpose: "Second ReLU again drops negative motif scores before the last downsample.",
-    does: "If a filter is dead (all zeros), the kernel is pointed the wrong way for this image.",
+    purpose: "Same rule again: keep positive shape scores, drop the rest.",
+    does: "If a map is all black, that stamp is pointed the wrong way for this picture.",
   },
   pool2: {
-    purpose: "Another 2×2 pool yields 2×2×64. That is exactly 256 numbers.",
-    does: "Count the cells: 2×2×64 = 256. That identity is why Flatten says 256.",
+    purpose: "Shrink one more time. You are left with 2×2×64 — that is 256 numbers.",
+    does: "Count it: 2 × 2 × 64 = 256. That is why Unroll says 256.",
   },
   flatten: {
-    purpose: "The volume is unrolled into a vector so a dense layer can read it.",
-    does: "The 256 bars are the pooled maps in channel order — not random decoration.",
+    purpose: "Line those 256 numbers up so the next layer can read them like a list.",
+    does: "The bars are the pooled maps in order — not random decoration.",
   },
   dense: {
-    purpose: "A 128-unit ReLU layer mixes those 256 numbers into a compact code.",
-    does: "Positive bars are live neurons. Many zeros means the ReLU parked that unit.",
+    purpose: "128 neurons mix the 256 numbers into a short code about “what kind of line is this?”",
+    does: "Tall bars are live neurons. A bar at zero means that neuron stayed quiet.",
   },
   softmax: {
-    purpose: "Two logits become a probability distribution over the two pattern classes.",
-    does: "Train the TensorFlow.js model to replace this inspector head with a fitted classifier.",
+    purpose: "Turn two scores into two percentages that add to 100%. Highest percentage wins.",
+    does: "Press Train to replace this practice guess with a fitted TensorFlow.js model.",
   },
+};
+
+const STAGE_NEXT: Record<StageId, string> = {
+  input: "Next: slide 3×3 stamps over this picture to find edges.",
+  conv1: "Next: throw away negative detections (Keep positives).",
+  relu1: "Next: shrink the map — keep only the strongest 2×2 cell.",
+  pool1: "Next: look at all 32 maps together and hunt for bigger shapes.",
+  conv2: "Next: keep only the positive shape scores.",
+  relu2: "Next: shrink again so the leftover is just 2×2×64.",
+  pool2: "Next: unroll those 256 numbers into a single list.",
+  flatten: "Next: mix the list into 128 neurons.",
+  dense: "Next: turn the mix into two percentages and pick a winner.",
+  softmax: "You are at the guess. Train the model if you want a fitted answer.",
 };
 
 type KernelBank = ImageMatrix[][];
@@ -191,6 +204,8 @@ function Matrix({
   return (
     <div
       className={`cnn-matrix ${grid ? "grid" : ""}`}
+      role="img"
+      aria-label={`${matrix.length} by ${matrix[0].length} pixel map. Brighter cells mean a stronger match.`}
       style={{ gridTemplateColumns: `repeat(${matrix[0].length},1fr)` }}
     >
       {normalized.flat().map((v, i) => (
@@ -220,11 +235,7 @@ function shapeOf(volume: ImageMatrix[]) {
 }
 
 export default function CNNPage() {
-  const { tab, setTab, lesson } = useLabTabs("Visualize", "Visualize", [
-    "Learn",
-    "Compare",
-    "Explain",
-  ]);
+  const { tab, setTab, lesson } = useLabTabs("Visualize");
   const [advanced, setAdvanced] = useState(false);
   const [view, setView] = useState<View>("overview");
   const [stageId, setStageId] = useState<StageId>("conv1");
@@ -382,6 +393,9 @@ export default function CNNPage() {
       ? 1
       : 0;
   const shownProbs = prediction.length > 0 ? prediction : pass.probs;
+  const guessPct = Math.round(shownProbs[predictedIndex] * 100);
+  const truthIndex = imageSample(101 + seed).label;
+  const modelStatus = training ? "training" : latest ? "trained" : "ready";
   const maxLoss = Math.max(1, ...history.map((point) => point.loss));
   const chartX = (index: number) => 20 + (history.length < 2 ? 0 : (index / (history.length - 1)) * 450);
   const lossPoints = history
@@ -431,35 +445,20 @@ export default function CNNPage() {
     else setView("overview");
   };
 
+  const pickKind = (kind: 0 | 1) => {
+    const hit = roster.find((item) => imageSample(101 + item.index).label === kind);
+    if (hit) setSeed(hit.index);
+  };
+
   return (
     <div className="cnn-page">
-      <aside className="cnn-side">
-        <Link to="/">◉</Link>
-        {VIEWS.map(([id, label]) => (
-          <button key={id} className={view === id ? "active" : ""} onClick={() => chooseView(id)}>
-            {label}
-          </button>
-        ))}
-        <section>
-          <h4>DATASET</h4>
-          <p>
-            ▦ Synthetic Patterns · <small>96 images · 8×8×1</small>
-          </p>
-          <h4>MODEL</h4>
-          <p>
-            ⌘ CNN v1.0 · <small>9 layers · {totalParams.toLocaleString()} weights</small>
-          </p>
-          <h4>TRAINING</h4>
-          <p>
-            ● 80% Train
-            <br />● 10% Val
-            <br />● 10% Test
-          </p>
-        </section>
-      </aside>
       <header className="cnn-head">
-        <h1>⌘ Convolutional Neural Network</h1>
-        <div>
+        <h1>How a CNN reads a picture</h1>
+        <p className="cnn-lede">
+          A convolutional network is a stack of tiny pattern detectors. This lab uses 8×8 lines —
+          {totalParams.toLocaleString()} weights, 96 practice pictures.
+        </p>
+        <div className="cnn-actions">
           <button onClick={reset}>
             <RotateCcw /> Reset
           </button>
@@ -467,15 +466,16 @@ export default function CNNPage() {
             <Play /> {training ? "Training…" : "Train"}
           </button>
           <label>
-            Epochs
+            Rounds
             <select value={epochs} onChange={(e) => setEpochs(Number(e.target.value))}>
               <option>5</option>
               <option>18</option>
               <option>40</option>
             </select>
           </label>
-          <span>
-            ● Model Status <b>{training ? "Training" : latest ? "Trained" : "Ready"}</b>
+          <span className={`cnn-status ${modelStatus}`}>
+            <i />
+            <b>{training ? "Training" : latest ? "Trained" : "Ready"}</b>
           </span>
         </div>
       </header>
@@ -494,6 +494,37 @@ export default function CNNPage() {
       </nav>
       <main>
         {lesson && <LabLessonPanel tab={tab} route="/ml/deep-learning/cnn" className="cnn-lesson" />}
+        {!lesson && (
+          <section className="cnn-guide panel">
+            <span className="cnn-guide-kicker">How to read this</span>
+            <div>
+              <b>Bright cells mean “I found that pattern here.”</b>
+              <p>
+                Pick a picture, then click a numbered step. The middle panel is the layer you are
+                looking inside. The right rail explains the same step in one sentence.
+              </p>
+              <div className="cnn-samples">
+                <button className={truthIndex === 0 ? "active" : ""} onClick={() => pickKind(0)}>
+                  Horizontal line
+                </button>
+                <button className={truthIndex === 1 ? "active" : ""} onClick={() => pickKind(1)}>
+                  Vertical line
+                </button>
+                <button onClick={() => setSeed((seed + 1) % 12)} aria-label="Next picture">
+                  Next picture
+                </button>
+                <small>Picture {seed + 1} of 12 · truth: {LABELS[truthIndex]}</small>
+              </div>
+              <div className="cnn-views">
+                {VIEWS.map(([id, label]) => (
+                  <button key={id} className={view === id ? "active" : ""} onClick={() => chooseView(id)}>
+                    {label.replace(/^[^\s]+\s/, "")}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
         {!lesson && <section className="cnn-pipeline panel">
           {STAGES.map((item) => (
             <button
@@ -505,16 +536,19 @@ export default function CNNPage() {
                 setFilter(0);
               }}
             >
-              <b>{item.icon}</b>
+              <em>{item.number}</em>
               {item.name}
               <small>{item.detail}</small>
-              {item.number > 0 && <i>{item.number}</i>}
             </button>
           ))}
         </section>}
 
         {lesson ? null : view === "data" ? (
           <section className="cnn-flow panel cnn-data-grid">
+            <p className="cnn-data-hint">
+              Click a picture to send it through the network. The label is the truth; the % is the
+              live guess.
+            </p>
             {samples.map((sample, index) => (
               <button key={index} onClick={() => setSeed(index)} className={seed === index ? "active" : ""}>
                 <Matrix matrix={sample.image} tone="gray" grid={grid} />
@@ -522,7 +556,12 @@ export default function CNNPage() {
                   {sample.label}
                   <small>
                     {" "}
-                    · inspector {roster[index].pred} {(roster[index].conf * 100).toFixed(0)}%
+                    · {roster[index].ok ? (
+                      <span className="cnn-ok">✓ {roster[index].pred}</span>
+                    ) : (
+                      <span className="cnn-bad">✕ said {roster[index].pred}</span>
+                    )}{" "}
+                    {(roster[index].conf * 100).toFixed(0)}%
                   </small>
                 </span>
               </button>
@@ -543,15 +582,15 @@ export default function CNNPage() {
               <tbody>
                 {[
                   ["—", "Input", "8×8×1", "0", STAGE_COPY.input.purpose],
-                  ["1", "Conv2D", shapeOf(pass.conv1), String(PARAMS.conv1), STAGE_COPY.conv1.purpose],
-                  ["2", "ReLU", shapeOf(pass.relu1), "0", STAGE_COPY.relu1.purpose],
-                  ["3", "MaxPool 2×2", shapeOf(pass.pool1), "0", STAGE_COPY.pool1.purpose],
-                  ["4", "Conv2D", shapeOf(pass.conv2), String(PARAMS.conv2), STAGE_COPY.conv2.purpose],
-                  ["5", "ReLU", shapeOf(pass.relu2), "0", STAGE_COPY.relu2.purpose],
-                  ["6", "MaxPool 2×2", shapeOf(pass.pool2), "0", STAGE_COPY.pool2.purpose],
-                  ["7", "Flatten", String(pass.flat.length), "0", STAGE_COPY.flatten.purpose],
-                  ["8", "Dense", String(pass.hidden.length), String(paramCounts.dense), STAGE_COPY.dense.purpose],
-                  ["9", "Softmax", String(pass.probs.length), String(PARAMS.softmax), STAGE_COPY.softmax.purpose],
+                  ["1", "Find edges (Conv2D)", shapeOf(pass.conv1), String(PARAMS.conv1), STAGE_COPY.conv1.purpose],
+                  ["2", "Keep positives (ReLU)", shapeOf(pass.relu1), "0", STAGE_COPY.relu1.purpose],
+                  ["3", "Shrink (MaxPool 2×2)", shapeOf(pass.pool1), "0", STAGE_COPY.pool1.purpose],
+                  ["4", "Find shapes (Conv2D)", shapeOf(pass.conv2), String(PARAMS.conv2), STAGE_COPY.conv2.purpose],
+                  ["5", "Keep positives (ReLU)", shapeOf(pass.relu2), "0", STAGE_COPY.relu2.purpose],
+                  ["6", "Shrink again (MaxPool)", shapeOf(pass.pool2), "0", STAGE_COPY.pool2.purpose],
+                  ["7", "Unroll (Flatten)", String(pass.flat.length), "0", STAGE_COPY.flatten.purpose],
+                  ["8", "Mix (Dense)", String(pass.hidden.length), String(paramCounts.dense), STAGE_COPY.dense.purpose],
+                  ["9", "Guess (Softmax)", String(pass.probs.length), String(PARAMS.softmax), STAGE_COPY.softmax.purpose],
                 ].map((row) => (
                   <tr key={row[0] + row[1]}>
                     {row.map((cell) => (
@@ -565,14 +604,13 @@ export default function CNNPage() {
         ) : view === "train" || view === "settings" ? (
           <section className="cnn-flow panel cnn-train">
             <article>
-              <h4>TENSORFLOW.JS FIT</h4>
+              <h4>TEACH THE NETWORK</h4>
               <p>
-                Fits Conv2D 32 → ReLU → MaxPool 2×2 → Conv2D 64 → ReLU → MaxPool 2×2 → Flatten 256 →
-                Dense 128 → Softmax on 96 labeled 8×8×1 bars. The fitted head replaces the inspector
-                softmax when training finishes.
+                Show it 96 labeled 8×8 lines, {epochs} times. After training, the Guess panel uses
+                the fitted TensorFlow.js model instead of the practice inspector.
               </p>
               <button className="train" onClick={() => void trainModel()} disabled={training}>
-                {training ? "Training…" : `Train ${epochs} epochs`}
+                {training ? "Training…" : `Train ${epochs} rounds`}
               </button>
               <table>
                 <thead>
@@ -586,7 +624,7 @@ export default function CNNPage() {
                   {(history.length ? history : [{ epoch: 0, loss: 0, accuracy: 0 }]).map((point) => (
                     <tr key={point.epoch}>
                       <td>{point.epoch || "—"}</td>
-                      <td>{point.epoch ? point.loss.toFixed(4) : "run Train"}</td>
+                      <td>{point.epoch ? point.loss.toFixed(4) : "press Train"}</td>
                       <td>{point.epoch ? `${(point.accuracy * 100).toFixed(1)}%` : "—"}</td>
                     </tr>
                   ))}
@@ -594,7 +632,7 @@ export default function CNNPage() {
               </table>
             </article>
             <article>
-              <h4>INSPECTOR SETTINGS</h4>
+              <h4>STAMP SETTINGS</h4>
               <label>
                 Stride
                 <select value={stride} onChange={(e) => setStride(Number(e.target.value))}>
@@ -602,6 +640,9 @@ export default function CNNPage() {
                   <option>2</option>
                 </select>
               </label>
+              <small className="cnn-help">
+                How far the stamp jumps. 1 = every pixel; 2 = skip a pixel (faster, blurrier).
+              </small>
               <label>
                 Padding
                 <select value={padding} onChange={(e) => setPadding(Number(e.target.value))}>
@@ -609,6 +650,9 @@ export default function CNNPage() {
                   <option>1</option>
                 </select>
               </label>
+              <small className="cnn-help">
+                Add a quiet border so the stamp can sit on the edge. 0 = crop; 1 = keep size.
+              </small>
               <label>
                 Bias
                 <input type="checkbox" checked={bias} onChange={(e) => setBias(e.target.checked)} />
@@ -639,18 +683,17 @@ params ${totalParams}`}</pre>
         ) : view === "evaluate" ? (
           <section className="cnn-flow panel cnn-eval">
             <article>
-              <h4>INSPECTOR ROSTER</h4>
+              <h4>RIGHT OR WRONG</h4>
               <p>
-                {inspectorHits}/12 samples match the true bar class using the live 8×8×1 → 32 → 64 →
-                256 → 128 → 2 forward pass.
+                {inspectorHits} of 12 pictures guessed correctly. Click a row to open that picture.
               </p>
               <table>
                 <thead>
                   <tr>
                     <th>#</th>
                     <th>Truth</th>
-                    <th>Inspector</th>
-                    <th>Conf</th>
+                    <th>Guess</th>
+                    <th>Sure</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -662,28 +705,35 @@ params ${totalParams}`}</pre>
                     >
                       <td>{item.index + 1}</td>
                       <td>{item.label}</td>
-                      <td>{item.ok ? item.pred : `${item.pred} ✕`}</td>
-                      <td>{(item.conf * 100).toFixed(1)}%</td>
+                      <td className={item.ok ? "cnn-ok" : "cnn-bad"}>
+                        {item.ok ? `✓ ${item.pred}` : `✕ ${item.pred}`}
+                      </td>
+                      <td>{(item.conf * 100).toFixed(0)}%</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </article>
             <article className="cnn-selected">
-              <h4>SAMPLE {seed + 1} SOFTMAX</h4>
+              <h4>PICTURE {seed + 1}</h4>
+              <p className="cnn-guess">
+                {guessPct}% sure this is {LABEL_PLAIN[predictedIndex]}
+                <span>
+                  {" "}
+                  · {prediction.length > 0 ? "trained model" : "practice inspector"}
+                </span>
+              </p>
               <div className="cnn-softmax">
                 {LABELS.map((name, index) => (
                   <p className={index === predictedIndex ? "active" : ""} key={name}>
                     {name}
-                    <b>{shownProbs[index].toFixed(3)}</b>
+                    <i className="cnn-pct">
+                      <span style={{ width: `${shownProbs[index] * 100}%` }} />
+                    </i>
+                    <b>{`${(shownProbs[index] * 100).toFixed(0)}%`}</b>
                   </p>
                 ))}
               </div>
-              <strong>
-                {prediction.length > 0
-                  ? `Trained model: ${LABELS[predictedIndex]}`
-                  : `Inspector head: ${LABELS[predictedIndex]}`}
-              </strong>
             </article>
           </section>
         ) : view === "deploy" ? (
@@ -700,13 +750,13 @@ Softmax → ${pass.probs.map((p) => p.toFixed(3)).join(" / ")}`}</pre>
         ) : (
           <section className="cnn-flow panel">
             <article>
-              <h4>INPUT IMAGE</h4>
+              <h4>THE PICTURE</h4>
               <Matrix matrix={image} tone="gray" grid={grid} />
-              <p>8 × 8 × 1 · sample {seed + 1}</p>
+              <p>8 × 8 pixels · picture {seed + 1}</p>
               {(stageId === "conv1" || stageId === "conv2") && (
                 <div className="kernel-card">
                   <h4>
-                    3×3 KERNEL (Filter {channel + 1})
+                    3×3 stamp · detector {channel + 1}
                   </h4>
                   {kernel.map((row, r) =>
                     row.map((v, c) => (
@@ -724,7 +774,7 @@ Softmax → ${pass.probs.map((p) => p.toFixed(3)).join(" / ")}`}</pre>
             </article>
             <article className="cnn-selected">
               <h4>
-                {stage.name.toUpperCase()} {stage.detail && `· ${stage.detail}`}
+                {stage.name} <small>{stage.tech}{stage.detail ? ` · ${stage.detail}` : ""}</small>
               </h4>
               {selectedVolume ? (
                 <>
@@ -734,34 +784,38 @@ Softmax → ${pass.probs.map((p) => p.toFixed(3)).join(" / ")}`}</pre>
                     grid={grid}
                   />
                   <p>
-                    viewing map {channel + 1}/{selectedVolume.length} · {shapeOf(selectedVolume)}
+                    Pattern detector {channel + 1} of {selectedVolume.length} · {shapeOf(selectedVolume)}
                   </p>
                 </>
               ) : stageId === "flatten" ? (
                 <>
                   <Bars values={pass.flat} />
-                  <p>{pass.flat.length} units · 2×2×64 unrolled</p>
+                  <p>{pass.flat.length} numbers lined up from the 2×2×64 leftover</p>
                 </>
               ) : stageId === "dense" ? (
                 <>
                   <Bars values={pass.hidden} tone="#5eead4" />
-                  <p>{pass.hidden.length} ReLU units · {pass.hidden.filter((v) => v <= 0).length} parked at 0</p>
+                  <p>
+                    {pass.hidden.length} neurons · {pass.hidden.filter((v) => v <= 0).length} stayed quiet
+                  </p>
                 </>
               ) : (
                 <>
+                  <p className="cnn-guess">
+                    {guessPct}% sure this is {LABEL_PLAIN[predictedIndex]}
+                    <span> · {prediction.length > 0 ? "trained model" : "practice inspector"}</span>
+                  </p>
                   <div className="cnn-softmax">
                     {LABELS.map((name, index) => (
                       <p className={index === predictedIndex ? "active" : ""} key={name}>
                         {name}
-                        <b>{shownProbs[index].toFixed(3)}</b>
+                        <i className="cnn-pct">
+                          <span style={{ width: `${shownProbs[index] * 100}%` }} />
+                        </i>
+                        <b>{`${(shownProbs[index] * 100).toFixed(0)}%`}</b>
                       </p>
                     ))}
                   </div>
-                  <strong>
-                    {prediction.length > 0
-                      ? `Trained model: ${LABELS[predictedIndex]}`
-                      : `Inspector head: ${LABELS[predictedIndex]}`}
-                  </strong>
                 </>
               )}
               {overlay && (
@@ -774,22 +828,23 @@ Softmax → ${pass.probs.map((p) => p.toFixed(3)).join(" / ")}`}</pre>
               )}
             </article>
             <article className="dense">
-              <h4>WHY THIS LAYER</h4>
+              <h4>WHY THIS STEP</h4>
               <p>{STAGE_COPY[stageId].purpose}</p>
               <p>{STAGE_COPY[stageId].does}</p>
+              <p className="cnn-next">{STAGE_NEXT[stageId]}</p>
             </article>
           </section>
         )}
 
         {!lesson && <section className="cnn-layers panel">
-          <h3>LAYERS</h3>
+          <h3>LOOK INSIDE A STEP</h3>
           {STAGES.map((item) => (
             <button
               key={item.id}
               className={stageId === item.id ? "active" : ""}
               onClick={() => setStageId(item.id)}
             >
-              {item.number > 0 && <small>{item.number}</small>}
+              <small>{item.number}</small>
               <b>{item.name}</b>
               <span>
                 {item.id === "input"
@@ -818,21 +873,34 @@ Softmax → ${pass.probs.map((p) => p.toFixed(3)).join(" / ")}`}</pre>
         {!lesson && <section className="cnn-bottom panel">
           <article>
             <h3>TRAINING PROGRESS</h3>
-            <svg viewBox="0 0 480 170">
-              <path d="M20 10V150H470" />
-              {history.length > 0 && (
-                <>
+            {history.length === 0 ? (
+              <p className="cnn-empty">
+                No training yet. Press Train — the network looks at 96 tiny pictures and tries to
+                tell the two kinds of line apart.
+              </p>
+            ) : (
+              <>
+                <p className="cnn-legend">
+                  <span>
+                    <i className="loss" /> mistakes (lower is better)
+                  </span>
+                  <span>
+                    <i className="acc" /> correct guesses
+                  </span>
+                </p>
+                <svg viewBox="0 0 480 170" aria-label="Training loss and accuracy">
+                  <path d="M20 10V150H470" />
                   <polyline className="loss" points={lossPoints} />
                   <polyline className="acc" points={accuracyPoints} />
-                </>
-              )}
-            </svg>
+                </svg>
+              </>
+            )}
           </article>
           <article>
-            <h3>METRICS (TensorFlow lab)</h3>
-            <button onClick={() => setAdvanced(true)}>Open live training metrics →</button>
+            <h3>SCOREBOARD</h3>
+            <button onClick={() => setAdvanced(true)}>Open the full training lab →</button>
             <p>
-              Epoch{" "}
+              Round{" "}
               <b>
                 {history.length} / {epochs}
               </b>
@@ -848,28 +916,27 @@ Softmax → ${pass.probs.map((p) => p.toFixed(3)).join(" / ")}`}</pre>
             </p>
           </article>
           <article>
-            <h3>PREDICTIONS</h3>
+            <h3>THE GUESS</h3>
+            <p className="cnn-guess">
+              {guessPct}% sure this is {LABEL_PLAIN[predictedIndex]}
+            </p>
             {LABELS.map((name, index) => (
               <p key={name}>
                 {name}
                 <i>
                   <span style={{ width: `${shownProbs[index] * 100}%` }} />
                 </i>
-                <b>{`${(shownProbs[index] * 100).toFixed(1)}%`}</b>
+                <b>{`${(shownProbs[index] * 100).toFixed(0)}%`}</b>
               </p>
             ))}
           </article>
         </section>}
       </main>
       {!lesson && <aside className="cnn-inspector panel">
-        <h2>
-          LAYER INSPECTOR
-          <button onClick={() => setView("overview")} aria-label="Focus overview">
-            ×
-          </button>
-        </h2>
+        <h2>Look inside this layer</h2>
+        <p className="cnn-insp-sub">{STAGE_COPY[stageId].purpose}</p>
         <label>
-          Layer
+          Step
           <select
             value={stageId}
             onChange={(e) => {
@@ -879,8 +946,7 @@ Softmax → ${pass.probs.map((p) => p.toFixed(3)).join(" / ")}`}</pre>
           >
             {STAGES.map((item) => (
               <option key={item.id} value={item.id}>
-                {item.number ? `${item.number} ` : ""}
-                {item.name}
+                {item.number} {item.name}
                 {item.detail ? ` · ${item.detail}` : ""}
               </option>
             ))}
@@ -888,11 +954,11 @@ Softmax → ${pass.probs.map((p) => p.toFixed(3)).join(" / ")}`}</pre>
         </label>
         {(stageId === "conv1" || stageId === "conv2" || stageId.includes("relu") || stageId.includes("pool")) && (
           <label>
-            Filter{" "}
+            Pattern detector{" "}
             <span>
               <button onClick={() => setFilter(Math.max(0, channel - 1))}>‹</button>
               <b>
-                {channel + 1} / {filterCount}
+                {channel + 1} of {filterCount}
               </b>
               <button onClick={() => setFilter(Math.min(filterCount - 1, channel + 1))}>›</button>
             </span>
@@ -901,7 +967,7 @@ Softmax → ${pass.probs.map((p) => p.toFixed(3)).join(" / ")}`}</pre>
         {(stageId === "conv1" || stageId === "conv2") && (
           <>
             <h3>
-              Kernel (3×3) <small>Edits this filter</small>
+              3×3 stamp <small>what this detector likes</small>
             </h3>
             <div className="kernel-grid">
               {kernel.map((row, r) =>
@@ -925,6 +991,9 @@ Softmax → ${pass.probs.map((p) => p.toFixed(3)).join(" / ")}`}</pre>
             <option>2</option>
           </select>
         </label>
+        <small className="cnn-help">
+          How far the stamp jumps. 1 = every pixel; 2 = skip a pixel.
+        </small>
         <label>
           Padding
           <select value={padding} onChange={(e) => setPadding(Number(e.target.value))}>
@@ -932,6 +1001,7 @@ Softmax → ${pass.probs.map((p) => p.toFixed(3)).join(" / ")}`}</pre>
             <option>1</option>
           </select>
         </label>
+        <small className="cnn-help">Quiet border so the stamp can sit on the edge.</small>
         <label>
           Bias
           <input type="checkbox" checked={bias} onChange={(e) => setBias(e.target.checked)} />
@@ -941,7 +1011,7 @@ Softmax → ${pass.probs.map((p) => p.toFixed(3)).join(" / ")}`}</pre>
           <input type="checkbox" checked={batchNorm} onChange={(e) => setBatchNorm(e.target.checked)} />
         </label>
         <section>
-          <h3>Feature Map Visualization</h3>
+          <h3>What you are seeing</h3>
           <p>
             {selectedVolume
               ? `${shapeOf(selectedVolume)} live maps`

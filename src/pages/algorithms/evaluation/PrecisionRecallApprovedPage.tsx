@@ -122,7 +122,7 @@ export default function PrecisionRecallApprovedPage() {
   const [customDataset, setCustomDataset] = useState<ScoreDataset | null>(null);
   const [threshold, setThreshold] = useState(0.37);
   const [bins, setBins] = useState(50);
-  const { tab, setTab, panel, layout, lesson } = useLabTabs("Visualize", "Visualize", ["Learn", "Compare", "Explain"]);
+  const { tab, setTab, panel, layout, lesson } = useLabTabs("Learn");
   const [showIso, setShowIso] = useState(true);
   const [showBaseline, setShowBaseline] = useState(true);
   const [showPoint, setShowPoint] = useState(true);

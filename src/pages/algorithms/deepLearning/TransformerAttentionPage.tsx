@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { runAttention } from "../../../lib/algorithms/neural/attention";
+import { LAB_TABS, LabLessonOrWork, labHide, useLabTabs } from "../../../components/common/LabTabs";
+import { LabHeatmap } from "../../../components/common/LabHeatmap";
+import { LabPipeline } from "../../../components/common/LabPipeline";
 import "./TransformerAttentionPage.css";
 
 const sequences = [
@@ -11,6 +14,7 @@ const sequences = [
 const EMBED_DIM = 8;
 
 export default function TransformerAttentionPage() {
+  const { tab, setTab } = useLabTabs("Learn");
   const [sequence, setSequence] = useState(sequences[0]),
     [selected, setSelected] = useState(2),
     [layer, setLayer] = useState(5),
@@ -18,6 +22,7 @@ export default function TransformerAttentionPage() {
     [temperature, setTemperature] = useState(1),
     [causal, setCausal] = useState(false),
     [selectedKey, setSelectedKey] = useState(2),
+    [stage, setStage] = useState(3),
     [toast, setToast] = useState("Attention ready");
   const tokens = sequence.split(/\s+/).slice(0, 12),
     index = Math.min(selected, tokens.length - 1),
@@ -83,6 +88,19 @@ export default function TransformerAttentionPage() {
             </select>
           </label>
         </div>
+        <nav role="tablist" aria-label="Transformer sections">
+          {LAB_TABS.map((name) => (
+            <button
+              role="tab"
+              aria-selected={tab === name}
+              className={tab === name ? "active" : ""}
+              onClick={() => setTab(name)}
+              key={name}
+            >
+              {name}
+            </button>
+          ))}
+        </nav>
         <nav>
           {tokens.map((token, i) => (
             <button
@@ -96,6 +114,23 @@ export default function TransformerAttentionPage() {
           ))}
         </nav>
       </header>
+      <LabLessonOrWork tab={tab} route="/ml/deep-learning/transformer-attention">
+      <div className={labHide(tab, "Visualize", "Train", "Dataset", "Metrics")}>
+      <LabPipeline
+        stages={[
+          "Tokens",
+          "Embeddings",
+          "Positional Information",
+          "Attention",
+          "Feed-Forward",
+          "Residual + Norm",
+          "Output",
+        ]}
+        active={stage}
+        onSelect={setStage}
+        note="Educational scaled-dot-product on hashed 8-D embeddings — not a pretrained Transformer."
+      />
+      </div>
       <main>
         <section className="attention-flow panel">
           <h2>
@@ -135,31 +170,19 @@ export default function TransformerAttentionPage() {
           <hr />
           <h2>
             Attention Matrix{" "}
-            <small>(rows: query position, columns: key position) ⓘ</small>
+            <small>(rows: query token, columns: key token)</small>
           </h2>
-          <div className="matrix-head">
-            {tokens.map((_, i) => (
-              <span key={i}>{i}</span>
-            ))}
-          </div>
-          <div className="attention-matrix">
-            {result.weights.map((row, r) =>
-              row.map((weight, c) => (
-                <button
-                  aria-label={`query ${r} key ${c}: ${(weight * 100).toFixed(1)}%`}
-                  onClick={() => {
-                    setSelected(r);
-                    setSelectedKey(c);
-                  }}
-                  className={r === index && c === keyIndex ? "selected" : ""}
-                  style={{
-                    background: `rgba(120,70,255,${Math.min(1, weight * 4.5)})`,
-                  }}
-                  key={`${r}-${c}`}
-                />
-              )),
-            )}
-          </div>
+          <LabHeatmap
+            matrix={result.weights}
+            rowLabels={tokens}
+            colLabels={tokens}
+            selected={{ r: index, c: keyIndex }}
+            onSelect={(cell) => {
+              setSelected(cell.r);
+              setSelectedKey(cell.c);
+            }}
+            caption="Click a cell: highlight the query row and the attended key. Weights are hashed-embedding similarities."
+          />
         </section>
         <section className="attention-how panel">
           <h2>How Attention Works ⓘ</h2>
@@ -167,10 +190,11 @@ export default function TransformerAttentionPage() {
             Attention(Q, K, V) = <b>softmax</b>( QKᵀ / √dₖ ) V
           </div>
           {[
-            ["1. Embed", "Tokens → Q, K, V"],
-            ["2. Score", "QKᵀ / √dₖ"],
-            ["3. Softmax", "Normalize rows"],
-            ["4. Mix", "Weight V by attention"],
+            ["1. Embed", "Tokens → hashed 8-D Q, K, V (not pretrained)"],
+            ["2. Position", "Index is shown; no trained positional encoding in this lab"],
+            ["3. Score", "QKᵀ / √dₖ"],
+            ["4. Softmax", "Normalize rows"],
+            ["5. Mix / FFN / residual", "Output here is attention(V). FFN + residual are conceptual stages in the pipeline."],
           ].map((item) => (
             <article key={item[0]}>
               <b>{item[0]}</b>
@@ -268,6 +292,7 @@ export default function TransformerAttentionPage() {
           <button onClick={switchDataset}>Switch Sequence</button>
         </section>
       </aside>
+      </LabLessonOrWork>
       <footer>{toast}</footer>
     </div>
   );

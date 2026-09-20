@@ -91,7 +91,7 @@ export default function BiasVarianceApprovedPage() {
   const [seed, setSeed] = useState(42);
   const [scaling, setScaling] = useState(true);
   const [animating, setAnimating] = useState(false);
-  const { tab: activeTab, setTab: setActiveTab, panel, layout, lesson } = useLabTabs('Visualize', 'Visualize', ['Learn', 'Compare', 'Explain']);
+  const { tab: activeTab, setTab: setActiveTab, panel, layout, lesson } = useLabTabs('Learn');
   const [complete, setComplete] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [status, setStatus] = useState('Ready');

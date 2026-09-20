@@ -1,0 +1,51 @@
+.lab-pipeline {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+.lab-pipeline-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.lab-pipeline-steps button {
+  border: 1px solid var(--lab-line, rgba(127, 143, 175, 0.35));
+  border-radius: 999px;
+  background: var(--lab-panel, rgba(127, 143, 175, 0.08));
+  color: inherit;
+  padding: 6px 10px;
+  cursor: pointer;
+  font: inherit;
+}
+.lab-pipeline-steps button.active {
+  border-color: var(--lab-cyan, #4be8ea);
+  background: var(--lab-cyan-soft, rgba(75, 232, 234, 0.12));
+}
+.lab-pipeline-play {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.lab-pipeline-play button {
+  border: 1px solid var(--lab-line, rgba(127, 143, 175, 0.35));
+  border-radius: 6px;
+  background: var(--lab-panel, rgba(8, 18, 36, 0.6));
+  color: inherit;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.lab-pipeline-note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--lab-muted, #9aabc4);
+}
+@media (max-width: 700px) {
+  .lab-pipeline-steps {
+    flex-direction: column;
+  }
+  .lab-pipeline-steps button {
+    width: 100%;
+    text-align: left;
+    border-radius: 8px;
+  }
+}

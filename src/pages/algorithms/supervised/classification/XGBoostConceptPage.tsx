@@ -26,6 +26,7 @@ import {
 } from "../../../../lib/classification/classificationDatasets";
 import "./XGBoostConceptPage.css";
 import { useTheme } from "../../../../stores/uiStore";
+import { LabLessonOrWork, labHide } from "../../../../components/common/LabTabs";
 
 type Row = { features: number[]; target: number };
 type Dataset = "separable" | "moons" | "xor" | "imbalanced" | "circles" | "imported";
@@ -329,6 +330,7 @@ export default function XGBoostConceptPage() {
             </button>
           ))}
         </nav>
+        <LabLessonOrWork tab={tab} route="/ml/supervised/xgboost-concept">
         <section className="xgb-work">
           <article className="xgb-pipeline">
             <h2>
@@ -567,7 +569,7 @@ export default function XGBoostConceptPage() {
             </button>
           </article>
         </section>
-        <section className="xgb-diagnostics">
+        <section className={`xgb-diagnostics${labHide(tab, "metrics", "visualize")}`}>
           <article>
             <h2>
               Learning Curve <Info />
@@ -626,8 +628,9 @@ export default function XGBoostConceptPage() {
             </div>
           </article>
         </section>
+        </LabLessonOrWork>
       </main>
-      <aside className="xgb-controls">
+      <aside className={`xgb-controls${labHide(tab, "train", "dataset", "visualize")}`}>
         <h3>DATASET</h3>
         <select
           value={dataset}

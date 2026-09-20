@@ -11,6 +11,13 @@ import {
   Upload,
 } from "lucide-react";
 import { runMultiHeadAttention } from "../../../lib/algorithms/neural/attention";
+import {
+  LAB_TABS,
+  LabLessonOrWork,
+  useLabTabs,
+} from "../../../components/common/LabTabs";
+import { LabHeatmap } from "../../../components/common/LabHeatmap";
+import { LabPipeline } from "../../../components/common/LabPipeline";
 import "./MultiHeadAttentionPage.css";
 
 const initialRows = [
@@ -31,9 +38,9 @@ const colors = [
   "#48dfba",
 ];
 const focuses = [
-  "Independent projection 1",
-  "Independent projection 2",
-  "Independent projection 3",
+  "Conceptual: local / adjacent tokens (hashed projection 1)",
+  "Conceptual: longer-range pairs (hashed projection 2)",
+  "Conceptual: subject-like vs object-like tokens (hashed projection 3)",
   "Independent projection 4",
   "Independent projection 5",
   "Independent projection 6",
@@ -42,6 +49,7 @@ const focuses = [
 ];
 
 export default function MultiHeadAttentionPage() {
+  const { tab, setTab } = useLabTabs("Learn");
   const [rows, setRows] = useState(initialRows),
     [rowIndex, setRowIndex] = useState(0),
     [modelDim, setModelDim] = useState(512),
@@ -50,7 +58,7 @@ export default function MultiHeadAttentionPage() {
     [attentionDropout, setAttentionDropout] = useState(0.1),
     [bias, setBias] = useState(true),
     [causal, setCausal] = useState(false),
-    [view, setView] = useState("All Heads"),
+    [view, setView] = useState("Head 1"),
     [toast, setToast] = useState("All changes saved");
   const tokens = rows[rowIndex].split(/\s+/).filter(Boolean).slice(0, 10);
   let result: ReturnType<typeof runMultiHeadAttention>;
@@ -81,7 +89,7 @@ export default function MultiHeadAttentionPage() {
   }
   const visibleHeads =
       view === "All Heads"
-        ? result.heads
+        ? result.heads.slice(0, 4)
         : result.heads.length
           ? [
               result.heads[
@@ -194,22 +202,16 @@ export default function MultiHeadAttentionPage() {
           concatenated projection. Heads are not guaranteed to specialize as
           “syntax vs semantics.”
         </p>
-        <nav>
-          {[
-            "Learn",
-            "Visualize",
-            "Dataset",
-            "Build / Train",
-            "Metrics",
-            "Compare",
-            "Explain",
-          ].map((tab) => (
+        <nav role="tablist" aria-label="Multi-Head Attention sections">
+          {LAB_TABS.map((name) => (
             <button
-              className={tab === "Visualize" ? "active" : ""}
-              onClick={() => setToast(`${tab} selected`)}
-              key={tab}
+              role="tab"
+              aria-selected={tab === name}
+              className={tab === name ? "active" : ""}
+              onClick={() => setTab(name)}
+              key={name}
             >
-              {tab}
+              {name}
             </button>
           ))}
         </nav>
@@ -229,6 +231,7 @@ export default function MultiHeadAttentionPage() {
           </button>
         </div>
       </header>
+      <LabLessonOrWork tab={tab} route="/ml/deep-learning/multi-head-attention">
       <main>
         <section className="mha-input panel">
           <h3>INPUT SEQUENCE ⓘ</h3>
@@ -245,6 +248,12 @@ export default function MultiHeadAttentionPage() {
           </div>
         </section>
         <section className="mha-heads panel">
+          <LabPipeline
+            stages={["Input tokens", "Per-head Q/K/V", "Attention weights", "Concat + output projection"]}
+            active={2}
+            onSelect={undefined}
+            note="Each head is an independent hashed projection. Labels such as “local vs long-range” are conceptual, not trained specializations."
+          />
           <header>
             <h3>ATTENTION HEADS ({headCount} heads)</h3>
             <label>
@@ -257,6 +266,10 @@ export default function MultiHeadAttentionPage() {
               </select>
             </label>
           </header>
+          {view === "All Heads" && result.heads.length > 4 ? (
+            <p>Showing the first 4 heads so the matrices stay readable.</p>
+          ) : null}
+          {architectureError ? <p role="alert">{architectureError}</p> : null}
           <div className="head-grid">
             {visibleHeads.map((head, displayIndex) => {
               const actual =
@@ -272,10 +285,10 @@ export default function MultiHeadAttentionPage() {
                     Head {actual + 1}
                   </h3>
                   <p>Focus: {focuses[actual]}</p>
-                  <Heatmap
+                  <LabHeatmap
                     matrix={head.weights}
-                    tokens={tokens}
-                    color={colors[actual % colors.length]}
+                    rowLabels={tokens}
+                    colLabels={tokens}
                   />
                 </article>
               );
@@ -366,10 +379,11 @@ export default function MultiHeadAttentionPage() {
             <h3>
               ATTENTION FLOW <small>(Avg. across heads)</small>
             </h3>
-            <Heatmap
+            <LabHeatmap
               matrix={result.averageWeights}
-              tokens={tokens}
-              color="#8c6dff"
+              rowLabels={tokens}
+              colLabels={tokens}
+              caption="Average across heads (concatenated projection still uses all heads)."
             />
           </article>
         </section>
@@ -397,12 +411,12 @@ export default function MultiHeadAttentionPage() {
             </select>
           </label>
           <label>
-            Number of Heads (h)
+            Number of Heads (h) — separate attention projections
             <select
               value={headCount}
               onChange={(e) => {
                 setHeadCount(Number(e.target.value));
-                setView("All Heads");
+                setView("Head 1");
               }}
             >
               {[2, 3, 4, 6, 8].map((n) => (
@@ -498,6 +512,7 @@ export default function MultiHeadAttentionPage() {
           </p>
         </section>
       </aside>
+      </LabLessonOrWork>
       <footer>
         <em>
           Multi-Head Attention allows the model to attend to information from
@@ -508,41 +523,6 @@ export default function MultiHeadAttentionPage() {
           <Save /> Save
         </button>
       </footer>
-    </div>
-  );
-}
-
-function Heatmap({
-  matrix,
-  tokens,
-  color,
-}: {
-  matrix: number[][];
-  tokens: string[];
-  color: string;
-}) {
-  return (
-    <div
-      className="mha-heatmap"
-      style={{ gridTemplateColumns: `44px repeat(${tokens.length}, 1fr)` }}
-    >
-      <i />
-      {tokens.map((token, index) => (
-        <i key={index}>{token}</i>
-      ))}
-      {matrix.flatMap((row, r) => [
-        <i key={`l-${r}`}>{tokens[r]}</i>,
-        ...row.map((value, c) => (
-          <span
-            title={`${(value * 100).toFixed(1)}%`}
-            style={{
-              background: color,
-              opacity: 0.08 + Math.min(0.92, value * 5),
-            }}
-            key={`${r}-${c}`}
-          />
-        )),
-      ])}
     </div>
   );
 }

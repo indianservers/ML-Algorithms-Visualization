@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { BookOpen, CircleHelp, Settings, Star, Upload } from "lucide-react";
 import {
@@ -10,6 +10,9 @@ import { kernelCenteredMeans, kernelIsSymmetric } from "../../../lib/dimensional
 import { getDimensionalityDataset } from "../../../lib/dimensionality/dimensionalityDatasets";
 import { applyFeatureScale, fitFeatureScale, type FeatureScaleMode } from "../../../lib/dimensionality/dimensionalityPrep";
 import "./KernelPCAPage.css";
+import { LAB_TABS, LabLessonOrWork, labHide, useLabTabs } from "../../../components/common/LabTabs";
+import { LabHeatmap } from "../../../components/common/LabHeatmap";
+import { LabPipeline } from "../../../components/common/LabPipeline";
 type Point = { values: number[]; label: number };
 type Dataset = "rings" | "moons" | "spiral" | "blobs" | "swiss" | "imported";
 const rand = (i: number, s: number) => {
@@ -72,8 +75,8 @@ const NAMES: Record<Dataset, string> = {
 };
 const COLORS = ["#18cad8", "#ff6134"];
 export default function KernelPCAPage() {
-  const [tab, setTab] = useState("Visualize"),
-    [dataset, setDataset] = useState<Dataset>("rings"),
+  const { tab, setTab } = useLabTabs("Learn");
+  const [dataset, setDataset] = useState<Dataset>("rings"),
     [points, setPoints] = useState<Point[]>(BUILT.rings),
     [imported, setImported] = useState<Point[]>([]),
     [kernel, setKernel] = useState<KernelPCAKernel>("rbf"),
@@ -88,6 +91,8 @@ export default function KernelPCAPage() {
     [scale, setScale] = useState<FeatureScaleMode>("standard"),
     [cellI, setCellI] = useState(0),
     [cellJ, setCellJ] = useState(1),
+    [stage, setStage] = useState(0),
+    [playing, setPlaying] = useState(false),
     [toast, setToast] = useState("");
   const fileRef = useRef<HTMLInputElement>(null),
     X = useMemo(() => {
@@ -99,8 +104,20 @@ export default function KernelPCAPage() {
     }, [points, scale]);
   const kpRun = useMemo(() => {
     const capped = X.slice(0, Math.min(X.length, KERNEL_PCA_MAX_SAMPLES));
+    const safeGamma = gamma > 0 ? gamma : 1;
+    const safeDegree = Math.max(1, degree);
+    const safeComponents = Math.max(1, Math.min(components, capped.length));
     try {
-      return { value: kernelPCA(capped, components, kernel, gamma, degree, coef0, center, scale === "standard"), error: null as string | null, n: capped.length };
+      return {
+        value: kernelPCA(capped, safeComponents, kernel, safeGamma, safeDegree, coef0, center, scale === "standard"),
+        error:
+          gamma <= 0
+            ? "Gamma must be positive; using 1."
+            : components < 1
+              ? "Need at least one component."
+              : null as string | null,
+        n: capped.length,
+      };
     } catch (cause) {
       return { value: null, error: cause instanceof Error ? cause.message : "Kernel PCA failed", n: capped.length };
     }
@@ -161,18 +178,34 @@ export default function KernelPCAPage() {
     event.target.value = "";
   };
   const pct = (value: number) => 50 + value * 20,
-    matrixOrder = Array.from({ length: 1024 }, (_, i) => {
-      const row = Math.round((Math.floor(i / 32) / 31) * (points.length - 1)),
-        col = Math.round(((i % 32) / 31) * (points.length - 1));
-      return result.centeredKernel[row][col];
-    }),
-    matrixMax = Math.max(...matrixOrder.map(Math.abs), 1e-9),
     cumulative = result.explainedVariance.reduce<number[]>(
       (all, value) => all.concat((all.at(-1) || 0) + value),
       [],
     ),
     pairVariance =
       (result.explainedVariance[0] || 0) + (result.explainedVariance[1] || 0);
+  const KP_STAGES = [
+    "Input geometry",
+    "Kernel relationships",
+    "Feature-map intuition",
+    "Principal directions",
+    "Final projection",
+  ];
+  const heatN = Math.min(16, result.kernel.length);
+  const kernelPreview = result.kernel.slice(0, heatN).map((row) => row.slice(0, heatN));
+  useEffect(() => {
+    if (!playing) return undefined;
+    const timer = window.setInterval(() => {
+      setStage((current) => {
+        if (current >= 4) {
+          setPlaying(false);
+          return current;
+        }
+        return current + 1;
+      });
+    }, 900);
+    return () => window.clearInterval(timer);
+  }, [playing]);
   return (
     <div className="kp-page">
       <aside className="kp-side">
@@ -231,15 +264,7 @@ export default function KernelPCAPage() {
       </header>
       <main>
         <nav>
-          {[
-            "Learn",
-            "Visualize",
-            "Dataset",
-            "Build / Train",
-            "Metrics",
-            "Compare",
-            "Explain",
-          ].map((name) => (
+          {LAB_TABS.map((name) => (
             <button
               className={tab === name ? "active" : ""}
               onClick={() => setTab(name)}
@@ -249,7 +274,8 @@ export default function KernelPCAPage() {
             </button>
           ))}
         </nav>
-        <section className="kp-data">
+        <LabLessonOrWork tab={tab} route="/ml/dimensionality-reduction/kernel-pca">
+        <section className={`kp-data${labHide(tab, "Dataset")}`}>
           <label>
             Dataset
             <select
@@ -278,7 +304,25 @@ export default function KernelPCAPage() {
             · Gamma controls RBF locality. Linear kernel relates to PCA subspace after centering (orientation/sign may differ).
           </p>
         </section>
-        <section className="kp-panels">
+        <section className={`kp-panels${labHide(tab, "Visualize", "Train")}`}>
+          <LabPipeline
+            stages={KP_STAGES}
+            active={stage}
+            onSelect={(index) => {
+              setPlaying(false);
+              setStage(index);
+            }}
+            playing={playing}
+            onPlay={() => setPlaying(true)}
+            onPause={() => setPlaying(false)}
+            onStep={() => setStage((current) => Math.min(4, current + 1))}
+            onReset={() => {
+              setPlaying(false);
+              setStage(0);
+            }}
+            note="Schematic ϕ is not the infinite feature space. Kernel PCA eigen-decomposes the centered Gram matrix."
+          />
+          {stage === 0 && (
           <article>
             <h3>1. Original features (first 2 shown — not the full geometry if dim&gt;2)</h3>
             <div className="kp-scatter axes">
@@ -300,9 +344,24 @@ export default function KernelPCAPage() {
             <b>x₁</b>
             <em>x₂</em>
           </article>
-          <strong>→</strong>
+          )}
+          {stage === 1 && (
           <article>
-            <h3>2. Kernel feature map (schematic only — not ϕ itself)</h3>
+            <h3>2. Pairwise kernel similarities (16×16 preview of K)</h3>
+            <LabHeatmap
+              matrix={kernelPreview}
+              caption="Computed kernel values, not a drawing of ϕ."
+              selected={{ r: Math.min(cellI, heatN - 1), c: Math.min(cellJ, heatN - 1) }}
+              onSelect={(cell) => {
+                setCellI(cell.r);
+                setCellJ(cell.c);
+              }}
+            />
+          </article>
+          )}
+          {stage === 2 && (
+          <article>
+            <h3>3. Kernel feature map (conceptual visualization — not ϕ itself)</h3>
             <div className="kp-bowl">
               <i></i>
               {points.slice(0, 160).map((p, i) => (
@@ -316,12 +375,26 @@ export default function KernelPCAPage() {
                 />
               ))}
             </div>
-            <b>ϕ₂ / ϕ₂</b>
-            <em>ϕ₃</em>
+            <b>schematic</b>
+            <em>not ∞-D</em>
           </article>
-          <strong>→</strong>
+          )}
+          {stage === 3 && (
           <article>
-            <h3>3. Kernel PCA Projection (PC₁ vs PC₂)</h3>
+            <h3>4. Principal directions in the centered kernel</h3>
+            <p>
+              Top eigenvalues:{" "}
+              {result.eigenvalues
+                .slice(0, 4)
+                .map((value, i) => `λ${i + 1}=${value.toFixed(3)}`)
+                .join(" · ")}
+            </p>
+            <p>Explained by first two: {(pairVariance * 100).toFixed(1)}%</p>
+          </article>
+          )}
+          {stage === 4 && (
+          <article>
+            <h3>5. Kernel PCA Projection (PC₁ vs PC₂)</h3>
             <div className="kp-scatter axes">
               {result.projection.map((p, i) => (
                 <i
@@ -340,21 +413,16 @@ export default function KernelPCAPage() {
             <b>PC₁</b>
             <em>PC₂</em>
           </article>
+          )}
         </section>
-        <section className="kp-results">
+        <section className={`kp-results${labHide(tab, "Metrics")}`}>
           <article>
             <h3>Kernel (Gram) Matrix K</h3>
-            <p>Preview (first 200 samples)</p>
-            <div className="kp-matrix">
-              {matrixOrder.map((value, i) => (
-                <i
-                  key={i}
-                  style={{
-                    background: `hsl(${285 - (value / matrixMax) * 220} 85% ${35 + Math.abs(value / matrixMax) * 35}%)`,
-                  }}
-                />
-              ))}
-            </div>
+            <LabHeatmap
+              matrix={kernelPreview}
+              signed
+              caption={`Preview ${heatN}×${heatN} of the computed kernel.`}
+            />
           </article>
           <article>
             <h3>Eigenvalue Spectrum</h3>
@@ -409,8 +477,9 @@ export default function KernelPCAPage() {
             embedding.
           </span>
         </footer>
+        </LabLessonOrWork>
       </main>
-      <aside className="kp-controls">
+      <aside className={`kp-controls${labHide(tab, "Train", "Transform", "Visualize")}`}>
         <h4>PARAMETER INSPECTOR</h4>
         <h3>Kernel</h3>
         <div className="kernel-tabs">
@@ -455,7 +524,7 @@ export default function KernelPCAPage() {
         </label>
         <p>Kernel PCA uses a centered kernel matrix. Reconstruction in input space is not claimed. Large N makes K an N×N matrix.</p>
         <label>
-          Gamma (γ) ⓘ{" "}
+          Gamma (γ) — RBF locality (must be &gt; 0)
           <input
             aria-label="Gamma numeric"
             type="number"

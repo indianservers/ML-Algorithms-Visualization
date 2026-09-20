@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { LabLessonPanel } from "../../../../components/common/LabTabs";
 import {
   Award,
   BarChart3,
@@ -727,6 +728,10 @@ export default function KNNClassificationPage() {
   );
 
   const genericPanel = () => {
+    if (tab === "learn")
+      return (
+        <LabLessonPanel tab="Learn" route="/ml/supervised/knn-classification" />
+      );
     if (tab === "dataset")
       return (
         <section className="knn-wide-card knn-dataset-card">

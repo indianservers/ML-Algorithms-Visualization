@@ -52,11 +52,7 @@ const BUILT = {
     imported: "Imported Data",
   };
 export default function UMAPConceptPage() {
-  const { tab, setTab, panel, lesson } = useLabTabs(
-    "Visualize",
-    "Visualize",
-    ["Learn", "Compare", "Explain"],
-  );
+  const { tab, setTab, panel, lesson } = useLabTabs("Visualize");
   const [dataset, setDataset] = useState<Dataset>("digits"),
     [samples, setSamples] = useState<Sample[]>(BUILT.digits),
     [imported, setImported] = useState<Sample[]>([]),
@@ -104,11 +100,23 @@ export default function UMAPConceptPage() {
       setToast(cause instanceof Error ? cause.message : "UMAP failed");
     }
   };
-  useEffect(() => () => {
-    abortRef.current = true;
-  }, []);
   useEffect(() => {
-    setStatus((current) => (current === "NOT RUN" || current === "ERROR" ? current : "STALE"));
+    runUmap();
+    return () => {
+      abortRef.current = true;
+    };
+    // First educational embedding only; later runs require Recompute.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const skipStale = useRef(true);
+  useEffect(() => {
+    setStatus((current) => {
+      if (skipStale.current) {
+        skipStale.current = false;
+        return current;
+      }
+      return current === "NOT RUN" || current === "ERROR" ? current : "STALE";
+    });
   }, [samples, neighbors, minDist, metric, seed, spread, angular]);
   const result = umapResult ?? {
     embedding: [] as number[][],
@@ -260,8 +268,13 @@ export default function UMAPConceptPage() {
             route="/ml/dimensionality-reduction/umap-concept"
           />
         )}
+        {status === "RUNNING" ? (
+          <p className="um-busy">Recomputing embedding…</p>
+        ) : status === "STALE" ? (
+          <p className="um-busy">Parameters changed — click Recompute Embedding.</p>
+        ) : null}
         <section
-          className={`um-panels${panel("Dataset", "Build / Train")}`}
+          className={`um-panels${panel("Visualize", "Dataset", "Build / Train")}`}
         >
           <article>
             <h3>
@@ -329,7 +342,7 @@ export default function UMAPConceptPage() {
           </article>
         </section>
         <section
-          className={`um-results${panel("Build / Train", "Metrics")}`}
+          className={`um-results${panel("Visualize", "Build / Train", "Metrics")}`}
         >
           <article>
             <h3>Topology Preservation</h3>
@@ -398,7 +411,7 @@ export default function UMAPConceptPage() {
           UMAP Parameters <button onClick={reset}>⟳ Reset</button>
         </h2>
         <label>
-          n_neighbors ⓘ{" "}
+          n_neighbors — how local vs global the embedding behaves
           <input
             aria-label="Neighbors numeric"
             type="number"
@@ -415,9 +428,12 @@ export default function UMAPConceptPage() {
             value={neighbors}
             onChange={(e) => setNeighbors(Number(e.target.value))}
           />
+          {neighbors >= samples.length ? (
+            <small>n_neighbors must be &lt; n. Using {Math.max(2, samples.length - 1)}.</small>
+          ) : null}
         </label>
         <label>
-          min_dist ⓘ{" "}
+          min_dist — packing tightness in the 2D picture
           <input
             aria-label="Minimum distance numeric"
             type="number"

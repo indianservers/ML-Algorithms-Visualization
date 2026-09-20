@@ -1213,12 +1213,14 @@
 }
 .knn-compare-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 20px;
   margin-top: 35px;
 }
 .knn-compare-grid article {
-  height: 290px;
+  min-height: 220px;
+  height: auto;
+  padding: 16px 12px;
   border: 1px solid var(--glow-line-strong);
   border-radius: var(--glow-radius);
   background: var(--glow-panel);

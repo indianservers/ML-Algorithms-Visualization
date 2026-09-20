@@ -1,6 +1,7 @@
 .ld-page {
   min-height: 941px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: radial-gradient(circle at 55% 0, #0b162a, #030a17 64%);
   color: #eef3fa;
   font:
@@ -300,7 +301,8 @@
   border-left: 1px solid #728197;
   border-bottom: 1px solid #728197;
 }
-.ld-hist i {
+.ld-hist i,
+.ld-hist span {
   position: absolute;
   bottom: 0;
   width: 8px;

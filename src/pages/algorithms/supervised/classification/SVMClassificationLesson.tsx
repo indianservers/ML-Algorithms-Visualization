@@ -1,5 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { LabProgressMeter } from "../../../../components/common/LabChrome";
+import { LabLessonPanel } from "../../../../components/common/LabTabs";
 import {
   BarChart3,
   BookOpen,
@@ -190,7 +192,6 @@ export default function SVMClassificationLesson() {
     event.target.value = "";
   };
   const reset = () => {
-    setTab("visualize");
     setDataset("moons");
     setPoints(BUILT_INS.moons.map((point) => ({ ...point })));
     setKernel("linear");
@@ -377,7 +378,7 @@ export default function SVMClassificationLesson() {
             while kernels create nonlinear boundaries through similarity
             functions.
           </p>
-          {plot}
+          <LabLessonPanel tab="Learn" route="/ml/supervised/svm-classification" />
         </section>
       );
     if (tab === "dataset")
@@ -680,10 +681,7 @@ export default function SVMClassificationLesson() {
           </div>
           <aside>
             <span>Lesson Progress</span>
-            <i>
-              <b />
-            </i>
-            <em>68%</em>
+            <LabProgressMeter />
             <button onClick={() => setToast("Lesson marked complete")}>
               <CheckCircle2 /> Mark Complete
             </button>

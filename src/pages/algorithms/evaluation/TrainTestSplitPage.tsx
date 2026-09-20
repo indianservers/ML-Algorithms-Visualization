@@ -5,6 +5,7 @@ import {
   classDistribution,
   threeWaySplit,
 } from "../../../lib/preprocessing/threeWaySplit";
+import { LabLessonOrWork, labHide } from "../../../components/common/LabTabs";
 import "./TrainTestSplitPage.css";
 
 type Row = {
@@ -60,7 +61,7 @@ export default function TrainTestSplitPage() {
     [stratify, setStratify] = useState(true),
     [shuffled, setShuffled] = useState(true),
     [advanced, setAdvanced] = useState(false),
-    [tab, setTab] = useState("Visualize"),
+    [tab, setTab] = useState("Learn"),
     [message, setMessage] = useState("Shuffled"),
     [progress, setProgress] = useState(42);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -227,10 +228,11 @@ export default function TrainTestSplitPage() {
         </nav>
       </header>
       <main>
-        <h3>
+        <LabLessonOrWork tab={tab} route="/ml/evaluation/train-test-split">
+        <h3 className={labHide(tab, "Visualize", "Train").trim()}>
           <i>1</i> Drag to split your data
         </h3>
-        <section className="split-flow">
+        <section className={`split-flow${labHide(tab, "Visualize", "Train")}`}>
           <article>
             <span>Dataset</span>
             <b>▤ {customRows ? "Uploaded Dataset" : catalog.name}</b>
@@ -298,11 +300,11 @@ export default function TrainTestSplitPage() {
             {shuffled ? "Shuffled ✓" : "Original order"}
           </button>
         </p>
-        <h3>
+        <h3 className={labHide(tab, "Dataset", "Metrics").trim()}>
           <i>2</i> Distribution Check{" "}
           <span>{stratify ? "Good balance" : "Unstratified"}</span>
         </h3>
-        <section className="distribution">
+        <section className={`distribution${labHide(tab, "Dataset", "Metrics")}`}>
           {distributionCards.map((card) => (
             <article className="panel" key={card.title}>
               <header>
@@ -343,7 +345,7 @@ export default function TrainTestSplitPage() {
             </svg>
           </article>
         </section>
-        <section className="linked panel">
+        <section className={`linked panel${labHide(tab, "Metrics")}`}>
           <h3>Linked Insights</h3>
           <div>
             {[
@@ -365,8 +367,9 @@ export default function TrainTestSplitPage() {
             })}
           </div>
         </section>
+        </LabLessonOrWork>
       </main>
-      <aside className="split-controls">
+      <aside className={`split-controls${labHide(tab, "Train", "Transform", "Dataset")}`}>
         <section className="panel ratios">
           <h3>
             Split Ratios <button onClick={reset}>Reset</button>

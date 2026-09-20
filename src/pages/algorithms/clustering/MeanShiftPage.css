@@ -1,6 +1,7 @@
 .ms-page {
   min-height: 941px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: radial-gradient(circle at 55% 0, #111b32, #030b19 58%);
   color: #f5f7fb;
   font:

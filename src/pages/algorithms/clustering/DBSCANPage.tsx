@@ -69,11 +69,7 @@ const LABELS: Record<Dataset, string> = {
 };
 
 export default function DBSCANPage() {
-  const { tab, setTab, panel, layout, lesson } = useLabTabs(
-      "Visualize",
-      "Visualize",
-      ["Learn", "Compare", "Explain"],
-    ),
+  const { tab, setTab, panel, layout, lesson } = useLabTabs("Learn"),
     [dataset, setDataset] = useState<Dataset>("moons"),
     [points, setPoints] = useState<Point[]>(BUILT.moons),
     [imported, setImported] = useState<Point[]>([]),
@@ -296,7 +292,7 @@ export default function DBSCANPage() {
           </button>
           <input ref={fileRef} type="file" accept=".csv" onChange={upload} />
         </section>
-        <section className={`db-stage${panel("Train")}`}>
+        <section className={`db-stage${panel("Visualize", "Train")}`}>
           <aside>
             <b>☼ Step {step} of 18</b>
             <h3>
@@ -479,7 +475,7 @@ export default function DBSCANPage() {
             ))}
           </article>
         </section>
-        <footer className={`db-info${panel("Train", "Dataset", "Metrics")}`}>
+        <footer className={`db-info${panel("Visualize", "Train", "Dataset", "Metrics")}`}>
           ⓘ DBSCAN finds clusters of arbitrary shape and handles noise. It does
           not require the number of clusters in advance.
           <button onClick={() => setToast("Mathematical details opened")}>

@@ -59,8 +59,17 @@ export const RouteSearchModal: React.FC<RouteSearchModalProps> = ({ open, onClos
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-gray-950/45 p-3 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Route search">
-      <div className="mx-auto mt-12 max-w-2xl overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900">
+    <div
+      className="fixed inset-0 z-50 bg-gray-950/45 p-3 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Route search"
+      onClick={onClose}
+    >
+      <div
+        className="mx-auto mt-12 max-w-2xl overflow-hidden rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900"
+        onClick={(event) => event.stopPropagation()}
+      >
         <div className="flex items-center gap-3 border-b border-gray-200 px-4 py-3 dark:border-gray-700">
           <Search size={17} className="text-gray-400" />
           <input

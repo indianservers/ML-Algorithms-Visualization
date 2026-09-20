@@ -26,7 +26,7 @@ export function Formula({ value, block = false, explanation }: { value: string; 
   const Tag = block ? 'div' : 'span';
   return (
     <Tag
-      className={`${block ? 'overflow-x-auto rounded bg-gray-50 p-3 text-sm dark:bg-gray-900' : ''} cursor-help`}
+      className={`${block ? 'lab-math overflow-x-auto rounded p-3 text-sm' : 'lab-math'} cursor-help`}
       title={explanation ?? explainFormula(value)}
       dangerouslySetInnerHTML={{ __html: html }}
     />

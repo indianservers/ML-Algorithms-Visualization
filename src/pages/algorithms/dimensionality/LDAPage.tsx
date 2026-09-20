@@ -11,6 +11,7 @@ import {
 import { pca } from "../../../lib/algorithms/dimensionality/pca";
 import { getDimensionalityDataset } from "../../../lib/dimensionality/dimensionalityDatasets";
 import "./LDAPage.css";
+import { LAB_TABS, LabLessonOrWork, labHide, useLabTabs } from "../../../components/common/LabTabs";
 
 type Sample = { values: number[]; label: number };
 type Dataset = "iris" | "wine" | "medical" | "imported";
@@ -33,8 +34,8 @@ const BUILT = {
     imported: "Imported Data",
   };
 export default function LDAPage() {
-  const [tab, setTab] = useState("Visualize"),
-    [dataset, setDataset] = useState<Dataset>("iris"),
+  const { tab, setTab } = useLabTabs("Learn");
+  const [dataset, setDataset] = useState<Dataset>("iris"),
     [samples, setSamples] = useState<Sample[]>(BUILT.iris),
     [imported, setImported] = useState<Sample[]>([]),
     [featureX, setFeatureX] = useState(2),
@@ -120,6 +121,8 @@ export default function LDAPage() {
     ry = range(samples.map((s) => s.values[featureY] ?? 0)),
     rs = range(result?.scores ?? [0, 1]),
     rld2 = range(result?.projections.map((row) => row[1] ?? 0) ?? [0, 1]),
+    rpcaX = range(pcaCompare.projections.map((row) => row[0] ?? 0)),
+    rpcaY = range(pcaCompare.projections.map((row) => row[1] ?? 0)),
     confusion = result
       ? classes.map((actual) =>
           classes.map(
@@ -179,7 +182,8 @@ export default function LDAPage() {
         <h1>Linear Discriminant Analysis</h1>
         <p>
           Finds the projection that maximizes between-class separation relative
-          to within-class scatter.
+          to within-class scatter. This is Linear Discriminant Analysis, not
+          Latent Dirichlet Allocation.
         </p>
         <div>
           <button onClick={() => setToast("Help opened")}>
@@ -199,15 +203,7 @@ export default function LDAPage() {
       </header>
       <main>
         <nav>
-          {[
-            "Learn",
-            "Visualize",
-            "Dataset",
-            "Build / Train",
-            "Metrics",
-            "Compare",
-            "Explain",
-          ].map((name) => (
+          {LAB_TABS.map((name) => (
             <button
               className={tab === name ? "active" : ""}
               onClick={() => setTab(name)}
@@ -217,7 +213,8 @@ export default function LDAPage() {
             </button>
           ))}
         </nav>
-        <section className="ld-data">
+        <LabLessonOrWork tab={tab} route="/ml/dimensionality-reduction/lda">
+        <section className={`ld-data${labHide(tab, "Dataset")}`}>
           <b>Dataset</b>
           <select
             value={dataset}
@@ -247,7 +244,7 @@ export default function LDAPage() {
           </span>
           <em>● Ready</em>
         </section>
-        <section className="ld-visual">
+        <section className={`ld-visual${labHide(tab, "Visualize", "Train")}`}>
           <article>
             <h3>Feature Space (Original)</h3>
             <select
@@ -329,14 +326,29 @@ export default function LDAPage() {
                   · PCA on the same scaled features is unsupervised variance, not class separation.
                 </footer>
                 <p>
-                  PCA PC1/PC2 first point: {pcaCompare.projections[0]?.map((v) => v.toFixed(2)).join(", ")} vs LDA{" "}
+                  PCA (unsupervised variance) PC1/PC2 first point:{" "}
+                  {pcaCompare.projections[0]?.map((v) => v.toFixed(2)).join(", ")} vs LDA{" "}
                   {result.projections[0]?.map((v) => v.toFixed(2)).join(", ")}
                 </p>
+                <h4>PCA on the same points (no labels)</h4>
+                <div className="ld-scatter">
+                  {samples.map((sample, i) => (
+                    <i
+                      key={i}
+                      style={{
+                        left: `${7 + ((pcaCompare.projections[i][0] - rpcaX.min) / rpcaX.span) * 86}%`,
+                        top: `${93 - (( (pcaCompare.projections[i][1] ?? 0) - rpcaY.min) / rpcaY.span) * 86}%`,
+                        background: COLORS[sample.label % COLORS.length],
+                      }}
+                    />
+                  ))}
+                </div>
+                <footer>Colors are labels for comparison only — PCA did not use them.</footer>
               </>
             )}
           </article>
         </section>
-        <section className="ld-results">
+        <section className={`ld-results${labHide(tab, "Metrics")}`}>
           <article>
             <h3>Class Statistics (Original Space)</h3>
             {classes.map((label, ci) => (
@@ -378,18 +390,31 @@ export default function LDAPage() {
             </p>
           </article>
           <article>
-            <h3>Projection Histogram</h3>
+            <h3>Projection Histogram (counts on LD1)</h3>
             <div className="ld-hist">
-              {samples.map((_, i) => (
-                <i
-                  key={i}
-                  style={{
-                    left: `${((result.scores[i] - rs.min) / rs.span) * 96}%`,
-                    height: `${12 + (i % 13) * 4}px`,
-                    background: COLORS[y[i] % COLORS.length],
-                  }}
-                />
-              ))}
+              {Array.from({ length: 24 }, (_, bin) => {
+                const counts = classes.map(
+                  (label) =>
+                    samples.filter((_, i) => {
+                      const t = (result.scores[i] - rs.min) / rs.span;
+                      return (
+                        y[i] === label &&
+                        Math.min(23, Math.max(0, Math.floor(t * 24))) === bin
+                      );
+                    }).length,
+                );
+                const total = counts.reduce((sum, n) => sum + n, 0);
+                return (
+                  <span
+                    key={bin}
+                    style={{
+                      left: `${(bin / 24) * 96}%`,
+                      height: `${4 + (total / Math.max(1, samples.length / 6)) * 28}px`,
+                      background: COLORS[counts.indexOf(Math.max(...counts)) % COLORS.length],
+                    }}
+                  />
+                );
+              })}
             </div>
           </article>
           <article>
@@ -422,8 +447,9 @@ export default function LDAPage() {
           <sub>W</sub>w. Project data onto w to achieve maximal class separation
           in 1D.
         </footer>
+        </LabLessonOrWork>
       </main>
-      <aside className="ld-controls">
+      <aside className={`ld-controls${labHide(tab, "Train", "Transform", "Visualize")}`}>
         <h2>Discriminant Controls</h2>
         <label>
           Solver
@@ -490,9 +516,16 @@ export default function LDAPage() {
           </label>
         </fieldset>
         <label>
-          Components ⓘ{" "}
-          <select>
-            <option>1 (LDA)</option>
+          Components ⓘ (capped at min(p, C−1) = {ldaMax}){" "}
+          <select
+            value={Math.min(requestedComponents, ldaMax)}
+            onChange={(e) => setRequestedComponents(Number(e.target.value))}
+          >
+            {Array.from({ length: Math.max(1, ldaMax) }, (_, i) => i + 1).map((n) => (
+              <option value={n} key={n}>
+                {n}
+              </option>
+            ))}
           </select>
         </label>
         <section>

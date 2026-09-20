@@ -1,6 +1,7 @@
 .op-page {
   min-height: 941px;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: radial-gradient(circle at 60% 0, #0d1b30, #050c19 62%);
   color: #eef3fb;
   font:
@@ -234,6 +235,11 @@
 }
 .op-grid > i.core {
   box-shadow: 0 0 0 1px currentColor;
+}
+.op-grid > i.current {
+  outline: 2px solid #4be8ea;
+  outline-offset: 2px;
+  z-index: 2;
 }
 .op-grid > svg {
   position: absolute;

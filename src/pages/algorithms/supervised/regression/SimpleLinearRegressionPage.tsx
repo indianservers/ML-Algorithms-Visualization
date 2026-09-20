@@ -451,6 +451,17 @@ export default function SimpleLinearRegressionPage() {
       </aside>
 
       <main className="slr-main">
+        <section className="slr-flow" aria-label="Lesson steps">
+          {lessonSteps.map((step, index) => (
+            <React.Fragment key={step.title}>
+              <button type="button" className={activeStep === index ? 'active' : ''} onClick={() => goToStep(index)}>
+                <b>{index + 1}</b>
+                <span><strong>{step.title}</strong><small>{step.hint}</small></span>
+              </button>
+              {index < lessonSteps.length - 1 && <span className="flow-dots">•••</span>}
+            </React.Fragment>
+          ))}
+        </section>
         <header className="slr-header">
           <div>
             <div className="slr-title-row"><h1>Simple Linear Regression</h1><span>Beginner</span></div>
@@ -818,18 +829,6 @@ export default function SimpleLinearRegressionPage() {
             )}
           </section>
         )}
-
-        <section className="slr-flow">
-          {lessonSteps.map((step, index) => (
-            <React.Fragment key={step.title}>
-              <button type="button" className={activeStep === index ? 'active' : ''} onClick={() => goToStep(index)}>
-                <b>{index + 1}</b>
-                <span><strong>{step.title}</strong><small>{step.hint}</small></span>
-              </button>
-              {index < lessonSteps.length - 1 && <span className="flow-dots">•••</span>}
-            </React.Fragment>
-          ))}
-        </section>
       </main>
     </div>
   );

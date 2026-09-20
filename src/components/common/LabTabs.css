@@ -52,6 +52,89 @@
   background: var(--panel, rgba(127, 143, 175, 0.06));
   padding: 16px 18px 20px;
 }
+.lab-tab-lesson.lab-tab-guide {
+  grid-template-columns: 1fr;
+  width: 100%;
+  max-width: none;
+}
+.lab-guide-learn {
+  display: grid;
+  gap: 16px;
+}
+.lab-guide-hero {
+  padding: 2px 2px 4px;
+}
+.lab-guide-hero p {
+  font-size: 15px;
+  line-height: 1.65;
+  max-width: none;
+}
+.lab-guide-important {
+  border: 1px solid rgba(124, 92, 252, 0.35);
+  border-radius: 10px;
+  padding: 14px 16px 16px;
+  background:
+    linear-gradient(180deg, rgba(124, 92, 252, 0.12), rgba(124, 92, 252, 0.04));
+}
+.lab-guide-important h3 {
+  color: inherit;
+}
+.lab-guide-important ul {
+  display: grid;
+  gap: 8px;
+}
+.lab-guide-theory p {
+  max-width: none;
+}
+.lab-guide-steps {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 8px;
+  line-height: 1.6;
+}
+.lab-guide-split {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+.lab-guide-split section {
+  border: 1px solid var(--border, rgba(127, 143, 175, 0.35));
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: rgba(127, 143, 175, 0.06);
+}
+.lab-guide-example {
+  border: 1px dashed var(--border, rgba(127, 143, 175, 0.45));
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: rgba(56, 189, 248, 0.06);
+}
+.lab-guide-terms div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.lab-guide-terms a {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border: 1px solid var(--border, rgba(124, 92, 252, 0.45));
+  border-radius: 999px;
+  background: rgba(124, 92, 252, 0.1);
+  font-size: 13px;
+}
+.lab-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+.lab-guide-grid article {
+  border: 1px solid var(--border, rgba(127, 143, 175, 0.35));
+  border-radius: 8px;
+  padding: 12px 14px 14px;
+  background: rgba(127, 143, 175, 0.06);
+}
 .lab-tab-lesson > header {
   grid-column: 1 / -1;
   display: flex;
@@ -66,14 +149,15 @@
   opacity: 0.7;
 }
 .lab-tab-lesson h3 {
-  font-size: 11px;
-  letter-spacing: 0.35px;
-  text-transform: uppercase;
-  opacity: 0.75;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  opacity: 1;
   margin: 0 0 6px;
 }
 .lab-tab-lesson p {
   margin: 0 0 8px;
+  font-size: 14px;
   line-height: 1.6;
 }
 .lab-tab-lesson ul {

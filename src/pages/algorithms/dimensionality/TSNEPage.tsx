@@ -42,11 +42,7 @@ const BUILT = {
     imported: "Imported Data",
   };
 export default function TSNEPage() {
-  const { tab, setTab, panel, layout, lesson } = useLabTabs(
-    "Visualize",
-    "Visualize",
-    ["Learn", "Compare", "Explain"],
-  );
+  const { tab, setTab, panel, lesson } = useLabTabs("Visualize");
   const [dataset, setDataset] = useState<Dataset>("digits"),
     [samples, setSamples] = useState<Sample[]>(BUILT.digits),
     [imported, setImported] = useState<Sample[]>([]),
@@ -144,14 +140,35 @@ export default function TSNEPage() {
       .sort((a, b) => a - b),
     max = magnitudes[Math.floor(magnitudes.length * 0.9)] || 1,
     plot = (value: number) =>
-      Math.max(4, Math.min(96, 50 + (value / max) * 42)),
-    choose = (kind: Dataset) => {
-      const next = kind === "imported" ? imported : BUILT[kind];
-      if (!next.length) return;
-      setDataset(kind);
-      setSamples(next);
-      setToast(`${NAMES[kind]} loaded`);
-    };
+      Math.max(4, Math.min(96, 50 + (value / max) * 42));
+  const highD = useMemo(() => {
+    const xs = samples.map((sample) => sample.values[0] ?? 0);
+    const ys = samples.map((sample) => sample.values[1] ?? 0);
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    const spanX = maxX - minX || 1;
+    const spanY = maxY - minY || 1;
+    return samples.map((sample, index) => ({
+      key: index,
+      left: 8 + ((sample.values[0] - minX) / spanX) * 84,
+      top: 8 + ((sample.values[1] - minY) / spanY) * 84,
+      color: COLORS[sample.label % COLORS.length],
+    }));
+  }, [samples]);
+  useEffect(() => {
+    runTsne();
+    // First open should already show a projection. Later runs stay on the button.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const choose = (kind: Dataset) => {
+    const next = kind === "imported" ? imported : BUILT[kind];
+    if (!next.length) return;
+    setDataset(kind);
+    setSamples(next);
+    setToast(`${NAMES[kind]} loaded`);
+  };
   const upload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -293,7 +310,7 @@ export default function TSNEPage() {
         {lesson && (
           <LabLessonPanel tab={tab} route="/ml/dimensionality-reduction/tsne" />
         )}
-        <section className={`ts-work${panel("Build / Train")}`}>
+        <section className={`ts-work${panel("Visualize", "Build / Train")}`}>
           <header>
             <h2>Interactive t-SNE Visualization ⓘ</h2>
             {error && <p>{error}</p>}
@@ -341,13 +358,13 @@ export default function TSNEPage() {
               </h3>
               <p>Original space (P)</p>
               <div className="ts-cube">
-                {samples.map((sample, i) => (
+                {highD.map((point) => (
                   <i
-                    key={i}
+                    key={point.key}
                     style={{
-                      left: `${15 + ((sample.values[0] + 3) / 6) * 70}%`,
-                      top: `${15 + ((sample.values[1] + 3) / 6) * 70}%`,
-                      background: COLORS[sample.label % COLORS.length],
+                      left: `${point.left}%`,
+                      top: `${point.top}%`,
+                      background: point.color,
                     }}
                   />
                 ))}
@@ -402,7 +419,7 @@ export default function TSNEPage() {
             </p>
           </footer>
         </section>
-        <section className={`ts-bottom${layout}`}>
+        <section className={`ts-bottom${panel("Dataset", "Metrics")}`}>
           <article className={panel("Dataset").trim()}>
             <h3>Dataset ⓘ</h3>
             <select
@@ -457,7 +474,7 @@ export default function TSNEPage() {
           </article>
         </section>
       </main>
-      <aside className="ts-controls">
+      <aside className={`ts-controls${panel("Visualize", "Build / Train", "Metrics")}`}>
         <h2>
           Parameters <button onClick={reset}>↶</button>
         </h2>

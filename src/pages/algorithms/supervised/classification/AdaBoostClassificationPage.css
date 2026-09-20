@@ -6,7 +6,7 @@
   --muted: #9ba8bb;
   width: 100%;
   min-height: 100vh;
-  overflow: hidden;
+  overflow: auto;
   color: var(--text);
   background: radial-gradient(circle at 55% -15%, #12243f, var(--bg) 46%);
   font:
@@ -289,14 +289,20 @@
   border-color: #4b83ff;
 }
 .ada-work {
-  position: absolute;
-  inset: 82px 9px 0 12px;
+  position: relative;
+  inset: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 309px);
+  gap: 12px;
+  padding: 82px 12px 28px;
+  overflow: auto;
 }
 .ada-main {
-  position: absolute;
-  top: 121px;
-  left: 0;
-  width: 1081px;
+  position: relative;
+  top: auto;
+  left: auto;
+  width: auto;
+  min-width: 0;
 }
 .ada-visual,
 .ada-sequence,
@@ -308,7 +314,8 @@
   background: linear-gradient(145deg, #0b192e, #081529);
 }
 .ada-visual {
-  height: 369px;
+  height: auto;
+  min-height: 369px;
   padding: 13px 17px;
 }
 .ada-visual > header {
@@ -338,9 +345,10 @@
   font-weight: 400;
 }
 .ada-main-viz {
-  height: 260px;
+  min-height: 260px;
+  height: auto;
   display: grid;
-  grid-template-columns: 194px 1fr;
+  grid-template-columns: minmax(160px, 194px) minmax(0, 1fr);
   gap: 15px;
 }
 .ada-main-viz > aside article {
@@ -657,11 +665,11 @@
   line-height: 2;
 }
 .ada-controls {
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 309px;
-  height: 707px;
+  position: relative;
+  right: auto;
+  top: auto;
+  width: auto;
+  height: auto;
   padding: 14px;
 }
 .ada-controls h3 {

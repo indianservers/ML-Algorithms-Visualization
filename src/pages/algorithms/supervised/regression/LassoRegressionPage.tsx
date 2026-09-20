@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { LabLessonPanel } from "../../../../components/common/LabTabs";
 import {
   Beaker,
   BookOpen,
@@ -1557,7 +1558,10 @@ export default function LassoRegressionPage() {
         </nav>
         <div className="lasso-content">
           <div className="lasso-workspace">
-            {(tab === "learn" || tab === "visualize") && (
+            {tab === "learn" && (
+              <LabLessonPanel tab="Learn" route="/ml/supervised/lasso-regression" />
+            )}
+            {tab === "visualize" && (
               <>
                 <div className="lasso-top-grid">
                   <CoefficientPaths
@@ -1575,7 +1579,7 @@ export default function LassoRegressionPage() {
                     lambda={lambda}
                   />
                 </div>
-                {tab === "learn" && <Insights />}
+                <Insights />
               </>
             )}
             {tab === "dataset" && (

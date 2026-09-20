@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { LabLessonPanel } from "../../../../components/common/LabTabs";
 import {
   Activity,
   BarChart3,
@@ -640,7 +641,13 @@ export default function PolynomialRegressionPage() {
             </button>
           ))}
         </div>
-        {(activeTab === "learn" || activeTab === "visualize") && (
+        {activeTab === "learn" && (
+          <LabLessonPanel
+            tab="Learn"
+            route="/ml/supervised/polynomial-regression"
+          />
+        )}
+        {activeTab === "visualize" && (
           <div className="poly-workspace">
             <section className={`poly-visual-card ${chartFocused ? 'focused' : ''}`}>
               <div className="poly-card-head">
@@ -841,28 +848,9 @@ export default function PolynomialRegressionPage() {
                     Noise (σ)<b>{noise.toFixed(2)}</b>
                   </span>
                 </div>
-                <div className="poly-dataset-buttons">
-                  <button
-                    onClick={() =>
-                      chooseDataset(
-                        datasetId === "sine"
-                          ? "students"
-                          : datasetId === "students"
-                            ? "energy"
-                            : datasetId === "energy"
-                              ? "linear"
-                              : "sine",
-                      )
-                    }
-                  >
-                    <SlidersHorizontal />
-                    Change Dataset
-                  </button>
-                  <button onClick={() => fileRef.current?.click()}>
-                    <Upload />
-                    Upload CSV
-                  </button>
-                </div>
+                <p className="poly-dataset-hint">
+                  Switch samples or upload CSV in the Dataset section.
+                </p>
               </section>
             </aside>
             <section className="poly-insights">

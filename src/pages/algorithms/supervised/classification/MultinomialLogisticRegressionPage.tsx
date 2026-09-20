@@ -10,7 +10,7 @@ import {
   Share2,
   Upload,
 } from "lucide-react";
-import { multinomialLogisticRegression } from "../../../../lib/algorithms/classification/multinomialLogisticRegression";
+import { LabLessonPanel } from "../../../../components/common/LabTabs";
 import {
   classificationSplit,
   fitStandardScaler,
@@ -505,7 +505,12 @@ export default function MultinomialLogisticRegressionPage() {
         </nav>
         <section className="mlr-workspace">
           <div className="mlr-content">
-            {tab === "Dataset" ? (
+            {tab === "Learn" ? (
+              <LabLessonPanel
+                tab="Learn"
+                route="/ml/supervised/multinomial-logistic-regression"
+              />
+            ) : tab === "Dataset" ? (
               <DataTable rows={rows} setRows={setRows} />
             ) : tab !== "Visualize" ? (
               <Generic tab={tab} loss={model.lossHistory} accuracy={trainAcc} />

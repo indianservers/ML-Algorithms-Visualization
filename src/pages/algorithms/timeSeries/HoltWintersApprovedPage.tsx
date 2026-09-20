@@ -10,6 +10,7 @@ import { forecastMetrics, seasonalNaiveForecast } from "../../../lib/timeSeries/
 import { TIME_SERIES_CATALOG } from "../../../lib/timeSeries/timeSeriesDatasets";
 import { splitRangeLabels } from "../../../lib/timeSeries/forecastDiagnostics";
 import { useActiveTimeSeries } from "../../../lib/timeSeries/useActiveTimeSeries";
+import { LabLessonOrWork, labHide } from "../../../components/common/LabTabs";
 import "./HoltWintersApprovedPage.css";
 type Point = { date: string; value: number };
 const TABS = [
@@ -266,11 +267,12 @@ export default function HoltWintersApprovedPage() {
         </div>
       </section>
       <main className="hw-main">
-        <h2>
+        <LabLessonOrWork tab={tab} route="/ml/time-series/holt-winters">
+        <h2 className={labHide(tab, "Visualize", "Train").trim()}>
           Decomposition{" "}
           <small>({mode[0].toUpperCase() + mode.slice(1)})　ⓘ</small>
         </h2>
-        <div className="legend">
+        <div className={`legend${labHide(tab, "Visualize", "Train")}`}>
           — Observed　　— Fitted　　- - Forecast{" "}
           <span>
             Zoom　
@@ -297,7 +299,7 @@ export default function HoltWintersApprovedPage() {
             lo = i < 2 ? min : i === 2 ? Math.min(...av) : -resMax,
             hi = i < 2 ? max : i === 2 ? Math.max(...av) : resMax;
           return (
-            <section className={cls as string} key={title as string}>
+            <section className={`${cls as string}${labHide(tab, "Visualize", "Train")}`} key={title as string}>
               <h3>{title as string}</h3>
               <svg viewBox="0 0 940 90">
                 <g>
@@ -318,8 +320,9 @@ export default function HoltWintersApprovedPage() {
             </section>
           );
         })}
+        </LabLessonOrWork>
       </main>
-      <aside className="hw-controls">
+      <aside className={`hw-controls${labHide(tab, "Train", "Transform", "Visualize")}`}>
         <h2>MODEL CONTROLS</h2>
         <p>
           {r.initialization} Fitted on the chronological train split. Hold-out
@@ -409,7 +412,7 @@ export default function HoltWintersApprovedPage() {
         </section>
         <a href="?advanced=1">Open original lab →</a>
       </aside>
-      <section className="hw-bottom">
+      <section className={`hw-bottom${labHide(tab, "Metrics")}`}>
         <article>
           <h2>KEY INSIGHTS</h2>
           <p>

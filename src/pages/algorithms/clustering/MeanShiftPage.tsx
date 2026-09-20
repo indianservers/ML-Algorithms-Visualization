@@ -54,11 +54,7 @@ const LABELS: Record<Dataset, string> = {
 };
 
 export default function MeanShiftPage() {
-  const { tab, setTab, panel, layout, lesson } = useLabTabs(
-      "Visualize",
-      "Visualize",
-      ["Learn", "Compare"],
-    ),
+  const { tab, setTab, panel, layout, lesson } = useLabTabs("Learn"),
     [dataset, setDataset] = useState<Dataset>("mixed"),
     [points, setPoints] = useState<Point[]>(BUILT.mixed),
     [imported, setImported] = useState<Point[]>([]),
@@ -236,7 +232,7 @@ export default function MeanShiftPage() {
       </header>
       <main className={layout.trim()}>
         <nav role="tablist" aria-label="Mean Shift sections">
-          {["Learn", "Visualize", "Dataset", "Train", "Metrics", "Compare"].map(
+          {["Learn", "Visualize", "Dataset", "Train", "Metrics", "Compare", "Explain"].map(
             (name) => (
               <button
                 role="tab"
@@ -276,7 +272,7 @@ export default function MeanShiftPage() {
           </button>
           <input ref={fileRef} type="file" accept=".csv" onChange={upload} />
         </section>
-        <section className={`ms-plot ${showHeatmap ? "heat" : ""}`}>
+        <section className={`ms-plot ${showHeatmap ? "heat" : ""}${panel("Visualize", "Train")}`}>
           <header>
             <b>
               Iteration {activeFrame} / {maxIterations}
@@ -447,7 +443,7 @@ export default function MeanShiftPage() {
             <p>Bandwidth (h): {bandwidth.toFixed(2)}</p>
           </article>
         </section>
-        <footer className={`ms-tip${panel("Train", "Dataset", "Metrics")}`}>
+        <footer className={`ms-tip${panel("Visualize", "Train", "Dataset", "Metrics")}`}>
           ⓘ Tip: Mean Shift finds density peaks without specifying cluster
           count. Try adjusting the bandwidth to explore different granularities.
         </footer>
@@ -461,7 +457,7 @@ export default function MeanShiftPage() {
       <aside className="ms-controls">
         <h2>MEAN SHIFT CONTROLS</h2>
         <label>
-          Bandwidth (h)
+          Bandwidth (h) — neighborhood radius for density modes
           <input
             aria-label="Bandwidth numeric"
             type="number"
@@ -471,6 +467,7 @@ export default function MeanShiftPage() {
             value={bandwidth}
             onChange={(event) => setBandwidth(Number(event.target.value))}
           />
+          {bandwidth <= 0 ? <small>Bandwidth must be positive. Using 1.25 for the fit.</small> : null}
         </label>
         <input
           aria-label="Bandwidth"

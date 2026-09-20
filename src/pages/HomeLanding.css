@@ -1,6 +1,5 @@
-/* Landing page. Colours are sampled from the approved redesign mockup, so this
-   surface is intentionally theme-independent: the header/hero are always navy
-   and the catalog is always light. */
+/* Landing page. Colours follow the redesign mockup in light mode and the
+   shared suite tokens when html.dark is set. */
 
 .home-landing {
   --hl-ink: #0f172a;
@@ -98,6 +97,7 @@
 }
 
 .hl-nav-search {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 9px;
@@ -111,6 +111,51 @@
   border: 1px solid #dbe6f8;
   color: var(--hl-ink-faint);
   font-size: 13px;
+}
+
+.hl-search-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border: 1px solid var(--hl-card-line);
+  border-radius: 12px;
+  background: var(--hl-card);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+}
+
+.hl-search-pop a,
+.hl-search-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--hl-ink);
+}
+
+.hl-search-pop a strong {
+  font-size: 13px;
+}
+
+.hl-search-pop a em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--hl-ink-soft);
+}
+
+.hl-search-pop a.is-active,
+.hl-search-pop a:hover {
+  background: #e8eefc;
+}
+
+.hl-search-empty {
+  font-size: 13px;
+  color: var(--hl-ink-soft);
 }
 
 .hl-nav-search input {
@@ -518,87 +563,104 @@
 
 /* -------------------------------------------------------------- spotlight */
 
-.hl-spotlight {
+.hl-spotlights {
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(220px, 0.7fr);
-  align-items: center;
-  gap: clamp(16px, 2vw, 28px);
-  margin: 0 var(--hl-pad);
-  margin-top: clamp(14px, 1.6vw, 20px);
-  padding: clamp(16px, 1.8vw, 22px) clamp(16px, 2vw, 24px);
-  border-radius: 18px;
-  background:
-    radial-gradient(80% 140% at 100% 0%, rgba(155, 107, 245, 0.28) 0%, transparent 58%),
-    linear-gradient(115deg, #101a3a 0%, #162456 52%, #1a1d4e 100%);
-  color: #eef3ff;
-  box-shadow: 0 16px 40px rgba(16, 26, 58, 0.16);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: 10px;
+  margin: clamp(12px, 1.4vw, 16px) var(--hl-pad) 0;
 }
 
-.hl-spotlight-kicker {
+.hl-spot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 92px;
+  align-items: center;
+  gap: 12px;
+  min-height: 118px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  color: #eef3ff;
+  overflow: hidden;
+  box-shadow: 0 10px 22px rgba(16, 26, 58, 0.12);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.hl-spot:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 26px rgba(16, 26, 58, 0.18);
+}
+
+.hl-spot.tone-navy {
+  background:
+    radial-gradient(90% 140% at 100% 0%, rgba(155, 107, 245, 0.28) 0%, transparent 58%),
+    linear-gradient(115deg, #101a3a 0%, #162456 52%, #1a1d4e 100%);
+}
+
+.hl-spot.tone-amber {
+  background:
+    radial-gradient(90% 140% at 100% 0%, rgba(251, 191, 36, 0.28) 0%, transparent 58%),
+    linear-gradient(115deg, #3b2410 0%, #5c3d16 52%, #7c4a12 100%);
+}
+
+.hl-spot-kicker {
   margin: 0;
-  font-size: 11px;
+  font-size: 9.5px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #c4b5fd;
 }
 
-.hl-spotlight-copy h2 {
-  margin: 6px 0 0;
-  font-size: clamp(20px, 2vw, 28px);
-  letter-spacing: -0.5px;
-  font-weight: 800;
+.hl-spot.tone-amber .hl-spot-kicker,
+.hl-spot.tone-amber .hl-spot-art span {
+  color: #fde68a;
 }
 
-.hl-spotlight-copy p {
-  margin: 8px 0 0;
-  max-width: 52ch;
-  font-size: 13px;
-  line-height: 1.55;
+.hl-spot-copy h2 {
+  margin: 3px 0 0;
+  font-size: clamp(14px, 1.15vw, 16.5px);
+  letter-spacing: -0.3px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.hl-spot-copy p {
+  margin: 5px 0 10px;
+  font-size: 11.5px;
+  line-height: 1.4;
   color: rgba(220, 230, 252, 0.78);
 }
 
-.hl-spotlight-copy ul {
-  margin: 12px 0 16px;
-  padding-left: 18px;
-  font-size: 12.5px;
-  line-height: 1.7;
-  color: #d7e3ff;
+.hl-spot-copy .hl-btn-primary {
+  height: 30px;
+  padding: 0 12px;
+  font-size: 11px;
+  box-shadow: 0 6px 14px rgba(120, 71, 251, 0.32);
 }
 
-.hl-spotlight-art {
+.hl-spot-art {
   display: grid;
   place-items: center;
-  min-height: 160px;
-  padding: 16px;
-  border-radius: 14px;
+  align-content: center;
+  min-height: 92px;
+  padding: 8px 6px;
+  border-radius: 10px;
   background: rgba(8, 14, 36, 0.45);
   border: 1px solid rgba(174, 195, 235, 0.16);
 }
 
-.hl-spotlight-art svg {
-  width: min(220px, 100%);
+.hl-spot-art svg {
+  width: min(72px, 100%);
   height: auto;
 }
 
-.hl-spotlight-art span {
-  margin-top: 8px;
-  font-size: 11px;
+.hl-spot-art span {
+  margin-top: 4px;
+  font-size: 8.5px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  text-align: center;
   color: #c4b5fd;
-}
-
-.hl-spotlight-terms {
-  background:
-    radial-gradient(80% 140% at 100% 0%, rgba(251, 191, 36, 0.28) 0%, transparent 58%),
-    linear-gradient(115deg, #3b2410 0%, #5c3d16 52%, #7c4a12 100%);
-}
-
-.hl-spotlight-terms .hl-spotlight-kicker,
-.hl-spotlight-terms .hl-spotlight-art span {
-  color: #fde68a;
 }
 
 /* ----------------------------------------------------------------- catalog */
@@ -866,9 +928,25 @@
   gap: 8px;
 }
 
+@property --hl-spin {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes hl-border-spin {
+  to {
+    --hl-spin: 360deg;
+  }
+}
+
 /* The card is a fixed-ratio tile: the name and blurb sit on top, the artwork is
    a layer behind them that bleeds down under the badge row, as in the mockup. */
 .hl-card {
+  --hl-glow-a: #2563eb;
+  --hl-glow-b: #a855f7;
+  --hl-glow-c: #22d3ee;
+  --hl-glow-d: #34d399;
   position: relative;
   display: block;
   min-width: 0;
@@ -877,20 +955,131 @@
   padding: 10px 10px 8px;
   border-radius: 9px;
   overflow: hidden;
+  isolation: isolate;
   background: var(--hl-card);
   border: 1px solid var(--hl-card-line);
-  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+  transition: transform 0.2s ease, box-shadow 0.22s ease, border-color 0.22s ease;
 }
 
-.hl-card:hover {
+/* Rotating conic ring: only the 1.6px rim is painted, then a bright comet
+   travels the perimeter. Tone classes below retint the stops per section. */
+.hl-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  border-radius: inherit;
+  padding: 2px;
+  pointer-events: none;
+  opacity: 0;
+  background: conic-gradient(
+    from var(--hl-spin),
+    var(--hl-glow-a) 0deg,
+    var(--hl-glow-b) 70deg,
+    #ffffff 96deg,
+    #ffffff 118deg,
+    var(--hl-glow-c) 160deg,
+    var(--hl-glow-d) 250deg,
+    var(--hl-glow-a) 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  transition: opacity 0.22s ease;
+}
+
+.hl-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(120% 90% at 18% 0%, rgba(255, 255, 255, 0.55), transparent 46%),
+    radial-gradient(90% 70% at 100% 100%, color-mix(in srgb, var(--hl-glow-b) 18%, transparent), transparent 55%);
+  transition: opacity 0.22s ease;
+}
+
+.hl-card:hover,
+.hl-card:focus-visible {
   transform: translateY(-2px);
-  border-color: #b9cdf0;
-  box-shadow: 0 10px 22px rgba(24, 44, 84, 0.13);
+  border-color: transparent;
+  box-shadow:
+    0 12px 26px rgba(24, 44, 84, 0.14),
+    0 0 0 1px color-mix(in srgb, var(--hl-glow-a) 28%, transparent),
+    0 10px 28px color-mix(in srgb, var(--hl-glow-b) 22%, transparent);
+}
+
+.hl-card:hover::before,
+.hl-card:focus-visible::before {
+  opacity: 1;
+  animation: hl-border-spin 2.4s linear infinite;
+}
+
+.hl-card:hover::after,
+.hl-card:focus-visible::after {
+  opacity: 1;
+}
+
+.tone-blue .hl-card {
+  --hl-glow-a: #2563eb;
+  --hl-glow-b: #60a5fa;
+  --hl-glow-c: #22d3ee;
+  --hl-glow-d: #818cf8;
+}
+
+.tone-green .hl-card {
+  --hl-glow-a: #059669;
+  --hl-glow-b: #34d399;
+  --hl-glow-c: #22d3ee;
+  --hl-glow-d: #84cc16;
+}
+
+.tone-purple .hl-card {
+  --hl-glow-a: #7c3aed;
+  --hl-glow-b: #c084fc;
+  --hl-glow-c: #f472b6;
+  --hl-glow-d: #818cf8;
+}
+
+.tone-amber .hl-card {
+  --hl-glow-a: #d97706;
+  --hl-glow-b: #fbbf24;
+  --hl-glow-c: #fb7185;
+  --hl-glow-d: #f97316;
+}
+
+.tone-teal .hl-card {
+  --hl-glow-a: #0d9488;
+  --hl-glow-b: #2dd4bf;
+  --hl-glow-c: #38bdf8;
+  --hl-glow-d: #34d399;
+}
+
+.tone-rose .hl-card {
+  --hl-glow-a: #e11d48;
+  --hl-glow-b: #fb7185;
+  --hl-glow-c: #f472b6;
+  --hl-glow-d: #f59e0b;
+}
+
+.tone-indigo .hl-card {
+  --hl-glow-a: #4f46e5;
+  --hl-glow-b: #818cf8;
+  --hl-glow-c: #22d3ee;
+  --hl-glow-d: #a78bfa;
 }
 
 .hl-card-name {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   margin: 0;
   font-size: clamp(10.5px, 0.82vw, 12px);
   font-weight: 700;
@@ -900,7 +1089,7 @@
 
 .hl-card-blurb {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   margin: 2px 0 0;
   font-size: clamp(8.5px, 0.68vw, 10px);
   color: #8496af;
@@ -911,6 +1100,7 @@
 .hl-card-art {
   position: absolute;
   inset: auto 8px 3px 8px;
+  z-index: 1;
   height: 63%;
   display: grid;
   place-items: center;
@@ -925,7 +1115,7 @@
 .hl-card-foot {
   position: absolute;
   inset: auto 10px 8px 10px;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1146,6 +1336,20 @@
   animation: hl-card-in 0.2s ease backwards;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .hl-card:hover::before,
+  .hl-card:focus-visible::before {
+    animation: none;
+    background: linear-gradient(
+      135deg,
+      var(--hl-glow-a),
+      var(--hl-glow-b),
+      var(--hl-glow-c),
+      var(--hl-glow-d)
+    );
+  }
+}
+
 .hl-mini.tone-amber {
   background: #faeede;
   border-color: #f3ddc0;
@@ -1225,8 +1429,8 @@
 }
 
 @media (max-width: 880px) {
-  .hl-spotlight {
-    grid-template-columns: minmax(0, 1fr);
+  .hl-spotlights {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .hl-hero {
     grid-template-columns: minmax(0, 1fr);
@@ -1257,6 +1461,9 @@
   .hl-cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  .hl-spotlights {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .hl-mini-row {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1264,4 +1471,41 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
   }
+}
+
+html.dark .home-landing {
+  --hl-ink: #e8eef8;
+  --hl-ink-soft: #9aa8c2;
+  --hl-ink-faint: #7d8ba6;
+  --hl-surface: #07111f;
+  --hl-card: #0c1728;
+  --hl-card-line: #1d2b42;
+}
+
+html.dark .hl-nav {
+  background: linear-gradient(90deg, #0b1528 0%, #0d1a30 55%, #102038 100%);
+  border-bottom-color: #1d2b42;
+}
+
+html.dark .hl-brand-text strong,
+html.dark .hl-nav-links a {
+  color: var(--hl-ink);
+}
+
+html.dark .hl-nav-search,
+html.dark .hl-theme,
+html.dark .hl-search {
+  background: #0f1c30;
+  border-color: #24344d;
+  color: var(--hl-ink-faint);
+}
+
+html.dark .hl-nav-search input,
+html.dark .hl-search input {
+  color: var(--hl-ink);
+}
+
+html.dark .hl-search-pop a.is-active,
+html.dark .hl-search-pop a:hover {
+  background: #17304f;
 }

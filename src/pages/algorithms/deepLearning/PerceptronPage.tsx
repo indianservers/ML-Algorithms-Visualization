@@ -185,11 +185,7 @@ function MiniPlot({ points }: { points: Point[] }) {
 }
 
 export default function PerceptronPage() {
-  const { tab, setTab, panel, layout, lesson } = useLabTabs(
-    "Visualize",
-    "Visualize",
-    ["Learn", "Compare", "Explain"],
-  );
+  const { tab, setTab, panel, layout, lesson } = useLabTabs("Learn");
   const [dataset, setDataset] = useState<DatasetKey>("linear");
   const [points, setPoints] = useState<Point[]>(BUILT_IN.linear);
   const [imported, setImported] = useState<Point[]>([]);
@@ -204,6 +200,7 @@ export default function PerceptronPage() {
   const [playing, setPlaying] = useState(false);
   const [animate, setAnimate] = useState(true);
   const [toast, setToast] = useState("");
+  const [showExplanation, setShowExplanation] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -789,7 +786,7 @@ export default function PerceptronPage() {
             Activation:{" "}
             {activation === "step" ? "Step (Hard Limit)" : activation}
           </p>
-          <button onClick={() => setToast("Explanation opened")}>
+          <button onClick={() => setShowExplanation(true)}>
             ▤ View Explanation
           </button>
         </section>
@@ -798,6 +795,30 @@ export default function PerceptronPage() {
         ⓘ Tip: Adjust weights or use Train to find a boundary that separates the
         classes.<b>● Ready</b>
       </footer>
+      {showExplanation && (
+        <aside className="pc-explain-panel" role="dialog" aria-label="Perceptron explanation">
+          <header>
+            <h3>How this perceptron decides</h3>
+            <button type="button" onClick={() => setShowExplanation(false)}>
+              Close
+            </button>
+          </header>
+          <p>
+            Weighted sum <code>z = w·x + b = {net.toFixed(2)}</code> using w = [
+            {weights.map((value) => value.toFixed(2)).join(", ")}] and b = {bias.toFixed(2)}.
+          </p>
+          <p>
+            Activation: {activation === "step" ? "step / hard limit" : activation}. Classification
+            rule: ŷ = 1 if z ≥ θ ({threshold.toFixed(2)}), else 0. Current ŷ ={" "}
+            {net >= threshold ? 1 : 0}.
+          </p>
+          <p>
+            Update rule on a miss: w ← w + η (y − ŷ) x and b ← b + η (y − ŷ), with η ={" "}
+            {learningRate}.
+          </p>
+          <p className="formula">ŷ = 1 if (w·x + b) ≥ θ, else 0</p>
+        </aside>
+      )}
       {toast && (
         <button className="pc-toast" onClick={() => setToast("")}>
           {toast}

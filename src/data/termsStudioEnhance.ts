@@ -28,8 +28,21 @@ export const termsStudioReadingOrder = [
 
 export const termsStudioConfusion: Record<string, string> = {
   'step size': 'learning-rate',
+  lr: 'learning-rate',
+  'learning rate': 'learning-rate',
   eta: 'learning-rate',
-  stride: 'learning-rate',
+  stride: 'stride',
+  regularisation: 'l1-l2',
+  regularization: 'l1-l2',
+  lasso: 'l1-l2',
+  ridge: 'l1-l2',
+  gini: 'gini-impurity',
+  roc: 'roc-curve',
+  auc: 'roc-curve',
+  'f1': 'f1-score',
+  cm: 'confusion-matrix',
+  qkv: 'query-key-value',
+  smote: 'smote',
   'dying neuron': 'relu',
   'dead relu': 'relu',
   'dying relu': 'relu',
@@ -54,7 +67,6 @@ export const termsStudioConfusion: Record<string, string> = {
   leakage: 'data-leakage',
   leak: 'data-leakage',
   cosine: 'cosine-similarity',
-  qkv: 'attention',
   'skip connection': 'residual-connection',
   residual: 'residual-connection',
   logit: 'softmax',
@@ -463,6 +475,12 @@ export function matchTermsStudioQuery(query: string): TermLesson[] {
   return termsStudioLessons.filter((term) => {
     if (confused === term.slug) return true;
     const extra = getTermEnhance(term);
+    const aliases = [term.label, term.slug.replace(/-/g, ' '), ...term.synonyms, ...extra.searchAliases];
+    if (aliases.some((alias) => alias.toLowerCase() === needle)) return true;
+    if (needle.length <= 3) {
+      const words = aliases.join(' ').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+      return words.some((word) => word === needle || word.startsWith(`${needle}-`) || word.startsWith(needle) && needle.length > 2);
+    }
     const hay = [
       term.label,
       term.blurb,
@@ -475,7 +493,7 @@ export function matchTermsStudioQuery(query: string): TermLesson[] {
       ...term.tags,
       ...extra.searchAliases,
     ].join(' ').toLowerCase();
-    return hay.includes(needle) || extra.searchAliases.some((alias) => alias.toLowerCase() === needle);
+    return hay.includes(needle);
   });
 }
 

@@ -8,6 +8,7 @@ import {
   type CVMetric,
   type CVRow,
 } from "../../../lib/evaluation/crossValidation";
+import { LabLessonOrWork, labHide } from "../../../components/common/LabTabs";
 import "./CrossValidationPage.css";
 
 const makeData = (count: number, classes: number, seed: number): CVRow[] =>
@@ -57,7 +58,7 @@ export default function CrossValidationPage() {
     [metric, setMetric] = useState<CVMetric>("accuracy"),
     [current, setCurrent] = useState(0),
     [playing, setPlaying] = useState(false),
-    [tab, setTab] = useState("Visualize"),
+    [tab, setTab] = useState("Learn"),
     [message, setMessage] = useState("Rotation ready");
   const go = useLabNavigate();
   const inputRef = useRef<HTMLInputElement>(null),
@@ -242,7 +243,8 @@ export default function CrossValidationPage() {
         </nav>
       </header>
       <main>
-        <section className="cv-matrix panel">
+        <LabLessonOrWork tab={tab} route="/ml/evaluation/cross-validation">
+        <section className={`cv-matrix panel${labHide(tab, "Visualize", "Train")}`}>
           <h2>K-Fold Cross Validation (K = {folds}) ⓘ</h2>
           <div className="cv-play">
             <button onClick={toggle}>{playing ? <Pause /> : <Play />}</button>
@@ -296,7 +298,7 @@ export default function CrossValidationPage() {
             </div>
           </footer>
         </section>
-        <section className="cv-insights panel">
+        <section className={`cv-insights panel${labHide(tab, "Dataset")}`}>
           <h2>Insights</h2>
           <p>
             ◎ <b>Stable Performance</b>
@@ -320,7 +322,7 @@ export default function CrossValidationPage() {
             </small>
           </p>
         </section>
-        <section className="cv-score panel">
+        <section className={`cv-score panel${labHide(tab, "Metrics")}`}>
           <h2>Score Distribution ⓘ</h2>
           <div>
             {result.folds.map((f) => (
@@ -334,7 +336,7 @@ export default function CrossValidationPage() {
           </div>
           <footer>0.50 · 0.60 · 0.70 · 0.80 · 0.90 · 1.00</footer>
         </section>
-        <section className="cv-bars panel">
+        <section className={`cv-bars panel${labHide(tab, "Metrics")}`}>
           <h2>Per-Fold Scores ⓘ</h2>
           {result.folds.map((f) => (
             <p key={f.fold}>
@@ -346,8 +348,9 @@ export default function CrossValidationPage() {
             </p>
           ))}
         </section>
+        </LabLessonOrWork>
       </main>
-      <aside className="cv-controls panel">
+      <aside className={`cv-controls panel${labHide(tab, "Train", "Transform", "Dataset")}`}>
         <h2>Cross Validation Controls</h2>
         <label>
           K (Folds)

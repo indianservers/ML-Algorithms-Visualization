@@ -8,6 +8,7 @@ import {
 } from "../../../lib/algorithms/dimensionality/autoencoder";
 import { getDimensionalityDataset } from "../../../lib/dimensionality/dimensionalityDatasets";
 import "./AutoencoderDimensionalityPage.css";
+import { LabLessonOrWork, labHide } from "../../../components/common/LabTabs";
 type Sample = { pixels: number[]; label: number };
 type Dataset = "digits" | "fashion" | "symbols" | "tabular" | "imported";
 const COLORS = [
@@ -109,7 +110,7 @@ function PixelImage({
   );
 }
 export default function AutoencoderDimensionalityPage() {
-  const [tab, setTab] = useState("Visualize"),
+  const [tab, setTab] = useState("Learn"),
     [dataset, setDataset] = useState<Dataset>("digits"),
     [samples, setSamples] = useState<Sample[]>(BUILT.digits),
     [imported, setImported] = useState<Sample[]>([]),
@@ -300,7 +301,8 @@ export default function AutoencoderDimensionalityPage() {
             </button>
           ))}
         </nav>
-        <section className="ae-pipeline">
+        <LabLessonOrWork tab={tab} route="/ml/dimensionality-reduction/autoencoder">
+        <section className={`ae-pipeline${labHide(tab, "Visualize", "Train")}`}>
           <h4>MODEL PIPELINE</h4>
           <article>
             <b>Input</b>
@@ -343,7 +345,7 @@ export default function AutoencoderDimensionalityPage() {
             <PixelImage pixels={reconstructions[3]} />
           </article>
         </section>
-        <section className="ae-visuals">
+        <section className={`ae-visuals${labHide(tab, "Visualize", "Train")}`}>
           <article>
             <h3>INPUT VS RECONSTRUCTION ⓘ</h3>
             <div className="ae-pairs">
@@ -395,7 +397,7 @@ export default function AutoencoderDimensionalityPage() {
             </footer>
           </article>
         </section>
-        <section className="ae-results">
+        <section className={`ae-results${labHide(tab, "Metrics")}`}>
           <article>
             <h3>RECONSTRUCTION QUALITY ⓘ</h3>
             {[
@@ -443,8 +445,9 @@ export default function AutoencoderDimensionalityPage() {
           💡 TIP Try increasing latent dimensions to see richer representations,
           or add noise for denoising autoencoders.
         </footer>
+        </LabLessonOrWork>
       </main>
-      <aside className="ae-controls">
+      <aside className={`ae-controls${labHide(tab, "Train", "Transform", "Dataset", "Visualize")}`}>
         <section>
           <h3>DATASET ⓘ</h3>
           <select

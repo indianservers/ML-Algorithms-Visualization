@@ -367,6 +367,28 @@
   padding: 4px 8px;
   margin-left: 8px;
 }
+.dt-playback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 0;
+}
+.dt-playback button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line, #2a3e5b);
+  border-radius: 6px;
+  background: #102038;
+  color: inherit;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.dt-playback small {
+  color: #9cb0cb;
+  font-size: 11px;
+}
 .dt-tree-svg {
   width: 100% !important;
   height: 414px !important;

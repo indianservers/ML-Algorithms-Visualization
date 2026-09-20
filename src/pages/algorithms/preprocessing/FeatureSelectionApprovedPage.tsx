@@ -8,6 +8,7 @@ import {
 } from "../../../lib/preprocessing/featureSelection";
 import "./FeatureSelectionApprovedPage.css";
 import "./FeatureSelectionApprovedOverrides.css";
+import { LabLessonOrWork, labHide } from "../../../components/common/LabTabs";
 
 type Row = Record<string, number>;
 type RankMode = "importance" | "correlation" | "variance";
@@ -119,7 +120,7 @@ export default function FeatureSelectionApprovedPage() {
       rows: Row[];
       target: string;
     } | null>(null),
-    [tab, setTab] = useState("Visualize"),
+    [tab, setTab] = useState("Learn"),
     [rankMode, setRankMode] = useState<RankMode>("importance"),
     [selector, setSelector] = useState("Model-based (XGBoost)"),
     [selected, setSelected] = useState<string[]>(INITIAL_SELECTED),
@@ -341,7 +342,8 @@ export default function FeatureSelectionApprovedPage() {
         </article>
       </section>
       <main className="fs-main">
-        <section className="ranking panel">
+        <LabLessonOrWork tab={tab} route="/ml/preprocessing/feature-selection">
+        <section className={`ranking panel${labHide(tab, "Visualize", "Train")}`}>
           <h2>FEATURE RANKING (BY {rankMode.toUpperCase()})　ⓘ</h2>
           <div className="rank-tools">
             <span>
@@ -423,7 +425,7 @@ export default function FeatureSelectionApprovedPage() {
             View all {featureKeys.length} features
           </button>
         </section>
-        <section className="network panel">
+        <section className={`network panel${labHide(tab, "Visualize", "Dataset")}`}>
           <h2>FEATURE CORRELATION NETWORK　ⓘ</h2>
           <div className="network-tools">
             <select aria-label="Correlation metric">
@@ -474,8 +476,9 @@ export default function FeatureSelectionApprovedPage() {
             STRONG POSITIVE
           </footer>
         </section>
+        </LabLessonOrWork>
       </main>
-      <aside className="fs-controls">
+      <aside className={`fs-controls${labHide(tab, "Train", "Transform", "Visualize")}`}>
         <section>
           <h2>
             SELECTION CONTROLS{" "}
@@ -607,7 +610,7 @@ export default function FeatureSelectionApprovedPage() {
           ))}
         </section>
       </aside>
-      <section className="fs-insights">
+      <section className={`fs-insights${labHide(tab, "Metrics")}`}>
         <h2>LINKED INSIGHTS　ⓘ</h2>
         <div>
           {[

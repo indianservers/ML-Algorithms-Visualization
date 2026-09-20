@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { LabProgressMeter } from "../../../../components/common/LabChrome";
+import { LabLessonPanel } from "../../../../components/common/LabTabs";
 import {
   Check,
   ChevronDown,
@@ -759,11 +761,9 @@ export default function LogisticRegressionPage() {
         </div>
         <div className="lr-progress">
           <span>
-            Lesson Progress <b>68%</b>
+            Lesson Progress
           </span>
-          <i>
-            <em style={{ width: "68%" }} />
-          </i>
+          <LabProgressMeter />
         </div>
         <button className="lr-resume" onClick={() => setStatus("Progress saved")}>
           <Play />
@@ -786,7 +786,9 @@ export default function LogisticRegressionPage() {
 
       <section className="lr-body">
         <div className="lr-main">
-          {tab === "Dataset" ? (
+          {tab === "Learn" ? (
+            <LabLessonPanel tab="Learn" route="/ml/supervised/logistic-regression" />
+          ) : tab === "Dataset" ? (
             <DataTable rows={rows} setRows={setRows} feature={current.feature} />
           ) : tab !== "Visualize" ? (
             <Generic

@@ -2,6 +2,13 @@ import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { BookOpen, Database, Play, RotateCcw, Upload } from "lucide-react";
 import { runTransferLearning } from "../../../lib/algorithms/neural/transferLearning";
+import {
+  LAB_TABS,
+  LabLessonOrWork,
+  labHide,
+  useLabTabs,
+} from "../../../components/common/LabTabs";
+import { LabPipeline } from "../../../components/common/LabPipeline";
 import "./TransferLearningPage.css";
 
 const datasets = [
@@ -29,6 +36,7 @@ const backbones = [
 const formatPercent = (value: number) => `${(value * 100).toFixed(1)}%`;
 
 export default function TransferLearningPage() {
+  const { tab, setTab } = useLabTabs("Learn");
   const [dataset, setDataset] = useState(0),
     [backbone, setBackbone] = useState(0),
     [blocks, setBlocks] = useState(2),
@@ -40,8 +48,7 @@ export default function TransferLearningPage() {
     [patience, setPatience] = useState(5),
     [run, setRun] = useState(1),
     [trained, setTrained] = useState(true),
-    [message, setMessage] = useState("Run completed"),
-    [activeTab, setActiveTab] = useState("Learn");
+    [message, setMessage] = useState("Run completed");
   const uploadRef = useRef<HTMLInputElement>(null);
   const data = datasets[dataset];
   const result = useMemo(
@@ -165,30 +172,21 @@ export default function TransferLearningPage() {
             hidden
           />
         </div>
-        <nav>
-          {[
-            "Learn",
-            "Visualize",
-            "Dataset",
-            "Transform",
-            "Train",
-            "Metrics",
-            "Compare",
-            "Explain",
-          ].map((x) => (
+        <nav role="tablist" aria-label="Transfer Learning sections">
+          {LAB_TABS.map((name) => (
             <button
-              className={activeTab === x ? "active" : ""}
-              onClick={() => {
-                setActiveTab(x);
-                setMessage(`${x} selected`);
-              }}
-              key={x}
+              role="tab"
+              aria-selected={tab === name}
+              className={tab === name ? "active" : ""}
+              onClick={() => setTab(name)}
+              key={name}
             >
-              {x}
+              {name}
             </button>
           ))}
         </nav>
       </header>
+      <LabLessonOrWork tab={tab} route="/ml/deep-learning/transfer-learning">
       <main>
         <section className="transfer-objective panel">
           <i>♙</i>
@@ -214,8 +212,8 @@ export default function TransferLearningPage() {
           <i>◷</i>
           <div>
             <small>ESTIMATED TIME</small>
-            <b>~ 8–15 min</b>
-            <p>Depending on dataset & settings</p>
+            <b>Browser synthetic run</b>
+            <p>Not a GPU ImageNet fine-tune</p>
           </div>
         </section>
         <section className="architecture panel">
@@ -243,33 +241,30 @@ export default function TransferLearningPage() {
             <span>Pretrained</span>
             <small>{backbones[backbone].source}</small>
           </div>
+          <LabPipeline
+            stages={["Pretrained extractor", "Freeze / unfreeze", "Replace head", "Fine-tune", "Evaluate"]}
+            active={blocks === 0 ? 1 : 3}
+            onSelect={undefined}
+            note="Conceptual visualization of this browser lab: 12-D synthetic features + a linear head. Not ResNet/ImageNet."
+          />
           <div className="architecture-flow">
             <div className="frozen">
-              <b>FROZEN (Feature Extractor) 🔒</b>
+              <b>{blocks === 0 ? "FROZEN 12-D FEATURES 🔒" : "EXTRACTOR SCALES (partially trainable)"}</b>
               <section>
-                {["Conv1", "Stage 1", "Stage 2", "Stage 3", "Stage 4"].map(
-                  (x) => (
-                    <i key={x}>{x}</i>
-                  ),
-                )}
+                {Array.from({ length: 12 }, (_, i) => (
+                  <i key={i} title={blocks === 0 ? "frozen feature" : "scale may update"}>
+                    z{i}
+                  </i>
+                ))}
               </section>
             </div>
             <em>→</em>
             <div className="trainable">
-              <b>TRAINABLE (Task Adaptation) 🔥</b>
+              <b>TRAINABLE LINEAR HEAD 🔥</b>
               <section>
+                <i>W, b</i>
                 <i>
-                  Global
-                  <br />
-                  Avg Pool
-                </i>
-                <i>
-                  Dropout
-                  <br />
-                  (0.3)
-                </i>
-                <i>
-                  FC
+                  softmax
                   <br />({data.classes})
                 </i>
               </section>
@@ -289,10 +284,51 @@ export default function TransferLearningPage() {
             <span>🔒 Frozen · 🔥 Trainable</span>
           </footer>
         </section>
+        <section className={`panel${labHide(tab, "Metrics", "Compare")}`}>
+          <h3>Conceptual comparison (this lab, not ImageNet scores)</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Strategy</th>
+                <th>Data need</th>
+                <th>Training time</th>
+                <th>Trainable params here</th>
+                <th>Typical use</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Train from scratch</td>
+                <td>High</td>
+                <td>Longest</td>
+                <td>Would include a full extractor (not implemented)</td>
+                <td>When you have lots of labeled target data</td>
+              </tr>
+              <tr>
+                <td>Feature extraction</td>
+                <td>Low–medium</td>
+                <td>Shortest</td>
+                <td>Head only (blocks = 0)</td>
+                <td>Small target set, similar source features</td>
+              </tr>
+              <tr>
+                <td>Fine-tuning</td>
+                <td>Medium</td>
+                <td>In between</td>
+                <td>Head + extractor scales (blocks &gt; 0)</td>
+                <td>When the new task drifts from the source</td>
+              </tr>
+            </tbody>
+          </table>
+          <p>
+            Current run: {result.trainableParameters} trainable · {result.frozenParameters} frozen extractor scales ·
+            val acc {formatPercent(result.afterAccuracy)} on synthetic embeddings.
+          </p>
+        </section>
         <section className="training panel">
           <h3>Training Controls</h3>
           <label>
-            Trainable Layers
+            Trainable Layers — 0 = feature extraction (head only); &gt;0 = fine-tune extractor scales
             <select
               aria-label="Trainable Layers"
               value={blocks}
@@ -453,6 +489,7 @@ export default function TransferLearningPage() {
           </div>
         </section>
       </main>
+      </LabLessonOrWork>
       <aside className="transfer-right">
         <section className="panel flow">
           <h3>Dataset Flow</h3>
