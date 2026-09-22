@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { LabProgressMeter } from "../../../../components/common/LabChrome";
-import { LabLessonPanel } from "../../../../components/common/LabTabs";
+import { LabLessonPanel, useUrlTab } from "../../../../components/common/LabTabs";
 import {
   BarChart3,
   BookOpen,
@@ -81,7 +81,7 @@ function transform(source: Row[], kind: DatasetId): Row[] {
       label: row.label,
     }));
   }
-  return source.map((row, index) => {
+  return source.map((row) => {
     if (kind === "wine")
       return {
         features: [
@@ -102,18 +102,6 @@ function transform(source: Row[], kind: DatasetId): Row[] {
         ],
         label: row.label,
       };
-    if (kind === "synthetic") {
-      const shift = row.label * 1.25;
-      return {
-        features: row.features.map(
-          (value, feature) =>
-            value +
-            shift * (feature % 2 ? 0.45 : 1) +
-            Math.cos(index * (feature + 1)) * 0.08,
-        ),
-        label: row.label,
-      };
-    }
     return { features: [...row.features], label: row.label };
   });
 }
@@ -408,8 +396,8 @@ function TreeView({
 }
 
 export default function DecisionTreeClassificationPage() {
-  const [tab, setTab] = useState<TabId>("visualize"),
-    [datasetId, setDatasetId] = useState<DatasetId>("iris");
+  const [tab, setTab] = useUrlTab<TabId>("visualize");
+  const [datasetId, setDatasetId] = useState<DatasetId>("iris");
   const [rows, setRows] = useState<Row[]>(
       BASE.map((row) => ({ features: [...row.features], label: row.label })),
     ),

@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { LabProgressMeter } from "../../../../components/common/LabChrome";
-import { LabLessonPanel } from "../../../../components/common/LabTabs";
+import { LabLessonPanel, useUrlTab } from "../../../../components/common/LabTabs";
 import {
   BarChart3,
   BookOpen,
@@ -86,7 +86,7 @@ const BUILT_INS = {
 };
 
 export default function SVMClassificationLesson() {
-  const [tab, setTab] = useState<Tab>("visualize");
+  const [tab, setTab] = useUrlTab<Tab>("visualize");
   const [dataset, setDataset] = useState<Dataset>("moons");
   const [points, setPoints] = useState<Point[]>(BUILT_INS.moons);
   const [imported, setImported] = useState<Point[]>([]);

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import * as tf from "@tensorflow/tfjs";
+import type { Tensor } from "@tensorflow/tfjs";
 import { BrainCircuit, Database, Play, RotateCcw } from "lucide-react";
 import {
   CartesianGrid,
@@ -36,6 +36,7 @@ import {
 } from "../../../lib/timeSeries/timeSeriesSplit";
 
 type RecurrentMode = "rnn" | "lstm" | "gru";
+type TfModule = typeof import("@tensorflow/tfjs");
 
 type SeriesPoint = {
   step: number;
@@ -132,7 +133,7 @@ function normalizeTrainOnly(train: number[]) {
   };
 }
 
-function buildWindows(values: number[], lookback: number) {
+function buildWindows(tf: TfModule, values: number[], lookback: number) {
   const xs: number[] = [];
   const ys: number[] = [];
   for (let index = 0; index < values.length - lookback; index += 1) {
@@ -146,6 +147,7 @@ function buildWindows(values: number[], lookback: number) {
 }
 
 function buildModel(
+  tf: TfModule,
   mode: RecurrentMode,
   lookback: number,
   units: number,
@@ -263,6 +265,7 @@ function RecurrentForecastingLab({ mode }: { mode: RecurrentMode }) {
     setStatus(
       `Training ${meta.layer} on ${selectedDataset.name} -> ${resolvedTarget}...`,
     );
+    const tf = await import("@tensorflow/tfjs");
     if (quickVerification && tf.getBackend() !== "cpu") {
       await tf.setBackend("cpu");
       await tf.ready();
@@ -272,10 +275,10 @@ function RecurrentForecastingLab({ mode }: { mode: RecurrentMode }) {
     const scaler = normalizeTrainOnly(trainSeries);
     const trainNorm = scaler.values(trainSeries);
     const valNorm = scaler.values([...trainSeries, ...split.validation]);
-    const data = buildWindows(trainNorm, lookback);
+    const data = buildWindows(tf, trainNorm, lookback);
     const valData =
-      valNorm.length > lookback + 1 ? buildWindows(valNorm, lookback) : null;
-    const model = buildModel(mode, lookback, units, learningRate);
+      valNorm.length > lookback + 1 ? buildWindows(tf, valNorm, lookback) : null;
+    const model = buildModel(tf, mode, lookback, units, learningRate);
 
     try {
       await model.fit(data.xs, data.ys, {
@@ -312,8 +315,8 @@ function RecurrentForecastingLab({ mode }: { mode: RecurrentMode }) {
 
       if (abortRef.current) return;
 
-      const fittedWindows = buildWindows(trainNorm, lookback);
-      const fittedTensor = model.predict(fittedWindows.xs) as tf.Tensor;
+      const fittedWindows = buildWindows(tf, trainNorm, lookback);
+      const fittedTensor = model.predict(fittedWindows.xs) as Tensor;
       const fittedValues = Array.from(await fittedTensor.data()).map((value) =>
         scaler.denormalize(value),
       );
@@ -326,7 +329,7 @@ function RecurrentForecastingLab({ mode }: { mode: RecurrentMode }) {
       for (let index = 0; index < horizon; index += 1) {
         if (abortRef.current) break;
         const input = tf.tensor3d(rollingWindow, [1, lookback, 1]);
-        const output = model.predict(input) as tf.Tensor;
+        const output = model.predict(input) as Tensor;
         const [nextNormalized] = Array.from(await output.data());
         input.dispose();
         output.dispose();

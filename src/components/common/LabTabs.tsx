@@ -83,7 +83,10 @@ export function useLabTabs(
   const location = useLocation();
   const [params, setParams] = useSearchParams();
   const urlTab = params.get("tab");
-  const [tab, setTabState] = useState(urlTab || initial);
+  const [tab, setTabState] = useState(() => {
+    if (!urlTab) return initial;
+    return LAB_TABS.find((name) => canonTab(name) === canonTab(urlTab)) ?? urlTab;
+  });
 
   useEffect(() => {
     if (!urlTab) return;
@@ -120,6 +123,46 @@ export function useLabTabs(
     progress: percent,
     visited,
   };
+}
+
+/**
+ * Local page tabs that still honor `?tab=` and write it back on click.
+ * Use this when the page keeps its own tab ids instead of `useLabTabs`.
+ */
+export function useUrlTab<T extends string>(initial: T): [T, (next: T) => void] {
+  const location = useLocation();
+  const [params, setParams] = useSearchParams();
+  const urlTab = params.get("tab");
+  const titled = initial !== initial.toLowerCase();
+
+  const coerce = (raw: string | null): T => {
+    if (!raw) return initial;
+    const now = canonTab(raw);
+    if (titled) {
+      return (LAB_TABS.find((name) => canonTab(name) === now) ?? initial) as T;
+    }
+    return (now || initial) as T;
+  };
+
+  const [tab, setTabState] = useState<T>(() => coerce(urlTab));
+
+  useEffect(() => {
+    if (!urlTab) return;
+    setTabState((current) => {
+      const next = coerce(urlTab);
+      return canonTab(current) === canonTab(next) ? current : next;
+    });
+  }, [urlTab]);
+
+  const setTab = (next: T) => {
+    setTabState(next);
+    const nextParams = new URLSearchParams(params);
+    nextParams.set("tab", canonTab(next));
+    setParams(nextParams, { replace: true });
+    markSectionVisited(location.pathname, next);
+  };
+
+  return [tab, setTab];
 }
 
 function LessonList({ title, items }: { title: string; items: string[] }) {

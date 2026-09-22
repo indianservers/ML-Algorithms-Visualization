@@ -242,9 +242,13 @@ export function projectPca2d(X: number[][]): number[][] {
     const norm = Math.sqrt(next.reduce((sum, value) => sum + value * value, 0)) || 1;
     return next.map((value) => value / norm);
   };
-  let first = Array.from({ length: width }, (_, i) => (i === 0 ? 1 : 0.01 * i));
+  let first: number[] = Array.from({ length: width }, (_, i) =>
+    i === 0 ? 1 : 0.01 * i,
+  );
   for (let i = 0; i < 40; i++) first = power(first);
-  let second = Array.from({ length: width }, (_, i) => (i === 1 ? 1 : 0.02));
+  let second: number[] = Array.from({ length: width }, (_, i) =>
+    i === 1 ? 1 : 0.02,
+  );
   for (let i = 0; i < 40; i++) {
     const projected = second.reduce((sum, value, d) => sum + value * first[d], 0);
     second = power(second.map((value, d) => value - projected * first[d]));

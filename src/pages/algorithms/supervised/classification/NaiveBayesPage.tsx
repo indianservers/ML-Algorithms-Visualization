@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { LabProgressMeter } from "../../../../components/common/LabChrome";
-import { LabLessonPanel } from "../../../../components/common/LabTabs";
+import { LabLessonPanel, useUrlTab } from "../../../../components/common/LabTabs";
 import {
   BarChart3,
   BookOpen,
@@ -26,7 +26,6 @@ import {
   Trophy,
   Upload,
 } from "lucide-react";
-import { irisDataset } from "../../../../data/sampleDatasets";
 import {
   trainBernoulliNB,
   trainGaussianNB,
@@ -67,66 +66,6 @@ const tabs: { id: TabId; label: string; icon: React.ReactNode }[] = [
 const gaussian = (x: number, mean: number, variance: number) =>
   Math.exp(-((x - mean) ** 2) / (2 * variance)) /
   Math.sqrt(2 * Math.PI * variance);
-const irisRows = (): Row[] => {
-  const seedRows = (irisDataset.data as Record<string, unknown>[]).map(
-    (item) => ({
-      features: [
-        "sepal_length",
-        "sepal_width",
-        "petal_length",
-        "petal_width",
-      ].map((key) => Number(item[key])),
-      label:
-        item.species === "setosa" ? 0 : item.species === "versicolor" ? 1 : 2,
-    }),
-  );
-  return [0, 1, 2].flatMap((label) => {
-    const group = seedRows.filter((row) => row.label === label);
-    return Array.from({ length: 50 }, (_, index) => ({
-      features: group[index % group.length].features.map(
-        (value, feature) =>
-          value + Math.sin((index + 1) * (feature + 2) * 1.73) * 0.035,
-      ),
-      label,
-    }));
-  });
-};
-const transformRows = (source: Row[], kind: DatasetId): Row[] =>
-  source.map((row, index) => {
-    if (kind === "wine")
-      return {
-        features: [
-          row.features[0] * 2.1 + 1.2,
-          row.features[1] * 0.65,
-          row.features[2] * 0.42,
-          row.features[3] * 34 + 12,
-        ],
-        label: row.label,
-      };
-    if (kind === "diagnostic")
-      return {
-        features: [
-          row.features[0] * 15 + 30,
-          row.features[1] * 8 + 4,
-          row.features[2] * 60 + 80,
-          row.features[3] * 20 + 5,
-        ],
-        label: row.label,
-      };
-    if (kind === "clusters") {
-      const shift = row.label * 1.4;
-      return {
-        features: [
-          row.features[0] + shift + Math.sin(index) * 0.2,
-          row.features[1] - shift * 0.3,
-          row.features[2] + shift,
-          row.features[3] + shift * 0.25,
-        ],
-        label: row.label,
-      };
-    }
-    return { features: [...row.features], label: row.label };
-  });
 const BASE = datasetGIris().map((row) => ({
   features: row.features,
   label: row.label,
@@ -186,7 +125,7 @@ function Bell({
 }
 
 export default function NaiveBayesPage() {
-  const [tab, setTab] = useState<TabId>("visualize");
+  const [tab, setTab] = useUrlTab<TabId>("visualize");
   const [datasetId, setDatasetId] = useState<DatasetId>("iris");
   const [rows, setRows] = useState<Row[]>(
     BASE.map((row) => ({ features: [...row.features], label: row.label })),

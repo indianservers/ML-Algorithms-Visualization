@@ -1,4 +1,4 @@
-import * as tf from "@tensorflow/tfjs";
+import type { SymbolicTensor, Tensor } from "@tensorflow/tfjs";
 import { reconstructionMse } from "../../dimensionality/dimensionalityPrep";
 
 export type AutoencoderArchitecture = "dense" | "shallow";
@@ -53,6 +53,7 @@ export async function trainAutoencoder(
 ): Promise<AutoencoderResult> {
   if (samples.length < 2 || !samples[0]?.length)
     throw new Error("Autoencoder training requires a non-empty sample matrix.");
+  const tf = await import("@tensorflow/tfjs");
   await tf.ready();
   const outputActivation = options?.outputActivation ?? "sigmoid";
   const inputDimension = samples[0].length,
@@ -63,20 +64,20 @@ export async function trainAutoencoder(
         : Math.min(32, Math.max(8, Math.floor(inputDimension / 4))),
     hidden = tf.layers
       .dense({ units: hiddenUnits, activation: "relu", name: "encoder_hidden" })
-      .apply(input) as tf.SymbolicTensor,
+      .apply(input) as SymbolicTensor,
     encoded = tf.layers
       .dense({ units: latentDimension, activation: "linear", name: "latent" })
-      .apply(hidden) as tf.SymbolicTensor,
+      .apply(hidden) as SymbolicTensor,
     decoderHidden = tf.layers
       .dense({ units: hiddenUnits, activation: "relu", name: "decoder_hidden" })
-      .apply(encoded) as tf.SymbolicTensor,
+      .apply(encoded) as SymbolicTensor,
     output = tf.layers
       .dense({
         units: inputDimension,
         activation: outputActivation,
         name: "reconstruction",
       })
-      .apply(decoderHidden) as tf.SymbolicTensor,
+      .apply(decoderHidden) as SymbolicTensor,
     model = tf.model({ inputs: input, outputs: output }),
     encoder = tf.model({ inputs: input, outputs: encoded });
   model.compile({
@@ -109,12 +110,12 @@ export async function trainAutoencoder(
       },
     },
   });
-  const reconstructionTensor = model.predict(clean) as tf.Tensor,
-    latentTensor = encoder.predict(clean) as tf.Tensor,
+  const reconstructionTensor = model.predict(clean) as Tensor,
+    latentTensor = encoder.predict(clean) as Tensor,
     reconstructions = (await reconstructionTensor.array()) as number[][],
     latent = (await latentTensor.array()) as number[][];
-  const hiddenLayer = model.getLayer("encoder_hidden") as tf.layers.Layer;
-  const latentLayer = model.getLayer("latent") as tf.layers.Layer;
+  const hiddenLayer = model.getLayer("encoder_hidden");
+  const latentLayer = model.getLayer("latent");
   const hiddenWeights = hiddenLayer.getWeights();
   const latentWeights = latentLayer.getWeights();
   const encoderWeights = [
@@ -135,8 +136,8 @@ export async function trainAutoencoder(
     ),
   );
   const traversalInput = tf.tensor2d(traversalCodes);
-  const traversalHidden = model.getLayer("decoder_hidden").apply(traversalInput) as tf.Tensor;
-  const traversalTensor = model.getLayer("reconstruction").apply(traversalHidden) as tf.Tensor;
+  const traversalHidden = model.getLayer("decoder_hidden").apply(traversalInput) as Tensor;
+  const traversalTensor = model.getLayer("reconstruction").apply(traversalHidden) as Tensor;
   const traversal = (await traversalTensor.array()) as number[][];
   const mse = reconstructionMse(samples, reconstructions);
   const sampleErrors = samples.map((row, i) =>

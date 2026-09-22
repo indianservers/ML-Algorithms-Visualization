@@ -1,12 +1,14 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Link } from "react-router-dom";
 import { Moon, Share2, Upload } from "lucide-react";
+import { LAB_TABS, LabLessonOrWork, useLabTabs } from "../../../components/common/LabTabs";
 import {
   createFewShotEpisode,
   type FewShotMetric,
 } from "../../../lib/algorithms/neural/fewShot";
-import FewShotMobileNetLab from "./FewShotMobileNetLab";
 import "./FewShotLearningPage.css";
+
+const FewShotMobileNetLab = lazy(() => import("./FewShotMobileNetLab"));
 
 const names = [
     "bird",
@@ -34,6 +36,7 @@ const names = [
   ],
   glyphs = ["🐦", "🐸", "⛵", "🚗", "🐶", "🐱", "✈️", "🦌", "🐴", "🚚"];
 export default function FewShotLearningPage() {
+  const { tab, setTab } = useLabTabs("Learn");
   const [advanced, setAdvanced] = useState(false),
     [nWay, setNWay] = useState(5),
     [kShot, setKShot] = useState(5),
@@ -76,7 +79,9 @@ export default function FewShotLearningPage() {
         <button onClick={() => setAdvanced(false)}>
           ← Return to Episode Visualizer
         </button>
-        <FewShotMobileNetLab />
+        <Suspense fallback={<p>Loading TensorFlow.js lab…</p>}>
+          <FewShotMobileNetLab />
+        </Suspense>
       </div>
     );
   return (
@@ -131,26 +136,19 @@ export default function FewShotLearningPage() {
         <h3>
           ◉ Learn › <b>Few-Shot Learning</b>
         </h3>
-        <nav>
-          {[
-            "Learn",
-            "Visualize",
-            "Dataset",
-            "Build / Train",
-            "Metrics",
-            "Compare",
-            "Explain",
-          ].map((tab) => (
+        <nav role="tablist" aria-label="Few-shot sections">
+          {LAB_TABS.map((name) => (
             <button
-              className={tab === "Learn" ? "active" : ""}
-              onClick={() =>
-                tab === "Build / Train"
-                  ? setAdvanced(true)
-                  : setToast(`${tab} selected`)
-              }
-              key={tab}
+              role="tab"
+              aria-selected={tab === name}
+              className={tab === name ? "active" : ""}
+              onClick={() => {
+                setTab(name);
+                if (name === "Build / Train") setAdvanced(true);
+              }}
+              key={name}
             >
-              {tab}
+              {name}
             </button>
           ))}
         </nav>
@@ -165,6 +163,7 @@ export default function FewShotLearningPage() {
           <b>MM</b>
         </div>
       </header>
+      <LabLessonOrWork tab={tab} route="/ml/deep-learning/few-shot-learning">
       <main>
         <section className="few-title panel">
           <h1>⚙ Few-Shot Learning</h1>
@@ -452,6 +451,7 @@ export default function FewShotLearningPage() {
         <button onClick={() => setSeed(seed + 1)}>Next Episode ›</button>
         <em>{toast}</em>
       </footer>
+      </LabLessonOrWork>
     </div>
   );
 }

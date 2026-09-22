@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { LabProgressMeter } from "../../../../components/common/LabChrome";
+import { useUrlTab } from "../../../../components/common/LabTabs";
 import {
   Activity,
   BarChart3,
@@ -1354,7 +1355,7 @@ function GenericPanels({
 }
 
 export default function DecisionTreeRegressionPage() {
-  const [tab, setTab] = useState<Tab>("visualize");
+  const [tab, setTab] = useUrlTab<Tab>("visualize");
   const [datasetId, setDatasetId] = useState<DatasetId>("bike");
   const [rows, setRows] = useState<TreeRow[]>(() => datasetFactories.bike());
   const [names, setNames] = useState(datasetMeta.bike.features);

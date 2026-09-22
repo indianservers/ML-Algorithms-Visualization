@@ -1,6 +1,7 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import { Link } from "react-router-dom";
 import { HelpCircle, Play, Save, Sun } from "lucide-react";
+import { LAB_TABS, LabLessonOrWork, useLabTabs } from "../../../components/common/LabTabs";
 import {
   runBackpropagation,
   type BackpropActivation,
@@ -33,6 +34,7 @@ const phases = [
 ];
 
 export default function BackpropagationVisualizerPage() {
+  const { tab, setTab } = useLabTabs("Visualize");
   const [data, setData] = useState(samples),
     [sample, setSample] = useState(3),
     [step, setStep] = useState(3),
@@ -136,22 +138,16 @@ export default function BackpropagationVisualizerPage() {
           〽 <b>Mega ML</b>
           <small>AI OBSERVATORY</small>
         </Link>
-        <nav>
-          {[
-            "▣ Learn",
-            "▦ Visualize",
-            "▤ Dataset",
-            "◉ Build / Train",
-            "▥ Metrics",
-            "⌘ Compare",
-            "? Explain",
-          ].map((item) => (
+        <nav role="tablist" aria-label="Backpropagation sections">
+          {LAB_TABS.map((name) => (
             <button
-              className={item.includes("Visualize") ? "active" : ""}
-              onClick={() => setToast(item)}
-              key={item}
+              role="tab"
+              aria-selected={tab === name}
+              className={tab === name ? "active" : ""}
+              onClick={() => setTab(name)}
+              key={name}
             >
-              {item}
+              {name}
             </button>
           ))}
         </nav>
@@ -167,6 +163,7 @@ export default function BackpropagationVisualizerPage() {
           </button>
         </div>
       </header>
+      <LabLessonOrWork tab={tab} route="/ml/deep-learning/backpropagation-visualizer">
       <main>
         <section className="bp-title">
           <h1>
@@ -544,6 +541,7 @@ export default function BackpropagationVisualizerPage() {
         {toast}
         <button onClick={reset}>Reset Session</button>
       </footer>
+      </LabLessonOrWork>
     </div>
   );
 }

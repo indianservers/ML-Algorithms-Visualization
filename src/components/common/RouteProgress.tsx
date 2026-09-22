@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import "./RouteProgress.css";
 
 /**
@@ -73,7 +73,7 @@ function startNavigation() {
     ramp = undefined;
     emit({ value: 100, active: true });
     fade = window.setTimeout(() => emit({ value: 100, active: false }), FADE_MS);
-  }, 12000);
+  }, 4000);
 }
 
 function hold() {
@@ -116,12 +116,9 @@ export function RouteProgressDone({ children }: { children: ReactNode }) {
  * change so a child `RouteProgressDone` effect can release after paint.
  */
 export function useRouteProgress(pathname: string) {
-  const prev = useRef<string | null>(null);
-  if (prev.current !== pathname) {
-    prev.current = pathname;
-    // Defer so we do not emit into subscribers during this render pass.
-    queueMicrotask(startNavigation);
-  }
+  useEffect(() => {
+    startNavigation();
+  }, [pathname]);
 }
 
 const SCENES = [

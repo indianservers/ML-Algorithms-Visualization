@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import * as tf from '@tensorflow/tfjs';
+import type { LayersModel, Tensor } from '@tensorflow/tfjs';
 import {
   Activity, BarChart3, BookOpen, Brain, Database, Download, FlaskConical,
   GitBranch, Layers, Play, Settings2, Target, Upload, RotateCcw, StepForward,
@@ -160,7 +160,7 @@ export default function ConceptAlgorithmPage({ config }: { config: AlgorithmModu
   const [tfPrediction, setTfPrediction] = useState<{ label: string; confidence: number; raw: number[] } | null>(null);
   const [uploadedRows, setUploadedRows] = useState<Array<Record<string, number>>>([]);
   const [uploadName, setUploadName] = useState('');
-  const tfModelRef = useRef<tf.LayersModel | null>(null);
+  const tfModelRef = useRef<LayersModel | null>(null);
   const autoTrainRunRef = useRef(0);
   const Icon = iconMap[config.icon ?? 'lab'];
   const maxIterations = 40;
@@ -465,6 +465,7 @@ export default function ConceptAlgorithmPage({ config }: { config: AlgorithmModu
     setTfTraining(true);
     setTfHistory([]);
     setTfPrediction(null);
+    const tf = await import('@tensorflow/tfjs');
     await tf.ready();
     tfModelRef.current?.dispose();
     const featureCount = tfDataset.features[0].length;
@@ -507,7 +508,7 @@ export default function ConceptAlgorithmPage({ config }: { config: AlgorithmModu
       });
       tfModelRef.current = model;
       const sample = tf.tensor2d([tfDataset.features[Math.min(2, tfDataset.features.length - 1)]]);
-      const output = model.predict(sample) as tf.Tensor;
+      const output = model.predict(sample) as Tensor;
       const raw = Array.from(await output.data()).map(value => Number(value.toFixed(4)));
       sample.dispose();
       output.dispose();

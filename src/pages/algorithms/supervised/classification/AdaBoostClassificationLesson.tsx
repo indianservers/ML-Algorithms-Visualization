@@ -27,7 +27,7 @@ import {
 import { binaryMetrics } from "../../../../lib/math/metrics";
 import { trainAdaBoostClassification } from "../../../../lib/algorithms/classification/adaBoostClassification";
 import { LabProgressMeter } from "../../../../components/common/LabChrome";
-import { LabLessonPanel } from "../../../../components/common/LabTabs";
+import { LabLessonPanel, useUrlTab } from "../../../../components/common/LabTabs";
 import { exportWorkspaceReport } from "../../../../lib/labWorkspace";
 import "./AdaBoostClassificationPage.css";
 
@@ -133,8 +133,8 @@ function AdaPlot({
 }
 
 export default function AdaBoostClassificationLesson() {
-  const [tab, setTab] = useState<Tab>("visualize"),
-    [dataset, setDataset] = useState<Dataset>("spiral"),
+  const [tab, setTab] = useUrlTab<Tab>("visualize");
+  const [dataset, setDataset] = useState<Dataset>("spiral"),
     [points, setPoints] = useState<Point[]>(BUILT.spiral),
     [imported, setImported] = useState<Point[]>([]);
   const [rounds, setRounds] = useState(6),

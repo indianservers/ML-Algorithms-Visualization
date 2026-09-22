@@ -1,17 +1,11 @@
-import { useMemo, useState } from "react";
-import * as tf from "@tensorflow/tfjs";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { Play, RotateCcw } from "lucide-react";
-import TensorFlowDeepLearningLab from "../shared/TensorFlowDeepLearningLab";
 import {
   LAB_TABS,
   LabLessonPanel,
   useLabTabs,
 } from "../../../components/common/LabTabs";
-import {
-  buildModel,
-  imageSample,
-  makeTrainingData,
-} from "../../../lib/algorithms/neural/tensorflowDeepLearning";
+import { imageSample } from "../../../lib/algorithms/neural/toySamples";
 import {
   applyBank,
   batchNormVolume,
@@ -28,18 +22,26 @@ import {
 } from "../../../lib/algorithms/neural/cnn";
 import "./CNNPage.css";
 
+const TensorFlowDeepLearningLab = lazy(
+  () => import("../shared/TensorFlowDeepLearningLab"),
+);
+
+const CONV1_FILTERS = 8;
+const CONV2_FILTERS = 8;
+const DENSE_UNITS = 32;
+const SAMPLE_COUNT = 12;
 const LABELS = ["horizontal bar", "vertical bar"] as const;
 const LABEL_PLAIN = ["a horizontal line", "a vertical line"] as const;
 const STAGES = [
   { id: "input", name: "Picture", tech: "Input", detail: "tiny 8×8 image", number: 1 },
-  { id: "conv1", name: "Find edges", tech: "Conv2D", detail: "32 stamps", number: 2 },
+  { id: "conv1", name: "Find edges", tech: "Conv2D", detail: `${CONV1_FILTERS} stamps`, number: 2 },
   { id: "relu1", name: "Keep positives", tech: "ReLU", detail: "drop negatives", number: 3 },
   { id: "pool1", name: "Shrink", tech: "MaxPool", detail: "keep strongest", number: 4 },
-  { id: "conv2", name: "Find shapes", tech: "Conv2D", detail: "64 stamps", number: 5 },
+  { id: "conv2", name: "Find shapes", tech: "Conv2D", detail: `${CONV2_FILTERS} stamps`, number: 5 },
   { id: "relu2", name: "Keep positives", tech: "ReLU", detail: "drop negatives", number: 6 },
   { id: "pool2", name: "Shrink again", tech: "MaxPool", detail: "2×2 leftover", number: 7 },
-  { id: "flatten", name: "Unroll", tech: "Flatten", detail: "256 numbers", number: 8 },
-  { id: "dense", name: "Mix", tech: "Dense", detail: "128 neurons", number: 9 },
+  { id: "flatten", name: "Unroll", tech: "Flatten", detail: `${CONV2_FILTERS * 4} numbers`, number: 8 },
+  { id: "dense", name: "Mix", tech: "Dense", detail: `${DENSE_UNITS} neurons`, number: 9 },
   { id: "softmax", name: "Guess", tech: "Softmax", detail: "2 choices", number: 10 },
 ] as const;
 
@@ -74,23 +76,23 @@ const STAGE_COPY: Record<StageId, { purpose: string; does: string }> = {
     does: "An 8-pixel bar becomes a 4×4 glow. Where it is matters less; that it exists still does.",
   },
   conv2: {
-    purpose: "Now 64 stamps look at all 32 earlier maps at once, so they can join edges into shapes.",
-    does: "Flip through detectors 1–64. Each map is a real mix of the previous layer, not a copy.",
+    purpose: `Now ${CONV2_FILTERS} stamps look at all ${CONV1_FILTERS} earlier maps at once, so they can join edges into shapes. (A production CNN often uses 32 then 64; this lab stays small so it stays live.)`,
+    does: `Flip through detectors 1–${CONV2_FILTERS}. Each map is a real mix of the previous layer, not a copy.`,
   },
   relu2: {
     purpose: "Same rule again: keep positive shape scores, drop the rest.",
     does: "If a map is all black, that stamp is pointed the wrong way for this picture.",
   },
   pool2: {
-    purpose: "Shrink one more time. You are left with 2×2×64 — that is 256 numbers.",
-    does: "Count it: 2 × 2 × 64 = 256. That is why Unroll says 256.",
+    purpose: `Shrink one more time. You are left with 2×2×${CONV2_FILTERS} — that is ${CONV2_FILTERS * 4} numbers.`,
+    does: `Count it: 2 × 2 × ${CONV2_FILTERS} = ${CONV2_FILTERS * 4}. That is why Unroll says ${CONV2_FILTERS * 4}.`,
   },
   flatten: {
-    purpose: "Line those 256 numbers up so the next layer can read them like a list.",
+    purpose: `Line those ${CONV2_FILTERS * 4} numbers up so the next layer can read them like a list.`,
     does: "The bars are the pooled maps in order — not random decoration.",
   },
   dense: {
-    purpose: "128 neurons mix the 256 numbers into a short code about “what kind of line is this?”",
+    purpose: `${DENSE_UNITS} neurons mix the ${CONV2_FILTERS * 4} numbers into a short code about “what kind of line is this?”`,
     does: "Tall bars are live neurons. A bar at zero means that neuron stayed quiet.",
   },
   softmax: {
@@ -103,11 +105,11 @@ const STAGE_NEXT: Record<StageId, string> = {
   input: "Next: slide 3×3 stamps over this picture to find edges.",
   conv1: "Next: throw away negative detections (Keep positives).",
   relu1: "Next: shrink the map — keep only the strongest 2×2 cell.",
-  pool1: "Next: look at all 32 maps together and hunt for bigger shapes.",
+  pool1: "Next: look at all the edge maps together and hunt for bigger shapes.",
   conv2: "Next: keep only the positive shape scores.",
-  relu2: "Next: shrink again so the leftover is just 2×2×64.",
-  pool2: "Next: unroll those 256 numbers into a single list.",
-  flatten: "Next: mix the list into 128 neurons.",
+  relu2: `Next: shrink again so the leftover is just 2×2×${CONV2_FILTERS}.`,
+  pool2: `Next: unroll those ${CONV2_FILTERS * 4} numbers into a single list.`,
+  flatten: `Next: mix the list into ${DENSE_UNITS} neurons.`,
   dense: "Next: turn the mix into two percentages and pick a winner.",
   softmax: "You are at the guess. Train the model if you want a fitted answer.",
 };
@@ -170,10 +172,10 @@ function vectorStats(values: number[]) {
 }
 
 const PARAMS = {
-  conv1: 3 * 3 * 1 * 32 + 32,
-  conv2: 3 * 3 * 32 * 64 + 64,
-  dense: 256 * 128 + 128,
-  softmax: 128 * 2 + 2,
+  conv1: 3 * 3 * 1 * CONV1_FILTERS + CONV1_FILTERS,
+  conv2: 3 * 3 * CONV1_FILTERS * CONV2_FILTERS + CONV2_FILTERS,
+  dense: CONV2_FILTERS * 4 * DENSE_UNITS + DENSE_UNITS,
+  softmax: DENSE_UNITS * 2 + 2,
 };
 const VIEW_TAB: Record<View, string> = {
   overview: "Visualize",
@@ -240,8 +242,12 @@ export default function CNNPage() {
   const [view, setView] = useState<View>("overview");
   const [stageId, setStageId] = useState<StageId>("conv1");
   const [filter, setFilter] = useState(0);
-  const [conv1Bank, setConv1Bank] = useState(() => makeKernelBank(32, 1, 32));
-  const [conv2Bank, setConv2Bank] = useState(() => makeKernelBank(64, 32, 64));
+  const [conv1Bank, setConv1Bank] = useState(() =>
+    makeKernelBank(CONV1_FILTERS, 1, CONV1_FILTERS),
+  );
+  const [conv2Bank, setConv2Bank] = useState(() =>
+    makeKernelBank(CONV2_FILTERS, CONV1_FILTERS, CONV2_FILTERS),
+  );
   const [stride, setStride] = useState(1);
   const [padding, setPadding] = useState(1);
   const [bias, setBias] = useState(true);
@@ -256,33 +262,55 @@ export default function CNNPage() {
   const [prediction, setPrediction] = useState<number[]>([]);
 
   const image = useMemo(() => makeImage(seed), [seed]);
-  const flattenSize = useMemo(
-    () =>
-      featurePass(image, conv1Bank, conv2Bank, stride, padding, bias, batchNorm)
-        .flat.length,
+  const features = useMemo(
+    () => featurePass(image, conv1Bank, conv2Bank, stride, padding, bias, batchNorm),
     [image, conv1Bank, conv2Bank, stride, padding, bias, batchNorm],
   );
+  const flattenSize = features.flat.length;
   const dense128 = useMemo(
-    () => makeDenseWeights(128, Math.max(1, flattenSize), 128),
+    () => makeDenseWeights(DENSE_UNITS, Math.max(1, flattenSize), DENSE_UNITS),
     [flattenSize],
   );
-  const dense2 = useMemo(() => makeDenseWeights(2, 128, 2), []);
+  const dense2 = useMemo(() => makeDenseWeights(2, DENSE_UNITS, 2), []);
   const paramCounts = {
     ...PARAMS,
-    dense: flattenSize * 128 + 128,
+    dense: flattenSize * DENSE_UNITS + DENSE_UNITS,
   };
   const totalParams =
     paramCounts.conv1 + paramCounts.conv2 + paramCounts.dense + paramCounts.softmax;
-  const pass = useMemo(
-    () => runPass(image, conv1Bank, conv2Bank, dense128, dense2, stride, padding, bias, batchNorm),
-    [image, conv1Bank, conv2Bank, stride, padding, bias, batchNorm, dense128, dense2],
-  );
+  const pass = useMemo(() => {
+    const hidden = denseForward(features.flat, dense128.weights, dense128.bias, "relu");
+    const logits = denseForward(hidden, dense2.weights, dense2.bias);
+    return { ...features, hidden, logits, probs: softmax(logits) };
+  }, [features, dense128, dense2]);
+  const needRoster = view === "data" || view === "evaluate";
   const roster = useMemo(
     () =>
-      Array.from({ length: 12 }, (_, index) => {
+      Array.from({ length: SAMPLE_COUNT }, (_, index) => {
         const sample = makeImage(index);
-        const out = runPass(sample, conv1Bank, conv2Bank, dense128, dense2, stride, padding, bias, batchNorm);
         const truth = imageSample(101 + index).label;
+        if (!needRoster) {
+          return {
+            index,
+            image: sample,
+            label: LABELS[truth],
+            pred: LABELS[0],
+            ok: false,
+            conf: 0,
+            probs: [0.5, 0.5],
+          };
+        }
+        const out = runPass(
+          sample,
+          conv1Bank,
+          conv2Bank,
+          dense128,
+          dense2,
+          stride,
+          padding,
+          bias,
+          batchNorm,
+        );
         const pred = out.probs[1] >= out.probs[0] ? 1 : 0;
         return {
           index,
@@ -294,7 +322,7 @@ export default function CNNPage() {
           probs: out.probs,
         };
       }),
-    [conv1Bank, conv2Bank, dense128, dense2, stride, padding, bias, batchNorm],
+    [needRoster, conv1Bank, conv2Bank, dense128, dense2, stride, padding, bias, batchNorm],
   );
 
   const volumes: Record<Exclude<StageId, "flatten" | "dense" | "softmax">, ImageMatrix[]> = {
@@ -307,7 +335,10 @@ export default function CNNPage() {
     pool2: pass.pool2,
   };
 
-  const filterCount = stageId === "conv2" || stageId === "relu2" || stageId === "pool2" ? 64 : 32;
+  const filterCount =
+    stageId === "conv2" || stageId === "relu2" || stageId === "pool2"
+      ? CONV2_FILTERS
+      : CONV1_FILTERS;
   const channel = Math.min(filter, filterCount - 1);
   const stage = STAGES.find((item) => item.id === stageId) ?? STAGES[1];
   const selectedVolume = stageId in volumes ? volumes[stageId as keyof typeof volumes] : null;
@@ -319,7 +350,7 @@ export default function CNNPage() {
   const kernel =
     stageId === "conv2" || stageId === "relu2" || stageId === "pool2"
       ? (conv2Bank[channel]?.[0] ?? conv2Bank[0][0])
-      : (conv1Bank[Math.min(filter, 31)]?.[0] ?? conv1Bank[0][0]);
+      : (conv1Bank[Math.min(filter, CONV1_FILTERS - 1)]?.[0] ?? conv1Bank[0][0]);
 
   const editKernel = (r: number, c: number, value: number) => {
     if (stageId === "conv2" || stageId === "relu2" || stageId === "pool2") {
@@ -336,7 +367,7 @@ export default function CNNPage() {
     }
     setConv1Bank((bank) =>
       bank.map((kernels, i) =>
-        i !== Math.min(filter, 31)
+        i !== Math.min(filter, CONV1_FILTERS - 1)
           ? kernels
           : [
               kernels[0].map((row, y) => row.map((item, x) => (y === r && x === c ? value : item))),
@@ -350,9 +381,13 @@ export default function CNNPage() {
     setHistory([]);
     setPrediction([]);
     setToast("Training TensorFlow.js CNN…");
-    const data = makeTrainingData("cnn", 96);
-    const model = buildModel("cnn", 32, 0.025);
     try {
+      const tf = await import("@tensorflow/tfjs");
+      const { buildModel, makeTrainingData } = await import(
+        "../../../lib/algorithms/neural/tensorflowDeepLearning"
+      );
+      const data = makeTrainingData("cnn", 96);
+      const model = buildModel("cnn", CONV1_FILTERS, 0.025);
       await model.fit(data.xs, data.ys, {
         epochs,
         batchSize: 16,
@@ -372,17 +407,18 @@ export default function CNNPage() {
         },
       });
       const input = tf.tensor4d(imageSample(101 + seed).values, [1, 8, 8, 1]);
-      const output = model.predict(input) as tf.Tensor;
+      const predicted = model.predict(input);
+      const output = Array.isArray(predicted) ? predicted[0] : predicted;
       setPrediction(Array.from(await output.data()));
       input.dispose();
       output.dispose();
+      data.xs.dispose();
+      data.ys.dispose();
+      model.dispose();
       setToast("Training complete — held-out prediction updated");
     } catch (error) {
       setToast(error instanceof Error ? `Training failed: ${error.message}` : "Training failed");
     } finally {
-      data.xs.dispose();
-      data.ys.dispose();
-      model.dispose();
       setTraining(false);
     }
   };
@@ -409,8 +445,8 @@ export default function CNNPage() {
     setSeed(0);
     setStageId("conv1");
     setFilter(0);
-    setConv1Bank(makeKernelBank(32, 1, 32));
-    setConv2Bank(makeKernelBank(64, 32, 64));
+    setConv1Bank(makeKernelBank(CONV1_FILTERS, 1, CONV1_FILTERS));
+    setConv2Bank(makeKernelBank(CONV2_FILTERS, CONV1_FILTERS, CONV2_FILTERS));
     setStride(1);
     setPadding(1);
     setBias(true);
@@ -426,7 +462,9 @@ export default function CNNPage() {
     return (
       <div className="cnn-advanced">
         <button onClick={() => setAdvanced(false)}>← Return to Layer Inspector</button>
-        <TensorFlowDeepLearningLab mode="cnn" />
+        <Suspense fallback={<p className="cnn-lesson">Loading TensorFlow.js lab…</p>}>
+          <TensorFlowDeepLearningLab mode="cnn" />
+        </Suspense>
       </div>
     );
 
@@ -510,10 +548,10 @@ export default function CNNPage() {
                 <button className={truthIndex === 1 ? "active" : ""} onClick={() => pickKind(1)}>
                   Vertical line
                 </button>
-                <button onClick={() => setSeed((seed + 1) % 12)} aria-label="Next picture">
+                <button onClick={() => setSeed((seed + 1) % SAMPLE_COUNT)} aria-label="Next picture">
                   Next picture
                 </button>
-                <small>Picture {seed + 1} of 12 · truth: {LABELS[truthIndex]}</small>
+                <small>Picture {seed + 1} of {SAMPLE_COUNT} · truth: {LABELS[truthIndex]}</small>
               </div>
               <div className="cnn-views">
                 {VIEWS.map(([id, label]) => (
@@ -670,12 +708,12 @@ export default function CNNPage() {
             <article>
               <h4>EXPORT SPEC</h4>
               <pre className="cnn-card">{`input: 8×8×1
-Conv2D(32, 3×3, stride ${stride}, pad ${padding}) → ${shapeOf(pass.conv1)}
+Conv2D(${CONV1_FILTERS}, 3×3, stride ${stride}, pad ${padding}) → ${shapeOf(pass.conv1)}
 ReLU → MaxPool(2×2) → ${shapeOf(pass.pool1)}
-Conv2D(64, 3×3) → ${shapeOf(pass.conv2)}
+Conv2D(${CONV2_FILTERS}, 3×3) → ${shapeOf(pass.conv2)}
 ReLU → MaxPool(2×2) → ${shapeOf(pass.pool2)}
 Flatten → ${pass.flat.length}
-Dense(128, ReLU) → ${pass.hidden.length}
+Dense(${DENSE_UNITS}, ReLU) → ${pass.hidden.length}
 Softmax → ${pass.probs.map((p) => p.toFixed(3)).join(" / ")}
 params ${totalParams}`}</pre>
             </article>
@@ -685,7 +723,7 @@ params ${totalParams}`}</pre>
             <article>
               <h4>RIGHT OR WRONG</h4>
               <p>
-                {inspectorHits} of 12 pictures guessed correctly. Click a row to open that picture.
+                {inspectorHits} of {SAMPLE_COUNT} pictures guessed correctly. Click a row to open that picture.
               </p>
               <table>
                 <thead>
@@ -739,12 +777,12 @@ params ${totalParams}`}</pre>
         ) : view === "deploy" ? (
           <section className="cnn-flow panel">
             <pre className="cnn-card">{`input: 8×8×1
-Conv2D(32, 3×3, stride ${stride}, pad ${padding}) → ${shapeOf(pass.conv1)}
+Conv2D(${CONV1_FILTERS}, 3×3, stride ${stride}, pad ${padding}) → ${shapeOf(pass.conv1)}
 ReLU → MaxPool(2×2) → ${shapeOf(pass.pool1)}
-Conv2D(64, 3×3) → ${shapeOf(pass.conv2)}
+Conv2D(${CONV2_FILTERS}, 3×3) → ${shapeOf(pass.conv2)}
 ReLU → MaxPool(2×2) → ${shapeOf(pass.pool2)}
 Flatten → ${pass.flat.length}
-Dense(128, ReLU) → ${pass.hidden.length}
+Dense(${DENSE_UNITS}, ReLU) → ${pass.hidden.length}
 Softmax → ${pass.probs.map((p) => p.toFixed(3)).join(" / ")}`}</pre>
           </section>
         ) : (

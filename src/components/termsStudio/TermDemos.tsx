@@ -29,6 +29,8 @@ const tooltip = {
   },
 };
 
+const gridStroke = 'var(--ts-line)';
+
 function Slider({
   label,
   value,

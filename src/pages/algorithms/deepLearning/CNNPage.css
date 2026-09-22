@@ -4,8 +4,8 @@
   grid-template-rows: auto auto 1fr;
   width: 100%;
   min-height: 100%;
-  background: #050d1b;
-  color: #eef3ff;
+  background: var(--lab-bg, #050d1b);
+  color: var(--lab-text-strong, #eef3ff);
   font:
     14px/1.5 Inter,
     system-ui;
@@ -42,23 +42,25 @@
 .cnn-page input,
 .cnn-page select {
   color: inherit;
-  background: #0d182a;
-  border: 1px solid #28354d;
+  background: var(--control-bg, #0d182a);
+  border: 1px solid var(--lab-line, #28354d);
 }
 .panel {
-  border: 1px solid #253149;
+  border: 1px solid var(--lab-line, #253149);
   border-radius: 8px;
-  background: #0b1628;
+  background: var(--lab-panel, #0b1628);
+  color: var(--lab-text, inherit);
 }
 .cnn-head {
   grid-column: 1 / -1;
   position: relative;
   min-height: 72px;
-  background: #050b17;
+  background: var(--lab-bg-elevated, #050b17);
   padding: 14px 20px 12px;
 }
 .cnn-head h1 {
   margin: 0;
+  padding-right: min(280px, 36vw);
   font-size: 22px;
   font-weight: 650;
   letter-spacing: -0.02em;
@@ -66,7 +68,8 @@
 .cnn-head .cnn-lede {
   margin: 4px 0 0;
   max-width: 52ch;
-  color: #9fb0c9;
+  padding-right: min(280px, 36vw);
+  color: var(--lab-muted, #9fb0c9);
   font-size: 13px;
 }
 .cnn-head > .cnn-actions {
@@ -85,7 +88,8 @@
   font-size: 13px;
 }
 .cnn-head button.train {
-  background: #276ff0;
+  background: var(--lab-blue, #276ff0);
+  color: #fff;
 }
 .cnn-head svg {
   width: 14px;
@@ -98,8 +102,9 @@
   height: 36px;
   padding: 0 11px;
   border-radius: 999px;
-  background: #0d1c33;
-  border: 1px solid #2a4468;
+  background: var(--control-bg, #0d1c33);
+  border: 1px solid var(--lab-line, #2a4468);
+  color: var(--lab-text, inherit);
   font-size: 13px;
 }
 .cnn-status i {
@@ -119,7 +124,7 @@
   background: #33dc91;
 }
 .cnn-status b {
-  color: #eef3ff;
+  color: var(--lab-text-strong, #eef3ff);
   font-weight: 650;
 }
 .cnn-page > main {
@@ -141,15 +146,15 @@
 }
 .cnn-guide p {
   margin: 4px 0 0;
-  color: #b7c6db;
+  color: var(--lab-muted, #b7c6db);
   font-size: 13px;
 }
 .cnn-guide-kicker {
   flex: 0 0 auto;
   padding: 3px 8px;
   border-radius: 999px;
-  background: #16325f;
-  color: #8eb6ff;
+  background: var(--lab-cyan-soft, #16325f);
+  color: var(--lab-cyan, #8eb6ff);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -169,11 +174,11 @@
   font-size: 13px;
 }
 .cnn-samples button.active {
-  background: #142d61;
-  outline: 1px solid #3c72ff;
+  background: var(--lab-cyan-soft, #142d61);
+  outline: 1px solid var(--lab-blue, #3c72ff);
 }
 .cnn-samples small {
-  color: #8ea0b8;
+  color: var(--lab-muted, #8ea0b8);
   font-size: 12px;
 }
 .cnn-pipeline {
@@ -203,25 +208,25 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #1a2940;
-  color: #9fb8de;
+  background: var(--lab-panel-3, #1a2940);
+  color: var(--lab-text, #9fb8de);
   font-size: 12px;
   font-weight: 700;
   display: grid;
   place-items: center;
 }
 .cnn-pipeline button small {
-  color: #95a2b5;
+  color: var(--lab-muted, #95a2b5);
   font-size: 11px;
   font-weight: 500;
   text-align: center;
 }
 .cnn-pipeline button.active {
-  outline: 2px solid #3c72ff;
-  background: #102446;
+  outline: 2px solid var(--lab-blue, #3c72ff);
+  background: var(--lab-cyan-soft, #102446);
 }
 .cnn-pipeline button.active em {
-  background: #276ff0;
+  background: var(--lab-blue, #276ff0);
   color: #fff;
 }
 .cnn-flow {
@@ -245,7 +250,7 @@
 .cnn-flow article p,
 .cnn-flow article small {
   font-size: 13px;
-  color: #b7c6db;
+  color: var(--lab-muted, #b7c6db);
 }
 .cnn-matrix {
   display: grid;
@@ -276,15 +281,15 @@
   margin: 0 0 10px;
   padding: 10px 12px;
   border-radius: 8px;
-  background: #102446;
-  color: #d7e6ff;
+  background: var(--lab-blue);
+  color: #fff;
   font-size: 15px;
   font-weight: 650;
   text-align: left;
   line-height: 1.35;
 }
 .cnn-guess span {
-  color: #8eb6ff;
+  color: color-mix(in srgb, #fff 82%, var(--lab-panel));
   font-weight: 500;
 }
 .cnn-bars {
@@ -293,7 +298,7 @@
   gap: 1px;
   height: 160px;
   padding: 6px 4px 0;
-  background: #081322;
+  background: var(--lab-inset, #081322);
 }
 .cnn-bars i {
   flex: 1;
@@ -308,13 +313,13 @@
 .cnn-data-hint {
   grid-column: 1 / -1;
   margin: 0 0 4px;
-  color: #b7c6db;
+  color: var(--lab-muted, #b7c6db);
   font-size: 14px;
   text-align: left;
 }
 .cnn-data-grid button {
-  border: 1px solid #253149;
-  background: #081322;
+  border: 1px solid var(--lab-line, #253149);
+  background: var(--lab-inset, #081322);
   padding: 8px;
 }
 .cnn-data-grid button.active {
@@ -326,10 +331,10 @@
   font-size: 13px;
 }
 .cnn-ok {
-  color: #33dc91;
+  color: var(--lab-green, #33dc91);
 }
 .cnn-bad {
-  color: #ff8b8b;
+  color: var(--lab-red, #ff8b8b);
 }
 .cnn-train,
 .cnn-eval {
@@ -354,7 +359,7 @@
 .cnn-help {
   display: block;
   margin: 2px 0 10px;
-  color: #8ea0b8;
+  color: var(--lab-muted, #8ea0b8);
   font-size: 12px;
 }
 .cnn-train table,
@@ -449,8 +454,8 @@
   margin-top: 8px;
   padding: 10px 12px;
   border-radius: 8px;
-  background: #102033;
-  color: #c5d6ef;
+  background: var(--lab-inset, #102033);
+  color: var(--lab-text, #c5d6ef);
   font-size: 13px;
 }
 .cnn-flow .dense p.active {
@@ -458,7 +463,7 @@
 }
 .cnn-flow .dense strong {
   position: static;
-  color: #8eb6ff;
+  color: var(--lab-cyan, #8eb6ff);
   font-size: 14px;
 }
 .cnn-layers {
@@ -487,7 +492,7 @@
 }
 .cnn-layers button span {
   display: block;
-  color: #8ea0b8;
+  color: var(--lab-muted, #8ea0b8);
   font-size: 12px;
 }
 .cnn-bottom {
@@ -510,7 +515,7 @@
   place-items: center;
   min-height: 150px;
   padding: 16px;
-  color: #9fb0c9;
+  color: var(--lab-muted, #9fb0c9);
   text-align: center;
   font-size: 14px;
 }
@@ -536,7 +541,7 @@
   display: flex;
   gap: 14px;
   margin: 0 0 6px;
-  color: #8ea0b8;
+  color: var(--lab-muted, #8ea0b8);
   font-size: 12px;
 }
 .cnn-legend i {
@@ -591,7 +596,7 @@
 }
 .cnn-inspector .cnn-insp-sub {
   margin: 0 0 12px;
-  color: #8ea0b8;
+  color: var(--lab-muted, #8ea0b8);
   font-size: 13px;
 }
 .cnn-inspector h2 button {
@@ -687,6 +692,15 @@
   .cnn-train,
   .cnn-eval {
     grid-template-columns: 1fr;
+  }
+  .cnn-head h1,
+  .cnn-head .cnn-lede {
+    padding-right: 0;
+  }
+  .cnn-head > .cnn-actions {
+    position: static;
+    margin-top: 10px;
+    flex-wrap: wrap;
   }
 }
 @media (max-width: 760px) {

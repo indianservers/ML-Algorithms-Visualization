@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { LabProgressMeter } from "../../../../components/common/LabChrome";
-import { LabLessonPanel } from "../../../../components/common/LabTabs";
+import { LabLessonPanel, useUrlTab } from "../../../../components/common/LabTabs";
 import {
   BarChart3,
   BookOpen,
@@ -70,7 +70,7 @@ function transform(source: Row[], kind: DatasetId): Row[] {
       label: row.label,
     }));
   }
-  return source.map((row, index) => {
+  return source.map((row) => {
     if (kind === "wine")
       return {
         features: [
@@ -91,18 +91,6 @@ function transform(source: Row[], kind: DatasetId): Row[] {
         ],
         label: row.label,
       };
-    if (kind === "synthetic") {
-      const shift = row.label * 1.3;
-      return {
-        features: row.features.map(
-          (value, feature) =>
-            value +
-            shift * (feature % 2 ? 0.5 : 1) +
-            Math.cos(index * (feature + 1)) * 0.1,
-        ),
-        label: row.label,
-      };
-    }
     return { features: [...row.features], label: row.label };
   });
 }
@@ -166,13 +154,13 @@ function MiniTree({
 }
 
 export default function RandomForestClassificationPage() {
-  const [tab, setTab] = useState<TabId>("visualize"),
-    [datasetId, setDatasetId] = useState<DatasetId>("iris");
+  const [tab, setTab] = useUrlTab<TabId>("visualize");
+  const [datasetId, setDatasetId] = useState<DatasetId>("iris");
   const [rows, setRows] = useState<Row[]>(
       BASE.map((row) => ({ features: [...row.features], label: row.label })),
     ),
     [imported, setImported] = useState<Row[]>([]);
-  const [estimators, setEstimators] = useState(100),
+  const [estimators, setEstimators] = useState(32),
     [depth, setDepth] = useState(7),
     [maxFeatures, setMaxFeatures] = useState<MaxFeatures>("sqrt"),
     [bootstrap, setBootstrap] = useState(true),
@@ -291,7 +279,7 @@ export default function RandomForestClassificationPage() {
     setRows(
       BASE.map((row) => ({ features: [...row.features], label: row.label })),
     );
-    setEstimators(100);
+    setEstimators(32);
     setDepth(7);
     setMaxFeatures("sqrt");
     setBootstrap(true);

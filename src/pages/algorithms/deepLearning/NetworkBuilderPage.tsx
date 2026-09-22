@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Code2,
@@ -10,13 +10,17 @@ import {
   Share2,
   Trash2,
 } from "lucide-react";
+import { LAB_TABS, LabLessonOrWork, useLabTabs } from "../../../components/common/LabTabs";
 import {
   evaluateNetwork,
   MAX_NETWORK_LAYERS,
   type NetworkLayer,
 } from "../../../lib/algorithms/neural/networkBuilder";
-import NetworkBuilderTensorFlowLab from "./NetworkBuilderTensorFlowLab";
 import "./NetworkBuilderPage.css";
+
+const NetworkBuilderTensorFlowLab = lazy(
+  () => import("./NetworkBuilderTensorFlowLab"),
+);
 
 const defaults: NetworkLayer[] = [
   { id: "input", type: "input", shape: [32, 32, 3] },
@@ -96,6 +100,7 @@ const layerName = (l: NetworkLayer) =>
 const shape = (v: number[]) => v.join("×");
 
 export default function NetworkBuilderPage() {
+  const { tab, setTab } = useLabTabs("Build / Train");
   const [advanced, setAdvanced] = useState(false),
     [layers, setLayers] = useState<NetworkLayer[]>(defaults),
     [selected, setSelected] = useState(defaults.length - 1),
@@ -152,7 +157,9 @@ export default function NetworkBuilderPage() {
         <button onClick={() => setAdvanced(false)}>
           ← Return to CNN Builder
         </button>
-        <NetworkBuilderTensorFlowLab />
+        <Suspense fallback={<p>Loading TensorFlow.js lab…</p>}>
+          <NetworkBuilderTensorFlowLab />
+        </Suspense>
       </div>
     );
   return (
@@ -200,26 +207,21 @@ export default function NetworkBuilderPage() {
             <Save /> Export Model
           </button>
         </div>
-        <nav>
-          {[
-            "Learn",
-            "Visualize",
-            "Dataset",
-            "Build / Train",
-            "Metrics",
-            "Compare",
-            "Explain",
-          ].map((x) => (
+        <nav role="tablist" aria-label="Network builder sections">
+          {LAB_TABS.map((name) => (
             <button
-              className={x === "Build / Train" ? "active" : ""}
-              onClick={() => setToast(`${x} selected`)}
-              key={x}
+              role="tab"
+              aria-selected={tab === name}
+              className={tab === name ? "active" : ""}
+              onClick={() => setTab(name)}
+              key={name}
             >
-              {x}
+              {name}
             </button>
           ))}
         </nav>
       </header>
+      <LabLessonOrWork tab={tab} route="/ml/deep-learning/network-builder">
       <aside className="builder-dataset panel">
         <h3>Sample Dataset</h3>
         <section>
@@ -594,6 +596,7 @@ export default function NetworkBuilderPage() {
           <p>Advanced Settings⌄</p>
         </section>
       </aside>
+      </LabLessonOrWork>
     </div>
   );
 }

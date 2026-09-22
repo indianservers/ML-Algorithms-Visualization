@@ -6,11 +6,12 @@
   place-items: center;
   padding: 24px;
   pointer-events: none;
+  visibility: hidden;
   opacity: 0;
   background: rgba(7, 12, 28, 0.46);
   backdrop-filter: blur(10px);
   transform: none;
-  transition: opacity 200ms ease;
+  transition: opacity 200ms ease, visibility 200ms ease;
 }
 
 @media print {
@@ -20,6 +21,8 @@
 }
 
 .route-progress[data-active] {
+  pointer-events: auto;
+  visibility: visible;
   opacity: 1;
 }
 

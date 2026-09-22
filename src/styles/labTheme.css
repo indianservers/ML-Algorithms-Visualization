@@ -273,17 +273,225 @@ html:not(.dark) #main-content [class*="-approved"] {
   color: var(--text-primary);
 }
 
+/* Local page tokens were authored for night mode. Remap them in Light so
+   leftover var(--panel)/var(--text)/var(--muted) usage stays readable. */
+html:not(.dark) #main-content [class*="-page"],
+html:not(.dark) #main-content [class*="-shell"],
+html:not(.dark) #main-content [class*="-approved"] {
+  --bg: var(--lab-bg);
+  --panel: var(--lab-panel);
+  --border: var(--lab-line);
+  --line: var(--lab-line);
+  --text: var(--lab-text-strong);
+  --muted: var(--lab-muted);
+  --ink: var(--lab-text-strong);
+  --surface: var(--lab-panel);
+}
+
+html.dark #main-content aside,
+html:not(.dark) #main-content aside {
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+
+/* Copy must follow the theme even when a lesson still hard-codes night/day hex. */
+html.dark #main-content [class*="-page"] h1,
+html.dark #main-content [class*="-page"] h2,
+html.dark #main-content [class*="-page"] h3,
+html.dark #main-content [class*="-page"] h4,
+html.dark #main-content [class*="-page"] h5,
+html.dark #main-content [class*="-page"] h6,
+html.dark #main-content [class*="-shell"] h1,
+html.dark #main-content [class*="-shell"] h2,
+html.dark #main-content [class*="-shell"] h3,
+html.dark #main-content [class*="-approved"] h1,
+html.dark #main-content [class*="-approved"] h2,
+html.dark #main-content [class*="-approved"] h3,
+html:not(.dark) #main-content [class*="-page"] h1,
+html:not(.dark) #main-content [class*="-page"] h2,
+html:not(.dark) #main-content [class*="-page"] h3,
+html:not(.dark) #main-content [class*="-page"] h4,
+html:not(.dark) #main-content [class*="-page"] h5,
+html:not(.dark) #main-content [class*="-page"] h6,
+html:not(.dark) #main-content [class*="-shell"] h1,
+html:not(.dark) #main-content [class*="-shell"] h2,
+html:not(.dark) #main-content [class*="-shell"] h3,
+html:not(.dark) #main-content [class*="-approved"] h1,
+html:not(.dark) #main-content [class*="-approved"] h2,
+html:not(.dark) #main-content [class*="-approved"] h3 {
+  color: var(--text-primary);
+}
+
+html.dark #main-content [class*="-page"] p,
+html.dark #main-content [class*="-page"] small,
+html.dark #main-content [class*="-page"] label,
+html.dark #main-content [class*="-page"] legend,
+html.dark #main-content [class*="-page"] th,
+html.dark #main-content [class*="-page"] td,
+html.dark #main-content [class*="-page"] li,
+html.dark #main-content [class*="-page"] dt,
+html.dark #main-content [class*="-page"] dd,
+html.dark #main-content [class*="-page"] figcaption,
+html.dark #main-content [class*="-page"] span,
+html.dark #main-content [class*="-page"] b,
+html.dark #main-content [class*="-page"] strong,
+html.dark #main-content [class*="-page"] em,
+html.dark #main-content [class*="-shell"] p,
+html.dark #main-content [class*="-shell"] small,
+html.dark #main-content [class*="-shell"] label,
+html.dark #main-content [class*="-shell"] span,
+html.dark #main-content [class*="-approved"] p,
+html.dark #main-content [class*="-approved"] small,
+html.dark #main-content [class*="-approved"] label,
+html.dark #main-content [class*="-approved"] span,
+html:not(.dark) #main-content [class*="-page"] p,
+html:not(.dark) #main-content [class*="-page"] small,
+html:not(.dark) #main-content [class*="-page"] label,
+html:not(.dark) #main-content [class*="-page"] legend,
+html:not(.dark) #main-content [class*="-page"] th,
+html:not(.dark) #main-content [class*="-page"] td,
+html:not(.dark) #main-content [class*="-page"] li,
+html:not(.dark) #main-content [class*="-page"] dt,
+html:not(.dark) #main-content [class*="-page"] dd,
+html:not(.dark) #main-content [class*="-page"] figcaption,
+html:not(.dark) #main-content [class*="-page"] span,
+html:not(.dark) #main-content [class*="-page"] b,
+html:not(.dark) #main-content [class*="-page"] strong,
+html:not(.dark) #main-content [class*="-page"] em,
+html:not(.dark) #main-content [class*="-shell"] p,
+html:not(.dark) #main-content [class*="-shell"] small,
+html:not(.dark) #main-content [class*="-shell"] label,
+html:not(.dark) #main-content [class*="-shell"] span,
+html:not(.dark) #main-content [class*="-approved"] p,
+html:not(.dark) #main-content [class*="-approved"] small,
+html:not(.dark) #main-content [class*="-approved"] label,
+html:not(.dark) #main-content [class*="-approved"] span {
+  color: var(--text-secondary);
+}
+
+html.dark #main-content [class*="-lede"],
+html.dark #main-content [class*="-hint"],
+html.dark #main-content [class*="-muted"],
+html.dark #main-content [class*="-caption"],
+html.dark #main-content [class*="-kicker"],
+html:not(.dark) #main-content [class*="-lede"],
+html:not(.dark) #main-content [class*="-hint"],
+html:not(.dark) #main-content [class*="-muted"],
+html:not(.dark) #main-content [class*="-caption"],
+html:not(.dark) #main-content [class*="-kicker"] {
+  color: var(--text-muted);
+}
+
+/* Light theme: lift leftover night-mode panels so dark body text is not
+   painted onto #0b1628 surfaces. */
 html:not(.dark) #main-content [class*="-page"] header,
 html:not(.dark) #main-content [class*="-shell"] header,
 html:not(.dark) #main-content [class*="-approved"] header,
 html:not(.dark) #main-content [class*="-page"] nav,
 html:not(.dark) #main-content [class*="-shell"] nav,
 html:not(.dark) #main-content [class*="-approved"] nav,
-html:not(.dark) #main-content aside,
-html.dark #main-content aside {
+html:not(.dark) #main-content [class*="-page"] main,
+html:not(.dark) #main-content [class*="-page"] section,
+html:not(.dark) #main-content [class*="-page"] article,
+html:not(.dark) #main-content [class*="-page"] footer,
+html:not(.dark) #main-content [class*="-page"] aside,
+html:not(.dark) #main-content [class*="-page"] table,
+html:not(.dark) #main-content [class*="-page"] thead,
+html:not(.dark) #main-content [class*="-page"] tbody,
+html:not(.dark) #main-content [class*="-page"] th,
+html:not(.dark) #main-content [class*="-page"] td,
+html:not(.dark) #main-content [class*="-page"] .panel,
+html:not(.dark) #main-content [class*="-shell"] .panel,
+html:not(.dark) #main-content [class*="-approved"] .panel,
+html:not(.dark) #main-content [class*="panel"],
+html:not(.dark) #main-content [class*="-card"],
+html:not(.dark) #main-content [class*="-head"],
+html:not(.dark) #main-content [class*="-toolbar"],
+html:not(.dark) #main-content [class*="-inspector"],
+html:not(.dark) #main-content [class*="-controls"],
+html:not(.dark) #main-content [class*="-rail"],
+html:not(.dark) #main-content [class*="-work"],
+html:not(.dark) #main-content [class*="-flow"],
+html:not(.dark) #main-content [class*="-guide"],
+html:not(.dark) #main-content [class*="-status"],
+html:not(.dark) #main-content [class*="-board"],
+html:not(.dark) #main-content [class*="-metrics"],
+html:not(.dark) #main-content [class*="-legend"],
+html:not(.dark) #main-content [class*="-progress"],
+html:not(.dark) #main-content [class*="-table"],
+html:not(.dark) #main-content [class*="-empty"],
+html:not(.dark) #main-content [class*="-side"],
+html:not(.dark) #main-content .lab-tab-lesson {
   background-color: var(--bg-surface);
   color: var(--text-primary);
   border-color: var(--border-default);
+}
+
+html:not(.dark) #main-content [class*="-page"] button,
+html:not(.dark) #main-content [class*="-shell"] button,
+html:not(.dark) #main-content [class*="-approved"] button {
+  background-color: var(--control-bg);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+
+html:not(.dark) #main-content button.train,
+html:not(.dark) #main-content button.primary,
+html:not(.dark) #main-content .train {
+  background-color: var(--lab-blue);
+  color: #fff;
+  border-color: var(--lab-blue);
+}
+
+html:not(.dark) #main-content [class*="-status"] {
+  background-color: var(--lab-panel-2);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+
+html:not(.dark) #main-content [class*="-status"] b,
+html:not(.dark) #main-content [class*="-status"] span {
+  color: var(--text-primary);
+}
+
+html:not(.dark) #main-content [role="tab"].active,
+html:not(.dark) #main-content button.active {
+  background-color: var(--lab-cyan-soft);
+  color: var(--lab-text-strong);
+}
+
+html:not(.dark) #main-content [class*="-ok"],
+html:not(.dark) #main-content [class*="-ok"] *,
+html:not(.dark) #main-content [class*="-good"],
+html:not(.dark) #main-content [class*="-good"] *,
+html.dark #main-content [class*="-ok"],
+html.dark #main-content [class*="-ok"] *,
+html.dark #main-content [class*="-good"],
+html.dark #main-content [class*="-good"] * {
+  color: var(--lab-green);
+}
+
+html:not(.dark) #main-content [class*="-bad"],
+html:not(.dark) #main-content [class*="-bad"] *,
+html.dark #main-content [class*="-bad"],
+html.dark #main-content [class*="-bad"] * {
+  color: var(--lab-red);
+}
+
+html:not(.dark) #main-content [class*="-page"] h1 em,
+html:not(.dark) #main-content [class*="-shell"] h1 em,
+html:not(.dark) #main-content [class*="-approved"] h1 em,
+html:not(.dark) #main-content [class*="-head"] h1 em {
+  background-color: var(--lab-green-soft);
+  color: var(--lab-green);
+}
+
+html:not(.dark) #main-content pre,
+html:not(.dark) #main-content code,
+html:not(.dark) #main-content .lab-tab-formula {
+  background-color: var(--bg-inset);
+  color: var(--text-primary);
 }
 
 #main-content [class*="-controls"],

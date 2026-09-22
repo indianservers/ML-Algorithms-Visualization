@@ -10,7 +10,8 @@ import {
   Share2,
   Upload,
 } from "lucide-react";
-import { LabLessonPanel } from "../../../../components/common/LabTabs";
+import { LabLessonPanel, useUrlTab } from "../../../../components/common/LabTabs";
+import { multinomialLogisticRegression } from "../../../../lib/algorithms/classification/multinomialLogisticRegression";
 import {
   classificationSplit,
   fitStandardScaler,
@@ -361,8 +362,8 @@ function Generic({
   );
 }
 export default function MultinomialLogisticRegressionPage() {
-  const [tab, setTab] = useState<Tab>("Visualize"),
-    [dataset, setDataset] = useState<DatasetKey>("iris"),
+  const [tab, setTab] = useUrlTab<Tab>("Visualize");
+  const [dataset, setDataset] = useState<DatasetKey>("iris"),
     [rows, setRows] = useState<Row[]>(builtins.iris.rows),
     [imported, setImported] = useState<Row[] | null>(null),
     [x1, setX1] = useState(0),

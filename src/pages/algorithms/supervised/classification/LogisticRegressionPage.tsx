@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { LabProgressMeter } from "../../../../components/common/LabChrome";
-import { LabLessonPanel } from "../../../../components/common/LabTabs";
+import { LabLessonPanel, useUrlTab } from "../../../../components/common/LabTabs";
 import {
   Check,
   ChevronDown,
@@ -590,8 +590,8 @@ function Generic({
 
 export default function LogisticRegressionPage() {
   const location = useLocation();
-  const [tab, setTab] = useState<Tab>("Visualize"),
-    [dataset, setDataset] = useState<DatasetKey>("admissions"),
+  const [tab, setTab] = useUrlTab<Tab>("Visualize");
+  const [dataset, setDataset] = useState<DatasetKey>("admissions"),
     [rows, setRows] = useState<Point[]>(admissions),
     [imported, setImported] = useState<Point[] | null>(null),
     [importedLabel, setImportedLabel] = useState("Imported CSV"),

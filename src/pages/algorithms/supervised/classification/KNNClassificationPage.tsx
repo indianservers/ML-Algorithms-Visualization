@@ -1,6 +1,6 @@
 import React, { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { LabLessonPanel } from "../../../../components/common/LabTabs";
+import { LabLessonPanel, useUrlTab } from "../../../../components/common/LabTabs";
 import {
   Award,
   BarChart3,
@@ -112,7 +112,7 @@ const clampK = (value: number, limit: number) =>
 const pct = (value: number) => `${Math.round(value * 100)}%`;
 
 export default function KNNClassificationPage() {
-  const [tab, setTab] = useState<TabId>("learn");
+  const [tab, setTab] = useUrlTab<TabId>("learn");
   const [datasetId, setDatasetId] = useState<DatasetId>("iris");
   const [points, setPoints] = useState<Point[]>(
     BUILT_INS.iris.map((point) => ({ ...point })),

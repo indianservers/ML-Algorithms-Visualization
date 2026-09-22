@@ -26,7 +26,7 @@ import {
 } from "../../../../lib/classification/classificationDatasets";
 import "./XGBoostConceptPage.css";
 import { useTheme } from "../../../../stores/uiStore";
-import { LabLessonOrWork, labHide } from "../../../../components/common/LabTabs";
+import { LabLessonOrWork, labHide, useUrlTab } from "../../../../components/common/LabTabs";
 
 type Row = { features: number[]; target: number };
 type Dataset = "separable" | "moons" | "xor" | "imbalanced" | "circles" | "imported";
@@ -93,8 +93,8 @@ function Sparkline({ train, valid }: { train: number[]; valid: number[] }) {
 }
 
 export default function XGBoostConceptPage() {
-  const [tab, setTab] = useState<Tab>("learn"),
-    [dataset, setDataset] = useState<Dataset>("separable"),
+  const [tab, setTab] = useUrlTab<Tab>("learn");
+  const [dataset, setDataset] = useState<Dataset>("separable"),
     [rows, setRows] = useState<Row[]>(BUILT.separable),
     [imported, setImported] = useState<Row[]>([]);
   const [rate, setRate] = useState(0.1),

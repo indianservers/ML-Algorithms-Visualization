@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import * as mobilenet from "@tensorflow-models/mobilenet";
-import * as tf from "@tensorflow/tfjs";
 import {
   ScatterChart,
   Scatter,
@@ -42,6 +40,18 @@ import {
 } from "../../../data/sampleDatasets";
 import KMeansReferenceLesson from "./KMeansReferenceLesson";
 
+const nextPaint = () =>
+  new Promise<void>((resolve) => {
+    requestAnimationFrame(() => resolve());
+  });
+
+type FeatureTensor = {
+  data: () => Promise<Float32Array | Int32Array | Uint8Array>;
+  dispose: () => void;
+};
+type MobileNetExtractor = {
+  infer: (canvas: HTMLCanvasElement, embedding: boolean) => FeatureTensor;
+};
 const colors = [
   "#2563eb",
   "#059669",
@@ -328,6 +338,7 @@ async function trainKMeansWithProgress(
   let assignments = assignToCentroids(values, centroids);
   const steps: KMeansStep[] = [];
   let converged = false;
+  let emptyClusterResets = 0;
 
   for (let iteration = 0; iteration < maxIterations; iteration++) {
     const inertia = calculateInertia(values, assignments, centroids);
@@ -336,13 +347,15 @@ async function trainKMeansWithProgress(
       centroids: centroids.map((centroid) => [...centroid]),
       assignments: [...assignments],
       inertia,
+      maxMovement: 0,
+      assignmentsChanged: 0,
     });
     onProgress({
       phase: "Training K-Means clusters",
       current: iteration + 1,
       total: maxIterations,
     });
-    await tf.nextFrame();
+    await nextPaint();
 
     const dims = values[0].length;
     const sums = Array.from({ length: count }, () => Array(dims).fill(0));
@@ -353,25 +366,45 @@ async function trainKMeansWithProgress(
         sums[cluster][dim] += value;
       });
     });
-    const nextCentroids = sums.map((sum, cluster) =>
-      clusterCounts[cluster] > 0
-        ? sum.map((value) => value / clusterCounts[cluster])
-        : [...values[Math.floor(Math.random() * values.length)]],
-    );
+    const nextCentroids = sums.map((sum, cluster) => {
+      if (clusterCounts[cluster] > 0) {
+        return sum.map((value) => value / clusterCounts[cluster]);
+      }
+      emptyClusterResets += 1;
+      return [...values[Math.floor(Math.random() * values.length)]];
+    });
     const nextAssignments = assignToCentroids(values, nextCentroids);
-    const changed = nextAssignments.some(
-      (assignment, index) => assignment !== assignments[index],
+    const assignmentsChanged = nextAssignments.reduce(
+      (sum, assignment, index) =>
+        sum + (assignment !== assignments[index] ? 1 : 0),
+      0,
     );
+    const maxMovement = Math.max(
+      0,
+      ...centroids.map((centroid, index) =>
+        distance(centroid, nextCentroids[index]),
+      ),
+    );
+    steps[steps.length - 1].maxMovement = maxMovement;
+    steps[steps.length - 1].assignmentsChanged = assignmentsChanged;
     centroids = nextCentroids;
     assignments = nextAssignments;
-    if (!changed) {
+    if (!assignmentsChanged) {
       converged = true;
       break;
     }
   }
 
   const inertia = calculateInertia(values, assignments, centroids);
-  return { centroids, assignments, inertia, steps, converged };
+  return {
+    centroids,
+    assignments,
+    inertia,
+    steps,
+    converged,
+    nInit: 1,
+    emptyClusterResets,
+  };
 }
 
 function ProgressBar({ progress }: { progress: ProgressState | null }) {
@@ -409,7 +442,7 @@ function downloadJson(filename: string, payload: unknown) {
 }
 
 export function KMeansAdvancedWorkbench() {
-  const extractorRef = useRef<mobilenet.MobileNet | null>(null);
+  const extractorRef = useRef<MobileNetExtractor | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [mode, setMode] = useState<"points" | "images">("points");
   const [k, setK] = useState(3);
@@ -435,9 +468,11 @@ export function KMeansAdvancedWorkbench() {
   const [imageResult, setImageResult] = useState<KMeansResult | null>(null);
 
   const ensureExtractor = async () => {
+    const tf = await import("@tensorflow/tfjs");
     await tf.ready();
     if (!extractorRef.current) {
       setImageStatus("Loading TensorFlow.js MobileNet feature extractor...");
+      const mobilenet = await import("@tensorflow-models/mobilenet");
       extractorRef.current = await mobilenet.load({ version: 2, alpha: 0.5 });
     }
     return extractorRef.current;
@@ -658,7 +693,7 @@ export function KMeansAdvancedWorkbench() {
     if (!ctx) throw new Error("Could not create image canvas.");
     ctx.clearRect(0, 0, 224, 224);
     ctx.drawImage(image, 0, 0, 224, 224);
-    const activation = extractor.infer(canvas, true) as tf.Tensor;
+    const activation = extractor.infer(canvas, true);
     const feature = Array.from(await activation.data());
     activation.dispose();
     return { feature, preview: canvas.toDataURL("image/jpeg", 0.78) };
@@ -710,7 +745,7 @@ export function KMeansAdvancedWorkbench() {
           current: index + 1,
           total: dataset.length,
         });
-        await tf.nextFrame();
+        await nextPaint();
       }
       setImages(imported);
       setK(
@@ -780,7 +815,7 @@ export function KMeansAdvancedWorkbench() {
           current: index + 1,
           total: files.length,
         });
-        if (index % 4 === 0) await tf.nextFrame();
+        if (index % 4 === 0) await nextPaint();
       }
       setImages((current) => [...current, ...imported]);
       setStep(0);

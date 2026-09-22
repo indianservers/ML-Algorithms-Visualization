@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { LabProgressMeter } from "../../../../components/common/LabChrome";
-import { LabLessonPanel } from "../../../../components/common/LabTabs";
+import { LabLessonPanel, useUrlTab } from "../../../../components/common/LabTabs";
 import {
   BookOpen,
   Bot,
@@ -127,8 +127,8 @@ function MiniPlot({
 }
 
 export default function GradientBoostingClassificationLesson() {
-  const [tab, setTab] = useState<Tab>("visualize"),
-    [dataset, setDataset] = useState<Dataset>("moons"),
+  const [tab, setTab] = useUrlTab<Tab>("visualize");
+  const [dataset, setDataset] = useState<Dataset>("moons"),
     [points, setPoints] = useState<Point[]>(BUILT.moons),
     [imported, setImported] = useState<Point[]>([]);
   const [estimators, setEstimators] = useState(5),

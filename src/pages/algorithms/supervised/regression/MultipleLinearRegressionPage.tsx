@@ -17,6 +17,7 @@ import { saveCurrentView } from '../../../../lib/labWorkspace';
 import { useTheme } from '../../../../stores/uiStore';
 import { useActiveLoadedDataset } from '../../../../lib/timeSeries/useActiveTimeSeries';
 import type { LoadedAlgorithmDataset } from '../../../../data/algorithmDatasets';
+import { useUrlTab } from '../../../../components/common/LabTabs';
 import './MultipleLinearRegressionPage.css';
 
 type Row = Record<string, number>;
@@ -151,7 +152,7 @@ export default function MultipleLinearRegressionPage() {
   const [xFeature, setXFeature] = React.useState('area_sqft');
   const [yFeature, setYFeature] = React.useState('bedrooms');
   const [colorFeature, setColorFeature] = React.useState('bathrooms');
-  const [activeTab, setActiveTab] = React.useState<TabId>('visualize');
+  const [activeTab, setActiveTab] = useUrlTab<TabId>('visualize');
   const [showPlane, setShowPlane] = React.useState(true);
   const [showPoints, setShowPoints] = React.useState(true);
   const [showResiduals, setShowResiduals] = React.useState(true);
@@ -161,7 +162,6 @@ export default function MultipleLinearRegressionPage() {
   const [shared, setShared] = React.useState(false);
   const { theme } = useTheme();
   const lightTheme = theme === 'light';
-  const fileRef = React.useRef<HTMLInputElement>(null);
   const [lockedPrediction, setLockedPrediction] = React.useState<number | null>(null);
   const [selectedRow, setSelectedRow] = React.useState(0);
   const [testSize, setTestSize] = React.useState(0.2);

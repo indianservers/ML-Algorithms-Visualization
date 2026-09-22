@@ -16,7 +16,11 @@ import {
   Sun,
   Upload,
 } from "lucide-react";
-import { LabLessonPanel } from "../../../../components/common/LabTabs";
+import { LabLessonPanel, useUrlTab } from "../../../../components/common/LabTabs";
+import {
+  energyDemandDataset,
+  housingDataset,
+} from "../../../../data/sampleDatasets";
 import { mae, mse, rSquared } from "../../../../lib/math/metrics";
 import {
   datasetAPerfectPositive,
@@ -302,8 +306,8 @@ function featureNamesFor(rows: Row[]) {
 }
 
 export default function SupportVectorRegressionPage() {
-  const [tab, setTab] = useState<Tab>("Visualize"),
-    [dataset, setDataset] = useState<DatasetKey>("bike"),
+  const [tab, setTab] = useUrlTab<Tab>("Visualize");
+  const [dataset, setDataset] = useState<DatasetKey>("bike"),
     [rows, setRows] = useState<Row[]>(builtins.bike.rows),
     [imported, setImported] = useState<Row[] | null>(null);
   const [kernel, setKernel] = useState<SvrKernel>("rbf"),

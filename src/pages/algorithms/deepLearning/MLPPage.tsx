@@ -9,7 +9,7 @@ import {
   type MLPResult,
 } from "../../../lib/algorithms/neural/mlp";
 import "./MLPPage.css";
-import { LabLessonOrWork, labHide } from "../../../components/common/LabTabs";
+import { LabLessonOrWork, labHide, useLabTabs } from "../../../components/common/LabTabs";
 
 type Point = { x: number; y: number; label: number };
 type Dataset = "moons" | "circles" | "xor" | "spiral" | "imported";
@@ -259,8 +259,8 @@ function Curves({ result }: { result: MLPResult }) {
 }
 
 export default function MLPPage() {
-  const [tab, setTab] = useState("Learn"),
-    [dataset, setDataset] = useState<Dataset>("moons"),
+  const { tab, setTab } = useLabTabs("Learn");
+  const [dataset, setDataset] = useState<Dataset>("moons"),
     [points, setPoints] = useState<Point[]>(BUILT.moons),
     [imported, setImported] = useState<Point[]>([]),
     [hiddenLayers, setHiddenLayers] = useState(2),
@@ -278,7 +278,7 @@ export default function MLPPage() {
   const fileRef = useRef<HTMLInputElement>(null),
     hidden = neurons.slice(0, hiddenLayers),
     [result, setResult] = useState<MLPResult>(() =>
-      train(BUILT.moons, [8, 6], "relu", "adam", 0.01, 32, 120, 0.0001, true),
+      train(BUILT.moons, [8, 6], "relu", "adam", 0.01, 32, 16, 0.0001, true),
     );
   const predictions = result.probabilities.map((p) => (p >= 0.5 ? 1 : 0)),
     labels = points.map((p) => p.label);

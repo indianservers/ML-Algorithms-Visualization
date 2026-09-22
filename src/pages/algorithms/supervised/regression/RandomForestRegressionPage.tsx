@@ -1218,16 +1218,16 @@ export default function RandomForestRegressionPage() {
     [rows, setRows] = useState(initial.rows),
     [names, setNames] = useState(initial.names),
     [targetName, setTargetName] = useState(initial.target);
-  const [trees, setTrees] = useState(200),
-    [maxDepth, setMaxDepth] = useState<number | null>(null),
+  const [trees, setTrees] = useState(32),
+    [maxDepth, setMaxDepth] = useState<number | null>(8),
     [minLeaf, setMinLeaf] = useState(5),
     [featureMode, setFeatureMode] = useState<MaxFeatureMode>("sqrt"),
     [bootstrap, setBootstrap] = useState(true),
     [sampleRate, setSampleRate] = useState(1),
     [seed, setSeed] = useState(42);
   const [trainedOptions, setTrainedOptions] = useState({
-    trees: 200,
-    maxDepth: null as number | null,
+    trees: 32,
+    maxDepth: 8 as number | null,
     minLeaf: 5,
     featureMode: "sqrt" as MaxFeatureMode,
     bootstrap: true,
@@ -1282,16 +1282,16 @@ export default function RandomForestRegressionPage() {
     }, 400);
   };
   const reset = () => {
-    setTrees(200);
-    setMaxDepth(null);
+    setTrees(32);
+    setMaxDepth(8);
     setMinLeaf(5);
     setFeatureMode("sqrt");
     setBootstrap(true);
     setSampleRate(1);
     setSeed(42);
     setTrainedOptions({
-      trees: 200,
-      maxDepth: null,
+      trees: 32,
+      maxDepth: 8,
       minLeaf: 5,
       featureMode: "sqrt",
       bootstrap: true,

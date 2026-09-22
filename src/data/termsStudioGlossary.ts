@@ -219,6 +219,7 @@ function stub(term: {
   tags?: string[];
   related?: string[];
   labLinks?: TermLesson['labLinks'];
+  demo?: TermLesson['demo'];
 }): TermLesson {
   return {
     analogy: term.blurb,

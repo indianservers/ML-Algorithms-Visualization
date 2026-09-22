@@ -1,13 +1,17 @@
-import { useEffect, useState, type ChangeEvent } from "react";
+import { lazy, Suspense, useEffect, useState, type ChangeEvent } from "react";
 import { Link } from "react-router-dom";
 import { Download, Moon, Play, RotateCcw, Save, Settings } from "lucide-react";
-import TensorFlowDeepLearningLab from "../shared/TensorFlowDeepLearningLab";
+import { LAB_TABS, LabLessonOrWork, useLabTabs } from "../../../components/common/LabTabs";
 import {
   runGRU,
   type GRUActivation,
   type GRUPrecision,
 } from "../../../lib/algorithms/neural/gru";
 import "./GRUPage.css";
+
+const TensorFlowDeepLearningLab = lazy(
+  () => import("../shared/TensorFlowDeepLearningLab"),
+);
 
 const datasets = [
   {
@@ -46,6 +50,7 @@ const datasets = [
 ];
 
 export default function GRUPage() {
+  const { tab, setTab } = useLabTabs("Visualize");
   const [advanced, setAdvanced] = useState(false),
     [dataset, setDataset] = useState(datasets[0]),
     [source, setSource] = useState("Built-in"),
@@ -144,7 +149,9 @@ export default function GRUPage() {
         <button onClick={() => setAdvanced(false)}>
           ← Return to GRU Visualizer
         </button>
-        <TensorFlowDeepLearningLab mode="gru" />
+        <Suspense fallback={<p>Loading TensorFlow.js lab…</p>}>
+          <TensorFlowDeepLearningLab mode="gru" />
+        </Suspense>
       </div>
     );
   const retention = Math.round(active.update * 100),
@@ -198,26 +205,19 @@ export default function GRUPage() {
           Explore how GRU gates control the flow of information and update the
           hidden state across time.
         </p>
-        <nav>
-          {[
-            "Learn",
-            "Visualize",
-            "Dataset",
-            "Build / Train",
-            "Metrics",
-            "Compare",
-            "Explain",
-          ].map((tab) => (
+        <nav role="tablist" aria-label="GRU sections">
+          {LAB_TABS.map((name) => (
             <button
-              className={tab === "Visualize" ? "active" : ""}
-              onClick={() =>
-                tab === "Build / Train"
-                  ? setAdvanced(true)
-                  : setToast(`${tab} selected`)
-              }
-              key={tab}
+              role="tab"
+              aria-selected={tab === name}
+              className={tab === name ? "active" : ""}
+              onClick={() => {
+                setTab(name);
+                if (name === "Build / Train") setAdvanced(true);
+              }}
+              key={name}
             >
-              {tab}
+              {name}
             </button>
           ))}
         </nav>
@@ -231,6 +231,7 @@ export default function GRUPage() {
           </button>
         </div>
       </header>
+      <LabLessonOrWork tab={tab} route="/ml/deep-learning/gru">
       <main>
         <section className="gru-toolbar panel">
           <button onClick={reset}>
@@ -562,6 +563,7 @@ export default function GRUPage() {
           <Save /> Save Experiment
         </button>
       </footer>
+      </LabLessonOrWork>
     </div>
   );
 }

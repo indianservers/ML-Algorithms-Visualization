@@ -1,13 +1,17 @@
-import { useEffect, useState, type ChangeEvent } from "react";
+import { lazy, Suspense, useEffect, useState, type ChangeEvent } from "react";
 import { Link } from "react-router-dom";
 import { Play, RotateCcw, Share2, Upload } from "lucide-react";
-import TensorFlowDeepLearningLab from "../shared/TensorFlowDeepLearningLab";
+import { LAB_TABS, LabLessonOrWork, useLabTabs } from "../../../components/common/LabTabs";
 import {
   runRNN,
   type RNNActivation,
   type RNNWeightInit,
 } from "../../../lib/algorithms/neural/rnn";
 import "./RNNPage.css";
+
+const TensorFlowDeepLearningLab = lazy(
+  () => import("../shared/TensorFlowDeepLearningLab"),
+);
 
 const sequences = [
   ["<s>", "the", "cat", "sat", "on", "mat", "</s>"],
@@ -16,6 +20,7 @@ const sequences = [
 ];
 
 export default function RNNPage() {
+  const { tab, setTab } = useLabTabs("Visualize");
   const [advanced, setAdvanced] = useState(false),
     [sequence, setSequence] = useState(sequences[0]),
     [sequenceLength, setSequenceLength] = useState(6),
@@ -114,7 +119,9 @@ export default function RNNPage() {
         <button onClick={() => setAdvanced(false)}>
           ← Return to RNN Visualizer
         </button>
-        <TensorFlowDeepLearningLab mode="rnn" />
+        <Suspense fallback={<p>Loading TensorFlow.js lab…</p>}>
+          <TensorFlowDeepLearningLab mode="rnn" />
+        </Suspense>
       </div>
     );
   return (
@@ -165,29 +172,23 @@ export default function RNNPage() {
           </button>
         </nav>
       </header>
-      <div className="rnn-tabs">
-        {[
-          "Learn",
-          "Visualize",
-          "Dataset",
-          "Build / Train",
-          "Metrics",
-          "Compare",
-          "Explain",
-        ].map((tab) => (
+      <nav className="rnn-tabs" role="tablist" aria-label="RNN sections">
+        {LAB_TABS.map((name) => (
           <button
-            className={tab === "Visualize" ? "active" : ""}
-            onClick={() =>
-              tab === "Build / Train"
-                ? setAdvanced(true)
-                : setToast(`${tab} view`)
-            }
-            key={tab}
+            role="tab"
+            aria-selected={tab === name}
+            className={tab === name ? "active" : ""}
+            onClick={() => {
+              setTab(name);
+              if (name === "Build / Train") setAdvanced(true);
+            }}
+            key={name}
           >
-            {tab}
+            {name}
           </button>
         ))}
-      </div>
+      </nav>
+      <LabLessonOrWork tab={tab} route="/ml/deep-learning/rnn">
       <main>
         <section className="unroll panel">
           <header>
@@ -551,6 +552,7 @@ export default function RNNPage() {
           <RotateCcw /> Reset Simulation
         </button>
       </footer>
+      </LabLessonOrWork>
       {toast && (
         <button className="rnn-toast" onClick={() => setToast("")}>
           {toast}

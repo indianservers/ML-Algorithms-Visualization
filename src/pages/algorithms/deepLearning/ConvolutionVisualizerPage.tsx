@@ -13,6 +13,7 @@ import {
   normalizeFeatureMap,
   type ImageMatrix,
 } from "../../../lib/algorithms/neural/cnn";
+import { LAB_TABS, LabLessonOrWork, useLabTabs } from "../../../components/common/LabTabs";
 import "./ConvolutionVisualizerPage.css";
 
 const baseImage: ImageMatrix = [
@@ -128,6 +129,7 @@ function NumberGrid({
 }
 
 export default function ConvolutionVisualizerPage() {
+  const { tab, setTab } = useLabTabs("Visualize");
   const [image, setImage] = useState<ImageMatrix>(baseImage),
     [sample, setSample] = useState(0),
     [kernelSize, setKernelSize] = useState(3),
@@ -296,27 +298,24 @@ export default function ConvolutionVisualizerPage() {
         </button>
       </aside>
       <header className="cv-top">
-        {[
-          "Learn",
-          "Visualize",
-          "Dataset",
-          "Build / Train",
-          "Metrics",
-          "Compare",
-          "Explain",
-        ].map((tab) => (
-          <button
-            className={tab === "Visualize" ? "active" : ""}
-            key={tab}
-            onClick={() => setToast(`${tab} view`)}
-          >
-            {tab}
-          </button>
-        ))}
+        <nav role="tablist" aria-label="Convolution sections">
+          {LAB_TABS.map((name) => (
+            <button
+              role="tab"
+              aria-selected={tab === name}
+              className={tab === name ? "active" : ""}
+              key={name}
+              onClick={() => setTab(name)}
+            >
+              {name}
+            </button>
+          ))}
+        </nav>
         <span>
           ☼ · ☾ · ▢ · ? · <b>MM</b>
         </span>
       </header>
+      <LabLessonOrWork tab={tab} route="/ml/deep-learning/convolution-visualizer">
       <main>
         <section className="cv-title">
           <i>⠿</i>
@@ -635,6 +634,7 @@ export default function ConvolutionVisualizerPage() {
       <footer>
         FP32⌄ · <b>● Ready</b>
       </footer>
+      </LabLessonOrWork>
       {toast && (
         <button className="cv-toast" onClick={() => setToast("")}>
           {toast}

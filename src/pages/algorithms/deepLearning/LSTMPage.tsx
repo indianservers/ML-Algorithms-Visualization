@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { Link } from "react-router-dom";
 import { BookOpen, Moon, Play, RotateCcw, Share2, Upload } from "lucide-react";
-import TensorFlowDeepLearningLab from "../shared/TensorFlowDeepLearningLab";
 import { LAB_TABS, useLabTabs } from "../../../components/common/LabTabs";
 import {
   activationGlyph,
@@ -34,6 +33,10 @@ import {
   LSTMLearnPanel,
 } from "./LSTMLesson";
 import "./LSTMPage.css";
+
+const TensorFlowDeepLearningLab = lazy(
+  () => import("../shared/TensorFlowDeepLearningLab"),
+);
 
 const EMPTY_STEP: LSTMStep = {
   input: 0,
@@ -618,7 +621,9 @@ export default function LSTMPage() {
             </article>
             {advanced ? (
               <div className="lstm-tf">
-                <TensorFlowDeepLearningLab mode="lstm" />
+                <Suspense fallback={<p>Loading TensorFlow.js lab…</p>}>
+                  <TensorFlowDeepLearningLab mode="lstm" />
+                </Suspense>
               </div>
             ) : (
               <article>
