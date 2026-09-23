@@ -8,6 +8,7 @@ import {
   Boxes,
   ChevronDown,
   Database,
+  Eye,
   FlaskConical,
   Gamepad2,
   Infinity as InfinityIcon,
@@ -46,7 +47,7 @@ type Group = {
   id: string;
   title: string;
   blurb: string;
-  tone: "blue" | "green" | "purple";
+  tone: "blue" | "green" | "purple" | "cyan";
   icon: React.ReactNode;
   categories: string[];
   featured: Card[];
@@ -133,6 +134,22 @@ const groups: Group[] = [
       card("/ml/deep-learning/lstm", "Long-term memory", "Intermediate"),
       card("/ml/deep-learning/transformer-attention", "Attention mechanism", "Advanced", "Transformer"),
       card("/ml/deep-learning/multi-head-attention", "Parallel attention heads", "Advanced", "Multi-Head Attention"),
+    ],
+  },
+  {
+    id: "computer-vision",
+    title: "Computer Vision",
+    blurb: "Detect, classify, and track from a live camera in the browser",
+    tone: "cyan",
+    icon: <Eye />,
+    categories: ["Computer Vision"],
+    featured: [
+      card("/ml/computer-vision", "Studio home for every vision lab", "Advanced", "Computer Vision Studio", "vision"),
+      card("/ml/computer-vision/object-detection", "Live boxes from EfficientDet Lite", "Advanced", "Object Detection", "vision"),
+      card("/ml/computer-vision/image-classification", "Train a custom classifier in-browser", "Advanced"),
+      card("/ml/computer-vision/hand-landmarks", "Track 21 hand keypoints live", "Advanced", "Hand Landmark Tracking", "vision"),
+      card("/ml/computer-vision/hand-gesture-recognition", "Recognize built-in MediaPipe gestures", "Advanced"),
+      card("/ml/computer-vision/face-mesh", "Dense facial landmarks live", "Advanced", "Face Mesh", "vision"),
     ],
   },
 ];

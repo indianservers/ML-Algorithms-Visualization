@@ -433,6 +433,9 @@ const routeSpecific: Record<string, AlgorithmDatasetSuggestion[]> = {
   '/ml/deep-learning/rnn': [
     weather('Daily temperature is a sequence, not a bag of rows.'),
     traffic('Hourly visits with recurrence.'),
+    sales('Seasonal monthly sales for next-step RNN readout.'),
+    retailSeq('Weekly orders with promo pulses.'),
+    machineLoad('Shift-cycle machine load for a vanilla RNN to chase.'),
     { ...synthetic.sequence },
   ],
   '/ml/deep-learning/lstm': [

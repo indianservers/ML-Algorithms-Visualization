@@ -104,9 +104,29 @@ const SentimentAnalysisPage = lazy(() => import('../pages/algorithms/nlp/Sentime
 const NaiveBayesSpamClassifierPage = lazy(() => import('../pages/algorithms/nlp/NaiveBayesSpamClassifierPage'));
 const AudioClassificationPage = lazy(() => import('../pages/algorithms/nlp/AudioClassificationPage'));
 
-// Computer Vision
-const ImageClassificationPage = lazy(() => import('../pages/algorithms/computerVision/ImageClassificationPage'));
-const HandGestureRecognitionPage = lazy(() => import('../pages/algorithms/computerVision/HandGestureRecognitionPage'));
+// Computer Vision Studio
+const ComputerVisionLayout = lazy(() => import('../pages/algorithms/computerVision/ComputerVisionLayout'));
+const ComputerVisionHome = lazy(() => import('../features/computer-vision/pages/ComputerVisionHome'));
+const VisionImageClassificationPage = lazy(() => import('../features/computer-vision/pages/ImageClassificationPage'));
+const VisionObjectDetectionPage = lazy(() => import('../features/computer-vision/pages/ObjectDetectionPage'));
+const VisionHandLandmarkPage = lazy(() => import('../features/computer-vision/pages/HandLandmarkPage'));
+const VisionHandGesturePage = lazy(() => import('../features/computer-vision/pages/HandGesturePage'));
+const VisionCustomGestureTrainerPage = lazy(() => import('../features/computer-vision/pages/CustomGestureTrainerPage'));
+const VisionFaceDetectionPage = lazy(() => import('../features/computer-vision/pages/FaceDetectionPage'));
+const VisionFaceMeshPage = lazy(() => import('../features/computer-vision/pages/FaceMeshPage'));
+const VisionFaceExpressionsPage = lazy(() => import('../features/computer-vision/pages/FaceExpressionsPage'));
+const VisionPoseEstimationPage = lazy(() => import('../features/computer-vision/pages/PoseEstimationPage'));
+const VisionPoseAngleAnalyzerPage = lazy(() => import('../features/computer-vision/pages/PoseAngleAnalyzerPage'));
+const VisionExerciseRepCounterPage = lazy(() => import('../features/computer-vision/pages/ExerciseRepCounterPage'));
+const VisionHolisticBodyTrackerPage = lazy(() => import('../features/computer-vision/pages/HolisticBodyTrackerPage'));
+const VisionImageSegmentationPage = lazy(() => import('../features/computer-vision/pages/ImageSegmentationPage'));
+const VisionPersonBackgroundPage = lazy(() => import('../features/computer-vision/pages/PersonBackgroundSegmentationPage'));
+const VisionInteractiveSegmentationPage = lazy(() => import('../features/computer-vision/pages/InteractiveSegmentationPage'));
+const VisionImageEmbeddingsPage = lazy(() => import('../features/computer-vision/pages/ImageEmbeddingsPage'));
+const VisionObjectTrackingPage = lazy(() => import('../features/computer-vision/pages/ObjectTrackingPage'));
+const VisionMultiObjectAnalyticsPage = lazy(() => import('../features/computer-vision/pages/MultiObjectAnalyticsPage'));
+const VisionCameraEffectsPage = lazy(() => import('../features/computer-vision/pages/CameraEffectsPage'));
+const VisionPipelineBuilderPage = lazy(() => import('../features/computer-vision/pages/VisionPipelineBuilderPage'));
 const PoseDetectionPage = lazy(() => import('../pages/algorithms/computerVision/PoseDetectionPage'));
 const PersonSegmentationPage = lazy(() => import('../pages/algorithms/computerVision/PersonSegmentationPage'));
 const CNNFilterExplorerPage = lazy(() => import('../pages/algorithms/computerVision/CNNFilterExplorerPage'));
@@ -281,10 +301,34 @@ export const router = createBrowserRouter([
       { path: 'ml/nlp/sentiment-analysis', element: <SentimentAnalysisPage /> },
       { path: 'ml/nlp/naive-bayes-spam', element: <NaiveBayesSpamClassifierPage /> },
       { path: 'ml/nlp/audio-classification', element: <AudioClassificationPage /> },
-      // Computer Vision
-      { path: 'ml/computer-vision/image-classification', element: <ImageClassificationPage /> },
+      // Computer Vision Studio
+      {
+        element: <ComputerVisionLayout />,
+        children: [
+          { path: 'ml/computer-vision', element: <ComputerVisionHome /> },
+          { path: 'ml/computer-vision/object-detection', element: <VisionObjectDetectionPage /> },
+          { path: 'ml/computer-vision/image-classification', element: <VisionImageClassificationPage /> },
+          { path: 'ml/computer-vision/hand-landmarks', element: <VisionHandLandmarkPage /> },
+          { path: 'ml/computer-vision/hand-gesture-recognition', element: <VisionHandGesturePage /> },
+          { path: 'ml/computer-vision/custom-gesture-trainer', element: <VisionCustomGestureTrainerPage /> },
+          { path: 'ml/computer-vision/face-detection', element: <VisionFaceDetectionPage /> },
+          { path: 'ml/computer-vision/face-mesh', element: <VisionFaceMeshPage /> },
+          { path: 'ml/computer-vision/face-expressions', element: <VisionFaceExpressionsPage /> },
+          { path: 'ml/computer-vision/pose-estimation', element: <VisionPoseEstimationPage /> },
+          { path: 'ml/computer-vision/pose-angle-analyzer', element: <VisionPoseAngleAnalyzerPage /> },
+          { path: 'ml/computer-vision/exercise-rep-counter', element: <VisionExerciseRepCounterPage /> },
+          { path: 'ml/computer-vision/holistic-body-tracker', element: <VisionHolisticBodyTrackerPage /> },
+          { path: 'ml/computer-vision/image-segmentation', element: <VisionImageSegmentationPage /> },
+          { path: 'ml/computer-vision/person-background-segmentation', element: <VisionPersonBackgroundPage /> },
+          { path: 'ml/computer-vision/interactive-segmentation', element: <VisionInteractiveSegmentationPage /> },
+          { path: 'ml/computer-vision/image-embeddings', element: <VisionImageEmbeddingsPage /> },
+          { path: 'ml/computer-vision/object-tracking', element: <VisionObjectTrackingPage /> },
+          { path: 'ml/computer-vision/multi-object-analytics', element: <VisionMultiObjectAnalyticsPage /> },
+          { path: 'ml/computer-vision/camera-effects', element: <VisionCameraEffectsPage /> },
+          { path: 'ml/computer-vision/pipeline-builder', element: <VisionPipelineBuilderPage /> },
+        ],
+      },
       { path: 'ml/computer-vision/audio-classification', element: <AudioClassificationPage /> },
-      { path: 'ml/computer-vision/hand-gesture-recognition', element: <HandGestureRecognitionPage /> },
       { path: 'ml/computer-vision/pose-detection', element: <PoseDetectionPage /> },
       { path: 'ml/computer-vision/person-segmentation', element: <PersonSegmentationPage /> },
       { path: 'ml/computer-vision/cnn-filter-explorer', element: <CNNFilterExplorerPage /> },

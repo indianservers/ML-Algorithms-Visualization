@@ -799,6 +799,11 @@
   border-color: #d4cbfb;
 }
 
+.hl-group.tone-cyan {
+  background: #d7f3fb;
+  border-color: #b7e4f3;
+}
+
 .hl-group-head {
   display: flex;
   align-items: center;
@@ -832,6 +837,11 @@
   box-shadow: 0 4px 11px rgba(124, 58, 237, 0.26);
 }
 
+.tone-cyan .hl-group-icon {
+  background: linear-gradient(135deg, #22d3ee, #0284c7);
+  box-shadow: 0 4px 11px rgba(2, 132, 199, 0.26);
+}
+
 .hl-group-title {
   display: grid;
   gap: 1px;
@@ -855,6 +865,9 @@
 }
 .tone-purple .hl-group-title h3 {
   color: #7c3aed;
+}
+.tone-cyan .hl-group-title h3 {
+  color: #0e7490;
 }
 
 .hl-group-title p {
@@ -890,6 +903,9 @@
 }
 .tone-purple .hl-view-all {
   color: #7c3aed;
+}
+.tone-cyan .hl-view-all {
+  color: #0e7490;
 }
 
 .hl-view-all svg {
@@ -1047,6 +1063,13 @@
   --hl-glow-b: #c084fc;
   --hl-glow-c: #f472b6;
   --hl-glow-d: #818cf8;
+}
+
+.tone-cyan .hl-card {
+  --hl-glow-a: #0284c7;
+  --hl-glow-b: #22d3ee;
+  --hl-glow-c: #38bdf8;
+  --hl-glow-d: #6366f1;
 }
 
 .tone-amber .hl-card {

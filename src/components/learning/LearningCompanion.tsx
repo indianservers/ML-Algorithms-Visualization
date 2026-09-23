@@ -6,16 +6,22 @@ import { Formula } from '../common/Formula';
 import { getLearningContent } from '../../data/learningContent';
 import { getLearnerNote, markRouteComplete, recordChallengeRun, saveLearnerNote, saveQuizResult } from '../../stores/learningStore';
 
+export type LearningCompanionSection = 'lessons' | 'companion' | 'challenge' | 'notes' | 'quiz';
+
+const ALL_COMPANION_SECTIONS: LearningCompanionSection[] = ['lessons', 'companion', 'challenge', 'notes', 'quiz'];
+
 interface LearningCompanionProps {
   route: string;
   compact?: boolean;
+  sections?: LearningCompanionSection[];
 }
 
-export function LearningCompanion({ route, compact = false }: LearningCompanionProps) {
-  return <LearningCompanionBody key={route} route={route} compact={compact} />;
+export function LearningCompanion({ route, compact = false, sections }: LearningCompanionProps) {
+  return <LearningCompanionBody key={route} route={route} compact={compact} sections={sections ?? ALL_COMPANION_SECTIONS} />;
 }
 
-function LearningCompanionBody({ route, compact = false }: LearningCompanionProps) {
+function LearningCompanionBody({ route, compact = false, sections = ALL_COMPANION_SECTIONS }: LearningCompanionProps) {
+  const show = (section: LearningCompanionSection) => sections.includes(section);
   const content = React.useMemo(() => getLearningContent(route), [route]);
   const [answers, setAnswers] = React.useState<Record<number, number>>({});
   const [score, setScore] = React.useState<number | null>(null);
@@ -54,8 +60,10 @@ function LearningCompanionBody({ route, compact = false }: LearningCompanionProp
 
   return (
     <div className="space-y-4">
+      {(show('lessons') || show('companion')) && (
       <div data-learning-explanation>
-        <Card title="Learning Companion" subtitle="Objectives, intuition, quiz, notes, and challenge tracking for this route." icon={<GraduationCap size={15} />}>
+        <Card title="Learning Companion" subtitle="Objectives, intuition, and the core PCA formula for this route." icon={<GraduationCap size={15} />}>
+        {show('lessons') && (
         <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50/70 p-3 dark:border-emerald-900/70 dark:bg-emerald-950/20">
           <h4 className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-200">
             <BookOpen size={13} /> Lesson Pages
@@ -73,6 +81,8 @@ function LearningCompanionBody({ route, compact = false }: LearningCompanionProp
             ))}
           </div>
         </div>
+        )}
+        {show('companion') && (
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="space-y-3">
             <div>
@@ -109,16 +119,23 @@ function LearningCompanionBody({ route, compact = false }: LearningCompanionProp
             )}
           </div>
         </div>
+        )}
         </Card>
       </div>
+      )}
 
+      {(show('challenge') || show('notes')) && (
       <div className="grid gap-4 lg:grid-cols-2">
+        {show('challenge') && (
         <Card title="Mini Challenge" subtitle={content.challenge} icon={<Trophy size={15} />}>
           <div className="flex flex-wrap gap-2">
             <button onClick={runChallenge} className="rounded bg-blue-600 px-3 py-2 text-xs font-semibold text-white">Record Challenge Attempt</button>
             <button onClick={complete} className="rounded border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-900">Mark Complete</button>
           </div>
+          {message && !show('quiz') && <p className="mt-2 text-xs text-green-600 dark:text-green-300">{message}</p>}
         </Card>
+        )}
+        {show('notes') && (
         <Card title="Learning Note" subtitle="Saved locally in this browser." icon={<NotebookPen size={15} />}>
           <textarea
             value={note}
@@ -129,8 +146,11 @@ function LearningCompanionBody({ route, compact = false }: LearningCompanionProp
           />
           <button onClick={saveNote} className="mt-2 rounded bg-gray-900 px-3 py-2 text-xs font-semibold text-white dark:bg-white dark:text-gray-900">Save Note</button>
         </Card>
+        )}
       </div>
+      )}
 
+      {show('quiz') && (
       <Card title="Quick Quiz" subtitle="Three checks for durable understanding." icon={<Code2 size={15} />} collapsible>
         <div className="relative space-y-3 overflow-hidden">
           {celebrate && (
@@ -173,6 +193,7 @@ function LearningCompanionBody({ route, compact = false }: LearningCompanionProp
           </div>
         </div>
       </Card>
+      )}
     </div>
   );
 }

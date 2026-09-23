@@ -490,10 +490,25 @@ export const algorithmSearchMeta: Record<string, AlgorithmSearchMeta> = {
     tags: ['audio', 'sound', 'microphone', 'spectrogram', 'classification'],
   },
 
+  '/ml/computer-vision': {
+    description: 'Browser computer vision studio for detection, classification, hands, and later labs.',
+    synonyms: ['computer vision studio', 'cv studio', 'vision lab', 'webcam ml'],
+    tags: ['computer vision', 'camera', 'mediapipe', 'tensorflow', 'studio'],
+  },
+  '/ml/computer-vision/object-detection': {
+    description: 'Detect objects live with MediaPipe EfficientDet Lite and draw bounding boxes in the browser.',
+    synonyms: ['object detection', 'bounding boxes', 'efficientdet', 'coco detection'],
+    tags: ['image', 'webcam', 'bounding box', 'detection', 'real time', 'mediapipe'],
+  },
   '/ml/computer-vision/image-classification': {
     description: 'Train an in-browser image classifier from your own webcam samples.',
-    synonyms: ['image classification', 'picture classification', 'photo classifier'],
+    synonyms: ['image classification', 'picture classification', 'photo classifier', 'teachable machine'],
     tags: ['image', 'webcam', 'classification', 'mobilenet', 'transfer learning'],
+  },
+  '/ml/computer-vision/hand-landmarks': {
+    description: 'Track 21 MediaPipe hand landmarks, handedness, and finger states from a webcam.',
+    synonyms: ['hand landmarks', 'hand tracking', 'hand keypoints', 'mediapipe hands'],
+    tags: ['image', 'webcam', 'landmarks', 'hands', 'real time'],
   },
   '/ml/computer-vision/audio-classification': {
     description: 'Classify audio clips using the same browser training loop as images.',
@@ -501,9 +516,89 @@ export const algorithmSearchMeta: Record<string, AlgorithmSearchMeta> = {
     tags: ['audio', 'sound', 'microphone', 'classification'],
   },
   '/ml/computer-vision/hand-gesture-recognition': {
-    description: 'Detect hand landmarks from the webcam and classify gestures live.',
-    synonyms: ['hand gesture recognition', 'hand tracking', 'hand pose detection'],
-    tags: ['image', 'webcam', 'landmarks', 'gestures', 'real time'],
+    description: 'Recognize built-in MediaPipe gestures such as Open Palm and Thumb Up from a live camera.',
+    synonyms: ['hand gesture recognition', 'hand tracking', 'thumb up', 'peace sign', 'mediapipe gestures'],
+    tags: ['image', 'webcam', 'landmarks', 'gestures', 'real time', 'mediapipe'],
+  },
+  '/ml/computer-vision/custom-gesture-trainer': {
+    description: 'Train your own hand gesture classes from MediaPipe landmarks with TensorFlow.js in the browser.',
+    synonyms: ['custom gesture trainer', 'train gestures', 'teachable gestures', 'landmark classifier'],
+    tags: ['image', 'webcam', 'landmarks', 'gestures', 'tensorflow', 'training'],
+  },
+  '/ml/computer-vision/face-detection': {
+    description: 'Detect one or more faces with MediaPipe Face Detector bounding boxes in the browser.',
+    synonyms: ['face detection', 'blazeface', 'face boxes', 'webcam face'],
+    tags: ['image', 'webcam', 'face', 'bounding box', 'detection', 'mediapipe'],
+  },
+  '/ml/computer-vision/face-mesh': {
+    description: 'Track dense facial landmarks, mesh, irises, and estimated head pose with MediaPipe Face Landmarker.',
+    synonyms: ['face mesh', 'face landmarks', 'iris tracking', 'head pose'],
+    tags: ['image', 'webcam', 'face', 'landmarks', 'mesh', 'mediapipe'],
+  },
+  '/ml/computer-vision/face-expressions': {
+    description: 'Explore MediaPipe blendshape scores such as smile, blink, and jaw open. Not emotion diagnosis.',
+    synonyms: ['face expressions', 'blendshapes', 'smile intensity', 'blink detection'],
+    tags: ['image', 'webcam', 'face', 'blendshapes', 'expressions', 'mediapipe'],
+  },
+  '/ml/computer-vision/pose-estimation': {
+    description: 'Track 33 MediaPipe pose landmarks, skeleton, world-space 3D, and joint angles in the browser.',
+    synonyms: ['pose estimation', 'body skeleton', 'joint angles', 'pose landmarker'],
+    tags: ['image', 'webcam', 'pose', 'keypoints', 'skeleton', 'mediapipe'],
+  },
+  '/ml/computer-vision/pose-angle-analyzer': {
+    description: 'Measure live joint angles and posture alignment indicators from MediaPipe pose landmarks.',
+    synonyms: ['pose angle analyzer', 'joint angles', 'knee angle', 'posture estimate'],
+    tags: ['image', 'webcam', 'pose', 'angles', 'geometry', 'mediapipe'],
+  },
+  '/ml/computer-vision/exercise-rep-counter': {
+    description: 'Count squat, curl, push-up, jumping jack, and lunge reps from pose geometry state machines.',
+    synonyms: ['rep counter', 'squat counter', 'exercise tracker', 'workout reps'],
+    tags: ['image', 'webcam', 'pose', 'exercise', 'reps', 'mediapipe'],
+  },
+  '/ml/computer-vision/holistic-body-tracker': {
+    description: 'Track face, both hands, and body together using Face Landmarker, Gesture Recognizer, and Pose Landmarker.',
+    synonyms: ['holistic tracker', 'face hands pose', 'full body landmarks'],
+    tags: ['image', 'webcam', 'face', 'hands', 'pose', 'mediapipe'],
+  },
+  '/ml/computer-vision/image-segmentation': {
+    description: 'Semantic image segmentation with MediaPipe Image Segmenter, class masks, and pixel coverage.',
+    synonyms: ['image segmentation', 'deeplab', 'semantic mask', 'class mask'],
+    tags: ['image', 'webcam', 'segmentation', 'mask', 'pixels', 'mediapipe'],
+  },
+  '/ml/computer-vision/person-background-segmentation': {
+    description: 'Isolate a person and blur, replace, or green-screen the background with a selfie segmenter.',
+    synonyms: ['background removal', 'green screen', 'person segmentation', 'blur background'],
+    tags: ['image', 'webcam', 'segmentation', 'background', 'mask', 'mediapipe'],
+  },
+  '/ml/computer-vision/interactive-segmentation': {
+    description: 'Click positive and negative seeds to grow a real object mask and export a transparent PNG.',
+    synonyms: ['interactive segmentation', 'click to segment', 'region growing', 'mask refine'],
+    tags: ['image', 'segmentation', 'mask', 'points', 'export'],
+  },
+  '/ml/computer-vision/image-embeddings': {
+    description: 'Extract MobileNet embeddings, search nearest neighbors, and plot a PCA map in the browser.',
+    synonyms: ['image embeddings', 'visual similarity', 'cosine similarity', 'mobilenet features'],
+    tags: ['image', 'embeddings', 'similarity', 'pca', 'mobilenet'],
+  },
+  '/ml/computer-vision/object-tracking': {
+    description: 'Detect objects and keep persistent track IDs with IoU association, trails, and pixel velocity.',
+    synonyms: ['object tracking', 'persistent ids', 'centroid tracker', 'iou matching'],
+    tags: ['webcam', 'tracking', 'detection', 'trajectories', 'mediapipe'],
+  },
+  '/ml/computer-vision/multi-object-analytics': {
+    description: 'Count line crossings, zone occupancy, dwell time, and events from persistent object tracks.',
+    synonyms: ['people counting', 'line crossing', 'zone occupancy', 'dwell time'],
+    tags: ['webcam', 'tracking', 'analytics', 'zones', 'events'],
+  },
+  '/ml/computer-vision/camera-effects': {
+    description: 'Attach live AR overlays to face, hand, and pose landmarks in the browser.',
+    synonyms: ['ar playground', 'camera effects', 'face filters', 'landmark overlays'],
+    tags: ['webcam', 'ar', 'face', 'hands', 'pose', 'landmarks'],
+  },
+  '/ml/computer-vision/pipeline-builder': {
+    description: 'Build and run a real computer vision pipeline by connecting typed blocks on a canvas.',
+    synonyms: ['vision pipeline', 'node graph', 'mediapipe pipeline', 'block editor'],
+    tags: ['webcam', 'pipeline', 'graph', 'mediapipe', 'nodes'],
   },
   '/ml/computer-vision/pose-detection': {
     description: 'Estimate body keypoints and classify the resulting pose.',

@@ -1,0 +1,212 @@
+.pca-lab {
+  --pca-ink: #0f172a;
+  --pca-muted: #64748b;
+  --pca-line: #e2e8f0;
+  --pca-fill: #ffffff;
+  --pca-accent: #2563eb;
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 1rem 1rem 2.5rem;
+}
+
+.dark .pca-lab {
+  --pca-ink: #e5e7eb;
+  --pca-muted: #94a3b8;
+  --pca-line: #334155;
+  --pca-fill: #0f172a;
+}
+
+.pca-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0 0 1rem;
+  padding: 4px;
+  border: 1px solid var(--pca-line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--pca-fill) 88%, #94a3b8);
+}
+
+.pca-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--pca-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+}
+
+.pca-tabs button:hover {
+  color: var(--pca-ink);
+  background: color-mix(in srgb, var(--pca-accent) 10%, transparent);
+}
+
+.pca-tabs button.pca-tab-on,
+.pca-tabs button[aria-selected="true"] {
+  color: #fff !important;
+  background: var(--pca-accent) !important;
+}
+
+.pca-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--pca-line);
+  border-radius: 10px;
+  background: var(--pca-fill);
+  font-size: 12px;
+  color: var(--pca-muted);
+}
+
+.pca-strip b {
+  color: var(--pca-ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.pca-strip button {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--pca-line);
+  border-radius: 8px;
+  background: var(--pca-fill);
+  color: var(--pca-ink);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pca-strip button.primary {
+  border-color: var(--pca-accent);
+  background: var(--pca-accent);
+  color: #fff;
+}
+
+.pca-grid-2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
+@media (min-width: 1024px) {
+  .pca-grid-2 {
+    grid-template-columns: 320px minmax(0, 1fr);
+  }
+
+  .pca-grid-charts {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.pca-grid-charts {
+  display: grid;
+  gap: 16px;
+}
+
+.pca-inspector {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.pca-inspector span {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--pca-line);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.pca-biplot {
+  width: 100%;
+  height: 340px;
+  border-radius: 10px;
+  background:
+    linear-gradient(to right, color-mix(in srgb, var(--pca-line) 55%, transparent) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(to bottom, color-mix(in srgb, var(--pca-line) 55%, transparent) 1px, transparent 1px) 0 0 / 28px 28px,
+    var(--pca-fill);
+}
+
+.pca-biplot .sample {
+  cursor: pointer;
+}
+
+.pca-biplot .arrow.active {
+  stroke: #dc2626;
+  stroke-width: 2.2;
+}
+
+.pca-biplot .arrow-label.active {
+  fill: #dc2626;
+  font-weight: 700;
+}
+
+.pca-preview {
+  width: 100%;
+  font-size: 11px;
+  border-collapse: collapse;
+}
+
+.pca-preview th,
+.pca-preview td {
+  padding: 6px 8px;
+  border: 1px solid var(--pca-line);
+  text-align: right;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.pca-preview th:first-child,
+.pca-preview td:first-child {
+  text-align: left;
+}
+
+.pca-slider-row {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) 64px;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.pca-slider-row input[type="range"] {
+  accent-color: var(--pca-accent);
+}
+
+.pca-infer-dot {
+  fill: #f59e0b;
+  stroke: #0f172a;
+  stroke-width: 1.5;
+}
+
+.pca-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.pca-status.done {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.pca-status.stale {
+  background: #fef3c7;
+  color: #92400e;
+}
