@@ -1,0 +1,141 @@
+﻿
+=== /ml/supervised/ridge-regression ===
+  bar#0 [Learn | Visualize | Dataset | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=4/7 panels=[5,11,1,1,5,1,3]
+
+=== /ml/supervised/random-forest-regression ===
+  bar#0 [Learn | Visualize | Dataset | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=5/7 panels=[10,10,5,5,15,8,6]
+
+=== /ml/supervised/multinomial-logistic-regression ===
+  bar#0 [Learn | Visualize | Dataset | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=2/7 panels=[8,12,8,8,8,8,8]
+
+=== /ml/supervised/random-forest-classification ===
+  bar#0 [Learn | Visualize | Dataset | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=5/7 panels=[18,18,6,11,16,9,9]
+
+=== /ml/supervised/xgboost-concept ===
+  bar#0 [Learn | Visualize | Dataset | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=1/7 panels=[9,9,9,9,9,9,9]
+
+=== /ml/clustering/dbscan ===
+  bar#0 [Learn | Visualize | Dataset | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=1/7 panels=[13,13,13,13,13,13,13]
+
+=== /ml/clustering/optics ===
+  bar#0 [Learn | Visualize | Dataset | Build / Train | Metrics | Compare | Explain]
+    indicator=ok layouts=6/7 panels=[17,14,14,13,10,6,8]
+
+=== /ml/dimensionality-reduction/umap-concept ===
+  bar#0 [Learn | Visualize | Dataset | Build / Train | Metrics | Compare | Explain]
+    indicator=ok layouts=1/7 panels=[10,10,10,10,10,10,10]
+
+=== /ml/deep-learning/mlp ===
+  bar#0 [Learn | Visualize | Dataset | Build / Train | Metrics | Compare | Explain]
+    indicator=ok layouts=1/7 panels=[7,7,7,7,7,7,7]
+
+=== /ml/deep-learning/rnn ===
+  bar#0 [Learn | Visualize | Dataset | Build / Train | Metrics | Compare | Explain]
+    indicator=BROKEN layouts=3/7 panels=[7,7,7,0,1,1,1]
+    - "Learn" click=ok activeAfter="Visualize"
+    - "Dataset" click=ok activeAfter="Visualize"
+    - "Build / Train" click=ok activeAfter="(none)"
+    - "Metrics" click=missing activeAfter="(none)"
+    - "Compare" click=missing activeAfter="(none)"
+    - "Explain" click=missing activeAfter="(none)"
+
+=== /ml/deep-learning/multi-head-attention ===
+  bar#0 [Learn | Visualize | Dataset | Build / Train | Metrics | Compare | Explain]
+    indicator=BROKEN layouts=1/7 panels=[13,13,13,13,13,13,13]
+    - "Learn" click=ok activeAfter="Visualize"
+    - "Dataset" click=ok activeAfter="Visualize"
+    - "Build / Train" click=ok activeAfter="Visualize"
+    - "Metrics" click=ok activeAfter="Visualize"
+    - "Compare" click=ok activeAfter="Visualize"
+    - "Explain" click=ok activeAfter="Visualize"
+
+=== /ml/deep-learning/transfer-learning ===
+  AUDIT ERROR: page.goto: Timeout 30000ms exceeded.
+
+=== /ml/evaluation/roc-auc ===
+  bar#0 [Learn | Visualize | Dataset | Transform | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=1/8 panels=[16,16,16,16,16,16,16,16]
+
+=== /ml/preprocessing/missing-values ===
+  bar#0 [Learn | Visualize | Dataset | Transform | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=1/8 panels=[13,13,13,13,13,13,13,13]
+  bar#1 [Γûª | Γûº | Γû╜ Filter]
+    indicator=BROKEN layouts=2/3 panels=[13,23,23]
+    - "Γû╜ Filter" click=ok activeAfter="Γûº"
+
+=== /ml/preprocessing/feature-selection ===
+  bar#0 [Learn | Visualize | Dataset | Transform | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=1/8 panels=[16,16,16,16,16,16,16,16]
+
+=== /ml/time-series/holt-winters ===
+  bar#0 [Learn | Visualize | Dataset | Transform | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=1/8 panels=[14,14,14,14,14,14,14,14]
+  bar#1 [1M | 3M | 6M | 1Y | All | Γûú]
+    indicator=BROKEN layouts=1/6 panels=[14,14,14,14,14,14]
+    - "Γûú" click=ok activeAfter="All"
+
+=== /ml/time-series/lstm-forecasting ===
+  bar#0 [Learn | Visualize | Dataset | Transform | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=1/8 panels=[18,18,18,18,18,18,18,18]
+
+=== /ml/nlp/text-classification ===
+  no tab bars detected
+
+=== /ml/nlp/audio-classification ===
+  no tab bars detected
+
+=== /ml/computer-vision/pose-detection ===
+  no tab bars detected
+
+=== /ml/computer-vision/edge-detection ===
+  no tab bars detected
+
+=== /ml/recommendation/item-based-cf ===
+  no tab bars detected
+
+=== /ml/reinforcement-learning/q-learning-grid-world ===
+  bar#0 [Γûª Add Wall | ΓêÆ Add Penalty | Γî½ Erase Cell | Γå╗ Reset Grid]
+    indicator=BROKEN layouts=1/4 panels=[9,9,9,9]
+    - "ΓêÆ Add Penalty" click=ok activeAfter="Γûª Add Wall"
+    - "Γå╗ Reset Grid" click=ok activeAfter="Γî½ Erase Cell"
+  bar#1 [Q-Table | Policy | Episode History]
+    indicator=ok layouts=1/3 panels=[9,9,9]
+
+=== /ml/explainability/shap-concept ===
+  no tab bars detected
+
+=== /ml/optimization/momentum ===
+  no tab bars detected
+
+=== /ml/ensemble/stacking ===
+  no tab bars detected
+
+=== /ml/deployment/browser-model-loader ===
+  no tab bars detected
+
+=== /ml/deployment/export-hub ===
+  no tab bars detected
+
+=== /ml/lab/automl-assistant ===
+  no tab bars detected
+
+=== /ml/lab/explainability-center ===
+  no tab bars detected
+
+=== /ml/lab/image-annotation ===
+  no tab bars detected
+
+=== /ml/lab/active-learning ===
+  no tab bars detected
+
+=== /ml/lab/hyperparameter-tuning ===
+  no tab bars detected
+
+=== /ml/lab/report-builder ===
+  no tab bars detected

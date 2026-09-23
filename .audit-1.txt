@@ -1,0 +1,146 @@
+﻿
+=== /ml/supervised/multiple-linear-regression ===
+  bar#0 [Learn | Visualize | Dataset | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=5/7 panels=[5,9,1,1,6,3,5]
+
+=== /ml/supervised/elastic-net-regression ===
+  bar#0 [Learn | Visualize | Dataset | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=6/7 panels=[8,17,5,10,9,9,6]
+  bar#1 [Combined | L1 Path (Lasso) | L2 Path (Ridge)]
+    indicator=BROKEN layouts=1/3 panels=[6,6,6]
+    - "Combined" click=missing activeAfter="(none)"
+    - "L1 Path (Lasso)" click=missing activeAfter="(none)"
+    - "L2 Path (Ridge)" click=missing activeAfter="(none)"
+
+=== /ml/supervised/support-vector-regression ===
+  bar#0 [Learn | Visualize | Dataset | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=2/7 panels=[4,7,4,4,4,4,4]
+
+=== /ml/supervised/naive-bayes ===
+  bar#0 [Learn | Visualize | Dataset | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=5/7 panels=[18,18,11,14,15,13,14]
+
+=== /ml/supervised/gradient-boosting-classification ===
+  bar#0 [Learn | Visualize | Dataset | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=4/7 panels=[15,15,4,4,9,8,4]
+  bar#1 [1 | 2 | 3 | 4]
+    indicator=ok layouts=1/4 panels=[4,4,4,4]
+
+=== /ml/clustering/k-medoids ===
+  bar#0 [1. Initialize Medoids | 2. Assign to Nearest Medoi | 3. Swap & Improve | 4. Converge]
+    indicator=BROKEN layouts=1/4 panels=[11,11,11,11]
+    - "4. Converge" click=ok activeAfter="3. Swap & Improve"
+  bar#1 [Learn | Visualize | Dataset | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=1/7 panels=[11,11,11,11,11,11,11]
+  bar#2 [1Initialize | 2Assign | 3Swap & Improve | 4Converge Check | 5Final Assignment | 6Done]
+    indicator=BROKEN layouts=1/6 panels=[11,11,11,11,11,11]
+    - "5Final Assignment" click=ok activeAfter="4Converge Check"
+    - "6Done" click=ok activeAfter="4Converge Check"
+
+=== /ml/clustering/gaussian-mixture-model ===
+  bar#0 [Learn | Visualize | Dataset | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=1/7 panels=[11,11,11,11,11,11,11]
+  bar#1 [Elongated GaussiansΓ£ô | Well-separated blobs | Two moons | Two spirals | Overlapping + banana | 4D blobs (PCA 2D, then GMM | Drop CSV file hereor click]
+    indicator=BROKEN layouts=1/7 panels=[11,11,11,11,11,11,11]
+    - "Well-separated blobs" click=ok activeAfter="Well-separated blobsΓ£ô"
+    - "Two moons" click=ok activeAfter="Two moonsΓ£ô"
+    - "Two spirals" click=ok activeAfter="Two spiralsΓ£ô"
+    - "Overlapping + banana" click=ok activeAfter="Overlapping + bananaΓ£ô"
+    - "Drop CSV file hereor click" click=ok activeAfter="4D blobs (PCA 2D, then GMM"
+
+=== /ml/dimensionality-reduction/kernel-pca ===
+  bar#0 [Learn | Visualize | Dataset | Build / Train | Metrics | Compare | Explain]
+    indicator=ok layouts=1/7 panels=[10,10,10,10,10,10,10]
+  bar#1 [Rbf | Polynomial | Sigmoid | Laplacian | Linear]
+    indicator=ok layouts=1/5 panels=[10,10,10,10,10]
+
+=== /ml/dimensionality-reduction/autoencoder ===
+  bar#0 [Learn | Visualize | Dataset | Build / Train | Metrics | Compare | Explain]
+    indicator=ok layouts=1/7 panels=[18,18,18,18,18,18,18]
+
+=== /ml/deep-learning/cnn ===
+  AUDIT ERROR: page.goto: Timeout 30000ms exceeded.
+
+=== /ml/deep-learning/gru ===
+  AUDIT ERROR: page.goto: Timeout 30000ms exceeded.
+
+=== /ml/deep-learning/few-shot-learning ===
+  AUDIT ERROR: page.goto: Timeout 30000ms exceeded.
+
+=== /ml/evaluation/cross-validation ===
+  bar#0 [Learn | Visualize | Dataset | Transform | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=1/8 panels=[10,10,10,10,10,10,10,10]
+
+=== /ml/evaluation/regression-metrics ===
+  bar#0 [Γûñ Learn | ΓûÑ Visualize | Γûñ Dataset | Γ£ú Transform | ΓÖº Train | ΓûÑ Metrics | Γîü Compare | ΓÖÖ Explain]
+    indicator=ok layouts=1/8 panels=[15,15,15,15,15,15,15,15]
+
+=== /ml/preprocessing/categorical-encoding ===
+  bar#0 [Learn | Visualize | Dataset | Transform | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=1/8 panels=[22,22,22,22,22,22,22,22]
+
+=== /ml/time-series/moving-average ===
+  bar#0 [ΓîüπÇÇLearn | ≡ƒÜÇπÇÇVisualize | ΓûñπÇÇDataset | ΓûúπÇÇTransform | ΓûÑπÇÇMetrics | ΓûªπÇÇCompare | Γî╛πÇÇExplain]
+    indicator=ok layouts=1/7 panels=[13,13,13,13,13,13,13]
+  bar#1 [7D | 30D | 90D | 1Y | All | Γûú | Γ¢╢]
+    indicator=BROKEN layouts=1/7 panels=[13,13,13,13,13,13,13]
+    - "Γûú" click=ok activeAfter="All"
+    - "Γ¢╢" click=ok activeAfter="All"
+  bar#2 [ |  |  |  | ]
+    indicator=ok layouts=1/5 panels=[13,13,13,13,13]
+
+=== /ml/time-series/anomaly-detection ===
+  bar#0 [Learn | Visualize | Dataset | Transform | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=1/8 panels=[21,21,21,21,21,21,21,21]
+  [console] Error: <path> attribute d: Expected number, "M18,NaN L23.17318435ΓÇª".
+
+=== /ml/nlp/bag-of-words ===
+  no tab bars detected
+
+=== /ml/nlp/sentiment-analysis ===
+  no tab bars detected
+
+=== /ml/computer-vision/audio-classification ===
+  no tab bars detected
+
+=== /ml/computer-vision/cnn-filter-explorer ===
+  no tab bars detected
+
+=== /ml/computer-vision/grad-cam ===
+  no tab bars detected
+
+=== /ml/recommendation/content-based ===
+  no tab bars detected
+
+=== /ml/explainability/feature-importance ===
+  no tab bars detected
+
+=== /ml/optimization/gradient-descent ===
+  no tab bars detected
+
+=== /ml/ensemble/bagging ===
+  no tab bars detected
+
+=== /ml/probabilistic/gaussian-process-regression ===
+  no tab bars detected
+
+=== /ml/deployment/tensorflowjs-training ===
+  no tab bars detected
+
+=== /ml/lab/experiment-workspace ===
+  no tab bars detected
+
+=== /ml/lab/inference-playground ===
+  no tab bars detected
+
+=== /ml/lab/tuning-engine ===
+  no tab bars detected
+
+=== /ml/lab/model-comparison ===
+  no tab bars detected
+
+=== /ml/lab/architecture-flow ===
+  no tab bars detected
+
+=== /ml/lab/saved-experiments ===
+  no tab bars detected

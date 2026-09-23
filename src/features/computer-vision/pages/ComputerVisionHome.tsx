@@ -41,19 +41,18 @@ export default function ComputerVisionHome() {
         ))}
       </div>
       <div className="cv-home-grid">
-        {cards.map((lab) => {
-          const Icon = lab.icon;
-          return (
-            <Link key={lab.id} to={lab.route} className="cv-home-card">
-              <span>
-                <Icon size={18} />
-              </span>
+        {cards.map((lab) => (
+          <Link key={lab.id} to={lab.route} className="cv-home-card">
+            <span className="cv-home-card-thumb">
+              <img src={`/cv/demos/cv-${lab.id}.png`} alt="" />
+              {lab.badge ? <i>{lab.badge}</i> : null}
+            </span>
+            <span className="cv-home-card-body">
               <strong>{lab.label}</strong>
               <em>{lab.blurb}</em>
-              <small>Open lab</small>
-            </Link>
-          );
-        })}
+            </span>
+          </Link>
+        ))}
       </div>
     </VisionPageShell>
   );

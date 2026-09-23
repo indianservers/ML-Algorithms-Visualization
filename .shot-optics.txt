@@ -1,0 +1,8 @@
+﻿/ml/clustering/optics: 7 tabs
+  .shots/tabs/ml-clustering-optics-0-Learn.png
+  .shots/tabs/ml-clustering-optics-1-Visualize.png
+  .shots/tabs/ml-clustering-optics-2-Dataset.png
+  .shots/tabs/ml-clustering-optics-3-BuildTrain.png
+  .shots/tabs/ml-clustering-optics-4-Metrics.png
+  .shots/tabs/ml-clustering-optics-5-Compare.png
+  .shots/tabs/ml-clustering-optics-6-Explain.png

@@ -1,0 +1,175 @@
+﻿
+=== /ml/supervised/simple-linear-regression ===
+  bar#0 [1What is Simple Linear Reg | 2Explore the DataInspect x | 3Place PointsDrag to add o | 4Fit the LineOrdinary leas | 5Inspect ErrorsResiduals,  | 6Make PredictionsEnter x t]
+    indicator=BROKEN layouts=2/6 panels=[8,10,10,10,10,10]
+    - "2Explore the DataInspect x" click=ok activeAfter="(none)"
+    - "3Place PointsDrag to add o" click=missing activeAfter="(none)"
+    - "4Fit the LineOrdinary leas" click=missing activeAfter="(none)"
+    - "5Inspect ErrorsResiduals, " click=missing activeAfter="(none)"
+    - "6Make PredictionsEnter x t" click=missing activeAfter="(none)"
+
+=== /ml/supervised/lasso-regression ===
+  bar#0 [Learn | Visualize | Dataset | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=6/7 panels=[11,7,4,4,8,9,5]
+
+=== /ml/supervised/gradient-boosting-regression ===
+  bar#0 [Learn | Visualize | Dataset | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=5/7 panels=[17,10,5,5,10,8,6]
+
+=== /ml/supervised/knn-classification ===
+  bar#0 [Learn | Visualize | Dataset | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=3/7 panels=[16,16,16,16,20,20,19]
+  bar#1 [Move | Add | Delete]
+    indicator=ok layouts=1/3 panels=[19,19,19]
+  bar#2 [Setosa | Versicolor | Virginica | New (Class D)]
+    indicator=ok layouts=1/4 panels=[19,19,19,19]
+  bar#3 [EuclideanStraight-line dis | ManhattanGrid-based distan | CosineAngular similarity | Minkowskip-norm distance (]
+    indicator=ok layouts=1/4 panels=[19,19,19,19]
+
+=== /ml/supervised/svm-classification ===
+  bar#0 [Learn | Visualize | Dataset | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=5/7 panels=[5,7,4,4,12,8,5]
+  bar#1 [linear | rbf | polynomial | sigmoid]
+    indicator=ok layouts=1/4 panels=[5,5,5,5]
+
+=== /ml/clustering/k-means ===
+  bar#0 [Γåû Select Point | Add Point | Remove Point | Zoom In | Zoom Out | Fit Canvas | Reset View]
+    indicator=BROKEN layouts=1/7 panels=[12,12,12,12,12,12,12]
+    - "Zoom In" click=ok activeAfter="Remove Point"
+    - "Zoom Out" click=ok activeAfter="Remove Point"
+    - "Fit Canvas" click=ok activeAfter="Remove Point"
+    - "Reset View" click=ok activeAfter="Remove Point"
+  bar#1 [1Assign | 2Update | 3Assign | 4Update | 5Assign | 6Update | 7Assign | 8Update | 9Assign | 10Update | 11Assign | 12Update]
+    indicator=BROKEN layouts=1/12 panels=[12,12,12,12,12,12,12,12,12,12,12,12]
+    - "3Assign" click=ok activeAfter="2Update"
+    - "4Update" click=ok activeAfter="2Update"
+    - "5Assign" click=ok activeAfter="2Update"
+    - "6Update" click=ok activeAfter="2Update"
+    - "7Assign" click=ok activeAfter="2Update"
+    - "8Update" click=ok activeAfter="2Update"
+    - "9Assign" click=ok activeAfter="2Update"
+    - "10Update" click=ok activeAfter="2Update"
+    - "11Assign" click=ok activeAfter="2Update"
+    - "12Update" click=ok activeAfter="2Update"
+  bar#2 [Γá┐ | ΓùÄ | ΓùîΓùî | ΓòÉ | ++++]
+    indicator=ok layouts=1/5 panels=[12,12,12,12,12]
+
+=== /ml/clustering/mean-shift ===
+  bar#0 [Learn | Visualize | Dataset | Train | Metrics | Compare]
+    indicator=ok layouts=1/6 panels=[10,10,10,10,10,10]
+  bar#1 [Γû╢ | t = 0 | t = 5 | t = 10 | t = 15 | t = 20 | t = 30 | Converged]
+    indicator=BROKEN layouts=1/8 panels=[10,10,10,10,10,10,10,10]
+    - "Γû╢" click=ok activeAfter="Converged"
+    - "t = 0" click=ok activeAfter="(none)"
+    - "t = 5" click=ok activeAfter="(none)"
+    - "t = 10" click=ok activeAfter="Converged"
+    - "t = 15" click=ok activeAfter="Converged"
+    - "t = 20" click=ok activeAfter="Converged"
+    - "t = 30" click=ok activeAfter="Converged"
+
+=== /ml/dimensionality-reduction/pca ===
+  no tab bars detected
+
+=== /ml/dimensionality-reduction/lda ===
+  bar#0 [Learn | Visualize | Dataset | Build / Train | Metrics | Compare | Explain]
+    indicator=ok layouts=1/7 panels=[11,11,11,11,11,11,11]
+
+=== /ml/deep-learning/nn-playground ===
+  AUDIT ERROR: page.goto: Timeout 30000ms exceeded.
+
+=== /ml/deep-learning/lstm ===
+  AUDIT ERROR: page.goto: Timeout 30000ms exceeded.
+
+=== /ml/deep-learning/backpropagation-visualizer ===
+  bar#0 [Γûú Learn | Γûª Visualize | Γûñ Dataset | Γùë Build / Train | ΓûÑ Metrics | Γîÿ Compare | ? Explain]
+    indicator=BROKEN layouts=1/7 panels=[10,10,10,10,10,10,10]
+    - "Γûú Learn" click=ok activeAfter="Γûª Visualize"
+    - "Γûñ Dataset" click=ok activeAfter="Γûª Visualize"
+    - "Γùë Build / Train" click=ok activeAfter="Γûª Visualize"
+    - "ΓûÑ Metrics" click=ok activeAfter="Γûª Visualize"
+    - "Γîÿ Compare" click=ok activeAfter="Γûª Visualize"
+    - "? Explain" click=ok activeAfter="Γûª Visualize"
+
+=== /ml/evaluation/train-test-split ===
+  bar#0 [Learn | Visualize | Dataset | Transform | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=1/8 panels=[28,28,28,28,28,28,28,28]
+
+=== /ml/evaluation/precision-recall-curve ===
+  bar#0 [Γûñ Learn | Γûº Visualize | Γûñ Dataset | Γùç Transform | ΓÖº Train | ΓûÑ Metrics | Γîÿ Compare | ΓÖÖ Explain]
+    indicator=ok layouts=1/8 panels=[16,16,16,16,16,16,16,16]
+
+=== /ml/preprocessing/scaling-normalization ===
+  bar#0 [ΓÖºLearn | ΓèòVisualize | ΓûªDataset | Γ£úTransform | ΓùëTrain | πÇ╜Metrics | ΓîÿCompare | ΓôÿExplain]
+    indicator=ok layouts=1/8 panels=[15,15,15,15,15,15,15,15]
+  bar#1 [Standardization (Z-Score)ΓùÅ | Min-Max Scaling (0ΓÇô1) | Robust Scaling (IQR)]
+    indicator=ok layouts=1/3 panels=[15,15,15]
+
+=== /ml/preprocessing/polynomial-features ===
+  bar#0 [Learn | Visualize | Dataset | Transform | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=1/8 panels=[23,23,23,23,23,23,23,23]
+  bar#1 [1 | 2 | 3]
+    indicator=ok layouts=1/3 panels=[23,23,23]
+  bar#2 [1 | 2 | 3]
+    indicator=ok layouts=1/3 panels=[23,23,23]
+
+=== /ml/time-series/arima-concept ===
+  bar#0 [Learn | ΓèÖ Visualize | Dataset | Transform | Train | Metrics | Compare | Explain]
+    indicator=ok layouts=1/8 panels=[22,22,22,22,22,22,22,22]
+  bar#1 [Γîâ | 0 | 1 | 2 | Γîä]
+    indicator=BROKEN layouts=1/5 panels=[22,22,22,22,22]
+    - "Γîâ" click=ok activeAfter="2"
+    - "Γîä" click=ok activeAfter="1"
+
+=== /ml/time-series/gru-forecasting ===
+  bar#0 [Learn | Visualize | Dataset | Transform | Train | Metrics | Compare | Explain]
+    indicator=BROKEN layouts=1/8 panels=[17,17,17,17,17,17,17,17]
+    - "Learn" click=ok activeAfter="Visualize"
+    - "Dataset" click=ok activeAfter="Visualize"
+
+=== /ml/nlp/word-embedding-concept ===
+  no tab bars detected
+
+=== /ml/computer-vision/image-classification ===
+  no tab bars detected
+
+=== /ml/computer-vision/person-segmentation ===
+  no tab bars detected
+
+=== /ml/computer-vision/object-detection-demo ===
+  no tab bars detected
+
+=== /ml/recommendation/matrix-factorization ===
+  no tab bars detected
+
+=== /ml/reinforcement-learning/markov-decision-process ===
+  no tab bars detected
+
+=== /ml/explainability/lime-concept ===
+  no tab bars detected
+
+=== /ml/optimization/adam ===
+  no tab bars detected
+
+=== /ml/probabilistic/bayesian-linear-regression ===
+  no tab bars detected
+
+=== /ml/deployment/onnx-runtime-demo ===
+  no tab bars detected
+
+=== /ml/deployment/model-card ===
+  no tab bars detected
+
+=== /ml/lab/training-visualizations ===
+  no tab bars detected
+
+=== /ml/lab/dataset-intelligence ===
+  no tab bars detected
+
+=== /ml/lab/data-augmentation ===
+  no tab bars detected
+
+=== /ml/lab/performance-dashboard ===
+  no tab bars detected
+
+=== /ml/lab/automl-concept ===
+  no tab bars detected
