@@ -25,7 +25,7 @@ export default function ObjectDetectionPage() {
   const [size, setSize] = useState({ w: 640, h: 360 });
   const [classFilter, setClassFilter] = useState("all");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const fpsRef = useRef({ frames: 0, stamp: performance.now() });
+  const fpsRef = useRef({ frames: 0, stamp: 0 });
   const lastUi = useRef(0);
   const { taskRef: detectorRef, ensure } = useVisionTask(() => createObjectDetector(maxDetections, threshold));
 
@@ -48,47 +48,46 @@ export default function ObjectDetectionPage() {
     setImageUrl(null);
   };
 
-  useRafLoop(camera.status === "live" && !paused && !imageUrl, (now) => {
+  useRafLoop(camera.status === "live" && !paused && !imageUrl, async (now) => {
     const video = camera.videoRef.current;
     if (!video || video.readyState < 2) return;
-    void (async () => {
-      try {
-        const detector = await ensureDetector();
-        const started = performance.now();
-        const result = detector.detectForVideo(video, now);
-        const next: DetectionHit[] = (result.detections ?? []).map((item, index) => {
-          const category = item.categories[0];
-          const box = item.boundingBox;
-          return {
-            id: `${index}-${category?.categoryName ?? "obj"}`,
-            label: category?.categoryName ?? "object",
-            score: category?.score ?? 0,
-            box: {
-              x: box?.originX ?? 0,
-              y: box?.originY ?? 0,
-              w: box?.width ?? 0,
-              h: box?.height ?? 0,
-            },
-            color: CLASS_COLORS[index % CLASS_COLORS.length],
-          };
-        }).filter((item) => item.score >= threshold)
-          .filter((item) => classFilter === "all" || item.label === classFilter)
-          .slice(0, maxDetections);
-        fpsRef.current.frames += 1;
-        if (now - lastUi.current > 100) {
-          lastUi.current = now;
-          setHits(next);
-          setLatency(performance.now() - started);
-          setSize({ w: video.videoWidth || 640, h: video.videoHeight || 360 });
-          if (now - fpsRef.current.stamp > 500) {
-            setFps((fpsRef.current.frames * 1000) / (now - fpsRef.current.stamp));
-            fpsRef.current = { frames: 0, stamp: now };
-          }
+    try {
+      const detector = await ensureDetector();
+      const started = performance.now();
+      const result = detector.detectForVideo(video, now);
+      const next: DetectionHit[] = (result.detections ?? []).map((item, index) => {
+        const category = item.categories[0];
+        const box = item.boundingBox;
+        return {
+          id: `${index}-${category?.categoryName ?? "obj"}`,
+          label: category?.categoryName ?? "object",
+          score: category?.score ?? 0,
+          box: {
+            x: box?.originX ?? 0,
+            y: box?.originY ?? 0,
+            w: box?.width ?? 0,
+            h: box?.height ?? 0,
+          },
+          color: CLASS_COLORS[index % CLASS_COLORS.length],
+        };
+      }).filter((item) => item.score >= threshold)
+        .filter((item) => classFilter === "all" || item.label === classFilter)
+        .slice(0, maxDetections);
+      if (!fpsRef.current.stamp) fpsRef.current.stamp = now;
+      fpsRef.current.frames += 1;
+      if (now - lastUi.current > 100) {
+        lastUi.current = now;
+        setHits(next);
+        setLatency(performance.now() - started);
+        setSize({ w: video.videoWidth || 640, h: video.videoHeight || 360 });
+        if (now - fpsRef.current.stamp > 500) {
+          setFps((fpsRef.current.frames * 1000) / (now - fpsRef.current.stamp));
+          fpsRef.current = { frames: 0, stamp: now };
         }
-      } catch (caught) {
-        setStatus(formatVisionError(caught, "Detection failed."));
       }
-    })();
+    } catch (caught) {
+      setStatus(formatVisionError(caught, "Detection failed."));
+    }
   });
 
   const detectImage = async (file: File) => {
