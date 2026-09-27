@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Tensor } from "@tensorflow/tfjs";
-import { BrainCircuit, Database, Play, RotateCcw } from "lucide-react";
+import type { LayersModel, Tensor } from "@tensorflow/tfjs";
+import { BrainCircuit, Database, Download, Play, RotateCcw } from "lucide-react";
 import {
   CartesianGrid,
   Legend,
@@ -34,6 +34,7 @@ import {
   futureTimestamps,
   trainOnlyScaler,
 } from "../../../lib/timeSeries/timeSeriesSplit";
+import { downloadJsonArtifact } from "../../../lib/modelArtifacts/downloadJsonArtifact";
 
 type RecurrentMode = "rnn" | "lstm" | "gru";
 type TfModule = typeof import("@tensorflow/tfjs");
@@ -218,11 +219,18 @@ function RecurrentForecastingLab({ mode }: { mode: RecurrentMode }) {
   >([]);
   const [chart, setChart] = useState<SeriesPoint[]>([]);
   const [lastPrediction, setLastPrediction] = useState<number | null>(null);
+  const [inferenceInput, setInferenceInput] = useState("");
+  const [inferenceResult, setInferenceResult] = useState<number | null>(null);
+  const [inferenceError, setInferenceError] = useState("");
+  const modelRef = useRef<LayersModel | null>(null);
+  const fittedRef = useRef<{ lookback: number; min: number; max: number; degenerate: boolean; datasetName: string; target: string } | null>(null);
   const abortRef = useRef(false);
   useEffect(() => {
     abortRef.current = false;
     return () => {
       abortRef.current = true;
+      modelRef.current?.dispose();
+      modelRef.current = null;
     };
   }, []);
 
@@ -247,9 +255,14 @@ function RecurrentForecastingLab({ mode }: { mode: RecurrentMode }) {
 
   const reset = () => {
     abortRef.current = true;
+    modelRef.current?.dispose();
+    modelRef.current = null;
+    fittedRef.current = null;
     setHistory([]);
     setChart([]);
     setLastPrediction(null);
+    setInferenceResult(null);
+    setInferenceError("");
     setTraining(false);
     setStatus(
       "Controls changed. Train again to compute fitted values and forecast horizon.",
@@ -258,6 +271,9 @@ function RecurrentForecastingLab({ mode }: { mode: RecurrentMode }) {
 
   const train = async () => {
     abortRef.current = false;
+    modelRef.current?.dispose();
+    modelRef.current = null;
+    fittedRef.current = null;
     setTraining(true);
     setHistory([]);
     setChart([]);
@@ -368,6 +384,17 @@ function RecurrentForecastingLab({ mode }: { mode: RecurrentMode }) {
       }));
       setChart([...fittedChart, ...forecastChart]);
       setLastPrediction(nextValues[0] ?? null);
+      modelRef.current = model;
+      fittedRef.current = {
+        lookback,
+        min: scaler.min,
+        max: scaler.max,
+        degenerate: scaler.degenerate,
+        datasetName: selectedDataset.name,
+        target: resolvedTarget,
+      };
+      setInferenceInput(rawSeries.slice(-lookback).join(", "));
+      setInferenceResult(null);
       setStatus(
         "Training used chronological train windows only. Scaler fit on train. Forecast is recursive (predicted values feed later steps). Validation loss is evaluated, not a random split of shuffled time.",
       );
@@ -376,9 +403,52 @@ function RecurrentForecastingLab({ mode }: { mode: RecurrentMode }) {
       data.ys.dispose();
       valData?.xs.dispose();
       valData?.ys.dispose();
-      model.dispose();
+      if (modelRef.current !== model) model.dispose();
       setTraining(false);
     }
+  };
+
+  const inferNewWindow = async () => {
+    const model = modelRef.current;
+    const fitted = fittedRef.current;
+    if (!model || !fitted) return setInferenceError("Train a model first.");
+    try {
+      const tokens = inferenceInput.trim().split(/[\s,]+/);
+      const values = tokens.map(Number);
+      if (tokens.some((token) => !token) || values.length !== fitted.lookback || !values.every(Number.isFinite)) {
+        throw new Error(`Enter ${fitted.lookback} finite values, oldest to newest.`);
+      }
+      const span = Math.max(fitted.max - fitted.min, 1e-6);
+      const normalized = values.map((value) => fitted.degenerate ? 0 : (value - fitted.min) / span);
+      const tf = await import("@tensorflow/tfjs");
+      const input = tf.tensor3d(normalized, [1, fitted.lookback, 1]);
+      const output = model.predict(input) as Tensor;
+      const predicted = Number((await output.data())[0]);
+      input.dispose();
+      output.dispose();
+      setInferenceResult(fitted.degenerate ? fitted.min : predicted * span + fitted.min);
+      setInferenceError("");
+    } catch (cause) {
+      setInferenceResult(null);
+      setInferenceError(cause instanceof Error ? cause.message : "Inference failed.");
+    }
+  };
+
+  const exportModel = async () => {
+    const model = modelRef.current;
+    const fitted = fittedRef.current;
+    if (!model || !fitted) return;
+    const filename = `${mode}-forecast-model`;
+    await model.save(`downloads://${filename}`);
+    downloadJsonArtifact(`${filename}-preprocessing.json`, {
+      format: "ml-suite-recurrent-forecast-v1",
+      algorithm: meta.title,
+      ...fitted,
+      inputOrder: "oldest-to-newest",
+      inputShape: [1, fitted.lookback, 1],
+      normalization: "train-only-min-max",
+      modelFiles: [`${filename}.json`, `${filename}.weights.bin`],
+    });
   };
 
   return (
@@ -556,6 +626,26 @@ function RecurrentForecastingLab({ mode }: { mode: RecurrentMode }) {
           </InfoBox>
         </div>
         <div className="space-y-4">
+          <Card title="New-Window Inference and Export">
+            <div className="space-y-3 text-sm">
+              <p className="text-gray-600 dark:text-gray-300">Enter {fittedRef.current?.lookback ?? lookback} recent target values, oldest to newest. The fitted scaler is reused for the next-step forecast.</p>
+              <textarea
+                aria-label="Recent values for inference"
+                value={inferenceInput}
+                onChange={(event) => setInferenceInput(event.target.value)}
+                rows={3}
+                placeholder="Train the model to fill a sample window"
+                className="w-full rounded border border-gray-200 bg-white p-2 font-mono text-xs dark:border-gray-700 dark:bg-gray-900"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" disabled={!modelRef.current || training} onClick={() => void inferNewWindow()} className="inline-flex min-h-10 items-center justify-center gap-2 rounded bg-blue-600 px-3 py-2 font-semibold text-white disabled:opacity-50"><Play size={14} /> Infer next</button>
+                <button type="button" disabled={!modelRef.current || training} onClick={() => void exportModel()} className="inline-flex min-h-10 items-center justify-center gap-2 rounded border border-gray-300 px-3 py-2 font-semibold disabled:opacity-50 dark:border-gray-600"><Download size={14} /> Export model</button>
+              </div>
+              {inferenceError && <p role="alert" className="text-red-600 dark:text-red-400">{inferenceError}</p>}
+              {inferenceResult !== null && <p className="font-semibold">Next predicted {fittedRef.current?.target}: {inferenceResult.toFixed(3)}</p>}
+              <p className="text-xs text-gray-500">Export downloads TensorFlow.js model files and a preprocessing JSON. Keep all three files together.</p>
+            </div>
+          </Card>
           <Card
             title={`${selectedDataset.name}: Observed, Fitted, and Forecast`}
             subtitle={`${selectedDataset.data.length} rows. Target: ${resolvedTarget}. Last observed period: ${lastObservedPeriod}.`}

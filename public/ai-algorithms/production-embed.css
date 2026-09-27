@@ -1,0 +1,12 @@
+:root { background: transparent; }
+html, body { background: transparent; overflow-x: hidden; }
+.app { max-width: none; margin: 0; padding: 0 2px 14px; }
+.top, .footer, .lab-explore { display: none !important; }
+.lab-skip { position: absolute; top: -60px; }
+.lab-skip:focus { top: 8px; z-index: 1000; }
+@media (max-width: 700px) {
+  .app { padding: 0 1px 12px; }
+}
+/* Read-only learning companion links the current state, Q row and update. */
+.qlearning .learning-linked { outline: 2px solid #7756f4; outline-offset: 2px; }
+.qlearning #td .learning-linked { border-radius: 6px; background: #f0ebff; }

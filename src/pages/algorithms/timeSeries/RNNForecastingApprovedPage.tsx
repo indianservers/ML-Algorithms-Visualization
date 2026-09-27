@@ -248,6 +248,7 @@ export default function RNNForecastingApprovedPage() {
             forecasting.
           </p>
         </div>
+        <a className="ml-model-workspace-link" href="?advanced=1">Train, infer &amp; export model</a>
         <label>
           Dataset
           <select

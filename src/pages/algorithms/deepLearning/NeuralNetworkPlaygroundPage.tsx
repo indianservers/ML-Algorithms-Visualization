@@ -9,6 +9,7 @@ import {
   type WheelEvent,
 } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { downloadJsonArtifact } from "../../../lib/modelArtifacts/downloadJsonArtifact";
 import {
   Pause,
   Play,
@@ -1128,6 +1129,15 @@ export default function NeuralNetworkPlaygroundPage() {
             ŷ = <b>{probePass.probability.toFixed(3)}</b> → class{" "}
             {probePass.probability >= 0.5 ? 1 : 0}
           </p>
+          <button type="button" disabled={state.epoch < 1} onClick={() => downloadJsonArtifact("neural-network-playground-model.json", {
+            format: "ml-suite-mlp-v1",
+            inputFeatures: features,
+            activation,
+            weights: state.weights,
+            biases: state.biases,
+            trainedEpochs: state.epoch,
+            output: "class-1 probability",
+          })}>Export trained model JSON</button>
         </section>
     </>
   );

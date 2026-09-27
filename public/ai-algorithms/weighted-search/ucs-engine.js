@@ -1,0 +1,7 @@
+(function(root,factory){const api=factory(typeof module==='object'?require('./weighted-core.js'):root.WeightedSearch);if(typeof module==='object')module.exports=api;else root.UniformCostSearch=api})(globalThis,W=>{
+ function engine(graph,start='A',goal='G'){const h=Object.fromEntries(graph.nodes.map(n=>[n.id,0])),c=W.context(graph,start,goal,h,(a,b)=>a.g-b.g||a.order-b.order);
+  function* run(){while(c.pop()){c.emit('pop',`Pop ${c.s.current}: g = ${c.g[c.s.current]}, the least accumulated path cost.`);yield;c.close();c.emit('close',`Mark ${c.s.current} expanded. ${c.s.current===goal?'The goal is now settled.':'Inspect its outgoing edges next.'}`);yield;if(c.s.current===goal){c.finish();yield;c.emit('reconstruct','Follow parent links from the settled goal back to the start.');yield;c.reconstruct();yield;return}
+   for(const next of c.adj[c.s.current]){c.inspect(next);c.emit('inspect',`Inspect ${c.s.current} → ${next.node}, edge cost ${next.cost}.`);yield;c.calculate(next);c.emit('calculate',`Tentative g(${next.node}) = ${c.g[c.s.current]} + ${next.cost} = ${c.s.tentative}; previous best ${Number.isFinite(c.s.previousCost)?c.s.previousCost:'∞'}.`);yield;const result=c.relax(next);c.emit('update',result.changed?`${result.operation==='decrease'?'Decrease':'Insert'} ${next.node} to g=${c.g[next.node]}, parent ${c.s.current}. Reorder the priority queue.`:`Keep ${next.node}: the tentative route does not improve g.`,result);yield}
+  }}return W.drive(c,run());
+ }return {engine};
+});

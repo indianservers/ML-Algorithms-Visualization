@@ -221,6 +221,7 @@ export default function GRUForecastingApprovedPage() {
             Compact gated recurrent unit for multivariate time series
             forecasting.
           </p>
+          <a className="ml-model-workspace-link" href="?advanced=1">Train, infer &amp; export model</a>
         </div>
         <nav>
           {tabs.map((x) => (

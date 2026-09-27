@@ -1,3 +1,5 @@
+import { aiVirtualLabs, aiVirtualLabRoute } from '../features/ai-virtual-labs/catalog';
+
 export type BadgeType =
   | 'Beginner' | 'Intermediate' | 'Advanced' | 'Concept'
   | 'Browser Trainable' | 'Browser Inference' | 'Educational' | 'Educational Simplified';
@@ -180,6 +182,15 @@ export const navigationData: NavCategory[] = [
       { label: 'Trainable Object Detection', route: '/ml/computer-vision/object-detection-demo', badge: 'Browser Trainable' },
       { label: 'Grad-CAM', route: '/ml/computer-vision/grad-cam', badge: 'Intermediate' },
     ],
+  },
+  {
+    category: 'AI Algorithms Virtual Labs',
+    icon: 'Brain',
+    items: aiVirtualLabs.map((lab) => ({
+      label: lab.title,
+      route: aiVirtualLabRoute(lab.slug),
+      badge: 'Advanced' as const,
+    })),
   },
   {
     category: 'Recommendation',

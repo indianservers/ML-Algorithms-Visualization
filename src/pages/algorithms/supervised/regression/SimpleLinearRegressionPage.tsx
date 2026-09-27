@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-  BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, Circle, Database, FileText,
+  BookOpen, Check, ChevronDown, ChevronLeft, ChevronRight, Circle, Database, Download, FileText,
   Hand, Lightbulb, Play, RotateCcw, Sigma, Star, Target, Trophy,
 } from 'lucide-react';
 import { mae, mse, rmse } from '../../../../lib/math/metrics';
@@ -10,6 +10,7 @@ import { energyDemandDataset, studentMarksDataset } from '../../../../data/sampl
 import type { LoadedAlgorithmDataset } from '../../../../data/algorithmDatasets';
 import { loadActiveDatasetMap } from '../../../../lib/experimentWorkspace';
 import { formatR2, parseFiniteNumber, regressionMetrics, simpleLinearIntervals } from '../../../../lib/regression/regressionEval';
+import { downloadJsonArtifact } from '../../../../lib/modelArtifacts/downloadJsonArtifact';
 import { RegressionDiagnosticsPanel } from '../../../../components/ml/RegressionDiagnosticsPanel';
 import {
   datasetAPerfectPositive,
@@ -413,6 +414,20 @@ export default function SimpleLinearRegressionPage() {
   const bandPolygon = band
     ? `${band.map((p) => `${sx(p.x)},${sy(p.meanHi)}`).join(' ')} ${[...band].reverse().map((p) => `${sx(p.x)},${sy(p.meanLo)}`).join(' ')}`
     : '';
+  const exportFittedModel = () => {
+    if (lineIsStale) return;
+    downloadJsonArtifact('simple-linear-regression-model.json', {
+      format: 'ml-suite-linear-regression-v1',
+      algorithm: 'Simple Linear Regression',
+      createdAt: new Date().toISOString(),
+      datasetName: currentDatasetName,
+      inputFeatures: ['x'],
+      target: 'y',
+      coefficients: { intercept, weights: [slope] },
+      trainingSamples: points.length,
+      metrics: { mae: metricMae, rmse: metricRmse, r2: inSample?.r2 ?? null },
+    });
+  };
   const tickCount = 7;
   const xTicks = Array.from({ length: tickCount }, (_, index) => xMin + (index * (xMax - xMin)) / (tickCount - 1));
   const yTicks = Array.from({ length: tickCount }, (_, index) => yMin + (index * (yMax - yMin)) / (tickCount - 1));
@@ -778,6 +793,9 @@ export default function SimpleLinearRegressionPage() {
                 </label>
                 <button type="button" className="train-button" onClick={runPrediction} disabled={points.length < 2}>
                   Predict ŷ <Target size={17} />
+                </button>
+                <button type="button" className="reset-button" onClick={exportFittedModel} disabled={lineIsStale} title={lineIsStale ? 'Refit the line before export' : 'Download fitted coefficients and input schema'}>
+                  Export model <Download size={17} />
                 </button>
                 {predictError && <p className="slr-help">{predictError}</p>}
                 {predictedY !== null && Number.isFinite(predictedY) ? (

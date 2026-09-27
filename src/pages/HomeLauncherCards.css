@@ -1,0 +1,277 @@
+/* The home catalogue shares the AI Virtual Labs card language. The algorithm
+   drawings stay route-specific, while the surrounding controls remain common. */
+.hl-catalog > .hl-group,
+.hl-catalog > .hl-mini-panel {
+  padding: 16px 22px 22px;
+  border: 1px solid #cdd9fb;
+  border-radius: 20px;
+  background: linear-gradient(125deg, #f8faff, #f2f6ff 55%, #f8fbff);
+  box-shadow: 0 9px 28px rgba(53, 79, 144, .08);
+}
+
+.hl-catalog .hl-group-head {
+  align-items: center;
+  gap: 22px;
+  min-height: 69px;
+  margin-bottom: 16px;
+  padding: 0;
+}
+
+.hl-catalog .hl-group-icon {
+  width: 68px;
+  height: 68px;
+  border-radius: 16px;
+  font-size: 35px;
+  box-shadow: inset 0 1px 4px #ffffff88, 0 5px 13px #546ca02e;
+}
+
+.home-landing .hl-group-icon svg { width: 38px; height: 38px; stroke-width: 1.7; }
+.hl-catalog .hl-group-title { gap: 3px; }
+.hl-catalog .hl-group-title h3,
+.hl-catalog .hl-mini-panel h4 {
+  color: #101b3b;
+  font-size: clamp(22px, 1.45vw, 29px);
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -.65px;
+}
+.hl-catalog .hl-group-title p { color: #405174; font-size: 15px; line-height: 1.35; }
+
+.hl-catalog .hl-view-all {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 13px;
+  min-width: 136px;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid #cdd3ff;
+  border-radius: 10px;
+  background: #f0f1ff;
+  box-shadow: 0 1px 3px #4f4cb21a;
+  color: #2121a1;
+  font-size: 14px;
+  font-weight: 750;
+  transition: background .2s, box-shadow .2s;
+}
+.hl-catalog .hl-view-all:hover { background: #e8e8ff; box-shadow: 0 3px 10px #7269e02b; }
+.hl-catalog .hl-view-all.is-static { cursor: default; }
+.hl-catalog .hl-view-all svg {
+  box-sizing: border-box;
+  width: 17px;
+  height: 17px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.hl-catalog .hl-cards {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.hl-catalog .hl-home-card { height: 160px; }
+.hl-catalog .hl-home-card-copy { width: 61%; }
+.hl-catalog .hl-home-card-copy strong { overflow-wrap: anywhere; }
+.hl-catalog .hl-home-card-copy > span { overflow-wrap: anywhere; }
+.hl-home-card-art {
+  position: absolute;
+  z-index: 0;
+  top: 24px;
+  right: 9px;
+  display: grid;
+  place-items: center;
+  width: min(44%, 140px);
+  height: 99px;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(0 4px 3px #416ab11a);
+  transition: transform .23s ease, filter .23s ease;
+}
+.home-landing .hl-home-card-art svg { width: 100%; height: 100%; }
+.hl-home-card-art img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 9px; box-shadow: 0 4px 9px #30518229; }
+.hl-home-card.has-thumb .hl-home-card-copy { width: 60%; }
+.hl-home-card:hover .hl-home-card-art,
+.hl-home-card:focus-visible .hl-home-card-art { transform: translateY(-2px) scale(1.02); filter: drop-shadow(0 6px 6px #4269b32a); }
+
+.hl-catalog .hl-mini-row { gap: 15px; }
+.hl-catalog .hl-mini {
+  min-height: 91px;
+  padding: 12px 14px;
+  border: 1px solid #d9e2f2;
+  border-radius: 14px;
+  background: linear-gradient(120deg, #fff, #f7faff);
+  box-shadow: 0 5px 12px #2e49771a;
+}
+.hl-catalog .hl-mini-icon { width: 42px; height: 42px; border-radius: 11px; font-size: 21px; }
+.home-landing .hl-mini-icon svg { width: 23px; height: 23px; }
+.hl-catalog .hl-mini-text strong { color: #101b3b; font-size: 15px; line-height: 1.2; }
+.hl-catalog .hl-mini-text em { color: #51617f; font-size: 12px; line-height: 1.3; }
+.hl-catalog .hl-mini-all { color: #3430a9; font-size: 12px; font-weight: 750; }
+.hl-catalog .hl-mini-all svg { box-sizing: border-box; width: 17px; height: 17px; padding: 0; background: none; box-shadow: none; }
+.hl-catalog .hl-mini-panel { gap: 16px; }
+.hl-catalog .hl-mini-panel h4 { margin-bottom: 1px; }
+
+.hl-spotlights { gap: 15px; }
+.hl-spot,
+.hl-spot.tone-navy,
+.hl-spot.tone-amber {
+  border: 1px solid #d9e2f2;
+  border-radius: 16px;
+  background: linear-gradient(120deg, #fff, #f7faff);
+  color: #101b3b;
+  box-shadow: 0 5px 12px #2e49771a;
+}
+.hl-spot.tone-amber { background: linear-gradient(120deg, #fff, #fffaf2); }
+.hl-spot-kicker,
+.hl-spot.tone-amber .hl-spot-kicker { color: #624ce1; }
+.hl-spot-copy p { color: #51617f; }
+.hl-spot-art { background: #eef3ff; border-color: #dbe4f5; }
+.hl-spot.tone-amber .hl-spot-art { background: #fff4df; border-color: #f0dfbc; }
+.hl-spot-art span,
+.hl-spot.tone-amber .hl-spot-art span { color: #52658b; }
+.home-landing .hl-spot-copy .hl-btn-primary { color: #fff; }
+
+/* One interaction language for every home card: a brief light sweep, then
+   motion inside the diagram. Animation runs only on hover or keyboard focus. */
+.home-landing .hl-ai-card::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(105deg, transparent 36%, #ffffff55 50%, transparent 64%);
+  transform: translateX(-100%);
+}
+.home-landing .hl-ai-card:hover::after,
+.home-landing .hl-ai-card:focus-visible::after { animation: hl-card-sweep .75s ease-out both; }
+.home-landing .hl-ai-card:hover .hl-ai-arrow,
+.home-landing .hl-ai-card:focus-visible .hl-ai-arrow { animation: hl-arrow-nudge .45s ease-out both; }
+.home-landing .hl-ai-card:hover .hl-ai-open,
+.home-landing .hl-ai-card:focus-visible .hl-ai-open { box-shadow: 0 7px 16px #6158e970; }
+
+.home-landing .hl-ai-card:hover .hl-algorithm-art .hl-art-content :is(circle, rect, ellipse),
+.home-landing .hl-ai-card:focus-visible .hl-algorithm-art .hl-art-content :is(circle, rect, ellipse),
+.home-landing .hl-spot-art:hover .hl-algorithm-art .hl-art-content :is(circle, rect, ellipse),
+.home-landing .hl-spot-art:focus-visible .hl-algorithm-art .hl-art-content :is(circle, rect, ellipse) {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hl-art-pop .55s ease-out both;
+}
+.home-landing .hl-algorithm-art .hl-art-content :is(circle, rect, ellipse):nth-of-type(3n + 2) { animation-delay: .07s; }
+.home-landing .hl-algorithm-art .hl-art-content :is(circle, rect, ellipse):nth-of-type(3n + 3) { animation-delay: .14s; }
+.home-landing .hl-ai-card:hover .hl-algorithm-art .hl-art-content :is(path, line, polyline),
+.home-landing .hl-ai-card:focus-visible .hl-algorithm-art .hl-art-content :is(path, line, polyline),
+.home-landing .hl-spot-art:hover .hl-algorithm-art .hl-art-content :is(path, line, polyline),
+.home-landing .hl-spot-art:focus-visible .hl-algorithm-art .hl-art-content :is(path, line, polyline) {
+  animation: hl-art-brighten .7s ease-out both;
+}
+.home-landing .hl-ai-card:hover .hl-home-card-art img,
+.home-landing .hl-ai-card:focus-visible .hl-home-card-art img { animation: hl-thumb-focus .65s ease-out both; }
+.home-landing .hl-spot:hover .hl-spot-art .hl-art-content :is(circle, rect, ellipse),
+.home-landing .hl-spot:focus-within .hl-spot-art .hl-art-content :is(circle, rect, ellipse) {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hl-art-pop .55s ease-out both;
+}
+.home-landing .hl-spot:hover .hl-spot-art .hl-art-content :is(path, line, polyline),
+.home-landing .hl-spot:focus-within .hl-spot-art .hl-art-content :is(path, line, polyline) { animation: hl-art-brighten .7s ease-out both; }
+.home-landing .hl-stat { transition: transform .2s ease, box-shadow .2s ease; }
+.home-landing .hl-stat:hover,
+.home-landing .hl-stat:focus-within { transform: translateY(-2px); box-shadow: 0 8px 18px #243d7e1f; }
+.home-landing .hl-stat:hover .hl-stat-icon svg,
+.home-landing .hl-stat:focus-within .hl-stat-icon svg { animation: hl-icon-hello .6s ease-out both; }
+
+.home-landing .hl-ai-card:hover .hl-ai-illustration .ai-ill-node,
+.home-landing .hl-ai-card:focus-visible .hl-ai-illustration .ai-ill-node {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hl-art-pop .55s ease-out both;
+}
+.home-landing .hl-ai-card .ai-ill-node:nth-of-type(3n + 2) { animation-delay: .08s; }
+.home-landing .hl-ai-card .ai-ill-node:nth-of-type(3n + 3) { animation-delay: .16s; }
+.home-landing .hl-ai-card:hover .hl-ai-illustration .ai-ill-edge,
+.home-landing .hl-ai-card:focus-visible .hl-ai-illustration .ai-ill-edge,
+.home-landing .hl-ai-card:hover .hl-ai-illustration .ai-ill-motion,
+.home-landing .hl-ai-card:focus-visible .hl-ai-illustration .ai-ill-motion { animation: hl-art-brighten .7s ease-out both; }
+.home-landing .hl-ai-card:not(.hl-ai-card-astar):hover .hl-ai-illustration :is(rect, ellipse),
+.home-landing .hl-ai-card:not(.hl-ai-card-astar):focus-visible .hl-ai-illustration :is(rect, ellipse) {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hl-art-pop .6s ease-out both;
+}
+.home-landing .hl-ai-card .hl-ai-illustration rect:nth-of-type(3n + 2),
+.home-landing .hl-ai-card .hl-ai-illustration ellipse:nth-of-type(3n + 2) { animation-delay: .08s; }
+.home-landing .hl-ai-card .hl-ai-illustration rect:nth-of-type(3n + 3),
+.home-landing .hl-ai-card .hl-ai-illustration ellipse:nth-of-type(3n + 3) { animation-delay: .16s; }
+
+.home-landing .hl-group-head:hover .hl-group-icon svg,
+.home-landing .hl-group-head:focus-within .hl-group-icon svg,
+.home-landing .hl-mini:hover .hl-mini-icon svg,
+.home-landing .hl-mini:focus-within .hl-mini-icon svg,
+.home-landing .hl-ai-header:hover .hl-ai-mark svg,
+.home-landing .hl-ai-header:focus-within .hl-ai-mark svg { animation: hl-icon-hello .6s ease-out both; }
+
+@keyframes hl-card-sweep { 0% { opacity: 0; transform: translateX(-100%); } 20% { opacity: .65; } 100% { opacity: 0; transform: translateX(100%); } }
+@keyframes hl-arrow-nudge { 0%, 100% { transform: translateX(0); } 55% { transform: translateX(4px); } }
+@keyframes hl-art-pop { 0% { transform: scale(.78); } 65% { transform: scale(1.1); } 100% { transform: scale(1); } }
+@keyframes hl-art-brighten { 0% { filter: brightness(1); } 55% { filter: brightness(1.35) saturate(1.25); } 100% { filter: none; } }
+@keyframes hl-thumb-focus { 0% { filter: saturate(.8); transform: scale(.94); } 60% { filter: saturate(1.2); transform: scale(1.04); } 100% { filter: none; transform: scale(1); } }
+@keyframes hl-icon-hello { 0%, 100% { transform: rotate(0) scale(1); } 55% { transform: rotate(-8deg) scale(1.1); } }
+
+@media (max-width: 1699px) { .hl-catalog .hl-cards { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+@media (max-width: 1349px) { .hl-catalog .hl-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 1049px) { .hl-catalog .hl-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } .hl-catalog .hl-group-head { gap: 15px; } }
+@media (max-width: 899px) { .hl-catalog .hl-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hl-catalog .hl-group-head { flex-wrap: wrap; } .hl-catalog .hl-view-all { margin-left: auto; } }
+@media (max-width: 619px) {
+  .hl-catalog > .hl-group, .hl-catalog > .hl-mini-panel { padding: 14px; }
+  .hl-catalog .hl-cards { grid-template-columns: minmax(0, 1fr); gap: 11px; }
+  .hl-catalog .hl-home-card { height: 150px; }
+  .hl-catalog .hl-group-icon { width: 51px; height: 51px; }
+  .home-landing .hl-group-icon svg { width: 31px; height: 31px; }
+  .hl-catalog .hl-group-title h3 { font-size: 20px; }
+  .hl-catalog .hl-group-title p { font-size: 12px; }
+  .hl-catalog .hl-group-head { gap: 11px; }
+  .hl-catalog .hl-view-all { min-width: 110px; height: 38px; font-size: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-landing .hl-ai-card::after,
+  .home-landing .hl-ai-card *,
+  .home-landing .hl-ai-card *::before,
+  .home-landing .hl-ai-card *::after,
+  .home-landing .hl-spot-art *,
+  .home-landing .hl-stat,
+  .home-landing .hl-stat-icon svg,
+  .home-landing .hl-group-icon svg,
+  .home-landing .hl-mini-icon svg,
+  .home-landing .hl-ai-mark svg { animation: none !important; transition: none !important; }
+  .hl-home-card, .hl-home-card::before, .hl-home-card::after,
+  .hl-home-card-art, .hl-catalog .hl-view-all, .hl-catalog .hl-mini {
+    animation: none !important;
+    transition: none !important;
+  }
+  .hl-home-card:hover, .hl-home-card:focus-visible,
+  .hl-home-card:hover .hl-home-card-art, .hl-home-card:focus-visible .hl-home-card-art,
+  .hl-catalog .hl-mini:hover, .home-landing .hl-stat:hover,
+  .home-landing .hl-spot:hover { transform: none !important; }
+}
+
+html.dark .hl-catalog > .hl-group,
+html.dark .hl-catalog > .hl-mini-panel { background: linear-gradient(125deg, #121c34, #16213b); border-color: #35416b; }
+html.dark .hl-catalog .hl-group-title h3,
+html.dark .hl-catalog .hl-mini-panel h4,
+html.dark .hl-catalog .hl-mini-text strong { color: #f0f3ff; }
+html.dark .hl-catalog .hl-group-title p,
+html.dark .hl-catalog .hl-mini-text em { color: #b5c0db; }
+html.dark .hl-catalog .hl-view-all { background: #282b59; border-color: #535294; color: #e5e2ff; }
+html.dark .hl-catalog .hl-mini,
+html.dark .hl-spot,
+html.dark .hl-spot.tone-navy,
+html.dark .hl-spot.tone-amber { background: linear-gradient(125deg, #1c2943, #202d4a); border-color: #3a4a69; }
+html.dark .hl-spot-copy h2 { color: #f0f3ff; }
+html.dark .hl-spot-copy p { color: #b5c0db; }
+html.dark .hl-spot-art { background: #253657; border-color: #425779; }

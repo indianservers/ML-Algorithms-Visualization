@@ -5,12 +5,15 @@ import { dirname, join } from 'node:path';
 const root = dirname(fileURLToPath(new URL('../package.json', import.meta.url)));
 const publicDir = join(root, 'public');
 const navigation = readFileSync(join(root, 'src/data/navigation.ts'), 'utf8');
+const aiCatalog = readFileSync(join(root, 'src/features/ai-virtual-labs/catalog.ts'), 'utf8');
 const domain = process.env.SITE_URL ?? 'https://www.aimersociety.com/MachineLearningAlgorithms';
 const today = new Date().toISOString().slice(0, 10);
 
 const algorithmRoutes = [...navigation.matchAll(/route:\s*'([^']+)'/g)]
   .map(match => match[1])
   .filter(route => route.startsWith('/ml/'));
+const aiLabRoutes = [...aiCatalog.matchAll(/slug:\s*'([^']+)'/g)]
+  .map(match => `/ai-algorithms/${match[1]}`);
 
 const lessonRoutes = algorithmRoutes.flatMap(route =>
   [1, 2, 3, 4, 5].map(pageNumber => `${route}/lessons/${pageNumber}`)
@@ -23,6 +26,7 @@ const routes = [
   { path: '/sitemap', priority: '0.7', changefreq: 'weekly' },
   { path: '/implementation-matrix', priority: '0.7', changefreq: 'weekly' },
   ...algorithmRoutes.map(path => ({ path, priority: '0.8', changefreq: 'monthly' })),
+  ...aiLabRoutes.map(path => ({ path, priority: '0.8', changefreq: 'monthly' })),
   ...lessonRoutes.map(path => ({ path, priority: '0.6', changefreq: 'monthly' })),
 ];
 

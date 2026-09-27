@@ -2,11 +2,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Share2, Sparkles, Upload } from "lucide-react";
 import {
+  encodeWithWeights,
+  reconstructWithWeights,
   trainAutoencoder,
   type AutoencoderArchitecture,
   type AutoencoderResult,
 } from "../../../lib/algorithms/dimensionality/autoencoder";
 import { getDimensionalityDataset } from "../../../lib/dimensionality/dimensionalityDatasets";
+import { downloadJsonArtifact } from "../../../lib/modelArtifacts/downloadJsonArtifact";
 import "./AutoencoderDimensionalityPage.css";
 import { LabLessonOrWork, labHide } from "../../../components/common/LabTabs";
 type Sample = { pixels: number[]; label: number };
@@ -128,6 +131,8 @@ export default function AutoencoderDimensionalityPage() {
     [tfTensors, setTfTensors] = useState<number | null>(null),
     [status, setStatus] = useState<"NOT TRAINED" | "TRAINING" | "TRAINED" | "STALE" | "ERROR">("NOT TRAINED"),
     [toast, setToast] = useState("");
+  const [inferenceInput, setInferenceInput] = useState("");
+  const [inferenceResult, setInferenceResult] = useState<{ code: number[]; reconstruction: number[]; mse: number } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null),
     runId = useRef(0);
   const runTraining = useCallback(async () => {
@@ -154,6 +159,7 @@ export default function AutoencoderDimensionalityPage() {
       );
       if (id === runId.current) {
         setResult(trained);
+        setInferenceResult(null);
         setStatus("TRAINED");
         setToast("Autoencoder training complete");
       }
@@ -185,6 +191,7 @@ export default function AutoencoderDimensionalityPage() {
       setDataset(kind);
       setSamples(next);
       setResult(null);
+      setInferenceResult(null);
       setProgress(0);
       setToast(`${NAMES[kind]} loaded — train to update`);
       setStatus("STALE");
@@ -623,6 +630,45 @@ export default function AutoencoderDimensionalityPage() {
           {tfTensors != null && (
             <p>tf.memory tensors after last train <b>{tfTensors}</b></p>
           )}
+        </section>
+        <section className="ae-inference">
+          <h3>INFERENCE &amp; MODEL EXPORT</h3>
+          <p>Enter one row of {samples[0].pixels.length} comma-separated feature values, in training order.</p>
+          <button type="button" onClick={() => setInferenceInput(samples[0].pixels.join(", "))}>
+            Use first dataset sample
+          </button>
+          <textarea aria-label="Autoencoder inference input" value={inferenceInput}
+            onChange={(event) => setInferenceInput(event.target.value)} rows={3}
+            placeholder="0.1, 0.2, 0.3, ..." />
+          <button type="button" disabled={!result || status !== "TRAINED"} onClick={() => {
+            if (!result) return;
+            const values = inferenceInput.trim().split(/[\s,]+/).map(Number);
+            if (values.length !== samples[0].pixels.length || values.some((value) => !Number.isFinite(value))) {
+              setToast(`Enter exactly ${samples[0].pixels.length} numeric values`);
+              return;
+            }
+            const code = encodeWithWeights([values], result.encoderWeights)[0];
+            const reconstruction = reconstructWithWeights([values], result)[0];
+            const mse = values.reduce((sum, value, index) => sum + (value - reconstruction[index]) ** 2, 0) / values.length;
+            setInferenceResult({ code, reconstruction, mse });
+          }}>Infer / reconstruct</button>
+          <button type="button" disabled={!result || status !== "TRAINED"} onClick={() => {
+            if (!result) return;
+            downloadJsonArtifact("autoencoder-model.json", {
+              format: "ml-suite-autoencoder-v1",
+              inputDimension: samples[0].pixels.length,
+              latentDimension: result.encoderWeights.at(-1)?.bias.length,
+              encoderWeights: result.encoderWeights,
+              decoderWeights: result.decoderWeights,
+              outputActivation: result.outputActivation,
+              trainingDataset: NAMES[dataset],
+            });
+          }}>Export model JSON</button>
+          {inferenceResult && <div className="ae-inference-result">
+            <p>Latent code: {inferenceResult.code.map((value) => value.toFixed(4)).join(", ")}</p>
+            <p>Reconstruction MSE: {inferenceResult.mse.toFixed(6)}</p>
+            <p>Reconstructed values: {inferenceResult.reconstruction.map((value) => value.toFixed(3)).join(", ")}</p>
+          </div>}
         </section>
       </aside>
       {toast && (

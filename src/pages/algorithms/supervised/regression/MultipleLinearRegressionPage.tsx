@@ -14,6 +14,7 @@ import { varianceInflationFactors } from '../../../../lib/regression/regressionD
 import { RegressionDiagnosticsPanel } from '../../../../components/ml/RegressionDiagnosticsPanel';
 import { datasetHHousing, datasetIMulticollinearity, datasetJIrrelevantFeatures, datasetNConstantFeature } from '../../../../lib/regression/regressionDatasets';
 import { saveCurrentView } from '../../../../lib/labWorkspace';
+import { downloadJsonArtifact } from '../../../../lib/modelArtifacts/downloadJsonArtifact';
 import { useTheme } from '../../../../stores/uiStore';
 import { useActiveLoadedDataset } from '../../../../lib/timeSeries/useActiveTimeSeries';
 import type { LoadedAlgorithmDataset } from '../../../../data/algorithmDatasets';
@@ -376,6 +377,20 @@ export default function MultipleLinearRegressionPage() {
     const url = URL.createObjectURL(new Blob([report], { type: 'application/json' }));
     const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'multiple-linear-regression-report.json'; anchor.click(); URL.revokeObjectURL(url);
   };
+  const exportModel = () => {
+    if (!trained || stale) return;
+    downloadJsonArtifact('multiple-linear-regression-model.json', {
+      format: 'ml-suite-linear-regression-v1',
+      algorithm: 'Multiple Linear Regression',
+      datasetName: definition.label,
+      createdAt: new Date().toISOString(),
+      inputFeatures: selectedFeatures,
+      target: definition.target,
+      coefficients: { intercept: coefficients[0], weights: coefficients.slice(1) },
+      trainingSamples: split?.nTrain ?? rows.length,
+      metrics: { trainR2: trainMetrics?.r2 ?? null, testR2: testMetrics?.r2 ?? null, testRmse: testMetrics?.rmse ?? null },
+    });
+  };
 
   return (
     <div className={`mlr-shell${lightTheme ? ' light' : ''}`}>
@@ -385,7 +400,7 @@ export default function MultipleLinearRegressionPage() {
         </header>
         <nav className="mlr-tabs" aria-label="Lesson views">
           <div>{tabs.map(tab => <button key={tab.id} className={activeTab === tab.id ? 'active' : ''} onClick={() => setActiveTab(tab.id)}>{tab.icon}{tab.label}</button>)}</div>
-          <div><button onClick={saveView}><Bookmark />{saved ? 'Saved' : 'Saved Views'}<ChevronDown /></button><button aria-label="Share view" onClick={() => { setShared(true); void navigator.clipboard?.writeText(window.location.href).catch(() => undefined); window.setTimeout(() => setShared(false), 1400); }}><Share2 />{shared && <small>Copied</small>}</button></div>
+          <div><button onClick={exportModel} disabled={!trained || stale} title={stale ? 'Retrain the model before export' : 'Download fitted coefficients and input schema'}><Download />Export model</button><button onClick={saveView}><Bookmark />{saved ? 'Saved' : 'Saved Views'}<ChevronDown /></button><button aria-label="Share view" onClick={() => { setShared(true); void navigator.clipboard?.writeText(window.location.href).catch(() => undefined); window.setTimeout(() => setShared(false), 1400); }}><Share2 />{shared && <small>Copied</small>}</button></div>
         </nav>
 
         {fitError && <p className="mlr-help" style={{ color: '#f87171', padding: '0 16px' }}>{fitError}</p>}

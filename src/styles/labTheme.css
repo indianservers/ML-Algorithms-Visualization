@@ -1,8 +1,6 @@
 /* Shared design tokens for the algorithm lab pages.
    Values are sampled from the ML_AI_Redesign_Checkpoint_74 mockups so every
-   algorithm page can share one palette instead of hard-coding hex per page.
-   Dark is the default; the light values keep the pages usable when a learner
-   flips the theme toggle. */
+   algorithm page can share one palette instead of hard-coding hex per page. */
 
 :root {
   --lab-bg: #eef4ff;
@@ -278,6 +276,7 @@ html:not(.dark) #main-content [class*="-approved"] {
 html:not(.dark) #main-content [class*="-page"],
 html:not(.dark) #main-content [class*="-shell"],
 html:not(.dark) #main-content [class*="-approved"] {
+  background-image: none;
   --bg: var(--lab-bg);
   --panel: var(--lab-panel);
   --border: var(--lab-line);
@@ -293,6 +292,16 @@ html:not(.dark) #main-content aside {
   background-color: var(--bg-surface);
   color: var(--text-primary);
   border-color: var(--border-default);
+}
+
+html:not(.dark) #main-content aside a:not(.is-active) {
+  color: var(--text-primary);
+}
+
+html:not(.dark) #main-content aside p,
+html:not(.dark) #main-content aside small,
+html:not(.dark) #main-content aside em {
+  color: var(--text-muted);
 }
 
 /* Copy must follow the theme even when a lesson still hard-codes night/day hex. */
@@ -370,6 +379,13 @@ html:not(.dark) #main-content [class*="-approved"] span {
   color: var(--text-secondary);
 }
 
+html:not(.dark) #main-content [class*="-shell"] li,
+html:not(.dark) #main-content [class*="-shell"] strong,
+html:not(.dark) #main-content [class*="-approved"] li,
+html:not(.dark) #main-content [class*="-approved"] strong {
+  color: var(--text-secondary);
+}
+
 html.dark #main-content [class*="-lede"],
 html.dark #main-content [class*="-hint"],
 html.dark #main-content [class*="-muted"],
@@ -424,6 +440,23 @@ html:not(.dark) #main-content [class*="-empty"],
 html:not(.dark) #main-content [class*="-side"],
 html:not(.dark) #main-content .lab-tab-lesson {
   background-color: var(--bg-surface);
+  background-image: none;
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+
+/* Some lessons use a shell or approved wrapper with plain nested sections and
+   articles. Give those surfaces the same complete light palette. */
+html:not(.dark) #main-content :is([class*="-page"], [class*="-shell"], [class*="-approved"]) :is(main, section, article, footer, aside, table, thead, tbody, th, td) {
+  background-color: var(--bg-surface);
+  background-image: none;
+  color: var(--text-primary);
+  border-color: var(--border-default);
+}
+
+html:not(.dark) #main-content :is([class*="-page"], [class*="-shell"], [class*="-approved"]) :is([class*="-toolbar"], [class*="-controls"]) :is(label, em) {
+  background-color: var(--control-bg);
+  background-image: none;
   color: var(--text-primary);
   border-color: var(--border-default);
 }
@@ -432,14 +465,17 @@ html:not(.dark) #main-content [class*="-page"] button,
 html:not(.dark) #main-content [class*="-shell"] button,
 html:not(.dark) #main-content [class*="-approved"] button {
   background-color: var(--control-bg);
+  background-image: none;
   color: var(--text-primary);
   border-color: var(--border-default);
 }
 
 html:not(.dark) #main-content button.train,
 html:not(.dark) #main-content button.primary,
-html:not(.dark) #main-content .train {
+html:not(.dark) #main-content .train,
+html:not(.dark) #main-content button[class*="train-button"] {
   background-color: var(--lab-blue);
+  background-image: none;
   color: #fff;
   border-color: var(--lab-blue);
 }
@@ -489,8 +525,10 @@ html:not(.dark) #main-content [class*="-head"] h1 em {
 
 html:not(.dark) #main-content pre,
 html:not(.dark) #main-content code,
-html:not(.dark) #main-content .lab-tab-formula {
+html:not(.dark) #main-content .lab-tab-formula,
+html:not(.dark) #main-content [class*="-formula"] {
   background-color: var(--bg-inset);
+  background-image: none;
   color: var(--text-primary);
 }
 
@@ -514,6 +552,20 @@ html:not(.dark) #main-content .lab-tab-formula {
 
 #main-content canvas {
   max-width: 100%;
+}
+
+#main-content a.ml-model-workspace-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  margin-top: 8px;
+  padding: 7px 12px;
+  border-radius: 6px;
+  background: #1c5ffa;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
 }
 
 #main-content [class*="upload"],

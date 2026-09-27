@@ -4,7 +4,7 @@ type Theme = 'light' | 'dark';
 export type TrainingMode = 'manual' | 'auto';
 export type TrainingSpeed = 'slow' | 'normal' | 'fast';
 
-// v3 re-baselines the default to dark so the labs match the redesign mockups.
+// Keep the existing key so saved theme preferences continue to work.
 export const THEME_KEY = 'ml-suite-theme-v3';
 const SIDEBAR_KEY = 'ml-suite-sidebar-collapsed';
 const TRAINING_MODE_KEY = 'ml-suite-training-mode';
@@ -15,8 +15,8 @@ const TEACHER_MODE_KEY = 'ml-suite-teacher-mode';
 const GUIDE_MODE_KEY = 'ml-suite-guide-mode';
 
 function readStoredTheme(): Theme {
-  if (typeof localStorage === 'undefined') return 'dark';
-  return localStorage.getItem(THEME_KEY) === 'light' ? 'light' : 'dark';
+  if (typeof localStorage === 'undefined') return 'light';
+  return localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light';
 }
 
 export function applyThemeClass(theme: Theme) {

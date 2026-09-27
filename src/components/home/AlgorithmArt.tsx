@@ -860,23 +860,25 @@ export function AlgorithmArt({
   category,
   artKey,
   className,
+  compact = false,
 }: {
   route?: string;
   category?: string;
   artKey?: ArtKey;
   className?: string;
+  compact?: boolean;
 }) {
   const id = useId().replace(/:/g, "");
   return (
     <svg
-      viewBox={`0 0 ${W} ${H}`}
-      className={className}
+      viewBox={compact ? `72 0 140 ${H}` : `0 0 ${W} ${H}`}
+      className={["hl-algorithm-art", className].filter(Boolean).join(" ")}
       preserveAspectRatio="xMidYMid meet"
       fill="none"
       aria-hidden
       focusable="false"
     >
-      {resolve(route, category, artKey)(id)}
+      <g className="hl-art-content">{resolve(route, category, artKey)(id)}</g>
     </svg>
   );
 }

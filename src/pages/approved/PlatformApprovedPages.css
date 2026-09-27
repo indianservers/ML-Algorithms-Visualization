@@ -229,6 +229,10 @@
   padding: 8px 0;
   border-bottom: 1px solid #1d2e47;
 }
+.pp-page.pp-light .pp-compatible a {
+  color: #1953ac;
+  border-bottom-color: #d8e1ee;
+}
 .pp-empty {
   padding: 16px;
   color: #8a98ac;
@@ -1263,6 +1267,7 @@
   color: #71839c;
   padding-top: 14px;
 }
+
 .pp-library > aside {
   display: flex;
   flex-direction: column;
@@ -1312,6 +1317,12 @@
     conic-gradient(#2878ef 0 57%, #f4a42a 57% 77%, #13c1aa 77%);
   font-size: 25px;
 }
+.pp-page.pp-light .pp-profile .ring {
+  background:
+    radial-gradient(circle, #fff 55%, transparent 56%),
+    conic-gradient(#2878ef 0 57%, #d08a1e 57% 77%, #0f9e8b 77%);
+  color: #12203a;
+}
 .pp-profile .bars {
   display: flex;
   flex-direction: column;
@@ -1323,6 +1334,9 @@
   background: #1d2c43;
   border-radius: 4px;
   overflow: hidden;
+}
+.pp-page.pp-light .pp-profile .bars i {
+  background: #dce6f4;
 }
 .pp-profile .bars i span {
   display: block;

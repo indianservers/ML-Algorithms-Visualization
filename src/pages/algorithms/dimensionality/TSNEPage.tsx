@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { HelpCircle, Moon, Share2, Upload } from "lucide-react";
+import { Download, HelpCircle, Moon, Play, Share2, Upload } from "lucide-react";
 import {
   tsne,
   type TSNEInitialization,
@@ -8,14 +8,23 @@ import {
 } from "../../../lib/algorithms/dimensionality/tsne";
 import { getDimensionalityDataset } from "../../../lib/dimensionality/dimensionalityDatasets";
 import { MAX_EMBEDDING_SAMPLES, subsampleIndices } from "../../../lib/dimensionality/dimensionalityPrep";
+import { downloadJsonArtifact } from "../../../lib/modelArtifacts/downloadJsonArtifact";
+import {
+  createTSNEArtifact,
+  parseTSNEArtifact,
+  projectWithTSNEArtifact,
+  type TSNEArtifact,
+} from "../../../lib/dimensionality/tsneArtifact";
 import {
   LAB_TABS,
   LabLessonPanel,
+  isLabTab,
   useLabTabs,
 } from "../../../components/common/LabTabs";
 import "./TSNEPage.css";
 type Sample = { values: number[]; label: number };
 type Dataset = "digits" | "fashion" | "iris" | "swiss" | "imported";
+type InferenceResult = ReturnType<typeof projectWithTSNEArtifact>;
 const COLORS = [
   "#13d6d3",
   "#ff9d00",
@@ -57,8 +66,13 @@ export default function TSNEPage() {
     [toast, setToast] = useState(""),
     [status, setStatus] = useState<"NOT RUN" | "RUNNING" | "COMPLETED" | "STALE" | "ERROR">("NOT RUN"),
     [tsneResult, setTsneResult] = useState<ReturnType<typeof tsne> | null>(null),
+    [model, setModel] = useState<TSNEArtifact | null>(null),
+    [inferenceInput, setInferenceInput] = useState(""),
+    [inferenceResults, setInferenceResults] = useState<InferenceResult[]>([]),
+    [inferenceError, setInferenceError] = useState(""),
     [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const modelFileRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef(false);
   const used = useMemo(() => {
       const indices = subsampleIndices(samples.length, MAX_EMBEDDING_SAMPLES);
@@ -74,6 +88,8 @@ export default function TSNEPage() {
     setStatus("RUNNING");
     setError(null);
     setPlaying(false);
+    setModel(null);
+    setInferenceResults([]);
     try {
       if (perplexity >= used.n) {
         throw new Error(`t-SNE perplexity must be less than N=${used.n}.`);
@@ -95,10 +111,24 @@ export default function TSNEPage() {
         return;
       }
       setTsneResult(computed);
+      setModel(createTSNEArtifact({
+        datasetName: NAMES[dataset],
+        features: used.X,
+        labels: used.labels,
+        result: computed,
+        metric,
+        initialization,
+        perplexity,
+        learningRate,
+        earlyExaggeration: exaggeration,
+        iterations,
+      }));
+      setInferenceInput(used.X[0].join(", "));
       setStatus("COMPLETED");
       setFrame(computed.snapshots.length - 1);
     } catch (cause) {
       setTsneResult(null);
+      setModel(null);
       setStatus("ERROR");
       setError(cause instanceof Error ? cause.message : "t-SNE failed");
     }
@@ -198,9 +228,55 @@ export default function TSNEPage() {
     setInitialization("pca");
     setPlaying(false);
     setTsneResult(null);
+    setModel(null);
+    setInferenceResults([]);
     setStatus("NOT RUN");
     setFrame(0);
   };
+  const infer = () => {
+    if (!model) return setInferenceError("Run t-SNE or import a saved reference model first.");
+    try {
+      const rows = inferenceInput.split(/\r?\n/).map((row) => row.trim()).filter(Boolean);
+      if (!rows.length || rows.length > 100) throw new Error("Enter 1 to 100 rows, one sample per line.");
+      const projected = rows.map((row) => {
+        const values = row.split(/[\s,]+/);
+        if (values.some((value) => !value)) throw new Error("Remove empty feature values from the input.");
+        return projectWithTSNEArtifact(model, values.map(Number));
+      });
+      setInferenceResults(projected);
+      setInferenceError("");
+    } catch (cause) {
+      setInferenceResults([]);
+      setInferenceError(cause instanceof Error ? cause.message : "Inference failed.");
+    }
+  };
+  const exportModel = () => {
+    if (!model) return;
+    downloadJsonArtifact(
+      `tsne-${model.datasetName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-model.json`,
+      model,
+    );
+  };
+  const importModel = async (file?: File) => {
+    if (!file) return;
+    try {
+      const parsed = parseTSNEArtifact(JSON.parse(await file.text()));
+      setModel(parsed);
+      setInferenceInput(parsed.referenceFeatures[0].join(", "));
+      setInferenceResults([]);
+      setInferenceError("");
+      setToast(`Loaded ${parsed.datasetName} reference model`);
+      setTab("Inference");
+    } catch (cause) {
+      setInferenceError(cause instanceof Error ? cause.message : "Could not import model.");
+    } finally {
+      if (modelFileRef.current) modelFileRef.current.value = "";
+    }
+  };
+  const inferenceScale = model
+    ? Math.max(1, ...model.embedding.flat().map(Math.abs))
+    : 1;
+  const inferPosition = (value: number) => `${Math.max(3, Math.min(97, 50 + (value / inferenceScale) * 44))}%`;
   const numericControls = [
     {
       name: "Perplexity",
@@ -298,14 +374,15 @@ export default function TSNEPage() {
           {LAB_TABS.map((name) => (
             <button
               role="tab"
-              aria-selected={tab === name}
-              className={tab === name ? "active" : ""}
+              aria-selected={isLabTab(tab, name)}
+              className={isLabTab(tab, name) ? "active" : ""}
               onClick={() => setTab(name)}
               key={name}
             >
               {name}
             </button>
           ))}
+          <button role="tab" aria-selected={isLabTab(tab, "Inference")} className={isLabTab(tab, "Inference") ? "active" : ""} onClick={() => setTab("Inference")}>Inference</button>
         </nav>
         {lesson && (
           <LabLessonPanel tab={tab} route="/ml/dimensionality-reduction/tsne" />
@@ -324,7 +401,7 @@ export default function TSNEPage() {
               </p>
             )}
             <p>
-              t-SNE emphasizes local neighborhoods. Cluster sizes and global spacing can be misleading. Same seed + settings are repeatable here (seed=42). New points cannot be transformed with this implementation.
+              t-SNE emphasizes local neighborhoods. Cluster sizes and global spacing can be misleading. Same seed + settings are repeatable here (seed=42). New points use approximate nearest-neighbor placement in the Inference tab.
             </p>
             <button className="primary" onClick={runTsne} disabled={status === "RUNNING"}>
               {status === "RUNNING" ? "Running…" : "Run t-SNE"}
@@ -473,6 +550,46 @@ export default function TSNEPage() {
             </p>
           </article>
         </section>
+        {isLabTab(tab, "Inference") && (
+          <section className="ts-inference" role="tabpanel" aria-label="t-SNE inference">
+            <header>
+              <div>
+                <h2>Inference and model export</h2>
+                <p>Place new samples near their closest reference samples in the fitted 2D map. This is an approximation, not a native t-SNE transform.</p>
+              </div>
+              <button onClick={exportModel} disabled={!model}><Download size={16} /> Export model</button>
+            </header>
+            <div className="ts-inference-actions">
+              <button onClick={() => modelFileRef.current?.click()}><Upload size={16} /> Import model JSON</button>
+              <input ref={modelFileRef} type="file" accept=".json,application/json" onChange={(event) => void importModel(event.currentTarget.files?.[0])} hidden />
+              {model && <span>{model.datasetName} · {model.referenceFeatures.length} reference samples · {model.inputDimensions} features</span>}
+            </div>
+            <label htmlFor="ts-inference-input">New samples, one comma-separated feature row per line</label>
+            <textarea id="ts-inference-input" value={inferenceInput} onChange={(event) => setInferenceInput(event.target.value)} rows={5} placeholder={model ? `Enter ${model.inputDimensions} numeric values per row` : "Run t-SNE first or import a model"} />
+            <div className="ts-inference-actions">
+              <button className="primary" onClick={infer} disabled={!model}><Play size={16} /> Run inference</button>
+              {model && <button onClick={() => setInferenceInput(model.referenceFeatures[0].join(", "))}>Use reference sample</button>}
+            </div>
+            {inferenceError && <p className="ts-inference-error" role="alert">{inferenceError}</p>}
+            {model && (
+              <p className="ts-inference-note">The exported JSON contains the fitted coordinates, input features, metric, and settings. Exact reference samples recover their saved coordinates. Other samples use inverse-distance interpolation from five neighbors; their positions are estimates and are not comparable across separate fits.</p>
+            )}
+            {model && inferenceResults.length > 0 && (
+              <>
+                <div className="ts-inference-map" aria-label="Reference embedding and projected samples">
+                  {model.embedding.map((point, index) => <i key={`reference-${index}`} className="reference" style={{ left: inferPosition(point[0]), top: inferPosition(-point[1]) }} />)}
+                  {inferenceResults.map((item, index) => <i key={`inferred-${index}`} className="inferred" title={`Sample ${index + 1}`} style={{ left: inferPosition(item.position[0]), top: inferPosition(-item.position[1]) }} />)}
+                </div>
+                <p className="ts-inference-note">Gray: fitted samples · Orange: new samples</p>
+                <div className="ts-inference-results">
+                  {inferenceResults.map((item, index) => (
+                    <p key={index}><b>Sample {index + 1}</b><span>({item.position[0].toFixed(3)}, {item.position[1].toFixed(3)})</span><small>{item.exact ? "Exact reference match" : `Approximate · nearest distance ${item.neighbors[0].distance.toFixed(3)}`}</small></p>
+                  ))}
+                </div>
+              </>
+            )}
+          </section>
+        )}
       </main>
       <aside className={`ts-controls${panel("Visualize", "Build / Train", "Metrics")}`}>
         <h2>

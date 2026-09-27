@@ -668,3 +668,21 @@
     white-space: nowrap;
   }
 }
+.ae-inference textarea {
+  display: block;
+  width: 100%;
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid #b7c9dd;
+  border-radius: 8px;
+  background: #fff;
+  color: #102139;
+  font: inherit;
+  resize: vertical;
+}
+
+.ae-inference-result {
+  overflow-wrap: anywhere;
+  max-height: 220px;
+  overflow: auto;
+}

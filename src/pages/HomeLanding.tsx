@@ -2,11 +2,12 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Activity,
-  ArrowRight,
   BookMarked,
   BookOpen,
+  BrainCircuit,
   Boxes,
   ChevronDown,
+  ChevronRight,
   Database,
   Eye,
   FlaskConical,
@@ -30,7 +31,11 @@ import { searchAlgorithms } from "../lib/search/algorithmSearchIndex";
 import { useTheme } from "../stores/uiStore";
 import { AlgorithmArt, type ArtKey } from "../components/home/AlgorithmArt";
 import { BrainVisual } from "../components/home/BrainVisual";
+import { visionLabThumb } from "../features/computer-vision/catalog";
+import { aiVirtualLabs, aiVirtualLabRoute } from "../features/ai-virtual-labs/catalog";
+import { AiAlgorithmsSection } from "../features/ai-virtual-labs/AiAlgorithmsSection";
 import "./HomeLanding.css";
+import "./HomeLauncherCards.css";
 
 type Level = "Beginner" | "Intermediate" | "Advanced";
 
@@ -152,6 +157,17 @@ const groups: Group[] = [
       card("/ml/computer-vision/face-mesh", "Dense facial landmarks live", "Advanced", "Face Mesh", "vision"),
     ],
   },
+  {
+    id: "ai-virtual-labs",
+    title: "AI Algorithms Virtual Labs",
+    blurb: "Step through search, planning, learning, and probabilistic algorithms",
+    tone: "purple",
+    icon: <BrainCircuit />,
+    categories: ["AI Algorithms Virtual Labs"],
+    featured: aiVirtualLabs.slice(0, 6).map((lab) =>
+      card(aiVirtualLabRoute(lab.slug), lab.summary, "Advanced", lab.title),
+    ),
+  },
 ];
 
 const miniCategories = [
@@ -235,9 +251,12 @@ const spotlights: Spotlight[] = [
 const FILTERS: Array<Level | "All"> = ["All", "Beginner", "Intermediate", "Advanced"];
 
 function toCard(item: NavItem & { category: string }): Card {
+  const aiLab = item.category === 'AI Algorithms Virtual Labs'
+    ? aiVirtualLabs.find((lab) => aiVirtualLabRoute(lab.slug) === item.route)
+    : undefined;
   return {
     label: item.label,
-    blurb: item.category.replace(" - ", " · "),
+    blurb: aiLab?.summary ?? item.category.replace(" - ", " · "),
     route: item.route,
     level: LEVEL_OF[item.badge],
     category: item.category,
@@ -291,23 +310,30 @@ const groupedCategories = new Set(groups.flatMap((group) => group.categories));
 const panelId = (category: string) => `hl-mini-panel-${category.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 
 function AlgorithmCard({ item, enterIndex = -1 }: { item: Card; enterIndex?: number }) {
+  const thumb = visionLabThumb(item.route);
   return (
     <Link
       to={item.route}
-      className={enterIndex >= 0 ? "hl-card hl-card-enter" : "hl-card"}
+      className={["hl-ai-card", "hl-home-card", enterIndex >= 0 ? "hl-card-enter" : "", thumb ? "has-thumb" : ""].filter(Boolean).join(" ")}
       style={enterIndex >= 0 ? { animationDelay: `${Math.min(enterIndex, 11) * 22}ms` } : undefined}
+      aria-label={`Open ${item.label} lab`}
     >
-      <p className="hl-card-name">{item.label}</p>
-      <p className="hl-card-blurb">{item.blurb}</p>
-      <span className="hl-card-art">
-        <AlgorithmArt route={item.route} category={item.category} artKey={item.artKey} />
+      <span className="hl-ai-copy hl-home-card-copy">
+        <strong>{item.label}</strong>
+        <span>{item.blurb}</span>
       </span>
-      <span className="hl-card-foot">
-        <span className={`hl-level lvl-${item.level.toLowerCase()}`}>{item.level}</span>
-        <span className="hl-card-go" aria-hidden>
-          <ArrowRight />
-        </span>
+      <span className="hl-home-card-art" aria-hidden="true">
+        {thumb ? (
+          <img src={thumb} alt="" loading="lazy" />
+        ) : (
+          <AlgorithmArt route={item.route} category={item.category} artKey={item.artKey} compact />
+        )}
       </span>
+      <span className="hl-ai-card-actions" aria-hidden="true">
+        <span className="hl-ai-open">Open Lab</span>
+        <span className="hl-ai-arrow"><ChevronRight /></span>
+      </span>
+      <span className="hl-sr">{item.level} difficulty</span>
     </Link>
   );
 }
@@ -635,6 +661,9 @@ export default function HomeLanding() {
 
         {visible.map(({ group, cards, total, expanded, forced }) => {
           if (filtering && cards.length === 0) return null;
+          if (group.id === "ai-virtual-labs") {
+            return <AiAlgorithmsSection key={group.id} globalRoutes={forced ? cards.map((item) => item.route) : undefined} />;
+          }
           return (
             <section key={group.id} className={`hl-group tone-${group.tone}`}>
               <header className="hl-group-head">

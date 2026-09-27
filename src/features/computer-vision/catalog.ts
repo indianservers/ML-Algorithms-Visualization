@@ -313,6 +313,25 @@ export function getVisionLab(pathname: string): VisionLab | undefined {
   return visionLabs.find((lab) => lab.route !== VISION_HOME_ROUTE && pathname.startsWith(lab.route));
 }
 
+const VISION_THUMB_ALIASES: Record<string, string> = {
+  home: "home",
+  "computer-vision": "home",
+  "pose-detection": "pose-estimation",
+  "person-segmentation": "person-seg",
+  "object-detection-demo": "object-detection",
+  "kmeans-image-segmentation": "segmentation",
+};
+
+export function visionLabThumb(route: string): string | undefined {
+  const exact = visionLabs.find((lab) => lab.route === route);
+  const id = exact
+    ? exact.id === "home"
+      ? VISION_THUMB_ALIASES.home
+      : exact.id
+    : VISION_THUMB_ALIASES[route.split("/").filter(Boolean).pop() ?? ""];
+  return id ? `/cv/demos/cv-${id}.png` : undefined;
+}
+
 export const visionBackItem = {
   label: "Back to Algorithms",
   route: ALGORITHMS_HOME_ROUTE,

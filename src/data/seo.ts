@@ -38,10 +38,13 @@ export function getSeoMetadata(pathname: string): SeoRoute {
 
   if (algorithm) {
     const status = getImplementationStatus(algorithm.route);
+    const aiLab = algorithm.category === 'AI Algorithms Virtual Labs';
     return {
       path: algorithm.route,
-      title: `${algorithm.label} Visualization | ${siteConfig.name}`,
-      description: `${algorithm.label} in ${algorithm.category}: an interactive ${algorithm.badge.toLowerCase()} machine learning module with ${status.toLowerCase()} browser learning tools, visual explanations, and experiment details.`,
+      title: `${algorithm.label} ${aiLab ? 'Virtual Lab' : 'Visualization'} | ${siteConfig.name}`,
+      description: aiLab
+        ? `Explore ${algorithm.label} with an interactive browser lab, step-by-step controls, visualizations, and live algorithm state.`
+        : `${algorithm.label} in ${algorithm.category}: an interactive ${algorithm.badge.toLowerCase()} machine learning module with ${status.toLowerCase()} browser learning tools, visual explanations, and experiment details.`,
       keywords: [
         algorithm.label,
         algorithm.category,

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "prebuild": "node scripts/generate-sitemap.mjs && node scripts/audit-pages.mjs && node scripts/audit-navigation.mjs",
+    "prebuild": "node scripts/generate-sitemap.mjs && node scripts/audit-pages.mjs && node scripts/audit-navigation.mjs && node scripts/audit-ai-virtual-labs.mjs",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -14,7 +14,7 @@
     "audit:navigation": "node scripts/audit-navigation.mjs",
     "smoke:routes": "node scripts/smoke-routes.mjs",
     "test:core": "vitest run tests/core-algorithms.test.ts",
-    "test": "vitest run --exclude tests/responsive.spec.ts",
+    "test": "vitest run --exclude tests/responsive.spec.ts --exclude tests/ai-virtual-labs.spec.ts",
     "test:responsive": "playwright test tests/responsive.spec.ts --reporter=line"
   },
   "dependencies": {

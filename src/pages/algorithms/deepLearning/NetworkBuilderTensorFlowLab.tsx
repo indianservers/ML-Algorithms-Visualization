@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as tf from "@tensorflow/tfjs";
 import { BrainCircuit, Download, Play, Plus, Trash2 } from "lucide-react";
 import {
@@ -134,10 +134,15 @@ export default function NetworkBuilderPage() {
   const [layers, setLayers] = useState<LayerConfig[]>(presets.Standard);
   const [history, setHistory] = useState<HistoryPoint[]>([]);
   const [training, setTraining] = useState(false);
+  const [modelReady, setModelReady] = useState(false);
+  const [inferenceX, setInferenceX] = useState(0.4);
+  const [inferenceY, setInferenceY] = useState(0.2);
+  const [prediction, setPrediction] = useState<number[] | null>(null);
   const [status, setStatus] = useState(
     "Choose a preset or add layers, then train the network in your browser.",
   );
   const totalParams = useMemo(() => parameterCount(layers), [layers]);
+  useEffect(() => () => { modelRef.current?.dispose(); }, []);
 
   const setDatasetKind = (kind: DatasetName) => {
     setDatasetName(kind);
@@ -234,6 +239,8 @@ export default function NetworkBuilderPage() {
 
   const train = async () => {
     setTraining(true);
+    setModelReady(false);
+    setPrediction(null);
     setHistory([]);
     modelRef.current?.dispose();
     const model = buildModel();
@@ -283,6 +290,7 @@ export default function NetworkBuilderPage() {
     xs.dispose();
     ys.dispose();
     setTraining(false);
+    setModelReady(true);
     setStatus(
       "Training complete. The decision boundary shows what the architecture learned.",
     );
@@ -594,6 +602,10 @@ export default function NetworkBuilderPage() {
           </Card>
           <Card title="Export">
             <div className="grid gap-2">
+              <button disabled={!modelReady || training} onClick={() => void modelRef.current?.save("downloads://network-builder-model")}
+                className="inline-flex items-center justify-center gap-2 rounded border border-gray-200 px-3 py-2 text-sm font-bold disabled:opacity-50 dark:border-gray-700">
+                <Download size={14} /> Trained model + weights
+              </button>
               <button
                 onClick={() =>
                   download(
@@ -620,6 +632,26 @@ export default function NetworkBuilderPage() {
             <pre className="mt-3 max-h-72 overflow-auto rounded bg-gray-950 p-3 text-xs text-gray-100">
               {python}
             </pre>
+          </Card>
+          <Card title="Inference">
+            <p className="mb-2 text-sm">Enter a point (x, y) to classify with the trained network.</p>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="text-sm">X<input aria-label="Inference X" type="number" step="0.1" value={inferenceX} onChange={(event) => setInferenceX(Number(event.target.value))} className="w-full rounded border p-2" /></label>
+              <label className="text-sm">Y<input aria-label="Inference Y" type="number" step="0.1" value={inferenceY} onChange={(event) => setInferenceY(Number(event.target.value))} className="w-full rounded border p-2" /></label>
+            </div>
+            <button disabled={!modelReady || training || !Number.isFinite(inferenceX) || !Number.isFinite(inferenceY)}
+              onClick={() => {
+                const model = modelRef.current;
+                if (!model) return;
+                const probabilities = tf.tidy(() => {
+                  const output = model.predict(tf.tensor2d([[inferenceX, inferenceY]])) as tf.Tensor;
+                  return Array.from(output.dataSync());
+                });
+                setPrediction(probabilities);
+              }} className="mt-2 rounded bg-blue-600 px-3 py-2 text-sm font-bold text-white disabled:opacity-50">
+              Infer point
+            </button>
+            {prediction && <p className="mt-2 text-sm">Class {prediction[1] > prediction[0] ? 1 : 0} · P(class 0) {(prediction[0] * 100).toFixed(1)}% · P(class 1) {(prediction[1] * 100).toFixed(1)}%</p>}
           </Card>
         </div>
       </div>

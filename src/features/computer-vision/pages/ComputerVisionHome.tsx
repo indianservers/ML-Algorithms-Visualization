@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { visionLabFilters, visionLabs } from "../catalog";
+import { visionLabFilters, visionLabs, visionLabThumb } from "../catalog";
 import { VisionPageShell } from "../components/VisionPageShell";
 import type { VisionLabFilter } from "../catalog";
 
@@ -44,7 +44,7 @@ export default function ComputerVisionHome() {
         {cards.map((lab) => (
           <Link key={lab.id} to={lab.route} className="cv-home-card">
             <span className="cv-home-card-thumb">
-              <img src={`/cv/demos/cv-${lab.id}.png`} alt="" />
+              <img src={visionLabThumb(lab.route) ?? `/cv/demos/cv-${lab.id}.png`} alt="" />
               {lab.badge ? <i>{lab.badge}</i> : null}
             </span>
             <span className="cv-home-card-body">

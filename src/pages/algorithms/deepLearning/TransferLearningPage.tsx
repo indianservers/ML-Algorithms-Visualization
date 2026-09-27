@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { BookOpen, Database, Play, RotateCcw, Upload } from "lucide-react";
-import { runTransferLearning } from "../../../lib/algorithms/neural/transferLearning";
+import { inferTransferEmbedding, runTransferLearning } from "../../../lib/algorithms/neural/transferLearning";
+import { downloadJsonArtifact } from "../../../lib/modelArtifacts/downloadJsonArtifact";
 import {
   LAB_TABS,
   LabLessonOrWork,
@@ -48,7 +49,9 @@ export default function TransferLearningPage() {
     [patience, setPatience] = useState(5),
     [run, setRun] = useState(1),
     [trained, setTrained] = useState(true),
-    [message, setMessage] = useState("Run completed");
+    [message, setMessage] = useState("Run completed"),
+    [inferenceInput, setInferenceInput] = useState("0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0"),
+    [inferenceScores, setInferenceScores] = useState<number[] | null>(null);
   const uploadRef = useRef<HTMLInputElement>(null);
   const data = datasets[dataset];
   const result = useMemo(
@@ -534,14 +537,12 @@ export default function TransferLearningPage() {
         </section>
         <section className="panel quick">
           <h3>Quick Actions</h3>
-          {["Visualize Features →", "Compare Runs →", "Export Model →"].map(
+          {["Visualize Features →", "Compare Runs →"].map(
             (x) => (
               <button
                 onClick={() =>
                   setMessage(
-                    x.includes("Export")
-                      ? "Export is not available: this educational classifier lives in memory only."
-                      : `${x.replace(" →", "")} is the current loss/accuracy view on this page.`,
+                    `${x.replace(" →", "")} is the current loss/accuracy view on this page.`,
                   )
                 }
                 key={x}
@@ -550,6 +551,28 @@ export default function TransferLearningPage() {
               </button>
             ),
           )}
+          <button disabled={!trained} onClick={() => downloadJsonArtifact("transfer-learning-model.json", {
+            format: "ml-suite-transfer-embedding-v1",
+            featureCount: 12,
+            classCount: data.classes,
+            model: result.model,
+            training: { dataset: data.name, backbone: backbones[backbone].name, epochs: result.stoppedAt },
+          })}>Export Model →</button>
+          <h3>Inference</h3>
+          <p>Enter 12 comma-separated values from the frozen embedding extractor.</p>
+          <textarea aria-label="Transfer learning embedding" value={inferenceInput} rows={3}
+            onChange={(event) => setInferenceInput(event.target.value)} />
+          <button disabled={!trained} onClick={() => {
+            try {
+              const values = inferenceInput.trim().split(/[\s,]+/).map(Number);
+              setInferenceScores(inferTransferEmbedding(values, result.model));
+              setMessage("Embedding inference complete");
+            } catch (error) {
+              setInferenceScores(null);
+              setMessage(error instanceof Error ? error.message : "Invalid embedding");
+            }
+          }}>Infer embedding</button>
+          {inferenceScores && <p>Predicted class {inferenceScores.indexOf(Math.max(...inferenceScores)) + 1} · probabilities: {inferenceScores.map((value) => `${(value * 100).toFixed(1)}%`).join(", ")}</p>}
         </section>
       </aside>
       <footer className="transfer-status">

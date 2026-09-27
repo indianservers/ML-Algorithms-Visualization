@@ -197,13 +197,7 @@ export default function NetworkBuilderPage() {
           <button onClick={() => setToast("Share link copied")}>
             <Share2 /> Share
           </button>
-          <button
-            onClick={() =>
-              setToast(
-                "In-memory architecture only — use the TF.js lab to export weights.",
-              )
-            }
-          >
+          <button onClick={() => setAdvanced(true)}>
             <Save /> Export Model
           </button>
         </div>

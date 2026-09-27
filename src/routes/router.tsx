@@ -1,6 +1,7 @@
 import React, { lazy } from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import { RootLayout } from '../layouts/RootLayout';
+const AiVirtualLabPage = lazy(() => import('../features/ai-virtual-labs/AiVirtualLabPage'));
 
 const HomePage = lazy(() => import('../pages/HomePage'));
 const ImplementationMatrixPage = lazy(() => import('../pages/ImplementationMatrixPage'));
@@ -336,6 +337,7 @@ export const router = createBrowserRouter([
       { path: 'ml/computer-vision/edge-detection', element: <EdgeDetectionPage /> },
       { path: 'ml/computer-vision/object-detection-demo', element: <ObjectDetectionDemoPage /> },
       { path: 'ml/computer-vision/grad-cam', element: <GradCAMPage /> },
+      { path: 'ai-algorithms/:slug', element: <AiVirtualLabPage /> },
       // Recommendation
       { path: 'ml/recommendation/user-based-cf', element: <UserBasedCFPage /> },
       { path: 'ml/recommendation/item-based-cf', element: <ItemBasedCFPage /> },

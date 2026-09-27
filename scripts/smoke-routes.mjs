@@ -7,10 +7,15 @@ if (!baseUrl) {
 }
 
 const router = readFileSync(new URL('../src/routes/router.tsx', import.meta.url), 'utf8');
+const aiCatalog = readFileSync(new URL('../src/features/ai-virtual-labs/catalog.ts', import.meta.url), 'utf8');
 const routes = [...router.matchAll(/path:\s*'([^']+)'/g)]
   .map(match => match[1])
   .filter(route => route.startsWith('ml/'))
   .map(route => `/${route}`);
+if (router.includes("path: 'ai-algorithms/:slug'")) {
+  routes.push(...[...aiCatalog.matchAll(/slug:\s*'([^']+)'/g)]
+    .map(match => `/ai-algorithms/${match[1]}`));
+}
 
 const failures = [];
 for (const route of routes) {

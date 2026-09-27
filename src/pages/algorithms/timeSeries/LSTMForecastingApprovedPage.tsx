@@ -174,6 +174,7 @@ export default function LSTMForecastingApprovedPage() {
             future values with memory gates and uncertainty.
           </p>
         </div>
+        <a className="ml-model-workspace-link" href="?advanced=1">Train, infer &amp; export model</a>
         <button onClick={() => act("Export")}>⇩ Export⌄</button>
         <button onClick={() => act("Theme")}>◔</button>
         <button onClick={() => act("Profile")}>ML</button>

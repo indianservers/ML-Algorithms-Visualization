@@ -1,0 +1,96 @@
+.ai-learn { max-width: 1800px; margin: 0 auto 18px; border: 1px solid #cfdafa; border-radius: 17px; background: linear-gradient(120deg, #fcfdff, #f2f6ff); color: #152548; box-shadow: 0 8px 22px #3a57941a; font: 14px/1.5 Inter, 'Segoe UI', system-ui, sans-serif; }
+.ai-learn *, .ai-learn *::before, .ai-learn *::after { box-sizing: border-box; }
+.ai-learn-head { display: flex; align-items: center; gap: 13px; padding: 13px 16px; }
+.ai-learn-badge { display: grid; place-items: center; flex: none; width: 43px; height: 43px; border-radius: 12px; color: #fff; background: linear-gradient(135deg, #8766f8, #5b49eb); }
+.ai-learn-badge svg { width: 24px; height: 24px; stroke: #fff; }
+.ai-learn-head > div { min-width: 0; flex: 1; }
+.ai-learn h2 { margin: 0; font-size: 18px; line-height: 1.2; color: #142349; }
+.ai-learn-head p { margin: 3px 0 0; color: #536484; font-size: 13px; }
+.ai-learn-status { flex: none; color: #495f89; font-size: 12px; font-weight: 700; }
+.ai-learn-toggle, .ai-learn button:not([role='tab']) { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 32px; padding: 5px 10px; border: 1px solid #d7dafa; border-radius: 8px; background: #f1efff; color: #3524aa; font: inherit; font-size: 12px; font-weight: 750; cursor: pointer; }
+.ai-learn button:hover:not(:disabled) { border-color: #9580ed; background: #eae6ff; }
+.ai-learn button:disabled { opacity: .5; cursor: not-allowed; }
+.ai-learn button:focus-visible, .ai-learn a:focus-visible, .ai-learn input:focus-visible, .ai-learn textarea:focus-visible, .ai-learn select:focus-visible { outline: 2px solid #6856e8; outline-offset: 2px; }
+.ai-learn button svg { width: 15px; height: 15px; }
+.ai-learn-toggle svg { transition: transform .2s; }
+.ai-learn-toggle[aria-expanded='true'] svg { transform: rotate(180deg); }
+.ai-learn-assignment { margin: 0 16px 12px; padding: 8px 12px; border-radius: 8px; background: #e9f5ff; color: #184a81; }
+.ai-learn-body { padding: 0 16px 16px; }
+.ai-learn-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 14px; padding: 4px; border-radius: 10px; background: #e8edf9; }
+.ai-learn .ai-learn-tabs button { flex: 1; min-width: 90px; padding: 8px 11px; border: 0; border-radius: 8px; background: transparent; color: #506084; font-size: 13px; font-weight: 750; }
+.ai-learn .ai-learn-tabs button[aria-selected='true'] { background: #fff; color: #3928c3; box-shadow: 0 2px 5px #31427420; }
+.ai-learn-layout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.ai-learn-editbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 11px; color: #40577d; font-size: 12px; font-weight: 700; text-transform: capitalize; }
+.ai-learn .ai-learn-editbar button[aria-pressed='true'] { background: #6752e9; border-color: #6752e9; color: #fff; }
+.ai-learn-card { min-width: 0; padding: 14px; border: 1px solid #dfe7f7; border-radius: 12px; background: #fff; }
+.ai-learn-card.wide { grid-column: 1 / -1; }
+.ai-learn-card h3 { margin: 0 0 8px; color: #18284d; font-size: 15px; }
+.ai-learn-card p { margin: 6px 0 10px; color: #4d5f80; }
+.ai-learn-card > strong { display: block; margin: 8px 0 3px; }
+.ai-learn-small { font-size: 12px; }
+.ai-learn-links { display: flex; flex-wrap: wrap; gap: 6px; margin: 5px 0 9px; }
+.ai-learn-links a, .ai-learn-links span { padding: 5px 8px; border: 1px solid #d8e1fb; border-radius: 7px; background: #f5f7ff; color: #2b4ec0; font-size: 12px; font-weight: 650; text-decoration: none; }
+.ai-learn-links a:hover { background: #eaefff; }
+.ai-learn-concepts { display: flex; flex-wrap: wrap; gap: 6px; }
+.ai-learn-concepts span { padding: 4px 8px; border-radius: 20px; background: #edebff; color: #4f3cb5; font-size: 11px; font-weight: 700; }
+.ai-learn-steps { margin: 8px 0 0; padding-left: 22px; color: #4c5c7b; }
+.ai-learn-steps li { margin: 3px 0; }
+.ai-learn-steps li.done { color: #14865c; font-weight: 700; }
+.ai-learn-steps li.done::marker { color: #18a66e; }
+.ai-learn-equation { padding: 9px; border-radius: 8px; background: #eef5ff; color: #142855 !important; font-variant-numeric: tabular-nums; }
+.ai-learn-choice { display: flex; flex-wrap: wrap; gap: 6px; margin: 9px 0; }
+.ai-learn-choice.vertical { flex-direction: column; }
+.ai-learn-choice label { display: inline-flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px solid #dce4f5; border-radius: 7px; background: #fbfcff; color: #203252; cursor: pointer; }
+.ai-learn-choice input { accent-color: #5f4be8; }
+.ai-learn-field { display: grid; gap: 4px; margin: 8px 0; color: #314365; font-size: 12px; font-weight: 700; }
+.ai-learn-field input:not([type='range']), .ai-learn-field select, .ai-learn-field textarea { width: 100%; min-height: 34px; padding: 7px 9px; border: 1px solid #cfdaf0; border-radius: 7px; background: #fff; color: #172747; font: inherit; font-weight: 400; }
+.ai-learn-field textarea { resize: vertical; line-height: 1.45; }
+.ai-learn-field input[type='range'] { width: 100%; accent-color: #5e50e8; }
+.ai-learn-feedback { padding: 8px 10px; border-left: 3px solid #6752e9; border-radius: 5px; background: #f1efff; color: #27326d !important; }
+.ai-learn-toolbar { display: flex; flex-wrap: wrap; gap: 7px; margin: 8px 0; }
+.ai-learn-timeline { padding: 8px 10px; border-radius: 8px; background: #edf4ff; color: #233a66 !important; }
+.ai-learn-compare { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.ai-learn-compare > div { display: grid; gap: 4px; padding: 12px; border: 1px solid #dce5f8; border-radius: 9px; background: #f8faff; }
+.ai-learn-compare strong { color: #233a71; }
+.ai-learn-compare span { color: #516486; font-size: 12px; }
+.ai-learn-run-grid { display: grid; gap: 2px; width: min(100%, 200px); margin-top: 6px; }
+.ai-learn-run-grid span { display: grid; place-items: center; aspect-ratio: 1; border-radius: 4px; background: #e9edf6; color: #54668d; font-size: 12px; }
+.ai-learn-run-grid .start { background: #c9edda; color: #096d46; }
+.ai-learn-run-grid .goal { background: #ffe2a8; color: #815200; }
+.ai-learn-run-grid .wall { background: #667795; color: #fff; }
+.ai-learn-run-grid .penalty { background: #ffd7d7; color: #a12331; }
+.ai-learn-run-grid .route { background: #dcd6ff; color: #4e39a8; }
+.ai-learn-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 42px)); gap: 4px; width: max-content; max-width: 100%; margin: 9px 0; }
+.ai-learn .ai-learn-grid button { width: 42px; height: 42px; min-height: 42px; padding: 0; border: 1px solid #becce5; background: #f4f7fd; color: #57709d; font-size: 18px; }
+.ai-learn .ai-learn-grid button.start { background: #d8f5e7; color: #087c50; }
+.ai-learn .ai-learn-grid button.goal { background: #fff0c5; color: #a16b00; }
+.ai-learn .ai-learn-grid button.wall { background: #687797; color: #fff; }
+.ai-learn .ai-learn-grid button.penalty { background: #ffe0de; color: #a53139; }
+.ai-learn-saved { display: grid; gap: 3px; padding: 9px 0; border-bottom: 1px solid #e4e9f5; }
+.ai-learn-saved span { font-size: 12px; color: #657393; }
+.ai-learn-list { max-height: 230px; overflow: auto; list-style: none; padding: 0; margin: 8px 0; }
+.ai-learn-list li { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid #e9edf6; font-size: 12px; }
+.ai-learn-list li span { color: #667899; text-align: right; }
+.ai-learn-wrap { overflow-wrap: anywhere; font-size: 11px; }
+.ai-learn-table-wrap { max-width: 100%; overflow-x: auto; }
+.ai-learn-table-wrap table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.ai-learn-table-wrap caption { text-align: left; font-weight: 600; padding: 5px 0; }
+.ai-learn-table-wrap th, .ai-learn-table-wrap td { padding: 7px 9px; border-bottom: 1px solid #dce5f3; text-align: left; }
+.ai-learn-message { display: flex; align-items: flex-start; gap: 7px; padding: 8px 10px; border-radius: 8px; background: #eef4ff; color: #274786; overflow-wrap: anywhere; }
+.ai-learn-message svg { width: 16px; height: 16px; flex: none; }
+.ai-learn-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 760px) { .ai-learn-head { flex-wrap: wrap; } .ai-learn-status { order: 3; width: 100%; } .ai-learn-layout { grid-template-columns: minmax(0, 1fr); } .ai-learn-card.wide { grid-column: auto; } #main-content .ai-learn-tabs[role='tablist'] { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; overflow: visible !important; scroll-snap-type: none; } #main-content .ai-learn-tabs[role='tablist'] button { min-width: 0 !important; width: 100% !important; height: 38px !important; min-height: 38px !important; padding: 5px 7px !important; font-size: 12px !important; } }
+@media (max-width: 410px) { .ai-learn-head { padding: 10px; } .ai-learn-body { padding: 0 10px 10px; } .ai-learn-compare { grid-template-columns: 1fr; } .ai-learn .ai-learn-grid button { width: 39px; height: 39px; min-height: 39px; } .ai-learn-grid { grid-template-columns: repeat(5, 39px); } }
+@media (prefers-reduced-motion: reduce) { .ai-learn *, .ai-learn *::before, .ai-learn *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+html.dark .ai-learn { background: linear-gradient(120deg, #16223b, #1b2944); border-color: #3d4c70; color: #e8edfb; }
+html.dark .ai-learn h2, html.dark .ai-learn-card h3 { color: #f0f4ff; }
+html.dark .ai-learn-head p, html.dark .ai-learn-card p, html.dark .ai-learn-status { color: #bdc9e1; }
+html.dark .ai-learn-card { background: #202f4d; border-color: #3b4b6e; }
+html.dark .ai-learn-tabs { background: #192640; }
+html.dark .ai-learn .ai-learn-tabs button[aria-selected='true'] { background: #324166; color: #f0eaff; }
+html.dark .ai-learn .ai-learn-tabs button { color: #c8d1e9; }
+html.dark .ai-learn-choice label, html.dark .ai-learn-compare > div { background: #253656; border-color: #465579; color: #e5edff; }
+html.dark .ai-learn-field, html.dark .ai-learn-compare strong { color: #e3eafe; }
+html.dark .ai-learn-field input:not([type='range']), html.dark .ai-learn-field select, html.dark .ai-learn-field textarea { background: #17243c; border-color: #4b5c7c; color: #f0f4ff; }
+html.dark .ai-learn-feedback, html.dark .ai-learn-timeline, html.dark .ai-learn-equation { background: #30375e; color: #eeeaff !important; }
+html.dark .ai-learn-table-wrap th, html.dark .ai-learn-table-wrap td { border-color: #465579; }

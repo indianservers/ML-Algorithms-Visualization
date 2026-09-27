@@ -11,6 +11,8 @@ export interface AutoencoderResult {
   mse: number;
   parameterCount: number;
   encoderWeights: { kernel: number[][]; bias: number[] }[];
+  decoderWeights: { kernel: number[][]; bias: number[] }[];
+  outputActivation: AutoencoderOutput;
   sampleErrors: number[];
 }
 
@@ -32,6 +34,20 @@ export function encodeWithWeights(samples: number[][], weights: AutoencoderResul
     weights.forEach((layer, index) => {
       const last = index === weights.length - 1;
       current = denseForward(current, layer.kernel, layer.bias, last ? "linear" : "relu");
+    });
+    return current;
+  });
+}
+
+export function reconstructWithWeights(
+  samples: number[][],
+  result: Pick<AutoencoderResult, "encoderWeights" | "decoderWeights" | "outputActivation">,
+) {
+  return encodeWithWeights(samples, result.encoderWeights).map((code) => {
+    let current = code;
+    result.decoderWeights.forEach((layer, index) => {
+      current = denseForward(current, layer.kernel, layer.bias,
+        index === result.decoderWeights.length - 1 ? result.outputActivation : "relu");
     });
     return current;
   });
@@ -128,6 +144,14 @@ export async function trainAutoencoder(
       bias: (await latentWeights[1].array()) as number[],
     },
   ];
+  const decoderWeights = [] as AutoencoderResult["decoderWeights"];
+  for (const name of ["decoder_hidden", "reconstruction"]) {
+    const tensors = model.getLayer(name).getWeights();
+    decoderWeights.push({
+      kernel: (await tensors[0].array()) as number[][],
+      bias: (await tensors[1].array()) as number[],
+    });
+  }
   const minimum = Math.min(...latent.map((row) => row[0]));
   const maximum = Math.max(...latent.map((row) => row[0]));
   const traversalCodes = Array.from({ length: 7 }, (_, i) =>
@@ -152,5 +176,5 @@ export async function trainAutoencoder(
   clean.dispose();
   noisy.dispose();
   model.dispose();
-  return { latent, reconstructions, traversal, losses, mse, parameterCount, encoderWeights, sampleErrors };
+  return { latent, reconstructions, traversal, losses, mse, parameterCount, encoderWeights, decoderWeights, outputActivation, sampleErrors };
 }

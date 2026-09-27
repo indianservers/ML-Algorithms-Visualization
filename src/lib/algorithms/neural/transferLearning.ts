@@ -28,6 +28,19 @@ export interface TransferResult {
   frozenParameters: number;
   stoppedAt: number;
   extractorUpdated: boolean;
+  model: { weights: number[][]; biases: number[]; scales: number[] };
+}
+
+export function inferTransferEmbedding(
+  features: number[],
+  model: TransferResult["model"],
+) {
+  if (features.length !== 12 || features.some((value) => !Number.isFinite(value)))
+    throw new Error("Enter exactly 12 numeric embedding values.");
+  const logits = model.weights.map((row, k) =>
+    row.reduce((sum, value, j) => sum + value * features[j] * model.scales[j], model.biases[k]),
+  );
+  return softmax(logits);
 }
 
 const FEATURE_SIZE = 12;
@@ -189,5 +202,6 @@ export function runTransferLearning(config: TransferConfig): TransferResult {
     frozenParameters: unfreezeExtractor ? 0 : extractorParameters,
     stoppedAt: history.at(-1)?.epoch ?? 0,
     extractorUpdated: scalesChanged,
+    model: { weights, biases, scales },
   };
 }

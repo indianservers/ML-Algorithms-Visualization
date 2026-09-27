@@ -710,3 +710,16 @@
     overflow: auto;
   }
 }
+.transfer-page .quick textarea {
+  width: 100%;
+  padding: 9px;
+  border: 1px solid #b7c9dd;
+  border-radius: 8px;
+  background: #fff;
+  color: #102139;
+  font: inherit;
+}
+
+.transfer-status {
+  pointer-events: none;
+}

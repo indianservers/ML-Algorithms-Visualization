@@ -434,6 +434,123 @@
   text-align: center;
   color: #98a5b6;
 }
+.ts-inference {
+  margin: 16px 0 24px;
+  padding: 22px;
+  border: 1px solid #263850;
+  border-radius: 10px;
+  background: #071427;
+}
+.ts-inference > header,
+.ts-inference-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.ts-inference h2 {
+  margin: 0 0 5px;
+  font-size: 19px;
+}
+.ts-inference p {
+  margin: 5px 0 14px;
+}
+.ts-inference button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 7px 12px;
+}
+.ts-inference button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.ts-inference-actions {
+  justify-content: flex-start;
+  margin: 16px 0;
+}
+.ts-inference-actions span {
+  color: #aebbd0;
+}
+.ts-inference label {
+  display: block;
+  margin: 16px 0 7px;
+  font-weight: 700;
+}
+.ts-inference textarea {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #354762;
+  border-radius: 7px;
+  background: #0b1b33;
+  color: #f3f6fb;
+  font: 13px/1.5 ui-monospace, Consolas, monospace;
+  resize: vertical;
+}
+.ts-inference .ts-inference-error {
+  color: #ff766d;
+  font-weight: 700;
+}
+.ts-inference .ts-inference-note {
+  color: #aebbd0;
+  font-size: 12px;
+}
+.ts-inference-map {
+  position: relative;
+  min-height: 280px;
+  overflow: hidden;
+  border: 1px solid #354762;
+  border-radius: 8px;
+  background: #0b1b33;
+}
+.ts-inference-map i {
+  position: absolute;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+.ts-inference-map .reference {
+  width: 5px;
+  height: 5px;
+  background: #8897ae;
+  opacity: 0.8;
+}
+.ts-inference-map .inferred {
+  width: 13px;
+  height: 13px;
+  border: 2px solid #fff;
+  background: #ff8c2a;
+  box-shadow: 0 0 0 3px #ff8c2a66;
+}
+.ts-inference-results p {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 9px 0;
+  border-bottom: 1px solid #263850;
+}
+.ts-inference-results small {
+  margin-left: auto;
+}
+html:not(.dark) .ts-inference-actions span,
+html:not(.dark) .ts-inference .ts-inference-note {
+  color: #53647c;
+}
+html:not(.dark) .ts-inference textarea,
+html:not(.dark) .ts-inference-map {
+  border-color: #c9d6ea;
+  background: #f5f8fe;
+  color: #12203a;
+}
+html:not(.dark) .ts-inference .ts-inference-error {
+  color: #b42318;
+}
+
 .ts-toast {
   position: fixed;
   z-index: 9;
