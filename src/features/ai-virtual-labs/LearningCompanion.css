@@ -25,6 +25,17 @@
 .ai-learn-card { min-width: 0; padding: 14px; border: 1px solid #dfe7f7; border-radius: 12px; background: #fff; }
 .ai-learn-card.wide { grid-column: 1 / -1; }
 .ai-learn-card h3 { margin: 0 0 8px; color: #18284d; font-size: 15px; }
+.ai-theory-layout { grid-template-columns: 1.2fr .8fr; }
+.ai-theory-layout .ai-learn-card { padding: clamp(16px, 2vw, 26px); }
+.ai-theory-layout .ai-learn-card h3 { font-size: 17px; }
+.ai-theory-layout .ai-learn-card p { font-size: 14px; line-height: 1.65; }
+.ai-theory-intro { background: linear-gradient(115deg, #edf6ff, #f5f0ff); border-color: #c8dbfb; }
+.ai-theory-intro h3 { margin-top: 6px; font-size: 23px !important; }
+.ai-theory-eyebrow { color: #345ec0; font-size: 11px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+.ai-theory-steps { display: grid; gap: 10px; margin: 10px 0 0; padding-left: 25px; color: #344768; line-height: 1.55; }
+.ai-theory-steps li::marker { color: #4f63d7; font-weight: 800; }
+.ai-theory-layout .ai-theory-rule { padding: 16px; border: 1px solid #cbdcfa; border-radius: 10px; background: #f0f5ff; color: #172b63; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
+.ai-theory-caution { border-left: 4px solid #e3a844; }
 .ai-learn-card p { margin: 6px 0 10px; color: #4d5f80; }
 .ai-learn-card > strong { display: block; margin: 8px 0 3px; }
 .ai-learn-small { font-size: 12px; }
@@ -86,6 +97,9 @@ html.dark .ai-learn { background: linear-gradient(120deg, #16223b, #1b2944); bor
 html.dark .ai-learn h2, html.dark .ai-learn-card h3 { color: #f0f4ff; }
 html.dark .ai-learn-head p, html.dark .ai-learn-card p, html.dark .ai-learn-status { color: #bdc9e1; }
 html.dark .ai-learn-card { background: #202f4d; border-color: #3b4b6e; }
+html.dark .ai-theory-intro { background: linear-gradient(115deg, #253d65, #332c59); }
+html.dark .ai-theory-steps { color: #d6e0f4; }
+html.dark .ai-theory-layout .ai-theory-rule { background: #172641; border-color: #4a6599; color: #edf4ff; }
 html.dark .ai-learn-tabs { background: #192640; }
 html.dark .ai-learn .ai-learn-tabs button[aria-selected='true'] { background: #324166; color: #f0eaff; }
 html.dark .ai-learn .ai-learn-tabs button { color: #c8d1e9; }

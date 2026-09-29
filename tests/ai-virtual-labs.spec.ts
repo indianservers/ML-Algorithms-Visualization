@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { aiVirtualLabs, aiVirtualLabRoute } from '../src/features/ai-virtual-labs/catalog';
 import { learningContent } from '../src/features/ai-virtual-labs/learningCatalog';
+import { theoryContent } from '../src/features/ai-virtual-labs/theoryCatalog';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -73,16 +74,33 @@ test('home cards animate AI and ML artwork for hover and keyboard focus', async 
 test('every AI lab has a learning goal, path and concept check', async ({ page }) => {
   for (const lab of aiVirtualLabs) {
     const content = learningContent(lab.slug);
+    const theory = theoryContent(lab.slug);
     expect(content.goal.length).toBeGreaterThan(15);
     expect(content.concepts).toHaveLength(2);
     expect(content.check.options).toHaveLength(3);
     expect(content.check.answer).toBeGreaterThanOrEqual(0);
+    expect(theory.how).toHaveLength(3);
+    expect(theory.example.length).toBeGreaterThan(50);
   }
   await page.goto('http://localhost:3355/ai-algorithms/uniform-cost-search');
   await expect(page.getByRole('heading', { name: 'Learning Companion' })).toBeVisible();
-  await page.getByRole('button', { name: 'Open', exact: true }).click();
+  await expect(page.getByRole('tab', { name: 'Learn' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Worked example' })).toBeVisible();
   await page.getByRole('tab', { name: 'Practice' }).click();
   await expect(page.getByRole('heading', { name: 'Concept check' })).toBeVisible();
+});
+
+test('simulated annealing teaches temperature and leaves its simulator usable', async ({ page }) => {
+  await page.goto('http://localhost:3355/ai-algorithms/simulated-annealing');
+  await expect(page.getByRole('tab', { name: 'Learn' })).toBeVisible();
+  await expect(page.getByText('P(accept) = 1 if ΔE ≤ 0; otherwise exp(−ΔE/T)')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Worked example' })).toBeVisible();
+  const frame = page.frameLocator('iframe.ai-virtual-lab-frame');
+  await expect(frame.locator('#step')).toBeVisible();
+  await frame.locator('#step').click();
+  await expect(frame.locator('#status')).toContainText('Current Temperature');
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(2);
 });
 
 test('Q-learning companion reads the live engine and runs isolated experiments', async ({ page }) => {
@@ -114,7 +132,6 @@ test('Q-learning companion reads the live engine and runs isolated experiments',
 test('learning records, notebook and educator assignments persist without changing a lab', async ({ page }) => {
   await page.goto('http://localhost:3355/ai-algorithms/uniform-cost-search');
   await expect(page.locator('iframe.ai-virtual-lab-frame.is-ready')).toBeVisible({ timeout: 20000 });
-  await page.getByRole('button', { name: 'Open', exact: true }).click();
   await page.getByRole('tab', { name: 'Practice' }).click();
   await page.getByRole('radio', { name: 'The node with the smallest accumulated cost' }).check();
   await page.getByRole('button', { name: 'Check answer' }).click();
@@ -126,7 +143,6 @@ test('learning records, notebook and educator assignments persist without changi
   await page.getByRole('tab', { name: 'Notebook' }).click();
   await page.getByRole('textbox', { name: 'Prediction' }).fill('The cheapest frontier node should be next.');
   await page.reload();
-  await page.getByRole('button', { name: 'Open', exact: true }).click();
   await page.getByRole('tab', { name: 'Notebook' }).click();
   await expect(page.getByRole('textbox', { name: 'Prediction' })).toHaveValue('The cheapest frontier node should be next.');
   await page.getByRole('tab', { name: 'Educator' }).click();
@@ -179,6 +195,8 @@ for (const lab of aiVirtualLabs) {
     });
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(`http://localhost:3355${aiVirtualLabRoute(lab.slug)}`);
+    await expect(page.getByRole('tab', { name: 'Learn' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: `About ${lab.title}` })).toBeVisible();
     await expect(page.locator('iframe.ai-virtual-lab-frame.is-ready')).toBeVisible({ timeout: 20000 });
     await expect(page.getByRole('heading', { name: lab.title, exact: true })).toBeVisible();
     const frame = page.frameLocator('iframe.ai-virtual-lab-frame');
