@@ -798,6 +798,19 @@ export default function LogisticRegressionPage() {
             <LabLessonPanel tab="Learn" route="/ml/supervised/logistic-regression" />
           ) : tab === "Dataset" ? (
             <DataTable rows={rows} setRows={setRows} feature={current.feature} />
+          ) : tab === "Explain" ? (
+            <article className="lr-card lr-panel lr-inference">
+              <h2>Live test / inference</h2>
+              <p>Enter a new {current.feature} value. The fitted sigmoid estimates its class 1 probability, then applies the current decision threshold.</p>
+              <label htmlFor="lr-inference-x">{current.feature}</label>
+              <input id="lr-inference-x" type="number" step="any" value={predX} onChange={(event) => setPredX(Number(event.target.value))} />
+              <div className="lr-inference-results" role="status">
+                <div><span>Linear score (log odds)</span><strong>{inspectZ.toFixed(3)}</strong></div>
+                <div><span>Class 1 probability</span><strong>{(inspectP * 100).toFixed(1)}%</strong></div>
+                <div><span>Predicted class at {(threshold * 100).toFixed(0)}% threshold</span><strong>{inspectClass === 1 ? "Class 1 · Positive" : "Class 0 · Negative"}</strong></div>
+              </div>
+              <p>Prediction uses the current trained coefficients and threshold. Change either one to see the result update.</p>
+            </article>
           ) : tab !== "Visualize" ? (
             <Generic
               tab={tab}

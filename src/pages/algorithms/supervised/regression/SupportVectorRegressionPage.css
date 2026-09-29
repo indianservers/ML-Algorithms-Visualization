@@ -906,3 +906,9 @@
     overflow: auto;
   }
 }
+.svr-live-inference{display:grid;align-content:start;gap:16px}
+.svr-live-inference h2,.svr-live-inference p{margin:0}
+.svr-live-inference label{font-weight:700}
+.svr-live-inference input{width:min(100%,320px);padding:10px 12px;border:1px solid #8da8d4;border-radius:7px;background:transparent;color:inherit}
+.svr-live-inference [role=status]{display:grid;gap:7px;max-width:360px;padding:18px;border:1px solid #8da8d4;border-radius:8px;background:rgba(46,116,212,.1)}
+.svr-live-inference [role=status] strong{font-size:24px}

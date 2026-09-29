@@ -12,16 +12,18 @@ const iconPaths: Record<string, string> = {
   metrics: '<path d="M3 3v18h18"/><path d="m6 16 4-5 4 3 5-7"/>',
   compare: '<path d="M12 3v18M5 6h14M5 6l-3 7h6L5 6Zm14 0-3 7h6l-3-7ZM8 20h8"/>',
   explain: '<path d="M9 18h6m-5 4h4M9 14a6 6 0 1 1 6 0c-.6.6-1 1.2-1 2H10c0-.8-.4-1.4-1-2Z"/>',
+  inference: '<path d="M12 2v4m0 12v4M2 12h4m12 0h4"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
   transform: '<path d="M4 7h12m0 0-3-3m3 3-3 3M20 17H8m0 0 3-3m-3 3 3 3"/>',
 };
 
 function tabKind(text: string) {
   const label = text.toLowerCase().replace(/^[^a-z]+/, "").trim();
   if (label === "build / train" || label === "build/train") return "train";
+  if (label === "live test/inference") return "inference";
   return iconPaths[label] ? label : "";
 }
 
-function decorateTabs() {
+function decorateTabs(showInference: boolean) {
   const host = document.getElementById("main-content");
   if (!host) return;
   const groups = new Map<Element, HTMLButtonElement[]>();
@@ -39,8 +41,19 @@ function decorateTabs() {
     (container as HTMLElement).dataset.mlLessonTabs = "";
     (container as HTMLElement).style.setProperty("--ml-tab-count", String(buttons.length));
     buttons.forEach((button) => {
-      const kind = tabKind(button.textContent ?? "");
+      let kind = tabKind(button.textContent ?? "");
       if (!kind) return;
+      if (showInference && kind === "explain") {
+        const walker = document.createTreeWalker(button, NodeFilter.SHOW_TEXT);
+        let node: Node | null;
+        while ((node = walker.nextNode())) {
+          if (node.textContent?.trim() === "Explain") {
+            node.textContent = "Live test/inference";
+            break;
+          }
+        }
+        kind = "inference";
+      }
       button.dataset.mlTab = kind;
       // Decision Tree, PCA, and a few other labs already render SVG icons.
       if (button.querySelector("svg, .ml-tab-icon")) return;
@@ -62,16 +75,17 @@ export function AlgorithmTabPresentation() {
       if (frame) return;
       frame = requestAnimationFrame(() => {
         frame = 0;
-        decorateTabs();
+        decorateTabs(location.pathname.startsWith("/ml/supervised/"));
       });
     };
     const observer = new MutationObserver((records) => {
-      if (records.some((record) => Array.from(record.addedNodes).some(
+      if (records.some((record) => record.type === "characterData" || Array.from(record.addedNodes).some(
         (node) => node instanceof Element && (node.matches("button") || Boolean(node.querySelector("button"))),
       ))) schedule();
     });
     observer.observe(document.getElementById("main-content") ?? document.body, {
       childList: true,
+      characterData: true,
       subtree: true,
     });
     schedule();

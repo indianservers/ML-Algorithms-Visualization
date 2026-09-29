@@ -115,6 +115,14 @@
 .slr2-residual-plot circle { fill: #8654e8; }
 .slr2-residual-plot text { fill: var(--slr-muted); font-size: 10px; }
 .slr2-formula { width: fit-content; max-width: 100%; margin: 10px 0; padding: 12px 16px; border: 1px solid var(--slr-border); border-radius: 8px; background: #f2f7fe; color: #134c9f; font-size: 17px; overflow-wrap: anywhere; }
+.slr2-inference { display: grid; justify-items: start; gap: 12px; }
+.slr2-inference p { margin: 0; }
+.slr2-inference label { display: grid; gap: 7px; width: min(100%, 330px); font-weight: 700; }
+.slr2-inference input { width: 100%; padding: 10px 12px; border: 1px solid var(--slr-border); border-radius: 8px; background: var(--slr-panel); color: var(--slr-text); }
+.slr2-inference-result { display: grid; gap: 4px; width: min(100%, 330px); padding: 17px; border: 1px solid #81dbc1; border-radius: 10px; background: #e7f9f3; color: #075d48; }
+.slr2-inference-result strong { font-size: 30px; }
+.slr2-inference .slr2-inference-warning { color: #a35408; font-weight: 700; }
+html.dark .slr2-inference-result { background: #0d4238; color: #d6fff1; }
 .slr2-step-list, .slr2-compare-note, .slr2-training-status { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; padding: 12px; margin-bottom: 9px; }
 .slr2-step-list h2 { flex-basis: 100%; margin: 0 0 3px; font-size: 15px; }
 .slr2-step-list button.active { background: #2463eb; border-color: #2463eb; color: white; }

@@ -1284,7 +1284,7 @@ export default function DecisionTreeClassificationPage() {
               <span>
                 <Lightbulb /> Need a hint?{" "}
                 <button onClick={() => setTab("explain")}>
-                  Show me how this tree was built
+                  Test a new sample
                 </button>
               </span>
             </section>

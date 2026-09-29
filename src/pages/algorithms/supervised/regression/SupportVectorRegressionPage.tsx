@@ -552,6 +552,15 @@ export default function SupportVectorRegressionPage() {
               />
             ) : tab === "Dataset" ? (
               <DataPanel rows={rows} setRows={setRows} />
+            ) : tab === "Explain" ? (
+              <article className="svr-generic svr-live-inference">
+                <h2>Live test / inference</h2>
+                <p>Enter a new feature x value to estimate the continuous target with the current {kernel.toUpperCase()} support vector regression model.</p>
+                <label htmlFor="svr-inference-x">Feature x</label>
+                <input id="svr-inference-x" type="number" step="any" value={px} onChange={(event) => setPx(Number(event.target.value))} />
+                <div role="status"><span>Predicted value</span><strong>{model.predict(featureNames.map((name) => name === "x" ? px : sample[0]?.[name] ?? 0)).toFixed(3)}</strong></div>
+                <p>The prediction uses the selected kernel and its fitted support vectors.</p>
+              </article>
             ) : tab !== "Visualize" ? (
               generic
             ) : (

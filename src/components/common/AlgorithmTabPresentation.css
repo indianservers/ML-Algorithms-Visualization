@@ -60,6 +60,7 @@
 #main-content [data-ml-lesson-tabs] > button[data-ml-tab="train"] :is(.ml-tab-icon, svg) { color: #00ad8e; }
 #main-content [data-ml-lesson-tabs] > button[data-ml-tab="compare"] :is(.ml-tab-icon, svg) { color: #665be9; }
 #main-content [data-ml-lesson-tabs] > button[data-ml-tab="explain"] :is(.ml-tab-icon, svg) { color: #eea925; }
+#main-content [data-ml-lesson-tabs] > button[data-ml-tab="inference"] :is(.ml-tab-icon, svg) { color: #0ba992; }
 #main-content [data-ml-lesson-tabs] > button:is(.active, [aria-selected="true"], [aria-current="page"], .pca-tab-on) :is(.ml-tab-icon, svg) { color: #fff !important; }
 
 html.dark #main-content [data-ml-lesson-tabs] > button:not(.active):not([aria-selected="true"]):not([aria-current="page"]):not(.pca-tab-on) {

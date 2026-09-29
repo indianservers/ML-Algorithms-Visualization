@@ -47,3 +47,32 @@ for (const route of [
     await expect(page).toHaveURL(/\?tab=visualize$/);
   });
 }
+
+for (const route of [
+  '/ml/supervised/decision-tree-classification',
+  '/ml/supervised/logistic-regression',
+  '/ml/supervised/simple-linear-regression',
+  '/ml/supervised/multiple-linear-regression',
+  '/ml/supervised/support-vector-regression',
+]) {
+  test(`${route} labels its prediction tab Live test/inference`, async ({ page }) => {
+    await page.goto(`${base}${route}?tab=explain`);
+    const inferenceTab = page.locator('#main-content button[data-ml-tab="inference"]').first();
+    await expect(inferenceTab).toHaveText(/Live test\/inference/);
+    await expect(page).toHaveURL(/\?tab=explain$/);
+  });
+}
+
+test('simple linear regression inference responds to a new input', async ({ page }) => {
+  await page.goto(`${base}/ml/supervised/simple-linear-regression?tab=explain`);
+  const input = page.getByRole('spinbutton', { name: 'Inference input' });
+  const prediction = page.locator('.slr2-inference-result strong');
+  const before = await prediction.textContent();
+  await input.fill('9');
+  await expect(prediction).not.toHaveText(before ?? '');
+});
+
+test('nonpredictive labs keep the Explain label', async ({ page }) => {
+  await page.goto(`${base}/ml/clustering/hierarchical-clustering?tab=explain`);
+  await expect(page.locator('#main-content button[data-ml-tab="explain"]').first()).toHaveText(/Explain/);
+});

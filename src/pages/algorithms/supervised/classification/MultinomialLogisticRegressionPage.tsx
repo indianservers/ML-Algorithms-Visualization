@@ -513,6 +513,22 @@ export default function MultinomialLogisticRegressionPage() {
               />
             ) : tab === "Dataset" ? (
               <DataTable rows={rows} setRows={setRows} />
+            ) : tab === "Explain" ? (
+              <article className="mlr-generic mlr-live-inference">
+                <h2>Live test / inference</h2>
+                <p>Move the selected point to test a new sample. The model updates all class probabilities immediately.</p>
+                <div className="mlr-live-fields">
+                  {[x1, x2].map((featureIndex, coordinate) => (
+                    <label key={featureIndex}>Feature {featureIndex + 1}
+                      <input aria-label={`Inference feature ${featureIndex + 1}`} type="number" step="any" value={selected[coordinate]} onChange={(event) => setSelected(current => current.map((value, index) => index === coordinate ? Number(event.target.value) : value) as [number, number])} />
+                    </label>
+                  ))}
+                </div>
+                <div className="mlr-live-results" role="status">
+                  <strong>Predicted class: {names[prediction]}</strong>
+                  {selectedProb.map((probability, index) => <span key={names[index]}>{names[index]}: {(probability * 100).toFixed(1)}%</span>)}
+                </div>
+              </article>
             ) : tab !== "Visualize" ? (
               <Generic tab={tab} loss={model.lossHistory} accuracy={trainAcc} />
             ) : (
