@@ -84,6 +84,17 @@
   display: grid;
   gap: 8px;
 }
+@media (min-width: 1500px) {
+  .lab-guide-important ul {
+    display: block;
+    columns: 2;
+    column-gap: 28px;
+  }
+  .lab-guide-important li {
+    break-inside: avoid;
+    margin-bottom: 8px;
+  }
+}
 .lab-guide-theory p {
   max-width: none;
 }

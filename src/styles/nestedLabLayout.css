@@ -192,6 +192,91 @@
   max-width: 100%;
 }
 
+/* The mockup navigation rails above are hidden inside the suite. Their
+   matching mains must give back the width reserved for those rails. */
+#main-content [class*="-page"]:has(> aside[class$="-nav"]) > main,
+#main-content [class*="-page"]:has(> aside[class$="-sidebar"]) > main {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+/* The classification workspaces were capped at mockup widths, leaving a
+   large empty area on wide displays. Start with one column for phones. */
+#main-content :is(
+  .dt-workspace,
+  .gbc-work,
+  .knn-workspace,
+  .nb-workspace,
+  .rfc-workspace,
+  .svmc-work
+) {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+@media (min-width: 1201px) {
+  #main-content :is(
+    .dt-workspace,
+    .gbc-work,
+    .knn-workspace,
+    .nb-workspace,
+    .rfc-workspace,
+    .svmc-work
+  ) {
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 20vw, 380px) !important;
+  }
+}
+
+/* Keep the lesson summary, progress, and dataset actions in document flow on
+   phones. The original absolute offsets overlap when the objective wraps. */
+@media (max-width: 700px) {
+  #main-content .rfc-header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+    padding: 14px !important;
+  }
+
+  #main-content .rfc-header > :is(div, aside, label, .rfc-upload) {
+    position: static !important;
+    inset: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+  }
+
+  #main-content .rfc-header > aside {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  #main-content .rfc-header > label,
+  #main-content .rfc-header > .rfc-upload {
+    min-height: 44px !important;
+  }
+
+  #main-content .svmc-header {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+    padding: 14px !important;
+  }
+
+  #main-content .svmc-header > aside {
+    position: static !important;
+    inset: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    grid-template-columns: auto minmax(0, 1fr) auto !important;
+  }
+}
+
 /* Lesson step strip stays at the top of every SLR view (sidebar is hidden). */
 #main-content .slr-flow {
   position: sticky;

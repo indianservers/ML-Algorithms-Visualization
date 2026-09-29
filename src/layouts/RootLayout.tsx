@@ -35,6 +35,7 @@ import {
 } from "../components/common/RouteProgress";
 import { GuideMode } from "../components/common/GuideMode";
 import { FitToViewport } from "../components/common/FitToViewport";
+import { SiteFooter } from "../components/common/SiteFooter";
 import { useGuideMode } from "../stores/uiStore";
 import "../styles/labTheme.css";
 import "../styles/nestedLabLayout.css";
@@ -432,7 +433,7 @@ export const RootLayout: React.FC = () => {
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={location.pathname}
-        className="h-full min-h-0"
+        className={location.pathname === "/" ? "min-h-full" : "h-full min-h-0"}
         initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -6 }}
@@ -474,6 +475,7 @@ export const RootLayout: React.FC = () => {
         <RouteProgressBar />
         <GuideMode />
         {page}
+        <SiteFooter />
         {chrome}
       </div>
     );
@@ -573,6 +575,7 @@ export const RootLayout: React.FC = () => {
         ) : (
           page
         )}
+        <SiteFooter />
       </main>
       {chrome}
     </div>

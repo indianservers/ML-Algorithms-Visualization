@@ -1,0 +1,663 @@
+/* Decision Tree Classification: responsive lesson layout built around the live lab. */
+#main-content .dt-redesign {
+  --bg: #f3f7ff;
+  --panel: #fff;
+  --line: #d5e3f5;
+  --text: #102552;
+  --muted: #526892;
+  color: var(--text);
+  background: var(--bg);
+  font-size: 14px;
+}
+
+#main-content .dt-redesign > main {
+  margin: 0 !important;
+  width: 100% !important;
+  min-width: 0;
+  padding: 0 !important;
+}
+
+.dt-redesign .dt-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 22px;
+  padding: 16px 16px 8px;
+  min-height: 142px;
+}
+
+.dt-redesign .dt-header > div > p {
+  margin: 0 0 19px;
+  color: #335480;
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.dt-redesign .dt-header > div > p span {
+  margin: 0 8px;
+  color: #89a0c2;
+}
+
+.dt-redesign .dt-header > div > section {
+  gap: 16px;
+}
+
+.dt-redesign .dt-header > div > section > i {
+  flex: 0 0 62px;
+  width: 62px;
+  height: 62px;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #08c19e, #079f88);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(9, 157, 135, 0.19);
+}
+
+.dt-redesign .dt-header > div > section > i svg {
+  width: 34px;
+  height: 34px;
+}
+
+.dt-redesign .dt-header h1 {
+  margin: 0 0 5px;
+  color: #0d2555;
+  font-size: clamp(25px, 2.15vw, 36px);
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+}
+
+.dt-redesign .dt-header section span {
+  color: #435d88;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.dt-redesign .dt-header > aside {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  height: auto;
+  min-width: 340px;
+  margin-left: auto;
+  color: #16346a;
+}
+
+.dt-redesign .dt-header > aside > .dt-current-dataset {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 190px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 8px 11px;
+  border-radius: 999px;
+  background: #f1e9ff;
+  color: #5935ae;
+  font-weight: 700;
+}
+
+.dt-redesign .dt-header > aside > i {
+  background: #dce6f4;
+}
+
+.dt-redesign .dt-header > aside > i b {
+  background: linear-gradient(90deg, #0cbd91, #17d0a6);
+}
+
+.dt-redesign .dt-header > aside > button:not([aria-label]) {
+  background: #235dff;
+  color: #fff;
+  border: 0;
+  min-height: 40px;
+  box-shadow: 0 6px 16px rgba(37, 93, 255, 0.2);
+}
+
+.dt-redesign .dt-tabs {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  height: auto;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 5px;
+  overflow: visible;
+  padding: 0 14px;
+  border: 0;
+}
+
+.dt-redesign .dt-tabs button {
+  width: 100%;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid #e0e9f6;
+  border-radius: 12px;
+  background: #fff;
+  color: #3d5784;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 5px 15px rgba(29, 68, 123, 0.055);
+  transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.dt-redesign .dt-tabs button svg {
+  width: 20px;
+  height: 20px;
+  color: #2775fa;
+}
+
+.dt-redesign .dt-tabs button:nth-child(3) svg { color: #16bdd8; }
+.dt-redesign .dt-tabs button:nth-child(4) svg { color: #00ad8e; }
+.dt-redesign .dt-tabs button:nth-child(6) svg { color: #665be9; }
+.dt-redesign .dt-tabs button:nth-child(7) svg { color: #eea925; }
+
+.dt-redesign .dt-tabs button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 9px 20px rgba(29, 68, 123, 0.12);
+}
+
+.dt-redesign .dt-tabs button.active {
+  border-color: #2667fb;
+  background: linear-gradient(135deg, #347eff, #2256f2);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(32, 86, 240, 0.25);
+}
+
+.dt-redesign .dt-tabs button.active svg { color: #fff; }
+
+.dt-redesign .dt-workspace {
+  position: relative;
+  inset: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(310px, 22vw, 390px) !important;
+  align-items: start;
+  gap: 16px;
+  height: auto;
+  padding: 16px 14px 30px;
+}
+
+.dt-redesign .dt-main,
+.dt-redesign .dt-controls { min-width: 0; }
+
+.dt-redesign .dt-dataset {
+  height: auto;
+  min-height: 64px;
+  flex-wrap: wrap;
+  gap: 10px 15px;
+  padding: 10px 14px;
+  border-radius: 13px;
+  border-color: #d8e5f7;
+  background: #fff;
+  box-shadow: 0 5px 15px rgba(26, 65, 124, 0.04);
+}
+
+.dt-redesign .dt-dataset > b {
+  color: #102c63;
+  font-size: 13px;
+  letter-spacing: 0;
+}
+
+.dt-redesign .dt-dataset label {
+  width: min(300px, 100%);
+  height: 42px;
+  gap: 8px;
+  border-color: #cbdaf0;
+  border-radius: 9px;
+  color: #1c3972;
+}
+
+.dt-redesign .dt-dataset label svg { color: #a45ee5; }
+.dt-redesign .dt-dataset label select { width: 100%; min-width: 0; }
+.dt-redesign .dt-dataset > span { color: #4e6590; font-size: 13px; }
+
+.dt-redesign .dt-dataset > button {
+  min-height: 39px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-left: auto;
+  border-color: #8ab0fb;
+  border-radius: 9px;
+  background: #fff;
+  color: #1744a0;
+  font-weight: 700;
+}
+
+.dt-redesign .dt-dataset > button + button {
+  margin-left: 0;
+  border-color: #245dff;
+  background: #245dff;
+  color: #fff;
+}
+
+.dt-redesign .dt-learn-panel {
+  display: block;
+  width: 100%;
+  max-width: none;
+  margin-top: 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #173261;
+}
+
+.dt-redesign .dt-learn-panel > header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 55px;
+  padding: 14px 20px 0;
+  border: 1px solid #d9e6f8;
+  border-bottom: 0;
+  border-radius: 14px 14px 0 0;
+  background: #fff;
+}
+
+.dt-redesign .dt-learn-panel > header b { color: #153267; font-size: 18px; }
+.dt-redesign .dt-learn-panel > header b::before {
+  content: "";
+  display: inline-block;
+  width: 16px;
+  height: 18px;
+  margin-right: 9px;
+  border-radius: 4px 1px 1px 4px;
+  background: linear-gradient(90deg, #05b98c 0 46%, #36cfac 50% 100%);
+  vertical-align: -3px;
+}
+.dt-redesign .dt-learn-panel > header span { font-size: 14px; opacity: 1; }
+
+.dt-redesign .dt-learn-panel .lab-guide-learn { gap: 14px; }
+
+.dt-redesign .dt-learn-panel .lab-guide-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 35%);
+  align-items: center;
+  gap: 20px;
+  min-height: 270px;
+  padding: 7px 16px 16px 20px;
+  border: 1px solid #d9e6f8;
+  border-top: 0;
+  border-radius: 0 0 14px 14px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(29, 69, 131, 0.05);
+}
+
+.dt-redesign .dt-learn-panel .lab-guide-hero h3 {
+  margin-bottom: 10px;
+  color: #132c60;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.dt-redesign .dt-learn-panel .lab-guide-hero p {
+  max-width: 72ch;
+  color: #244378;
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.dt-redesign .dt-learn-panel .lab-guide-hero .lab-tab-tip {
+  max-width: 75ch;
+  margin: 14px 0 0;
+  padding: 11px 14px;
+  border: 0;
+  border-radius: 11px;
+  background: #eff6ff;
+  color: #254878;
+  opacity: 1;
+}
+
+.dt-redesign .dt-learn-panel .lab-guide-hero .lab-tab-tip::before {
+  content: "✦";
+  margin-right: 7px;
+  color: #e9a620;
+}
+
+.dt-redesign .dt-learn-art {
+  width: 100%;
+  height: auto;
+  max-height: 280px;
+  border-radius: 15px;
+  overflow: hidden;
+}
+
+.dt-redesign .dt-learn-panel .lab-guide-important {
+  padding: 16px 20px;
+  border-color: #b9d7fc;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #eff7ff, #e9f3ff);
+}
+
+.dt-redesign .dt-learn-panel .lab-guide-important h3 {
+  margin-bottom: 13px;
+  color: #123469;
+  font-size: 17px;
+}
+
+.dt-redesign .dt-learn-panel .lab-guide-important h3::before {
+  content: "i";
+  display: inline-grid;
+  place-items: center;
+  width: 21px;
+  height: 21px;
+  margin-right: 9px;
+  border-radius: 50%;
+  background: #2367eb;
+  color: #fff;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.dt-redesign .dt-learn-panel .lab-guide-important ul {
+  display: block;
+  columns: 2;
+  column-gap: 26px;
+  padding: 0;
+  list-style: none;
+  counter-reset: dt-point;
+}
+
+.dt-redesign .dt-learn-panel .lab-guide-important li {
+  position: relative;
+  min-height: 28px;
+  margin: 0 0 9px;
+  padding-left: 36px;
+  break-inside: avoid;
+  color: #254477;
+  line-height: 1.5;
+}
+
+.dt-redesign .dt-learn-panel .lab-guide-important li::before {
+  counter-increment: dt-point;
+  content: counter(dt-point);
+  position: absolute;
+  left: 0;
+  top: 1px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #3674ec;
+  box-shadow: 0 1px 5px rgba(37, 94, 199, 0.2);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.dt-redesign .dt-learn-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dt-redesign .dt-learn-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 76px;
+  padding: 12px;
+  border: 1px solid var(--action-border);
+  border-radius: 12px;
+  background: var(--action-bg);
+  color: var(--action-color);
+  text-align: left;
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+.dt-redesign .dt-learn-action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(35, 76, 137, 0.12);
+}
+
+.dt-redesign .dt-learn-action > svg:first-child {
+  flex: 0 0 28px;
+  width: 28px;
+  height: 28px;
+}
+
+.dt-redesign .dt-learn-action > svg:last-child { flex: 0 0 16px; margin-left: auto; }
+.dt-redesign .dt-learn-action span { min-width: 0; }
+.dt-redesign .dt-learn-action b { display: block; font-size: 13px; }
+.dt-redesign .dt-learn-action small { display: block; margin-top: 3px; color: #4d6485; font-size: 11px; line-height: 1.35; }
+.dt-redesign .dt-learn-action-try { --action-border:#b8ecdf; --action-bg:#e8faf5; --action-color:#059a77; }
+.dt-redesign .dt-learn-action-watch { --action-border:#e2d5fa; --action-bg:#f3edff; --action-color:#803de2; }
+.dt-redesign .dt-learn-action-numbers { --action-border:#ffdfbd; --action-bg:#fff5e9; --action-color:#ef8509; }
+.dt-redesign .dt-learn-action-compare { --action-border:#facfe5; --action-bg:#fff0f7; --action-color:#e83e85; }
+
+.dt-redesign .dt-learn-panel .lab-guide-learn > section:not(.lab-guide-hero):not(.lab-guide-important),
+.dt-redesign .dt-learn-panel .lab-guide-learn > .lab-guide-grid article {
+  padding: 17px 19px;
+  border: 1px solid #dce7f6;
+  border-radius: 13px;
+  background: #fff;
+}
+
+.dt-redesign .dt-controls {
+  height: auto;
+  color: #17346a;
+}
+
+.dt-redesign .dt-controls > section {
+  height: auto;
+  margin-bottom: 12px;
+  padding: 16px;
+  border: 1px solid #dce7f6;
+  border-radius: 13px;
+  background: #fff;
+  box-shadow: 0 7px 20px rgba(30, 67, 125, 0.055);
+}
+
+.dt-redesign .dt-controls h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: auto;
+  margin-bottom: 14px;
+  color: #142e61;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.dt-redesign .dt-controls h3 svg { width: 18px; height: 18px; color: #2769ee; }
+.dt-redesign .dt-controls .dt-prune h3 svg { color: #0abb8b; }
+.dt-redesign .dt-controls label { min-height: 37px; color: #254274; font-size: 13px; }
+
+.dt-redesign .dt-controls > section:first-child label input,
+.dt-redesign .dt-prune label input {
+  background: #f3f7ff;
+  border-color: #d6e4f7;
+  color: #18376f;
+  font-weight: 700;
+}
+
+.dt-redesign .dt-controls input[type="range"] { accent-color: #2866f2; }
+
+.dt-redesign .dt-controls > section:first-child select {
+  min-height: 40px;
+  background: #fff;
+  border-color: #ccdaf0;
+  color: #17346a;
+}
+
+/* The suite's light palette gives every nested button and section a neutral
+   surface. Restore the intentional accents on this page after that reset. */
+html:not(.dark) #main-content .dt-redesign .dt-tabs button.active {
+  background-color: #245dff;
+  background-image: linear-gradient(135deg, #347eff, #2256f2);
+  border-color: #2667fb;
+  color: #fff;
+}
+
+html:not(.dark) #main-content .dt-redesign .dt-tabs button.active span {
+  color: #fff;
+}
+
+html:not(.dark) #main-content .dt-redesign .dt-learn-panel {
+  background-color: transparent;
+  border-color: transparent;
+}
+
+html:not(.dark) #main-content .dt-redesign .lab-guide-important {
+  background-color: #edf6ff;
+  background-image: linear-gradient(135deg, #eff7ff, #e9f3ff);
+  border-color: #b9d7fc;
+}
+
+html:not(.dark) #main-content .dt-redesign button.dt-learn-action {
+  background-color: var(--action-bg);
+  border-color: var(--action-border);
+  color: var(--action-color);
+}
+
+html:not(.dark) #main-content .dt-redesign .dt-learn-action b {
+  color: var(--action-color);
+}
+
+html:not(.dark) #main-content .dt-redesign .dt-dataset > button + button,
+html:not(.dark) #main-content .dt-redesign .dt-header > aside > button:not([aria-label]),
+html:not(.dark) #main-content .dt-redesign .dt-retrain {
+  background-color: #245dff;
+  color: #fff;
+  border-color: #245dff;
+}
+
+html.dark #main-content .dt-redesign {
+  background-color: #071327;
+  color: #e5edfb;
+}
+
+html.dark #main-content .dt-redesign .dt-tabs button:not(.active),
+html.dark #main-content .dt-redesign .dt-dataset,
+html.dark #main-content .dt-redesign .dt-learn-panel > header,
+html.dark #main-content .dt-redesign .lab-guide-hero,
+html.dark #main-content .dt-redesign .dt-learn-panel .lab-guide-learn > section:not(.lab-guide-hero):not(.lab-guide-important),
+html.dark #main-content .dt-redesign .dt-learn-panel .lab-guide-learn > .lab-guide-grid article,
+html.dark #main-content .dt-redesign .dt-controls > section,
+html.dark #main-content .dt-redesign .dt-hint {
+  background-color: #111f38;
+  background-image: none;
+  border-color: #2a4063;
+  color: #e5edfb;
+}
+
+html.dark #main-content .dt-redesign .dt-learn-panel {
+  background-color: transparent;
+  border-color: transparent;
+}
+
+html.dark #main-content .dt-redesign .dt-tabs button:not(.active) {
+  background: #162640 !important;
+  border-color: #2a4063;
+  color: #e5edfb;
+}
+
+html.dark #main-content .dt-redesign .dt-header > aside > .dt-current-dataset {
+  background: #30244e;
+  color: #e9ddff;
+}
+
+html.dark #main-content .dt-redesign .lab-guide-important {
+  background-color: #122b48;
+  background-image: none;
+  border-color: #315783;
+}
+
+html.dark #main-content .dt-redesign .lab-guide-hero .lab-tab-tip {
+  background-color: #1c3455;
+  color: #dceafb;
+}
+
+html.dark #main-content .dt-redesign .dt-gauge > div:after { background-color: #111f38; }
+html.dark #main-content .dt-redesign .dt-dataset > button:not(:last-of-type) {
+  background-color: #172a49;
+  border-color: #456797;
+  color: #dce9ff;
+}
+
+html.dark #main-content .dt-redesign button.dt-learn-action {
+  background-color: color-mix(in srgb, var(--action-color) 14%, #111f38);
+  border-color: color-mix(in srgb, var(--action-color) 36%, #2a4063);
+  color: #e5edfb;
+}
+
+html.dark #main-content .dt-redesign .dt-learn-action b { color: #e5edfb; }
+
+.dt-redesign .dt-gauge { min-height: 174px; }
+.dt-redesign .dt-gauge > div { overflow: visible; }
+.dt-redesign .dt-gauge > div:after { background: #fff; }
+.dt-redesign .dt-gauge > div b { color: #102a5f; }
+.dt-redesign .dt-gauge > div span { color: #4a6288; }
+.dt-redesign .dt-gauge footer { margin-top: 10px; color: #4a6288; font-size: 10px; }
+.dt-redesign .dt-prune button { min-height: 34px; background: #eef4ff; border-color: #c9dcfb; color: #2458ae; }
+
+.dt-redesign .dt-retrain {
+  min-height: 45px;
+  margin-bottom: 12px;
+  border-color: #245fff;
+  border-radius: 11px;
+  background: #245fff;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.dt-redesign .dt-hint {
+  height: auto;
+  min-height: 48px;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 12px 15px;
+  border-radius: 10px;
+  background: #fff;
+  color: #465e86;
+}
+
+@media (max-width: 1200px) {
+  .dt-redesign .dt-header { flex-wrap: wrap; min-height: 0; }
+  .dt-redesign .dt-header > aside { display: flex; justify-content: flex-start; margin-left: 0; min-width: 0; }
+  .dt-redesign .dt-workspace { grid-template-columns: minmax(0, 1fr) !important; }
+  .dt-redesign .dt-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .dt-redesign .dt-controls > section { margin: 0; }
+  .dt-redesign .dt-retrain { grid-column: 1 / -1; margin: 0; }
+  .dt-redesign .dt-tabs { display: flex; overflow-x: auto; padding-bottom: 3px; }
+  .dt-redesign .dt-tabs button { flex: 0 0 140px; }
+}
+
+@media (max-width: 700px) {
+  .dt-redesign .dt-header { display: block; padding: 12px 4px 8px; }
+  .dt-redesign .dt-header > div > p { margin-bottom: 12px; font-size: 11px; }
+  .dt-redesign .dt-header > div > section > i { display: grid; flex-basis: 46px; width: 46px; height: 46px; }
+  .dt-redesign .dt-header > div > section > i svg { width: 25px; height: 25px; }
+  .dt-redesign .dt-header h1 { font-size: 23px; }
+  .dt-redesign .dt-header section span { font-size: 13px; }
+  .dt-redesign .dt-header > aside { gap: 8px; margin-top: 12px; }
+  .dt-redesign .dt-header > aside > .dt-current-dataset { max-width: 100%; }
+  .dt-redesign .dt-header > aside > i { width: 90px; }
+  .dt-redesign .dt-tabs { padding: 0 3px 4px; }
+  .dt-redesign .dt-tabs button { flex-basis: 118px; min-height: 48px; }
+  .dt-redesign .dt-workspace { padding: 12px 2px 25px; }
+  .dt-redesign .dt-dataset { overflow: visible; white-space: normal; }
+  .dt-redesign .dt-dataset label { width: 100%; }
+  .dt-redesign .dt-dataset > span { flex: 1 0 100%; }
+  .dt-redesign .dt-dataset > button { display: inline-flex; flex: 1 1 130px; margin: 0; }
+  .dt-redesign .dt-learn-panel .lab-guide-hero { grid-template-columns: minmax(0, 1fr); padding: 8px 16px 18px; }
+  .dt-redesign .dt-learn-art { max-height: none; }
+  .dt-redesign .dt-learn-panel .lab-guide-important ul { columns: 1; }
+  .dt-redesign .dt-learn-actions { grid-template-columns: minmax(0, 1fr); }
+  .dt-redesign .dt-learn-action { min-height: 66px; }
+  .dt-redesign .dt-controls { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dt-redesign .dt-tabs button,
+  .dt-redesign .dt-learn-action { transition: none; }
+}

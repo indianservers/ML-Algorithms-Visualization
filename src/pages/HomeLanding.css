@@ -488,6 +488,92 @@
   filter: drop-shadow(0 0 26px rgba(56, 130, 246, 0.35));
 }
 
+.hl-brain .brain-halo {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hl-brain-halo 6.8s ease-in-out infinite;
+}
+
+.hl-brain .brain-body {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hl-brain-breathe 7.5s ease-in-out infinite;
+}
+
+.hl-brain .brain-ambient-stars circle {
+  animation: hl-brain-twinkle 3.8s ease-in-out infinite;
+}
+
+.hl-brain .brain-active-edge {
+  animation: hl-brain-synapse 3.6s ease-in-out infinite;
+}
+
+.hl-brain .brain-neuron-active,
+.hl-brain .brain-node-glow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hl-brain-neuron 3.8s ease-in-out infinite;
+}
+
+.hl-brain .brain-signal-trail {
+  fill: none;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-dasharray: 2 19;
+  animation: hl-brain-signal 4.8s linear infinite;
+}
+
+.hl-brain .brain-signal-particle,
+.hl-brain .brain-signal-core {
+  offset-distance: 0%;
+  offset-rotate: 0deg;
+  animation: hl-brain-travel linear infinite;
+}
+
+.hl-brain .brain-outline {
+  animation: hl-brain-rim 6.8s ease-in-out infinite;
+}
+
+@keyframes hl-brain-halo {
+  0%, 100% { opacity: 0.65; transform: scale(0.97); }
+  50% { opacity: 1; transform: scale(1.04); }
+}
+
+@keyframes hl-brain-breathe {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes hl-brain-twinkle {
+  0%, 100% { opacity: 0.25; }
+  45% { opacity: 0.9; }
+}
+
+@keyframes hl-brain-synapse {
+  0%, 100% { opacity: 0.34; stroke-width: 0.95; }
+  45% { opacity: 1; stroke-width: 1.7; }
+}
+
+@keyframes hl-brain-neuron {
+  0%, 100% { opacity: 0.65; transform: scale(0.85); }
+  45% { opacity: 1; transform: scale(1.55); }
+}
+
+@keyframes hl-brain-signal {
+  0% { opacity: 0.1; stroke-dashoffset: 42; }
+  25%, 75% { opacity: 0.8; }
+  100% { opacity: 0.1; stroke-dashoffset: -42; }
+}
+
+@keyframes hl-brain-travel {
+  to { offset-distance: 100%; }
+}
+
+@keyframes hl-brain-rim {
+  0%, 100% { opacity: 0.73; }
+  50% { opacity: 1; }
+}
+
 .hl-pill {
   position: absolute;
   padding: 4px 12px;
@@ -556,8 +642,23 @@
 
 @media (prefers-reduced-motion: reduce) {
   .hl-pill,
-  .hl-card-enter {
-    animation: none;
+  .hl-card-enter,
+  .hl-brain .brain-halo,
+  .hl-brain .brain-body,
+  .hl-brain .brain-ambient-stars circle,
+  .hl-brain .brain-active-edge,
+  .hl-brain .brain-neuron-active,
+  .hl-brain .brain-node-glow,
+  .hl-brain .brain-signal-trail,
+  .hl-brain .brain-signal-particle,
+  .hl-brain .brain-signal-core,
+  .hl-brain .brain-outline {
+    animation: none !important;
+  }
+
+  .hl-brain .brain-signal-particle,
+  .hl-brain .brain-signal-core {
+    display: none;
   }
 }
 

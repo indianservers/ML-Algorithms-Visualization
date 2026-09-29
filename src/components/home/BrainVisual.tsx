@@ -222,6 +222,55 @@ function tone(hue: number) {
 
 const { nodes, edges } = build();
 
+/** Follow actual mesh edges so each traveling impulse reads as a neural signal. */
+function signalRoute(from: Pt, to: Pt): string {
+  const nearest = (point: Pt) =>
+    nodes.reduce((best, node, index) =>
+      Math.hypot(node.x - point.x, node.y - point.y) <
+      Math.hypot(nodes[best].x - point.x, nodes[best].y - point.y)
+        ? index
+        : best, 0);
+  const start = nearest(from);
+  const goal = nearest(to);
+  const distances = nodes.map(() => Infinity);
+  const previous = nodes.map(() => -1);
+  const visited = new Set<number>();
+  distances[start] = 0;
+
+  while (visited.size < nodes.length) {
+    let current = -1;
+    for (let i = 0; i < nodes.length; i += 1) {
+      if (!visited.has(i) && (current < 0 || distances[i] < distances[current])) current = i;
+    }
+    if (current < 0 || !Number.isFinite(distances[current]) || current === goal) break;
+    visited.add(current);
+    for (const [a, b] of edges) {
+      const next = a === current ? b : b === current ? a : -1;
+      if (next < 0 || visited.has(next)) continue;
+      const weight = Math.hypot(nodes[a].x - nodes[b].x, nodes[a].y - nodes[b].y);
+      if (distances[current] + weight < distances[next]) {
+        distances[next] = distances[current] + weight;
+        previous[next] = current;
+      }
+    }
+  }
+
+  const route: number[] = [];
+  for (let at = goal; at >= 0; at = previous[at]) {
+    route.unshift(at);
+    if (at === start) break;
+  }
+  return route[0] === start
+    ? route.map((index, i) => `${i ? "L" : "M"}${nodes[index].x} ${nodes[index].y}`).join(" ")
+    : "";
+}
+
+const SIGNAL_ROUTES = [
+  signalRoute({ x: 58, y: 104 }, { x: 322, y: 124 }),
+  signalRoute({ x: 63, y: 174 }, { x: 303, y: 218 }),
+  signalRoute({ x: 119, y: 61 }, { x: 291, y: 251 }),
+].filter(Boolean);
+
 const SPARKS: [number, number, number, string][] = [
   [16, 60, 1.8, "#38bdf8"],
   [376, 74, 1.6, "#e879f9"],
@@ -265,19 +314,20 @@ export function BrainVisual({ className }: { className?: string }) {
         </filter>
       </defs>
 
-      <ellipse cx={VW * 0.48} cy={VH * 0.45} rx={VW * 0.52} ry={VH * 0.5} fill={`url(#${id}halo)`} />
+      <ellipse className="brain-halo" cx={VW * 0.48} cy={VH * 0.45} rx={VW * 0.52} ry={VH * 0.5} fill={`url(#${id}halo)`} />
 
-      <g>
+      <g className="brain-ambient-stars">
         {SPARKS.map(([x, y, r, c], i) => (
-          <circle key={i} cx={x} cy={y} r={r} fill={c} opacity="0.7" />
+          <circle key={i} cx={x} cy={y} r={r} fill={c} opacity="0.7" style={{ animationDelay: `${-i * 0.8}s` }} />
         ))}
       </g>
 
+      <g className="brain-body">
       <g clipPath={`url(#${id}clip)`}>
         <path d={BRAIN} fill={`url(#${id}mesh)`} opacity="0.18" />
         <g stroke={`url(#${id}mesh)`} strokeWidth="0.95" opacity="0.72" strokeLinecap="round">
           {edges.map(([a, b], i) => (
-            <line key={i} x1={nodes[a].x} y1={nodes[a].y} x2={nodes[b].x} y2={nodes[b].y} />
+            <line className={i % 11 === 0 ? "brain-active-edge" : undefined} key={i} x1={nodes[a].x} y1={nodes[a].y} x2={nodes[b].x} y2={nodes[b].y} style={i % 11 === 0 ? { animationDelay: `${-(i % 7) * 0.55}s` } : undefined} />
           ))}
         </g>
         <g stroke="#bae6fd" strokeWidth="1.1" opacity="0.24" fill="none">
@@ -289,15 +339,25 @@ export function BrainVisual({ className }: { className?: string }) {
           {nodes
             .filter((n) => n.glow)
             .map((n, i) => (
-              <circle key={i} cx={n.x} cy={n.y} r={n.r * 3.2} fill={tone(n.hue)} opacity="0.6" filter={`url(#${id}soft)`} />
+              <circle className="brain-node-glow" key={i} cx={n.x} cy={n.y} r={n.r * 3.2} fill={tone(n.hue)} opacity="0.6" filter={`url(#${id}soft)`} style={{ animationDelay: `${-i * 0.42}s` }} />
             ))}
           {nodes.map((n, i) => (
-            <circle key={i} cx={n.x} cy={n.y} r={n.r} fill={n.glow ? "#f0f9ff" : tone(n.hue)} opacity={n.glow ? 1 : 0.95} />
+            <circle className={n.glow || i % 9 === 0 ? "brain-neuron brain-neuron-active" : "brain-neuron"} key={i} cx={n.x} cy={n.y} r={n.r} fill={n.glow ? "#f0f9ff" : tone(n.hue)} opacity={n.glow ? 1 : 0.95} style={{ animationDelay: `${-(i % 11) * 0.37}s` }} />
           ))}
         </g>
       </g>
 
-      <g fill="none" stroke={`url(#${id}rim)`}>
+      <g className="brain-signals" clipPath={`url(#${id}clip)`}>
+        {SIGNAL_ROUTES.map((d, i) => (
+          <g key={d}>
+            <path className="brain-signal-trail" d={d} stroke={i === 1 ? "#f0abfc" : "#7dd3fc"} style={{ animationDelay: `${-i * 1.9}s` }} />
+            <circle className="brain-signal-particle" r="3" fill={i === 1 ? "#f5d0fe" : "#e0f7ff"} filter={`url(#${id}soft)`} style={{ offsetPath: `path('${d}')`, animationDuration: `${4.8 + i * 0.85}s`, animationDelay: `${-i * 1.7}s` }} />
+            <circle className="brain-signal-core" r="1.8" fill="#fff" style={{ offsetPath: `path('${d}')`, animationDuration: `${4.8 + i * 0.85}s`, animationDelay: `${-i * 1.7}s` }} />
+          </g>
+        ))}
+      </g>
+
+      <g className="brain-outline" fill="none" stroke={`url(#${id}rim)`}>
         <g strokeWidth="3.4" opacity="0.55" filter={`url(#${id}rimglow)`}>
           <path d={BRAIN} />
           <path d={STEM} />
@@ -306,6 +366,7 @@ export function BrainVisual({ className }: { className?: string }) {
           <path d={BRAIN} />
           <path d={STEM} />
         </g>
+      </g>
       </g>
     </svg>
   );

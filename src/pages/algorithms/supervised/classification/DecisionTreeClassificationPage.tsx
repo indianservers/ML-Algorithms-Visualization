@@ -2,7 +2,9 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { LabProgressMeter } from "../../../../components/common/LabChrome";
 import { LabLessonPanel, useUrlTab } from "../../../../components/common/LabTabs";
+import { DecisionTreeLearnIllustration } from "../../../../components/learning/DecisionTreeLearnIllustration";
 import {
+  ArrowRight,
   BarChart3,
   BookOpen,
   BrainCircuit,
@@ -13,15 +15,18 @@ import {
   FileText,
   GitBranch,
   Lightbulb,
+  Leaf,
   Moon,
   Network,
   Pause,
   Play,
   Plus,
   RefreshCw,
+  Scale,
   SkipForward,
-  Sparkles,
+  SlidersHorizontal,
   Sun,
+  Target,
   Upload,
 } from "lucide-react";
 import {
@@ -39,6 +44,7 @@ import {
 } from "../../../../lib/algorithms/classification/decisionTree";
 import { classificationSplit } from "../../../../lib/classification/classificationEval";
 import "./DecisionTreeClassificationPage.css";
+import "./DecisionTreeClassificationRedesign.css";
 
 type Row = { features: number[]; label: number };
 type DatasetId = "iris" | "wine" | "seeds" | "synthetic" | "imported";
@@ -63,12 +69,12 @@ const FEATURES = [
 const SHORT = ["sepal length", "sepal width", "petal length", "petal width"];
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
   { id: "learn", label: "Learn", icon: <BookOpen /> },
-  { id: "visualize", label: "Visualize", icon: <Sparkles /> },
+  { id: "visualize", label: "Visualize", icon: <BarChart3 /> },
   { id: "dataset", label: "Dataset", icon: <Database /> },
   { id: "train", label: "Train", icon: <Play /> },
   { id: "metrics", label: "Metrics", icon: <BarChart3 /> },
-  { id: "compare", label: "Compare", icon: <Network /> },
-  { id: "explain", label: "Explain", icon: <FileText /> },
+  { id: "compare", label: "Compare", icon: <Scale /> },
+  { id: "explain", label: "Explain", icon: <Lightbulb /> },
 ];
 const BASE = datasetGIris().map((row) => ({
   features: row.features,
@@ -838,6 +844,44 @@ export default function DecisionTreeClassificationPage() {
         <LabLessonPanel
           tab="Learn"
           route="/ml/supervised/decision-tree-classification"
+          className="dt-learn-panel"
+          heroMedia={<DecisionTreeLearnIllustration />}
+          learnActions={
+            <div className="dt-learn-actions">
+              <button type="button" className="dt-learn-action dt-learn-action-try" onClick={() => setTab("visualize")}>
+                <Target />
+                <span>
+                  <b>Try it yourself</b>
+                  <small>Change the dataset and see how the tree changes.</small>
+                </span>
+                <ArrowRight />
+              </button>
+              <button type="button" className="dt-learn-action dt-learn-action-watch" onClick={startPlayback}>
+                <Play />
+                <span>
+                  <b>Watch it work</b>
+                  <small>See each split animate step by step.</small>
+                </span>
+                <ArrowRight />
+              </button>
+              <button type="button" className="dt-learn-action dt-learn-action-numbers" onClick={() => setTab("metrics")}>
+                <BarChart3 />
+                <span>
+                  <b>Check the numbers</b>
+                  <small>Explore accuracy, confusion matrix and feature importance.</small>
+                </span>
+                <ArrowRight />
+              </button>
+              <button type="button" className="dt-learn-action dt-learn-action-compare" onClick={() => setTab("compare")}>
+                <Scale />
+                <span>
+                  <b>Compare models</b>
+                  <small>See how decision trees compare with other algorithms.</small>
+                </span>
+                <ArrowRight />
+              </button>
+            </div>
+          }
         />
       );
     if (tab === "visualize") return visualize;
@@ -1092,7 +1136,7 @@ export default function DecisionTreeClassificationPage() {
     );
   };
   return (
-    <div className="dt-page">
+    <div className="dt-page dt-redesign">
       <aside className="dt-nav">
         <Link className="dt-brand" to="/">
           <i>
@@ -1157,7 +1201,7 @@ export default function DecisionTreeClassificationPage() {
         <header className="dt-header">
           <div>
             <p>
-              SUPERVISED LEARNING <span>›</span> DECISION TREE
+              Supervised Learning <span>›</span> Decision Tree <span>›</span> {TABS.find((item) => item.id === tab)?.label}
             </p>
             <section>
               <i>
@@ -1173,6 +1217,7 @@ export default function DecisionTreeClassificationPage() {
             </section>
           </div>
           <aside>
+            <span className="dt-current-dataset"><Database /> {LABELS[datasetId]}</span>
             <span>Lesson Progress</span>
             <LabProgressMeter />
             <button type="button" onClick={resumePlayback}>
@@ -1185,14 +1230,14 @@ export default function DecisionTreeClassificationPage() {
             </button>
           </aside>
         </header>
-        <nav className="dt-tabs">
+        <nav className="dt-tabs" aria-label="Decision tree sections">
           {TABS.map((item) => (
             <button
               className={tab === item.id ? "active" : ""}
               key={item.id}
               onClick={() => setTab(item.id)}
             >
-              {item.label}
+              {item.icon}<span>{item.label}</span>
             </button>
           ))}
         </nav>
@@ -1201,7 +1246,7 @@ export default function DecisionTreeClassificationPage() {
             <section className="dt-dataset">
               <b>DATASET</b>
               <label>
-                <span>🔮</span>
+                <Database />
                 <select
                   aria-label="Dataset"
                   value={datasetId}
@@ -1219,7 +1264,7 @@ export default function DecisionTreeClassificationPage() {
                 </select>
               </label>
               <span>{rows.length} samples • 4 features • 3 classes</span>
-              <button onClick={reset}>Reset Dataset</button>
+              <button onClick={reset}><RefreshCw /> Reset Dataset</button>
               <button onClick={() => uploadRef.current?.click()}>
                 <Upload /> Upload CSV
               </button>
@@ -1246,7 +1291,7 @@ export default function DecisionTreeClassificationPage() {
           </div>
           <aside className="dt-controls">
             <section>
-              <h3>TREE CONTROLS</h3>
+              <h3><SlidersHorizontal /> TREE CONTROLS</h3>
               <label>
                 Max Depth
                 <input
@@ -1328,7 +1373,7 @@ export default function DecisionTreeClassificationPage() {
               </select>
             </section>
             <section className="dt-gauge">
-              <h3>IMPURITY ({criterion.toUpperCase()})</h3>
+              <h3><BrainCircuit /> IMPURITY ({criterion.toUpperCase()})</h3>
               <div>
                 <i />
                 <b>{(tree.impurity ?? 0).toFixed(3)}</b>
@@ -1347,7 +1392,7 @@ export default function DecisionTreeClassificationPage() {
               </footer>
             </section>
             <section className="dt-prune">
-              <h3>PRUNING</h3>
+              <h3><Leaf /> PRUNING</h3>
               <label>
                 Cost Complexity (α)
                 <input
@@ -1388,9 +1433,15 @@ export default function DecisionTreeClassificationPage() {
                 Apply Pruning
               </button>
             </section>
-            <button className="dt-retrain" onClick={retrainTree}>
-              <RefreshCw /> Retrain Tree
-            </button>
+            {tab === "learn" ? (
+              <button className="dt-retrain" onClick={() => setTab("visualize")}>
+                <Play /> Open in Visualization <ArrowRight />
+              </button>
+            ) : (
+              <button className="dt-retrain" onClick={retrainTree}>
+                <RefreshCw /> Retrain Tree
+              </button>
+            )}
             <section className="dt-options">
               <h3>TREE OPTIONS</h3>
               <label>

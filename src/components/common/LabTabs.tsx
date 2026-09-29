@@ -179,7 +179,7 @@ function LessonList({ title, items }: { title: string; items: string[] }) {
   );
 }
 
-function GuideLearnBody({ route }: { route: string }) {
+function GuideLearnBody({ route, heroMedia, learnActions }: { route: string; heroMedia?: ReactNode; learnActions?: ReactNode }) {
   const tour = useMemo(() => getGuideTour(route), [route]);
   const steps = useMemo(() => getAlgorithmGuideSteps(route), [route]);
   const learn = useMemo(() => getLearnPageContent(route), [route]);
@@ -189,10 +189,13 @@ function GuideLearnBody({ route }: { route: string }) {
   return (
     <div className="lab-guide-learn">
       <section className="lab-guide-hero">
-        <h3>The idea, in plain words</h3>
-        <p>{learn.idea || idea?.purpose || tour.pitch}</p>
-        {learn.story ? <p>{learn.story}</p> : null}
-        {idea?.teach ? <p className="lab-tab-tip">{idea.teach}</p> : null}
+        <div className="lab-guide-hero-copy">
+          <h3>The idea, in plain words</h3>
+          <p>{learn.idea || idea?.purpose || tour.pitch}</p>
+          {learn.story ? <p>{learn.story}</p> : null}
+          {idea?.teach ? <p className="lab-tab-tip">{idea.teach}</p> : null}
+        </div>
+        {heroMedia}
       </section>
 
       {learn.important.length ? (
@@ -205,6 +208,8 @@ function GuideLearnBody({ route }: { route: string }) {
           </ul>
         </section>
       ) : null}
+
+      {learnActions}
 
       {learn.theory.length ? (
         <section className="lab-guide-theory">
@@ -341,10 +346,14 @@ export function LabLessonPanel({
   tab,
   route,
   className = "",
+  heroMedia,
+  learnActions,
 }: {
   tab: string;
   route: string;
   className?: string;
+  heroMedia?: ReactNode;
+  learnActions?: ReactNode;
 }) {
   const content = useMemo(() => getLearningContent(route), [route]);
   const algorithm = getAlgorithmByRoute(route);
@@ -398,7 +407,7 @@ export function LabLessonPanel({
       </>
     );
   } else {
-    body = <GuideLearnBody route={route} />;
+    body = <GuideLearnBody route={route} heroMedia={heroMedia} learnActions={learnActions} />;
   }
 
   return (
