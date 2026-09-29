@@ -607,9 +607,6 @@
   background: var(--glow-toast-bg);
   color: white;
 }
-.km-page.light {
-  filter: var(--glow-light-lift);
-}
 @media (max-width: 1100px) {
   .km-page {
     overflow: auto;
@@ -714,4 +711,29 @@
   .km-page {
     width: 100%;
   }
+}
+/* K-Means uses its dark palette independently of the suite's saved theme. */
+#main-content .km-dark-only {
+  --bg-app: #07111e;
+  --bg-surface: #0b1725;
+  --bg-elevated: #0b1725;
+  --bg-inset: #101c2c;
+  --text-primary: #f4f6f9;
+  --text-secondary: #d5dfed;
+  --text-muted: #a9b3c2;
+  --border-default: #344358;
+  --control-bg: #101c2c;
+  --control-hover: #17283d;
+  color-scheme: dark;
+}
+html:not(.dark) #main-content .km-dark-only .km-page {
+  --bg: #07111e;
+  --panel: #0b1725;
+  --line: #2a384b;
+  --text: #f4f6f9;
+  --muted: #a9b3c2;
+  --ink: #f4f6f9;
+  --surface: #0b1725;
+  background: var(--glow-page);
+  color: #f4f6f9;
 }

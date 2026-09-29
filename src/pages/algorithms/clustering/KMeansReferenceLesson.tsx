@@ -12,7 +12,6 @@ import {
   FlaskConical,
   HelpCircle,
   Maximize2,
-  Moon,
   Network,
   Notebook,
   Pause,
@@ -21,7 +20,6 @@ import {
   RefreshCw,
   RotateCcw,
   Sparkles,
-  Sun,
   Trash2,
   ZoomIn,
   ZoomOut,
@@ -36,7 +34,6 @@ import {
   datasetIElongated,
 } from "../../../lib/clustering/clusteringDatasets";
 import "./KMeansReferenceLesson.css";
-import { useTheme } from "../../../stores/uiStore";
 
 type Shape = "blobs" | "rings" | "mixed" | "elongated" | "four";
 type Tool = "select" | "add" | "remove";
@@ -115,8 +112,6 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
     [manual, setManual] = useState<number[][] | null>(null),
     [dragging, setDragging] = useState<number | null>(null),
     [toast, setToast] = useState("");
-  const { theme, toggleTheme } = useTheme();
-  const light = theme === "light";
   const navigate = useNavigate();
   const go = (label: string) => {
     const route = resolveNavRoute(label);
@@ -212,7 +207,7 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
     (_, cluster) => assignments.filter((value) => value === cluster).length,
   );
   return (
-    <div className={`km-page ${light ? "light" : ""}`}>
+    <div className="km-page">
       <header className="km-top">
         <Link to="/">
           <BrainCircuit />
@@ -226,9 +221,6 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
         </button>
         <button onClick={() => go("Help")}>
           <HelpCircle /> Help
-        </button>
-        <button onClick={toggleTheme}>
-          {light ? <Moon /> : <Sun />}
         </button>
         <i>AI</i>
       </header>

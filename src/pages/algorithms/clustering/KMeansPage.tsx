@@ -232,18 +232,22 @@ function assignToCentroids(values: number[][], centroids: number[][]) {
 
 export default function KMeansPage() {
   const [advanced, setAdvanced] = useState(false);
-  return advanced ? (
-    <div className="relative h-full overflow-auto">
-      <button
-        className="fixed right-4 top-4 z-[100] rounded bg-blue-600 px-3 py-2 text-xs font-bold text-white"
-        onClick={() => setAdvanced(false)}
-      >
-        Return to clustering lab
-      </button>
-      <KMeansAdvancedWorkbench />
+  return (
+    <div className="km-dark-only dark min-h-full bg-slate-950 text-slate-100">
+      {advanced ? (
+        <div className="relative h-full overflow-auto">
+          <button
+            className="fixed right-4 top-4 z-[100] rounded bg-blue-600 px-3 py-2 text-xs font-bold text-white"
+            onClick={() => setAdvanced(false)}
+          >
+            Return to clustering lab
+          </button>
+          <KMeansAdvancedWorkbench />
+        </div>
+      ) : (
+        <KMeansReferenceLesson onAdvanced={() => setAdvanced(true)} />
+      )}
     </div>
-  ) : (
-    <KMeansReferenceLesson onAdvanced={() => setAdvanced(true)} />
   );
 }
 
