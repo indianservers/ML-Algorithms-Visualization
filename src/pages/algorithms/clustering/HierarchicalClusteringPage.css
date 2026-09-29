@@ -223,6 +223,22 @@
   border-color: #3f83f2;
   color: #5796ff;
 }
+.hc-tab-panel {
+  padding: 24px;
+  border: 1px solid #314664;
+  border-radius: 10px;
+  background: #0d1d34;
+  color: #e6eeff;
+  line-height: 1.6;
+}
+.hc-tab-panel h2 { margin: 0 0 10px; font-size: 20px; }
+.hc-tab-panel p { max-width: 75ch; color: #c5d1e6; }
+.hc-tab-panel label { display: block; margin: 18px 0 7px; font-weight: 700; }
+.hc-tab-panel select, .hc-tab-panel button { max-width: 100%; padding: 9px 12px; border: 1px solid #59749b; border-radius: 7px; background: #142b4d; color: #fff; }
+.hc-tab-panel button { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }
+.hc-tab-hint { padding: 12px; border-left: 3px solid #58a6ff; background: #132b4c; }
+.hc-train-panel > div { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.hc-train-panel > div span { padding: 8px 10px; border: 1px solid #405a7e; border-radius: 7px; }
 .hc-work {
   height: 501px;
   border: 1px solid #152741;

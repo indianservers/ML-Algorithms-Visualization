@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { LabProgressMeter } from "../../../../components/common/LabChrome";
 import { LabLessonPanel, useUrlTab } from "../../../../components/common/LabTabs";
@@ -7,7 +7,6 @@ import {
   ChevronDown,
   Info,
   Lightbulb,
-  LineChart,
   Play,
   RefreshCw,
   Table2,
@@ -22,28 +21,17 @@ import {
   majorityBaseline,
   thresholdSweep,
 } from "../../../../lib/classification/classificationEval";
-import {
-  datasetA1D,
-  datasetB1D,
-  datasetCXor1DFails,
-  datasetH1D,
-  datasetHSevere1D,
-} from "../../../../lib/classification/classificationDatasets";
+import { datasetB1D } from "../../../../lib/classification/classificationDatasets";
 import { ClassificationDiagnosticsPanel } from "../../../../components/ml/ClassificationDiagnosticsPanel";
 import "./LogisticRegressionPage.css";
 import { loadActiveDatasetMap } from "../../../../lib/experimentWorkspace";
 import type { LoadedAlgorithmDataset } from "../../../../data/algorithmDatasets";
+import { reportTrainingActivity } from "../../../../lib/trainingActivity";
 
 type Point = { x: number; y: number; z?: number };
-type DatasetKey =
-  | "admissions"
-  | "separable"
-  | "overlap"
-  | "imbalanced"
-  | "severe"
-  | "xor"
-  | "imported";
+type DatasetKey = "reference" | "overlap" | "imported";
 type View = "probability" | "logodds" | "both";
+type Outcome = "TP" | "TN" | "FP" | "FN";
 
 const tabs = [
   "Learn",
@@ -56,54 +44,46 @@ const tabs = [
 ] as const;
 type Tab = (typeof tabs)[number];
 
-const admissions = Array.from({ length: 120 }, (_, i) => {
-  const x = 8 + ((i * 37) % 93),
-    noise = ((i * 17) % 23) - 11;
-  return { x, y: x + noise > 61 ? 1 : 0 };
-});
+function sigmoid(z: number) {
+  return z >= 0 ? 1 / (1 + Math.exp(-z)) : Math.exp(z) / (1 + Math.exp(z));
+}
+function logitProbability(p: number) { return Math.log(p / (1 - p)); }
+function decisionBoundary(beta0: number, beta1: number, threshold: number) {
+  return Math.abs(beta1) < 1e-10 ? null : (logitProbability(threshold) - beta0) / beta1;
+}
+function outcome(actual: number, predicted: number): Outcome {
+  return actual ? (predicted ? "TP" : "FN") : predicted ? "FP" : "TN";
+}
+
+// Fixed synthetic binary observations recreate the reference's 0–1 teaching
+// example. Their observed class is sampled once, never derived from the live fit.
+const referenceRows = (() => {
+  let seed = 2026;
+  const random = () => ((seed = (1664525 * seed + 1013904223) >>> 0) / 4294967296);
+  return Array.from({ length: 320 }, (_, i) => {
+    const x = (i + random()) / 320;
+    return { x, y: random() < sigmoid(12 * (x - 0.5)) ? 1 : 0 };
+  });
+})();
 
 const datasets = {
-  admissions: {
-    name: "University Admissions",
-    feature: "Exam Score",
-    source: "Recommended",
-    rows: admissions,
-  },
-  separable: {
-    name: "Perfect separable (lab A)",
+  reference: {
+    name: "Sigmoid reference (0–1)",
     feature: "Feature x",
-    source: "Lab",
-    rows: datasetA1D(),
+    source: "Recommended",
+    rows: referenceRows,
   },
   overlap: {
-    name: "Overlapping binary (lab B)",
+    name: "Overlapping binary classes",
     feature: "Feature x",
     source: "Lab",
     rows: datasetB1D(),
-  },
-  imbalanced: {
-    name: "Imbalanced 90/10 (lab H)",
-    feature: "Feature x",
-    source: "Lab",
-    rows: datasetH1D(),
-  },
-  severe: {
-    name: "Severe imbalance 95/5",
-    feature: "Feature x",
-    source: "Lab",
-    rows: datasetHSevere1D(),
-  },
-  xor: {
-    name: "XOR two features (lab C)",
-    feature: "x1, x2",
-    source: "Lab",
-    rows: datasetCXor1DFails(),
   },
 };
 
 function parseCsv(text: string) {
   const lines = text.trim().split(/\r?\n/).filter(Boolean);
-  if (lines.length < 3) throw Error("CSV requires a header and two rows.");
+  if (lines.length < 5) throw Error("CSV requires a header and at least four labeled rows.");
   return lines.slice(1).map((line) => {
     const v = line.split(",").map(Number);
     if (!Number.isFinite(v[0]) || ![0, 1].includes(v.at(-1)!))
@@ -125,15 +105,10 @@ function rowsFromLoaded(dataset: LoadedAlgorithmDataset): Point[] {
   return dataset.data.map((row) => {
     const x = Number(row[features[0]]);
     const yRaw = Number(row[target]);
-    const point: Point = {
+    return {
       x: Number.isFinite(x) ? x : 0,
       y: yRaw >= 0.5 ? 1 : 0,
     };
-    if (features[1]) {
-      const z = Number(row[features[1]]);
-      if (Number.isFinite(z)) point.z = z;
-    }
-    return point;
   });
 }
 
@@ -215,56 +190,73 @@ function SigmoidPlot({
   proba,
   threshold,
   feature,
+  boundary,
+  probeX,
+  selectedIndex,
+  filterOutcome,
+  onProbe,
+  onSelect,
 }: {
   rows: Point[];
   proba: (x: number) => number;
   threshold: number;
   feature: string;
+  boundary: number | null;
+  probeX: number;
+  selectedIndex: number | null;
+  filterOutcome: Outcome | null;
+  onProbe: (x: number) => void;
+  onSelect: (index: number) => void;
 }) {
-  const W = 1030,
-    H = 300,
-    L = 74,
-    R = 168,
-    T = 56,
-    B = 56;
+  const [compact, setCompact] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 640px)").matches);
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 640px)");
+    const update = () => setCompact(media.matches);
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+  const W = compact ? 400 : 1030, H = compact ? 400 : 430, L = compact ? 43 : 76, R = compact ? 12 : 36, T = compact ? 70 : 67, B = compact ? 54 : 63;
   const xs = rows.map((v) => v.x);
-  const rawMin = Math.min(...xs),
-    rawMax = Math.max(...xs);
-  const pad = (rawMax - rawMin || 1) * 0.06;
-  const xmin = rawMin - pad,
-    xmax = rawMax + pad;
-
+  const rawMin = Math.min(...xs), rawMax = Math.max(...xs);
+  const referenceScale = rawMin >= 0 && rawMax <= 1;
+  const pad = (rawMax - rawMin || 1) * 0.04;
+  const xmin = referenceScale ? 0 : rawMin - pad;
+  const xmax = referenceScale ? 1 : rawMax + pad;
   const sx = (x: number) => L + ((x - xmin) / (xmax - xmin)) * (W - L - R);
   const sy = (p: number) => H - B - p * (H - T - B);
-
-  const curve = Array.from({ length: 160 }, (_, i) => {
-    const x = xmin + (i / 159) * (xmax - xmin);
-    return { x, p: proba(x) };
-  });
-  const path = curve
-    .map((v, i) => `${i ? "L" : "M"}${sx(v.x).toFixed(1)},${sy(v.p).toFixed(1)}`)
-    .join(" ");
-
-  // Decision boundary: the feature value where P crosses the threshold.
-  let boundary: number | null = null;
-  for (let i = 1; i < curve.length; i++) {
-    const a = curve[i - 1],
-      b = curve[i];
-    if ((a.p - threshold) * (b.p - threshold) <= 0 && a.p !== b.p) {
-      boundary = a.x + ((threshold - a.p) / (b.p - a.p)) * (b.x - a.x);
-      break;
-    }
-  }
-
-  const ticks = niceTicks(rawMin, rawMax, 5);
+  const path = Array.from({ length: 240 }, (_, i) => {
+    const x = xmin + (i / 239) * (xmax - xmin);
+    return `${i ? "L" : "M"}${sx(x).toFixed(1)},${sy(proba(x)).toFixed(1)}`;
+  }).join(" ");
+  const visibleBoundary = boundary !== null && boundary >= xmin && boundary <= xmax;
+  const leftEdge = visibleBoundary ? sx(boundary) : W - R;
+  const leftClass = proba(xmin) >= threshold ? 1 : 0;
+  const rightClass = proba(xmax) >= threshold ? 1 : 0;
+  const ticks = referenceScale ? [0, .2, .4, .6, .8, 1] : niceTicks(rawMin, rawMax, compact ? 4 : 5);
+  const decimals = referenceScale ? 2 : Math.abs(xmax - xmin) < 10 ? 2 : 1;
+  const clickProbe = (event: MouseEvent<SVGRectElement>) => {
+    const svg = event.currentTarget.ownerSVGElement;
+    if (!svg) return;
+    const position = svg.createSVGPoint();
+    position.x = event.clientX;
+    position.y = event.clientY;
+    const local = position.matrixTransform(svg.getScreenCTM()?.inverse());
+    onProbe(Math.max(xmin, Math.min(xmax, xmin + ((local.x - L) / (W - L - R)) * (xmax - xmin))));
+  };
 
   return (
     <svg
       className="lr-plot"
       viewBox={`0 0 ${W} ${H}`}
       role="img"
-      aria-label={`Sigmoid probability curve over ${feature} with decision threshold at ${Math.round(threshold * 100)} percent`}
+      aria-label={`Sigmoid probability curve over ${feature}. Probability threshold ${threshold.toFixed(2)}. ${boundary === null ? "No finite decision boundary" : `Decision boundary x ${boundary.toFixed(decimals)}`}. Observations appear near actual class 0 or 1.`}
     >
+      <defs><clipPath id="lr-plot-clip"><rect x={L} y={T} width={W - L - R} height={H - T - B} /></clipPath></defs>
+      <rect x={L} y={T} width={W - L - R} height={H - T - B} fill="transparent" className="lr-plot-hit-area" onClick={clickProbe} />
+      <g clipPath="url(#lr-plot-clip)">
+        <rect x={L} y={T} width={leftEdge - L} height={H - T - B} className={leftClass ? "lr-region-one" : "lr-region-zero"} />
+        {visibleBoundary && <rect x={leftEdge} y={T} width={W - R - leftEdge} height={H - T - B} className={rightClass ? "lr-region-one" : "lr-region-zero"} />}
+      </g>
       {[0, 0.5, 1].map((v) => (
         <g key={v}>
           <line x1={L} x2={W - R} y1={sy(v)} y2={sy(v)} className="grid" />
@@ -273,67 +265,35 @@ function SigmoidPlot({
           </text>
         </g>
       ))}
-
+      <line x1={L} x2={W - R} y1={sy(threshold)} y2={sy(threshold)} className="lr-probability-threshold" />
+      <text x={W - R - 8} y={sy(threshold) - 9} textAnchor="end" className="lr-threshold-label">Probability threshold τ = {threshold.toFixed(2)}</text>
       <line x1={L} x2={W - R} y1={H - B} y2={H - B} className="axis" />
-
       {ticks.map((t) => (
-        <text key={t} x={sx(t)} y={H - B + 22}>
-          {fmtTick(t)}
+        <text key={t} x={sx(t)} y={H - B + 22} className="lr-axis-tick">
+          {referenceScale ? t.toFixed(1) : fmtTick(t)}
         </text>
       ))}
-
-      {boundary !== null && (
+      {visibleBoundary && (
         <>
-          <line
-            x1={sx(boundary)}
-            x2={sx(boundary)}
-            y1={sy(threshold)}
-            y2={H - B}
-            className="threshold-line"
-          />
-          <line
-            x1={sx(boundary)}
-            x2={sx(boundary)}
-            y1={T - 12}
-            y2={sy(threshold)}
-            className="threshold-stem"
-          />
-          <rect
-            x={sx(boundary) - 55}
-            y={T - 40}
-            width="110"
-            height="25"
-            rx="5"
-            className="threshold-pill"
-          />
-          <path
-            d={`M${sx(boundary) - 5},${T - 15} L${sx(boundary)},${T - 9} L${sx(boundary) + 5},${T - 15} Z`}
-            className="threshold-label"
-          />
-          <text x={sx(boundary)} y={T - 23} className="threshold-label">
-            Threshold: {Math.round(threshold * 100)}
-          </text>
-          <circle
-            cx={sx(boundary)}
-            cy={sy(threshold)}
-            r="5"
-            className="cross-dot"
-          />
+          <line x1={sx(boundary)} x2={sx(boundary)} y1={T} y2={H-B} className="lr-decision-boundary" />
+          <text x={Math.max(L+(compact ? 52 : 72), Math.min(W-R-(compact ? 52 : 72), sx(boundary)))} y={T-31} className="lr-boundary-label">Decision boundary</text>
+          <text x={Math.max(L+(compact ? 52 : 72), Math.min(W-R-(compact ? 52 : 72), sx(boundary)))} y={T-13} className="lr-boundary-value">x = {boundary.toFixed(decimals)}</text>
+          <circle cx={sx(boundary)} cy={sy(threshold)} r="6" className="lr-intersection" />
         </>
       )}
-
       <path d={path} className="sigmoid" />
-
-      {rows.map((v, i) => (
-        <circle
-          key={i}
-          cx={sx(v.x)}
-          cy={H - B}
-          r="4.5"
-          className={v.y ? "pt-pos" : "pt-neg"}
-        />
-      ))}
-
+      {rows.map((v, i) => {
+        const predicted = proba(v.x) >= threshold ? 1 : 0;
+        const result = outcome(v.y, predicted);
+        const jitter = ((i * 73) % 17) / 17 * .045;
+        return <circle key={i} cx={sx(v.x)} cy={sy(v.y ? .975 - jitter : .025 + jitter)} r={selectedIndex === i ? 6 : 3.5}
+          className={`lr-observation ${v.y ? "pt-pos" : "pt-neg"}${selectedIndex === i ? " is-selected" : ""}${filterOutcome && filterOutcome !== result ? " is-dimmed" : ""}`}
+          tabIndex={0} role="button" aria-label={`Sample ${i + 1}: actual class ${v.y}, predicted class ${predicted}, ${result}`}
+          onClick={() => onSelect(i)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onSelect(i); } }}>
+          <title>Sample #{i + 1} · x {v.x.toFixed(2)} · actual {v.y} · P {proba(v.x).toFixed(3)} · {result}</title>
+        </circle>;
+      })}
+      {probeX >= xmin && probeX <= xmax && <g className="lr-probe" aria-hidden="true"><line x1={sx(probeX)} x2={sx(probeX)} y1={sy(proba(probeX))} y2={H-B} /><circle cx={sx(probeX)} cy={sy(proba(probeX))} r="5" /></g>}
       <text x={(L + W - R) / 2} y={H - 10} className="axis-title">
         {feature}
       </text>
@@ -341,14 +301,7 @@ function SigmoidPlot({
         transform={`translate(20 ${(T + H - B) / 2}) rotate(-90)`}
         className="axis-title"
       >
-        P(Positive)
-      </text>
-
-      <text x={W - R + 12} y={T + 2} className="formula">
-        Sigmoid Function
-      </text>
-      <text x={W - R + 12} y={T + 26} className="formula-math">
-        σ(z) = 1 / (1 + e⁻ᶻ)
+        Probability / Observed Class
       </text>
     </svg>
   );
@@ -359,85 +312,61 @@ function SigmoidPlot({
 function LogOddsStrip({
   rows,
   logit,
+  threshold,
 }: {
   rows: Point[];
   logit: (x: number) => number;
+  threshold: number;
 }) {
-  const W = 1030,
-    H = 150,
-    L = 74,
-    R = 74,
-    axisY = 96;
-  const zs = rows.map((r) => logit(r.x));
-  const bound = Math.max(2, Math.ceil(Math.max(...zs.map(Math.abs)) || 2));
-  const sx = (z: number) => L + ((z + bound) / (2 * bound)) * (W - L - R);
-  const ticks = niceTicks(-bound, bound, 6).filter(
-    (t) => t >= -bound && t <= bound,
-  );
+  const [compact, setCompact] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 640px)").matches);
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 640px)");
+    const update = () => setCompact(media.matches);
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+  const W = compact ? 400 : 1030, H = compact ? 300 : 260;
+  const L = compact ? 43 : 76, R = compact ? 12 : 36, T = 35, B = 48;
+  const xs = rows.map((r) => r.x);
+  const rawMin = Math.min(...xs), rawMax = Math.max(...xs);
+  const referenceScale = rawMin >= 0 && rawMax <= 1;
+  const pad = (rawMax - rawMin || 1) * .04;
+  const xmin = referenceScale ? 0 : rawMin - pad;
+  const xmax = referenceScale ? 1 : rawMax + pad;
+  const cutoff = logitProbability(threshold);
+  const bound = Math.max(2, Math.ceil(Math.max(Math.abs(cutoff), Math.abs(logit(xmin)), Math.abs(logit(xmax)))));
+  const sx = (x: number) => L + ((x - xmin) / (xmax - xmin)) * (W - L - R);
+  const sy = (z: number) => T + ((bound - z) / (2 * bound)) * (H - T - B);
+  const boundary = Math.abs(logit(xmax) - logit(xmin)) < 1e-10 ? null : xmin + (cutoff - logit(xmin)) * (xmax - xmin) / (logit(xmax) - logit(xmin));
+  const line = `M${sx(xmin)},${sy(logit(xmin))} L${sx(xmax)},${sy(logit(xmax))}`;
+  const ticks = referenceScale ? [0, .2, .4, .6, .8, 1] : niceTicks(rawMin, rawMax, compact ? 4 : 6);
 
   return (
     <svg
       className="lr-plot"
       viewBox={`0 0 ${W} ${H}`}
       role="img"
-      aria-label="Log-odds space showing each sample's linear score"
+      aria-label={`Log-odds space showing the straight line z equals beta zero plus beta one x and classification cutoff z ${cutoff.toFixed(2)}`}
     >
-      <text x={sx(-bound / 2)} y={30} className="zone-neg">
-        Negative (z &lt; 0)
-      </text>
-      <text x={sx(-bound / 2)} y={48} className="zone-neg">
-        P &lt; 0.5
-      </text>
-      <text x={sx(bound / 2)} y={30} className="zone-pos">
-        Positive (z &gt; 0)
-      </text>
-      <text x={sx(bound / 2)} y={48} className="zone-pos">
-        P &gt; 0.5
-      </text>
-
-      <text x={sx(0)} y={30} className="zone-zero">
-        z = 0
-      </text>
-      <text x={sx(0)} y={48} className="zone-zero">
-        P = 0.5
-      </text>
-
-      <line x1={L} x2={W - R} y1={axisY} y2={axisY} className="axis" />
-      <line
-        x1={sx(0)}
-        x2={sx(0)}
-        y1={58}
-        y2={axisY}
-        className="threshold-line"
-      />
-
+      <line x1={L} x2={W-R} y1={sy(0)} y2={sy(0)} className="grid" />
+      <line x1={L} x2={W-R} y1={sy(cutoff)} y2={sy(cutoff)} className="lr-probability-threshold" />
+      <text x={W-R-5} y={sy(cutoff)-8} textAnchor="end" className="lr-threshold-label">τ = {threshold.toFixed(2)} → z = {cutoff.toFixed(2)}</text>
+      <line x1={L} x2={W-R} y1={H-B} y2={H-B} className="axis" />
+      {boundary !== null && boundary >= xmin && boundary <= xmax && <line x1={sx(boundary)} x2={sx(boundary)} y1={T} y2={H-B} className="lr-decision-boundary" />}
+      <path d={line} className="lr-logit-line" />
       {ticks.map((t) => (
         <g key={t}>
-          <line x1={sx(t)} x2={sx(t)} y1={axisY} y2={axisY + 6} className="axis" />
-          <text x={sx(t)} y={axisY + 22}>
-            {fmtTick(t)}
+          <line x1={sx(t)} x2={sx(t)} y1={H-B} y2={H-B+6} className="axis" />
+          <text x={sx(t)} y={H-B+22}>
+            {referenceScale ? t.toFixed(1) : fmtTick(t)}
           </text>
         </g>
       ))}
-
-      {rows.map((r, i) => {
-        const z = Math.max(-bound, Math.min(bound, zs[i]));
-        return (
-          <circle
-            key={i}
-            cx={sx(z)}
-            cy={axisY}
-            r="4.5"
-            className={r.y ? "pt-pos" : "pt-neg"}
-          />
-        );
-      })}
-
-      <circle cx={sx(0)} cy={axisY} r="4.5" className="cross-dot" />
-
+      {rows.filter((_, i) => i % Math.max(1, Math.floor(rows.length / 80)) === 0).map((r, i) => <circle key={i} cx={sx(r.x)} cy={sy(logit(r.x))} r="2.8" className={r.y ? "pt-pos" : "pt-neg"} />)}
       <text x={(L + W - R) / 2} y={H - 8} className="axis-title">
-        Log-Odds (z)
+        Feature x
       </text>
+      <text transform={`translate(${compact ? 17 : 22} ${(T+H-B)/2}) rotate(-90)`} className="axis-title">Log-odds z</text>
     </svg>
   );
 }
@@ -504,10 +433,10 @@ function DataTable({
       <div className="lr-data-head">
         <h2>Editable Classification Data</h2>
         <span aria-label="Active row count">{rows.length} rows</span>
-        <button onClick={() => setRows((v) => [...v, { x: 60, y: 1 }])}>
+        <button onClick={() => setRows((v) => [...v, { x: medianX(v), y: 1 }])}>
           Add Row
         </button>
-        <button onClick={() => setRows((v) => v.slice(0, -1))}>
+        <button disabled={rows.length <= 4} onClick={() => setRows((v) => v.slice(0, -1))}>
           Remove Row
         </button>
       </div>
@@ -591,17 +520,22 @@ function Generic({
 export default function LogisticRegressionPage() {
   const location = useLocation();
   const [tab, setTab] = useUrlTab<Tab>("Visualize");
-  const [dataset, setDataset] = useState<DatasetKey>("admissions"),
-    [rows, setRows] = useState<Point[]>(admissions),
+  const [dataset, setDataset] = useState<DatasetKey>("reference"),
+    [rows, setRows] = useState<Point[]>(referenceRows),
     [imported, setImported] = useState<Point[] | null>(null),
     [importedLabel, setImportedLabel] = useState("Imported CSV"),
+    [importedFeature, setImportedFeature] = useState("Feature x"),
     [threshold, setThreshold] = useState(0.5),
     [view, setView] = useState<View>("probability"),
+    [coefficientOverride, setCoefficientOverride] = useState<{ beta0: number; beta1: number } | null>(null),
+    [selectedIndex, setSelectedIndex] = useState<number | null>(null),
+    [filterOutcome, setFilterOutcome] = useState<Outcome | null>(null),
+    [changeNote, setChangeNote] = useState("Move a control to see how probability and predicted classes change."),
     [l2, setL2] = useState(1),
     [trained, setTrained] = useState(true),
     [dataLoaded, setDataLoaded] = useState(false),
     [status, setStatus] = useState("Last trained: just now");
-  const [predX, setPredX] = useState(72);
+  const [predX, setPredX] = useState(0.5);
   const fileRef = useRef<HTMLInputElement>(null),
     appliedHandoffKey = useRef<string | null>(null),
     model = useMemo(() => {
@@ -612,12 +546,21 @@ export default function LogisticRegressionPage() {
       }
     }, [rows, l2]);
 
-  const testScores = model
-    ? model.split.testX.map((row) => model.probaRow(row))
-    : [];
+  const fittedBeta0 = model?.logit(0) ?? 0;
+  const fittedBeta1 = model ? model.logit(1) - model.logit(0) : 0;
+  const beta0 = coefficientOverride?.beta0 ?? fittedBeta0;
+  const beta1 = coefficientOverride?.beta1 ?? fittedBeta1;
+  const beta0Limit = Math.max(20, Math.ceil(Math.abs(fittedBeta0)) + 1);
+  const beta1Limit = Math.max(20, Math.ceil(Math.abs(fittedBeta1)) + 1);
+  const proba = (x: number) => sigmoid(beta0 + beta1 * x);
+  const boundary = decisionBoundary(beta0, beta1, threshold);
+  const testScores = model ? model.split.testX.map((row) => proba(row[0])) : [];
   const testPred = applyThreshold(testScores, threshold);
-  const metrics = model
-    ? binaryMetrics(model.split.testY, testPred)
+  const testMetrics = model ? binaryMetrics(model.split.testY, testPred) : null;
+  const allScores = rows.map((row) => proba(row.x));
+  const allPred = applyThreshold(allScores, threshold);
+  const metrics = rows.length
+    ? binaryMetrics(rows.map((row) => row.y), allPred)
     : {
         tp: 0,
         tn: 0,
@@ -635,29 +578,32 @@ export default function LogisticRegressionPage() {
     : null;
   const pr = testScores.length ? prAuc(model!.split.testY, testScores) : null;
   const trainScores = model
-    ? model.split.trainX.map((row) => model.probaRow(row))
+    ? model.split.trainX.map((row) => proba(row[0]))
     : [];
   const trainMetrics = model
     ? binaryMetrics(model.split.trainY, applyThreshold(trainScores, threshold))
     : null;
   const sweep = model ? thresholdSweep(model.split.testY, testScores) : [];
   const baseline = model ? majorityBaseline(model.split.testY) : null;
-  const inspectZ = model ? model.logit(predX) : 0;
-  const inspectP = model ? model.proba(predX) : 0;
+  const inspectZ = beta0 + beta1 * predX;
+  const inspectP = proba(predX);
   const inspectClass = inspectP >= threshold ? 1 : 0;
   const positive = rows.filter((v) => v.y).length / Math.max(1, rows.length);
 
-  const allScores = model ? rows.map((r) => model.probaRow(featuresOf(r))) : [];
   const posScores = allScores.filter((_, i) => rows[i].y);
   const negScores = allScores.filter((_, i) => !rows[i].y);
   const mean = (list: number[]) =>
     list.length ? list.reduce((a, b) => a + b, 0) / list.length : 0;
+  const selected = selectedIndex === null ? null : rows[selectedIndex] ?? null;
+  const selectedProbability = selected ? proba(selected.x) : 0;
+  const selectedPredicted = selectedProbability >= threshold ? 1 : 0;
+  const selectedOutcome = selected ? outcome(selected.y, selectedPredicted) : null;
 
   const current =
     dataset === "imported"
       ? {
           name: importedLabel,
-          feature: "Feature",
+          feature: importedFeature,
           source: "Local",
           rows,
         }
@@ -670,6 +616,10 @@ export default function LogisticRegressionPage() {
     setRows(next);
     // predX belongs to the old feature scale, so re-centre it on the new data.
     setPredX(medianX(next));
+    setCoefficientOverride(null);
+    setSelectedIndex(null);
+    setFilterOutcome(null);
+    setChangeNote(`Switched to ${key === "imported" ? importedLabel : datasets[key].name}. The model fit and axis range updated.`);
     setTrained(false);
     setStatus("Dataset changed — retrain to refresh the fit");
   };
@@ -679,11 +629,15 @@ export default function LogisticRegressionPage() {
     if (!points.length) return;
     setImported(points);
     setImportedLabel(next.name);
+    setImportedFeature(next.columns.find((column) => column && column !== next.target) ?? "Feature x");
     setRows(points);
     setDataset("imported");
     setDataLoaded(true);
     setTrained(true);
     setPredX(medianX(points));
+    setCoefficientOverride(null);
+    setSelectedIndex(null);
+    setFilterOutcome(null);
     setStatus(`Loaded ${next.name} (${points.length} rows)`);
   };
 
@@ -716,12 +670,16 @@ export default function LogisticRegressionPage() {
   }, [location.pathname]);
 
   const reset = () => {
-    setDataset("admissions");
-    setRows(admissions);
+    setDataset("reference");
+    setRows(referenceRows);
     setThreshold(0.5);
     setView("probability");
     setL2(1);
-    setPredX(medianX(admissions));
+    setPredX(0.5);
+    setCoefficientOverride(null);
+    setSelectedIndex(null);
+    setFilterOutcome(null);
+    setChangeNote("Restored the fitted reference model and probability threshold 0.50.");
     setTrained(true);
     setStatus("Last trained: just now");
   };
@@ -729,10 +687,45 @@ export default function LogisticRegressionPage() {
   const retrain = () => {
     setTrained(false);
     setStatus("Optimizing cross-entropy…");
-    setTimeout(() => {
+    reportTrainingActivity({
+      kind: "start",
+      message: `Training started · ${rows.length} labeled rows · L2 ${l2.toFixed(2)}`,
+      current: 0,
+      total: 650,
+    });
+    const startedAt = performance.now();
+    try {
+      // Fit again on click. The preview stays live, while this trace describes
+      // the model run the learner explicitly requested.
+      const fitted = train(rows, l2);
+      const history = fitted.lossHistory;
+      for (const index of [0, 49, 149, 299, 449, history.length - 1]) {
+        const loss = history[index];
+        if (loss === undefined) continue;
+        reportTrainingActivity({
+          kind: "progress",
+          message: `Recorded iteration ${index + 1}/${history.length} · cross-entropy ${loss.toFixed(4)}`,
+          current: index + 1,
+          total: history.length,
+        });
+      }
+      const predictions = fitted.split.testX.map((row) => fitted.probaRow(row));
+      const result = binaryMetrics(fitted.split.testY, applyThreshold(predictions, threshold));
+      const fitMs = performance.now() - startedAt;
       setTrained(true);
+      setCoefficientOverride(null);
       setStatus(`Trained on ${rows.length} samples`);
-    }, 400);
+      reportTrainingActivity({
+        kind: "complete",
+        message: `Training completed · ${fitted.split.nTrain} train / ${fitted.split.nTest} test · accuracy ${(result.accuracy * 100).toFixed(1)}% · fit ${fitMs.toFixed(1)} ms`,
+        current: history.length,
+        total: history.length,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to fit this dataset.";
+      setStatus(message);
+      reportTrainingActivity({ kind: "error", message: `Training failed · ${message}` });
+    }
   };
 
   const bars = [
@@ -745,19 +738,34 @@ export default function LogisticRegressionPage() {
   const xMin = Math.min(...rows.map((v) => v.x));
   const xMax = Math.max(...rows.map((v) => v.x));
   const featureCount = rows.some((r) => r.z !== undefined) ? 2 : 1;
+  const updateThreshold = (next: number) => {
+    const previousBoundary = decisionBoundary(beta0, beta1, threshold);
+    const nextBoundary = decisionBoundary(beta0, beta1, next);
+    setThreshold(next);
+    setChangeNote(`Probability threshold ${next > threshold ? "increased" : "decreased"} from ${threshold.toFixed(2)} to ${next.toFixed(2)}. ${previousBoundary !== null && nextBoundary !== null ? `The feature-space boundary moved from x = ${previousBoundary.toFixed(2)} to x = ${nextBoundary.toFixed(2)}.` : "The model has no finite feature-space boundary."}`);
+  };
+  const updateCoefficient = (key: "beta0" | "beta1", next: number) => {
+    const old = key === "beta0" ? beta0 : beta1;
+    const changed = { beta0, beta1, [key]: next };
+    setCoefficientOverride(changed);
+    const nextBoundary = decisionBoundary(changed.beta0, changed.beta1, threshold);
+    setChangeNote(key === "beta1"
+      ? `β1 ${next > old ? "increased" : "decreased"} from ${old.toFixed(2)} to ${next.toFixed(2)}. ${next < 0 ? "Probability now decreases as x increases." : next === 0 ? "Probability is constant across x." : `The sigmoid is ${Math.abs(next) > Math.abs(old) ? "steeper" : "flatter"}.`} ${nextBoundary === null ? "There is no finite decision boundary." : `Decision boundary: x = ${nextBoundary.toFixed(2)}.`}`
+      : `β0 changed from ${old.toFixed(2)} to ${next.toFixed(2)}, shifting the sigmoid ${beta1 >= 0 ? (next > old ? "left" : "right") : (next > old ? "right" : "left")}. ${nextBoundary === null ? "There is no finite decision boundary." : `Decision boundary: x = ${nextBoundary.toFixed(2)}.`}`);
+  };
 
   return (
     <div className="logistic-page">
       <header className="lr-head">
         <div className="lr-head-icon">
-          <LineChart />
+          <svg viewBox="0 0 28 28" fill="none" aria-hidden="true"><path d="M3 3v22h22" stroke="currentColor" strokeWidth="2"/><path d="M4 22C9 22 9 21 12 17S16 7 24 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/></svg>
         </div>
         <div>
           <h1>Logistic Regression</h1>
           <p>
-            Objective: Learn how logistic regression models probability and
-            makes classifications.
+            Learn how logistic regression converts a linear score into probability and classifies binary outcomes.
           </p>
+          <small className="lr-head-note">Logistic Regression predicts probability, then applies a threshold to determine the class.</small>
         </div>
         <div className="lr-progress">
           <span>
@@ -798,55 +806,66 @@ export default function LogisticRegressionPage() {
             />
           ) : (
             <>
-              <article className="lr-card lr-chart-card">
-                <div className="lr-chart-head">
-                  <span className="lr-card-title">
-                    <i className="dot" />
-                    1D Feature Space: {current.feature}
-                    <Info />
-                  </span>
-                  <div className="lr-legend">
-                    <span>
-                      <i className="pos" />
-                      Positive
-                    </span>
-                    <span>
-                      <i className="neg" />
-                      Negative
-                    </span>
-                    <span>
-                      <i className="hint" />
-                      Each dot is one sample
-                    </span>
-                  </div>
-                </div>
-
+              <article className={`lr-card lr-chart-card lr-chart-card--${view}`}>
                 {view !== "logodds" && (
-                  <SigmoidPlot
-                    rows={rows}
-                    proba={(x) => model?.proba(x) ?? 0.5}
-                    threshold={threshold}
-                    feature={current.feature}
-                  />
+                  <>
+                    <div className="lr-chart-head">
+                      <div><h2>Logistic Regression — Probability Curve &amp; Decision Boundary</h2><p>Each observation belongs to class 0 or 1. The sigmoid shows the model’s predicted probability P(y = 1 | x).</p></div>
+                      <div className="lr-legend">
+                        <span><i className="pos" />Actual class 1</span>
+                        <span><i className="neg" />Actual class 0</span>
+                        <span><i className="lr-legend-curve" />Predicted probability</span>
+                        <span><i className="lr-legend-threshold" />Probability threshold</span>
+                        <span><i className="lr-legend-boundary" />Decision boundary</span>
+                      </div>
+                    </div>
+                    <SigmoidPlot
+                      rows={rows}
+                      proba={proba}
+                      threshold={threshold}
+                      feature={current.feature}
+                      boundary={boundary}
+                      probeX={predX}
+                      selectedIndex={selectedIndex}
+                      filterOutcome={filterOutcome}
+                      onProbe={(x) => { setPredX(x); setSelectedIndex(null); }}
+                      onSelect={(index) => { setSelectedIndex(index); setPredX(rows[index].x); }}
+                    />
+                    <div className="lr-chart-footer">
+                      <div className="lr-equations" aria-label="Logistic regression equations"><span>Linear score: <b>z = β₀ + β₁x</b></span><span>Probability: <b>P(y = 1 | x) = σ(z)</b></span><span>Sigmoid: <b>σ(z) = 1 / (1 + e⁻ᶻ)</b></span><span>Log-odds: <b>ln(P / (1 − P)) = β₀ + β₁x</b></span></div>
+                      <p className="lr-boundary-note" title="The feature value where the predicted probability equals the chosen probability threshold.">Probability threshold <b>τ = {threshold.toFixed(2)}</b> <span>→</span> Decision boundary <b>{boundary === null ? "No finite x boundary" : `x = ${boundary.toFixed(2)}`}</b>{boundary !== null && (boundary < xMin || boundary > xMax) ? " (outside the visible feature range)" : ""}</p>
+                      <p className="lr-chart-tip">Logistic Regression is a classification model: the curve gives probability; the threshold converts it into a class. Click a sample or the plot to inspect a value.</p>
+                    </div>
+                    {selected && <div className="lr-selected-sample" role="status"><strong>Sample #{selectedIndex! + 1}</strong><span>x = {selected.x.toFixed(2)}</span><span>Actual class {selected.y}</span><span>P(y = 1 | x) = {selectedProbability.toFixed(3)}</span><span>τ = {threshold.toFixed(2)}</span><span>Predicted class {selectedPredicted}</span><b>{selectedOutcome} · {selectedOutcome === "TP" ? "True Positive" : selectedOutcome === "TN" ? "True Negative" : selectedOutcome === "FP" ? "False Positive" : "False Negative"}</b></div>}
+                  </>
                 )}
 
-                <div className="lr-logodds">
-                  <span className="lr-card-title">
-                    Log-Odds (Logit) Space
-                    <Info />
-                  </span>
-                  <LogOddsStrip
-                    rows={rows}
-                    logit={(x) => model?.logit(x) ?? 0}
-                  />
-                </div>
+                {view !== "probability" && (
+                  <div className="lr-logodds">
+                    <span className="lr-card-title">
+                      Linear Log-Odds (Logit) Space
+                      <span title="Logistic Regression is linear in log-odds: z = β₀ + β₁x. The sigmoid maps this score to probability."><Info /></span>
+                    </span>
+                    <p className="lr-logodds-copy">The logit is a straight line in x. The horizontal cutoff is logit(τ); its intersection with the line gives the same x boundary as the probability chart.</p>
+                    <div className="lr-legend lr-logodds-legend">
+                      <span><i className="pos" />Positive</span>
+                      <span><i className="neg" />Negative</span>
+                      <span><i className="hint" />Each dot is one sample</span>
+                    </div>
+                    <LogOddsStrip
+                      rows={rows}
+                      logit={(x) => beta0 + beta1 * x}
+                      threshold={threshold}
+                    />
+                  </div>
+                )}
               </article>
 
               <div className="lr-metrics">
                 <article className="lr-card">
                   <span className="lr-card-title">
-                    Confusion Matrix (Threshold = {Math.round(threshold * 100)})
-                    <Info />
+                    Confusion Matrix (τ = {threshold.toFixed(2)})
+                    <span title="Counts of actual classes versus model predictions at the current threshold."><Info /></span>
                   </span>
                   <table className="lr-confusion">
                     <caption>Predicted</caption>
@@ -860,16 +879,17 @@ export default function LogisticRegressionPage() {
                     <tbody>
                       <tr>
                         <th>Positive</th>
-                        <td className="hit">{metrics.tp}</td>
-                        <td className="miss">{metrics.fn}</td>
+                        <td className="hit"><button type="button" className={filterOutcome === "TP" ? "active" : ""} aria-pressed={filterOutcome === "TP"} onClick={() => setFilterOutcome(filterOutcome === "TP" ? null : "TP")}>TP {metrics.tp}</button></td>
+                        <td className="miss"><button type="button" className={filterOutcome === "FN" ? "active" : ""} aria-pressed={filterOutcome === "FN"} onClick={() => setFilterOutcome(filterOutcome === "FN" ? null : "FN")}>FN {metrics.fn}</button></td>
                       </tr>
                       <tr>
                         <th>Negative</th>
-                        <td className="miss">{metrics.fp}</td>
-                        <td className="hit">{metrics.tn}</td>
+                        <td className="miss"><button type="button" className={filterOutcome === "FP" ? "active" : ""} aria-pressed={filterOutcome === "FP"} onClick={() => setFilterOutcome(filterOutcome === "FP" ? null : "FP")}>FP {metrics.fp}</button></td>
+                        <td className="hit"><button type="button" className={filterOutcome === "TN" ? "active" : ""} aria-pressed={filterOutcome === "TN"} onClick={() => setFilterOutcome(filterOutcome === "TN" ? null : "TN")}>TN {metrics.tn}</button></td>
                       </tr>
                     </tbody>
                   </table>
+                  {filterOutcome && <p className="lr-filter-note">Showing {filterOutcome} samples. Click the cell again to clear.</p>}
                 </article>
 
                 <article className="lr-card">
@@ -899,6 +919,7 @@ export default function LogisticRegressionPage() {
                     <Info />
                   </span>
                   <dl className="lr-stats">
+                    <dt>Mean predicted probability</dt><dd>{mean(allScores).toFixed(2)}</dd>
                     <dt>Mean P (Positive)</dt>
                     <dd>{mean(posScores).toFixed(2)}</dd>
                     <dt>Mean P (Negative)</dt>
@@ -932,31 +953,15 @@ export default function LogisticRegressionPage() {
                     <Info />
                   </span>
                   <div className="lr-odds-row">
-                    Odds at Threshold
-                    <b>
-                      {(threshold / Math.max(1e-6, 1 - threshold)).toFixed(2)} :
-                      1
-                    </b>
-                  </div>
-                  <p className="lr-odds-sub">(P = {threshold.toFixed(2)})</p>
-                  <div className="lr-odds-row">
-                    Odds at Mean (Positive)
-                    <b>
-                      {(
-                        mean(posScores) / Math.max(1e-6, 1 - mean(posScores))
-                      ).toFixed(2)}{" "}
-                      : 1
-                    </b>
+                    Probability at probe <b>{inspectP.toFixed(3)}</b>
                   </div>
                   <div className="lr-odds-row">
-                    Odds at Mean (Negative)
-                    <b>
-                      {(
-                        mean(negScores) / Math.max(1e-6, 1 - mean(negScores))
-                      ).toFixed(2)}{" "}
-                      : 1
-                    </b>
+                    Odds P / (1 − P) <b>{Math.exp(Math.min(50, inspectZ)).toFixed(2)} : 1</b>
                   </div>
+                  <div className="lr-odds-row">
+                    Log-odds ln(P / (1 − P)) <b>{inspectZ.toFixed(3)}</b>
+                  </div>
+                  <div className="lr-odds-row">Linear predictor β₀ + β₁x <b>{inspectZ.toFixed(3)}</b></div>
                   <label className="lr-inline-field">
                     Inspect {current.feature}
                     <input
@@ -967,8 +972,7 @@ export default function LogisticRegressionPage() {
                     />
                   </label>
                   <p className="lr-odds-sub" style={{ textAlign: "left", margin: 0 }}>
-                    z = {inspectZ.toFixed(2)} · P = {inspectP.toFixed(3)} ·
-                    class {inspectClass}
+                    x = {predX.toFixed(2)} · predicted class {inspectClass} at τ = {threshold.toFixed(2)}
                   </p>
                   <div className="lr-callout">
                     <Lightbulb />
@@ -999,7 +1003,7 @@ export default function LogisticRegressionPage() {
                         }
                       : undefined
                   }
-                  test={metrics}
+                  test={testMetrics ?? metrics}
                   rocAuc={roc?.auc}
                   prAuc={pr}
                   baselineAccuracy={baseline?.accuracy}
@@ -1015,27 +1019,36 @@ export default function LogisticRegressionPage() {
           <section>
             <header>
               <i>1</i>
-              <b>Controls</b>
+              <b>Model Controls</b>
             </header>
             <div className="lr-field">
               <span>
-                Decision Threshold
-                <b>{Math.round(threshold * 100)}</b>
+                <label htmlFor="lr-threshold">Probability Threshold <span title="The probability cutoff used to turn P(y = 1 | x) into a predicted class."><Info /></span></label>
+                <b>{threshold.toFixed(2)}</b>
               </span>
               <div className="lr-slider">
-                0
+                0.05
                 <input
-                  aria-label="Decision threshold"
+                  id="lr-threshold"
+                  aria-label="Probability Threshold"
                   type="range"
-                  min="5"
-                  max="95"
-                  step="1"
-                  value={Math.round(threshold * 100)}
-                  onChange={(e) => setThreshold(Number(e.target.value) / 100)}
+                  min="0.05"
+                  max="0.95"
+                  step="0.01"
+                  value={threshold}
+                  onChange={(e) => updateThreshold(Number(e.target.value))}
                 />
-                100
+                0.95
               </div>
-              <small>Classify as Positive if P(Positive) ≥ threshold</small>
+              <small>Predict class 1 if P(y = 1 | x) ≥ {threshold.toFixed(2)}</small>
+            </div>
+            <div className="lr-field">
+              <span><label htmlFor="lr-beta0">Intercept β₀ <span title="The linear score when x is zero. Changing it shifts the sigmoid horizontally."><Info /></span></label><b>{beta0.toFixed(2)}</b></span>
+              <div className="lr-slider">−{beta0Limit}<input id="lr-beta0" aria-label="Intercept beta zero" type="range" min={-beta0Limit} max={beta0Limit} step="0.05" value={beta0} onChange={(e) => updateCoefficient("beta0", Number(e.target.value))} />+{beta0Limit}</div>
+            </div>
+            <div className="lr-field">
+              <span><label htmlFor="lr-beta1">Coefficient β₁ <span title="Controls how strongly x changes log-odds. Its sign sets the sigmoid direction; its magnitude sets steepness."><Info /></span></label><b>{beta1.toFixed(2)}</b></span>
+              <div className="lr-slider">−{beta1Limit}<input id="lr-beta1" aria-label="Coefficient beta one" type="range" min={-beta1Limit} max={beta1Limit} step="0.05" value={beta1} onChange={(e) => updateCoefficient("beta1", Number(e.target.value))} />+{beta1Limit}</div>
             </div>
             <b>View</b>
             <div className="lr-segmented">
@@ -1056,6 +1069,7 @@ export default function LogisticRegressionPage() {
                 </button>
               ))}
             </div>
+            <div className="lr-change-note" role="status"><Lightbulb /><span><b>What changed?</b>{changeNote}</span></div>
           </section>
 
           <section>
@@ -1080,12 +1094,8 @@ export default function LogisticRegressionPage() {
                 value={dataset}
                 onChange={(e) => choose(e.target.value as DatasetKey)}
               >
-                <option value="admissions">University Admissions</option>
-                <option value="separable">Perfect separable</option>
-                <option value="overlap">Overlapping binary</option>
-                <option value="imbalanced">Imbalanced 90/10</option>
-                <option value="severe">Severe imbalance 95/5</option>
-                <option value="xor">XOR (linear cannot solve)</option>
+                <option value="reference">Sigmoid reference (0–1)</option>
+                <option value="overlap">Overlapping binary classes</option>
                 {imported && <option value="imported">{importedLabel}</option>}
               </select>
             </div>
@@ -1093,7 +1103,7 @@ export default function LogisticRegressionPage() {
             <div className="lr-button-row">
               <button
                 onClick={() =>
-                  choose(dataset === "admissions" ? "overlap" : "admissions")
+                  choose(dataset === "reference" ? "overlap" : "reference")
                 }
               >
                 <RefreshCw />
@@ -1116,9 +1126,14 @@ export default function LogisticRegressionPage() {
                     setImportedLabel(
                       f.name.replace(/\.csv$/i, "") || "Imported CSV",
                     );
+                    setImportedFeature("Feature x");
                     setRows(p);
                     setDataset("imported");
                     setPredX(medianX(p));
+                    setCoefficientOverride(null);
+                    setSelectedIndex(null);
+                    setFilterOutcome(null);
+                    setChangeNote(`Imported ${p.length} labeled observations. The model fit and chart range updated.`);
                     setStatus(`Imported ${p.length} rows`);
                   } catch (err) {
                     setStatus(

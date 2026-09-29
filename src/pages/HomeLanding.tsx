@@ -67,6 +67,7 @@ const LEVEL_OF: Record<BadgeType, Level> = {
   "Browser Inference": "Advanced",
   Educational: "Beginner",
   "Educational Simplified": "Beginner",
+  Upcoming: "Advanced",
 };
 
 const items = navigationData.flatMap((group) =>

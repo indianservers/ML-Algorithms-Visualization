@@ -1,4 +1,5 @@
 import { createAStarPreview } from './astarPreview';
+import type { UpcomingAiVirtualLab } from './catalog';
 
 type Point = [number, number];
 const preview = createAStarPreview();
@@ -28,7 +29,7 @@ function Heatmap({ q = false }: { q?: boolean }) {
   })}{q && <><text x="1" y="20" fontSize="10" fontWeight="800" fill="#182956">Q</text><text x="101" y="91" fontSize="11" fill="#1b9f67">↗</text></>}</>;
 }
 
-export function AiAlgorithmIllustration({ slug }: { slug: string }) {
+export function AiAlgorithmIllustration({ slug, family }: { slug: string; family?: UpcomingAiVirtualLab['family'] }) {
   let art: React.ReactNode;
   switch (slug) {
     case 'uniform-cost-search': art = <><Lines paths={[[[18,54],[51,21]],[[18,54],[52,76]],[[51,21],[88,42]],[[52,76],[88,42]],[[88,42],[116,72]]]} /><path className="ai-ill-motion" d="M18 54 51 21 88 42 116 72" fill="none" stroke="#22b879" strokeWidth="3" strokeDasharray="7 4" /><text x="24" y="29" fontSize="8" fill="#4b6b9c">2</text><text x="70" y="25" fontSize="8" fill="#4b6b9c">3</text><text x="72" y="67" fontSize="8" fill="#4b6b9c">8</text>{[[18,54,'green'],[51,21,'blue'],[52,76,'orange'],[88,42,'blue'],[116,72,'orange']].map(([x,y,c],i) => <Dot key={i} x={x as number} y={y as number} color={c as string} />)}</>; break;
@@ -55,7 +56,13 @@ export function AiAlgorithmIllustration({ slug }: { slug: string }) {
     case 'markov-decision-process-explorer': art = <><path className="ai-ill-motion" d="M32 37C54 0 107 21 103 51M104 61C88 92 38 88 27 55" fill="none" stroke="#5f85d2" strokeWidth="3" strokeDasharray="5 3" /><Dot x={28} y={51} color="blue" r={15} label="S" /><Dot x={102} y={49} color="green" r={15} label="S′" /><text x="61" y="48" textAnchor="middle" fontSize="13" fill="#e89727" fontWeight="800">+R</text><text x="49" y="95" fontSize="9" fill="#5c739e">P(s′ | s, a)</text></>; break;
     case 'sarsa-learning': art = <><path className="ai-ill-motion" d="M31 20H94V70H31Z" fill="none" stroke="#36b989" strokeWidth="3" strokeDasharray="6 3" /><Dot x={31} y={20} color="blue" r={12} label="S" /><Dot x={94} y={20} color="purple" r={12} label="A" /><Dot x={94} y={70} color="orange" r={12} label="R" /><Dot x={31} y={70} color="green" r={12} label="S′" /><text x="64" y="50" textAnchor="middle" fontSize="10" fill="#52699b">on policy</text></>; break;
     case 'hidden-markov-model-forward-viterbi': art = <><Lines paths={[[[18,23],[65,23]],[[65,23],[112,23]],[[18,23],[18,72]],[[65,23],[65,72]],[[112,23],[112,72]]]} color="#9aaed2" />{[18,65,112].map((x,i)=><Dot key={i} x={x} y={23} color={['blue','purple','red'][i]} r={9} />)}{[18,65,112].map((x,i)=><rect className={i===1?'ai-ill-motion':''} key={i} x={x-7} y="65" width="14" height="14" rx="3" fill={['#82aafb','#b9a8dd','#eaa39c'][i]} stroke="#fff" />)}<text x="2" y="97" fontSize="9" fill="#63789d">hidden → observed</text></>; break;
-    default: art = <Dot x={66} y={48} />;
+    default:
+      art = family === 'Search' ? <><Tree mode="dfs" /><path className="ai-ill-motion" d="M66 10 92 39 111 74" fill="none" stroke="#20b991" strokeWidth="3" strokeDasharray="5 3" /></>
+        : family === 'Constraint Solving' ? <><Lines paths={[[[31,22],[67,22]],[[67,22],[103,22]],[[31,22],[31,62]],[[67,22],[67,62]],[[103,22],[103,62]],[[31,62],[67,62]],[[67,62],[103,62]]]} />{[[31,22,'blue'],[67,22,'green'],[103,22,'orange'],[31,62,'orange'],[67,62,'purple'],[103,62,'blue']].map(([x,y,color],index) => <Dot key={index} x={x as number} y={y as number} color={color as string} r={9} />)}<text x="65" y="91" textAnchor="middle" fontSize="10" fill="#5373ac">all different</text></>
+        : family === 'Game Search' ? <><Tree mode="minimax" /><text x="66" y="15" textAnchor="middle" fontSize="9" fill="#fff">?</text></>
+        : family === 'Probabilistic Reasoning' ? <><Lines paths={[[[22,28],[65,21]],[[65,21],[108,31]],[[22,28],[50,69]],[[65,21],[50,69]],[[65,21],[106,72]]]} /><Dot x={22} y={28} color="blue" r={10}/><Dot x={65} y={21} color="purple" r={10}/><Dot x={108} y={31} color="green" r={10}/><Dot x={50} y={69} color="orange" r={10}/><Dot x={106} y={72} color="blue" r={10}/><text x="67" y="96" textAnchor="middle" fontSize="9" fill="#5d76ad">P(state | evidence)</text></>
+        : family === 'Reinforcement Learning' ? <><Heatmap q /><path className="ai-ill-motion" d="M91 26Q115 48 91 73" fill="none" stroke="#22b98f" strokeWidth="3" strokeDasharray="5 3"/><text x="109" y="55" textAnchor="middle" fontSize="13" fill="#3887d9" fontWeight="800">R</text></>
+        : <Dot x={66} y={48} />;
   }
   return <svg className="hl-ai-illustration" viewBox="0 0 132 100" role="img" aria-label={`${slug.replaceAll('-', ' ')} concept diagram`}>
     <defs><linearGradient id="ai-blue" x2=".8" y2="1"><stop stopColor="#73b9ff" /><stop offset="1" stopColor="#245be5" /></linearGradient><linearGradient id="ai-green" x2=".8" y2="1"><stop stopColor="#6be5ae" /><stop offset="1" stopColor="#13a966" /></linearGradient><linearGradient id="ai-orange" x2=".8" y2="1"><stop stopColor="#ffce60" /><stop offset="1" stopColor="#fb8d13" /></linearGradient><linearGradient id="ai-purple" x2=".8" y2="1"><stop stopColor="#ad9aff" /><stop offset="1" stopColor="#6e4bef" /></linearGradient></defs>{art}

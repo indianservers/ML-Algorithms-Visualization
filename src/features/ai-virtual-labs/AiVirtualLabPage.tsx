@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, BrainCircuit } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BrainCircuit, Clock3, Compass, Lightbulb } from 'lucide-react';
 import { VisualizationSkeleton } from '../../components/common/EmptyState';
 import { aiVirtualLabRoute, getAiVirtualLab } from './catalog';
+import { AiAlgorithmIllustration } from './AiAlgorithmIllustration';
 import { LearningCompanion } from './LearningCompanion';
 import { readLearningStore, recordAction, writeLearningStore, type QSnapshot } from './learningModel';
 import './AiVirtualLabPage.css';
@@ -20,7 +21,7 @@ export default function AiVirtualLabPage() {
   const timelineSlug = useRef('');
   const lab = getAiVirtualLab(slug);
   const saved = searchParams.get('saved') === '1';
-  const frameUrl = useMemo(() => lab
+  const frameUrl = useMemo(() => lab && 'bundle' in lab
     ? `/ai-algorithms/${lab.bundle}/index.html?lab=${encodeURIComponent(lab.sourceKey)}${saved ? '&saved=1' : ''}`
     : '', [lab, saved]);
   const ready = readyUrl === frameUrl;
@@ -56,6 +57,20 @@ export default function AiVirtualLabPage() {
 
   if (!lab) {
     return <main className="ai-virtual-lab-page"><h1>Lab not found</h1><Link to="/">Return home</Link></main>;
+  }
+
+  if ('family' in lab) {
+    return <main className="ai-virtual-lab-page ai-upcoming-page">
+      <div className="ai-virtual-lab-heading">
+        <Link to="/" className="ai-virtual-lab-back"><ArrowLeft size={17} /> AI Virtual Labs</Link>
+        <div className="ai-virtual-lab-title"><span className="ai-virtual-lab-mark"><BrainCircuit size={22} /></span><div><p>AI Algorithms Virtual Labs · {lab.family}</p><h1>{lab.title}</h1><span>{lab.summary}</span></div></div>
+      </div>
+      <div className="ai-upcoming-hero">
+        <div><span className="ai-upcoming-badge"><Clock3 size={16}/> Upcoming Virtual Lab</span><h2>Explore {lab.title}</h2><p>{lab.summary} This route is reserved for a future interactive lab. The simulator and practice controls are still being developed.</p><Link to={aiVirtualLabRoute(lab.relatedSlug)} className="ai-upcoming-related"><Compass size={17}/> Explore a related live lab <ArrowRight size={16}/></Link></div>
+        <div className="ai-upcoming-art"><AiAlgorithmIllustration slug={lab.slug} family={lab.family}/></div>
+      </div>
+      <div className="ai-upcoming-details"><section><h3><Lightbulb size={18}/> Concepts this lab will cover</h3><ul>{lab.concepts.map(concept => <li key={concept}>{concept}</li>)}</ul></section><section><h3><BrainCircuit size={18}/> Planned interaction</h3><p>{lab.plannedInteraction}</p><p className="ai-upcoming-note">Upcoming — this interaction is not available yet.</p></section></div>
+    </main>;
   }
 
   return (

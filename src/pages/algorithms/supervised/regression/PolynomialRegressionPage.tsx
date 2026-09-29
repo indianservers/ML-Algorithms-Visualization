@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { LabLessonPanel } from "../../../../components/common/LabTabs";
+import { LabLessonPanel, useUrlTab } from "../../../../components/common/LabTabs";
 import {
   Activity,
   BarChart3,
@@ -83,12 +83,12 @@ function sineRows(noise: number, count = 200): Point[] {
 }
 const datasetFactories = {
   sine: (noise: number) => sineRows(noise),
-  quadratic: (_noise: number) =>
+  quadratic: () =>
     Array.from({ length: 11 }, (_, i) => {
       const x = i - 5;
       return { x, y: x * x };
     }),
-  cubic: (_noise: number) =>
+  cubic: () =>
     Array.from({ length: 21 }, (_, i) => {
       const x = i - 10;
       return { x, y: 0.5 * x ** 3 - 2 * x ** 2 + x + noiseAt(i) * 6 };
@@ -480,7 +480,7 @@ function ErrorChart({
 }
 
 export default function PolynomialRegressionPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("learn"),
+  const [activeTab, setActiveTab] = useUrlTab<Tab>("learn"),
     [degree, setDegree] = useState(3),
     [alpha, setAlpha] = useState(0),
     [noise, setNoise] = useState(0.1),
@@ -527,7 +527,8 @@ export default function PolynomialRegressionPage() {
     },
     chooseDataset = (id: DatasetId) => {
       setDatasetId(id);
-      setRows(datasetFactories[id](noise));
+      const factory: (level: number) => Point[] = datasetFactories[id];
+      setRows(factory(noise));
     },
     retrain = () => {
       setTraining(true);

@@ -1,12 +1,12 @@
 .guide-launch {
   position: fixed;
   right: 16px;
-  bottom: 16px;
+  bottom: 3px;
   z-index: 360;
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  height: 36px;
+  height: 34px;
   padding: 0 13px;
   border: 0;
   border-radius: 999px;
@@ -174,7 +174,7 @@
 @media (max-width: 720px) {
   .guide-card {
     top: auto;
-    bottom: 64px;
+    bottom: 68px;
     right: 8px;
     left: 8px;
     width: auto;

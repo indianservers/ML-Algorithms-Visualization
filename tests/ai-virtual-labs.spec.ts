@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { aiVirtualLabs, aiVirtualLabRoute } from '../src/features/ai-virtual-labs/catalog';
+import { aiVirtualLabs, upcomingAiVirtualLabs, allAiVirtualLabs, aiVirtualLabRoute } from '../src/features/ai-virtual-labs/catalog';
 import { learningContent } from '../src/features/ai-virtual-labs/learningCatalog';
 import { theoryContent } from '../src/features/ai-virtual-labs/theoryCatalog';
 
@@ -11,17 +11,17 @@ test('home category follows Computer Vision and lists all labs', async ({ page }
   const vision = page.locator('.hl-group').filter({ has: page.getByRole('heading', { name: 'Computer Vision' }) });
   const group = page.locator('.hl-ai-section');
   expect(await vision.evaluate((node) => node.compareDocumentPosition(document.querySelector('.hl-ai-section')!) & Node.DOCUMENT_POSITION_FOLLOWING)).toBeTruthy();
-  await expect(group.locator('.hl-ai-card')).toHaveCount(24);
+  await expect(group.locator('.hl-ai-card')).toHaveCount(39);
   await group.getByRole('button', { name: 'Collapse' }).click();
-  await expect(group.getByText('24 Labs')).toBeVisible();
+  await expect(group.getByText('24 Labs · 15 Upcoming')).toBeVisible();
   await group.getByRole('button', { name: 'Expand' }).click();
   await group.getByRole('searchbox', { name: 'Search AI algorithms' }).fill('bayes');
-  await expect(group.locator('.hl-ai-card')).toHaveCount(2);
+  await expect(group.locator('.hl-ai-card')).toHaveCount(3);
   await group.getByRole('searchbox', { name: 'Search AI algorithms' }).fill('not-a-real-algorithm');
   await expect(group.getByText('No algorithms found')).toBeVisible();
   await group.getByRole('button', { name: 'Clear search' }).click();
-  await expect(group.locator('.hl-ai-card')).toHaveCount(24);
-  for (const [index, lab] of aiVirtualLabs.entries()) {
+  await expect(group.locator('.hl-ai-card')).toHaveCount(39);
+  for (const [index, lab] of allAiVirtualLabs.entries()) {
     const card = group.locator('.hl-ai-card').nth(index);
     await expect(card).toHaveAttribute('href', aiVirtualLabRoute(lab.slug));
     await expect(card).toContainText(lab.title);
@@ -37,7 +37,7 @@ test('AI launcher fits responsive widths and exposes keyboard focus', async ({ p
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
     expect(overflow, `launcher overflows at ${width}px`).toBeLessThanOrEqual(2);
     const cards = page.locator('.hl-ai-section .hl-ai-card');
-    await expect(cards).toHaveCount(24);
+    await expect(cards).toHaveCount(39);
     const cardWidth = await cards.first().evaluate((node) => node.getBoundingClientRect().width);
     expect(cardWidth, `card too narrow at ${width}px`).toBeGreaterThan(180);
   }
@@ -46,6 +46,21 @@ test('AI launcher fits responsive widths and exposes keyboard focus', async ({ p
   await expect(first).toBeFocused();
   await page.keyboard.press('Space');
   await expect(page).toHaveURL(/\/ai-algorithms\/uniform-cost-search$/);
+});
+
+test('15 upcoming AI labs have distinct working routes without live simulators', async ({ page }) => {
+  expect(upcomingAiVirtualLabs).toHaveLength(15);
+  expect(new Set(allAiVirtualLabs.map(lab => lab.slug)).size).toBe(39);
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  for (const lab of upcomingAiVirtualLabs) {
+    await page.goto(`http://localhost:3355${aiVirtualLabRoute(lab.slug)}`);
+    await expect(page.getByRole('heading', { name: lab.title, exact: true })).toBeVisible();
+    await expect(page.getByText('Upcoming Virtual Lab', { exact: true })).toBeVisible();
+    await expect(page.locator('iframe.ai-virtual-lab-frame')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: /Explore a related live lab/ })).toHaveAttribute('href', aiVirtualLabRoute(lab.relatedSlug));
+  }
+  expect(errors).toEqual([]);
 });
 
 test('A* preview and reduced-motion behavior remain usable', async ({ page }) => {

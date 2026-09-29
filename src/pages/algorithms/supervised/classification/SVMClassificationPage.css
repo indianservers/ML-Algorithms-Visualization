@@ -280,6 +280,28 @@
   border-radius: 5px;
   background: #14223a;
 }
+
+/* Let the shared lesson-tab cards sit on the page surface in both themes. */
+#main-content .svmc-bar {
+  gap: 8px;
+  height: 58px;
+  padding: 3px;
+  border: 1px solid #dce8f7;
+  border-radius: 12px;
+  background: #edf4ff;
+}
+#main-content .svmc-bar nav[data-ml-lesson-tabs] {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+html:not(.dark) #main-content .svmc-bar > label,
+html:not(.dark) #main-content .svmc-bar > button {
+  color: #28436e;
+  border-color: #dbe5f4;
+  background: #fff;
+}
+html:not(.dark) #main-content .svmc-bar select { color: #28436e; }
+html.dark #main-content .svmc-bar { border-color: #294567; background: #0b1d35; }
 .svmc-work {
   position: absolute;
   top: 192px;

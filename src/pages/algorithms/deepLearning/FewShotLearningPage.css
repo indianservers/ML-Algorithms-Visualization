@@ -9,6 +9,19 @@
     system-ui;
   padding: 111px 317px 52px 228px;
 }
+.few-tab-panel { padding: 24px; min-height: 380px; line-height: 1.6; }
+.few-tab-panel h2 { margin: 0 0 12px; font-size: 21px; }
+.few-tab-panel p { max-width: 72ch; color: #c9d6ed; }
+.few-tab-panel button { padding: 9px 12px; }
+.few-tab-panel ol { display: grid; gap: 8px; padding-left: 24px; }
+.few-dataset-controls { display: grid; gap: 12px; max-width: 430px; margin: 16px 0; }
+.few-dataset-controls label { display: grid; gap: 5px; }
+.few-dataset-controls select { padding: 8px; }
+.few-dataset-controls input[type="range"] { width: 100%; }
+.few-metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 20px 0; }
+.few-metric-grid article { display: grid; gap: 8px; padding: 15px; border: 1px solid #385477; border-radius: 9px; }
+.few-metric-grid strong { font-size: 24px; color: #8ab7ff; }
+.few-advanced { min-width: 0; }
 .few-page * {
   box-sizing: border-box;
 }

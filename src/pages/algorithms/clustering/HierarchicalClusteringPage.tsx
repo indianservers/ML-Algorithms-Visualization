@@ -37,6 +37,7 @@ import {
   silhouetteScore,
 } from "../../../lib/clustering/clusteringEval";
 import { ClusteringDiagnosticsPanel } from "../../../components/ml/ClusteringDiagnosticsPanel";
+import { LabLessonPanel, useUrlTab } from "../../../components/common/LabTabs";
 import "./HierarchicalClusteringPage.css";
 const EMPTY_HIER: HierarchicalModel = {
   sampleCount: 0,
@@ -106,8 +107,8 @@ const LABELS: Record<Dataset, string> = {
 };
 const dist = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
 export default function HierarchicalClusteringPage() {
-  const [tab, setTab] = useState<Tab>("visualize"),
-    [dataset, setDataset] = useState<Dataset>("iris"),
+  const [tab, setTab] = useUrlTab<Tab>("learn");
+  const [dataset, setDataset] = useState<Dataset>("iris"),
     [points, setPoints] = useState<Point[]>(BUILT.iris),
     [imported, setImported] = useState<Point[]>([]),
     [linkage, setLinkage] = useState<LinkageMethod>("ward"),
@@ -300,10 +301,13 @@ export default function HierarchicalClusteringPage() {
         <ChevronDown />
       </header>
       <main>
-        <nav>
+        <nav role="tablist" aria-label="Hierarchical clustering sections">
           {TABS.map((item) => (
             <button
               key={item}
+              type="button"
+              role="tab"
+              aria-selected={tab === item}
               className={tab === item ? "active" : ""}
               onClick={() => setTab(item)}
             >
@@ -311,34 +315,34 @@ export default function HierarchicalClusteringPage() {
             </button>
           ))}
         </nav>
-        <section className="hc-work">
+        {tab === "learn" && <LabLessonPanel tab="Learn" route="/ml/clustering/hierarchical-clustering" />}
+        {tab === "dataset" && <section className="hc-tab-panel" aria-label="Dataset workspace">
+          <h2>Explore the dataset</h2>
+          <p>Hierarchical clustering builds a tree from every sample. Select a shape to see how linkage changes the grouping.</p>
+          <label htmlFor="hc-dataset-select">Dataset</label>
+          <select id="hc-dataset-select" value={dataset} onChange={(event) => choose(event.target.value as Dataset)}>
+            {Object.entries(LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
+          <p><strong>{points.length}</strong> samples · <strong>{points[0].features.length}</strong> features · {points[0].features.length > 2 ? "Clustering uses all features; the chart is a PCA projection." : "Chart uses the original coordinates."}</p>
+          <button type="button" onClick={() => uploadRef.current?.click()}><Upload /> Upload numeric CSV</button>
+          <p className="hc-tab-hint">Try the bridge dataset with single and complete linkage, then compare the cluster counts at the same cut height.</p>
+        </section>}
+        {tab === "train" && <section className="hc-tab-panel hc-train-panel" aria-label="Training workspace"><h2>Build the hierarchy</h2><p>Choose linkage and distance metric in Algorithm Controls. The dendrogram is refitted when either setting changes; moving the cut only changes the final grouping.</p><div><span>Linkage: <strong>{linkage}</strong></span><span>Distance: <strong>{metric}</strong></span><span>Merges: <strong>{model.merges.length}</strong></span><span>Clusters at cut: <strong>{clusterCount}</strong></span></div></section>}
+        {tab === "compare" && <div className="hc-tab-panel"><ClusteringDiagnosticsPanel
+          algorithm="Hierarchical"
+          dataset={LABELS[dataset]}
+          samples={points.length}
+          features={points[0]?.features.length ?? 0}
+          preprocessing={(points[0]?.features.length ?? 0) > 2 ? "All selected dimensions; scatter is PCA" : "Raw coordinates"}
+          status={trained.error ? "ERROR" : "READY"}
+          clustersFound={clusterCount}
+          extras={[["silhouette", formatCl(silhouette)], ["calinskiHarabasz", formatCl(calinski, 1)], ["daviesBouldin", formatCl(davies)]]}
+          why={linkage === "single" && dataset === "wine" ? "Single linkage can chain through the bridge, merging the two blobs earlier than complete linkage." : `Cut height ${normalizedCut.toFixed(2)} yields ${clusterCount} clusters from the stored dendrogram (hierarchy is not refit when only the cut changes).`}
+          compare={compareRows}
+        /></div>}
+        {tab === "explain" && <LabLessonPanel tab="Explain" route="/ml/clustering/hierarchical-clustering" />}
+        {(tab === "visualize" || tab === "train") && <section className="hc-work">
           {trained.error && <p role="alert">{trained.error}</p>}
-          {tab === "compare" && (
-            <ClusteringDiagnosticsPanel
-              algorithm="Hierarchical"
-              dataset={LABELS[dataset]}
-              samples={points.length}
-              features={points[0]?.features.length ?? 0}
-              preprocessing={
-                (points[0]?.features.length ?? 0) > 2
-                  ? "All selected dimensions; scatter is PCA"
-                  : "Raw coordinates"
-              }
-              status={trained.error ? "ERROR" : "READY"}
-              clustersFound={clusterCount}
-              extras={[
-                ["silhouette", formatCl(silhouette)],
-                ["calinskiHarabasz", formatCl(calinski, 1)],
-                ["daviesBouldin", formatCl(davies)],
-              ]}
-              why={
-                linkage === "single" && dataset === "wine"
-                  ? "Single linkage can chain through the bridge, merging the two blobs earlier than complete linkage."
-                  : `Cut height ${normalizedCut.toFixed(2)} yields ${clusterCount} clusters from the stored dendrogram (hierarchy is not refit when only the cut changes).`
-              }
-              compare={compareRows}
-            />
-          )}
           <header>
             <h2>♧ Linked Dendrogram & Scatter ⓘ</h2>
             <p>Drag the cut height line to form clusters.</p>
@@ -413,8 +417,8 @@ export default function HierarchicalClusteringPage() {
               </span>
             ))}
           </footer>
-        </section>
-        <section className="hc-cards">
+        </section>}
+        {(tab === "visualize" || tab === "metrics") && <section className="hc-cards">
           <article>
             <h3>Cluster Summary (k={clusterCount})</h3>
             <div className="summary-head">Size · Avg. Distance · Diameter</div>
@@ -477,7 +481,7 @@ export default function HierarchicalClusteringPage() {
               </p>
             ))}
           </article>
-        </section>
+        </section>}
       </main>
       <aside className="hc-controls">
         <article>

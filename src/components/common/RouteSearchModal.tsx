@@ -108,6 +108,7 @@ export const RouteSearchModal: React.FC<RouteSearchModalProps> = ({ open, onClos
             <option>Educational</option>
             <option>Concept</option>
             <option>Scaffold</option>
+            <option>Upcoming</option>
           </select>
           <select
             value={levelFilter}
@@ -123,6 +124,7 @@ export const RouteSearchModal: React.FC<RouteSearchModalProps> = ({ open, onClos
             <option>Advanced</option>
             <option>Browser Trainable</option>
             <option>Browser Inference</option>
+            <option>Upcoming</option>
           </select>
         </div>
         <div className="max-h-[65vh] overflow-y-auto p-2">

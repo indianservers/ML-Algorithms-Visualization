@@ -51,8 +51,7 @@ const datasets = [
 
 export default function GRUPage() {
   const { tab, setTab } = useLabTabs("Visualize");
-  const [advanced, setAdvanced] = useState(false),
-    [dataset, setDataset] = useState(datasets[0]),
+  const [dataset, setDataset] = useState(datasets[0]),
     [source, setSource] = useState("Built-in"),
     [sequenceLength, setSequenceLength] = useState(8),
     [step, setStep] = useState(3),
@@ -143,17 +142,6 @@ export default function GRUPage() {
       .catch(() => setToast("Could not read dataset"));
     event.target.value = "";
   };
-  if (advanced)
-    return (
-      <div className="gru-advanced">
-        <button onClick={() => setAdvanced(false)}>
-          ← Return to GRU Visualizer
-        </button>
-        <Suspense fallback={<p>Loading TensorFlow.js lab…</p>}>
-          <TensorFlowDeepLearningLab mode="gru" />
-        </Suspense>
-      </div>
-    );
   const retention = Math.round(active.update * 100),
     longGRU =
       result
@@ -213,7 +201,6 @@ export default function GRUPage() {
               className={tab === name ? "active" : ""}
               onClick={() => {
                 setTab(name);
-                if (name === "Build / Train") setAdvanced(true);
               }}
               key={name}
             >
@@ -232,6 +219,7 @@ export default function GRUPage() {
         </div>
       </header>
       <LabLessonOrWork tab={tab} route="/ml/deep-learning/gru">
+      {tab === "Build / Train" ? <div className="gru-advanced"><Suspense fallback={<p>Loading TensorFlow.js lab…</p>}><TensorFlowDeepLearningLab mode="gru" /></Suspense></div> : tab === "Dataset" ? <section className="gru-tab-panel panel"><h2>Sequence dataset</h2><p>The visualizer turns each row into a token sequence. Choose a dataset or upload your own text rows to inspect the inputs before training.</p><label>Dataset <select value={dataset.name} onChange={(event) => { const next = datasets.find((item) => item.name === event.target.value); if (next) { setDataset(next); setStep(0); } }}>{!datasets.some((item) => item.name === dataset.name) && <option>{dataset.name}</option>}{datasets.map((item) => <option key={item.name}>{item.name}</option>)}</select></label><p>{dataset.rows.length} preview rows · sequence length {sequenceLength}</p><ol>{dataset.rows.map((row, index) => <li key={`${row}-${index}`}>{row} <strong>{dataset.labels[index]}</strong></li>)}</ol><label className="gru-upload">Upload CSV, JSON, or TXT <input type="file" accept=".csv,.json,.txt" onChange={upload} /></label></section> : tab === "Metrics" ? <section className="gru-tab-panel panel"><h2>Gate and state metrics</h2><p>These values come from the current visualizer step. Change the sequence or parameters on Visualize, then return here to compare.</p><div className="gru-metric-grid"><article><span>Update gate zₜ</span><strong>{active.update.toFixed(3)}</strong></article><article><span>Reset gate rₜ</span><strong>{active.reset.toFixed(3)}</strong></article><article><span>Candidate state</span><strong>{active.candidate.toFixed(3)}</strong></article><article><span>Hidden state hₜ</span><strong>{active.hidden.toFixed(3)}</strong></article></div><p>GRU retention over remaining steps: {longGRU.toFixed(2)} · simple RNN: {longRNN.toFixed(2)}</p></section> : <>
       <main>
         <section className="gru-toolbar panel">
           <button onClick={reset}>
@@ -563,6 +551,7 @@ export default function GRUPage() {
           <Save /> Save Experiment
         </button>
       </footer>
+      </>}
       </LabLessonOrWork>
     </div>
   );

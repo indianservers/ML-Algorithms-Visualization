@@ -1,8 +1,8 @@
-import { aiVirtualLabs, aiVirtualLabRoute } from '../features/ai-virtual-labs/catalog';
+import { allAiVirtualLabs, aiVirtualLabRoute } from '../features/ai-virtual-labs/catalog';
 
 export type BadgeType =
   | 'Beginner' | 'Intermediate' | 'Advanced' | 'Concept'
-  | 'Browser Trainable' | 'Browser Inference' | 'Educational' | 'Educational Simplified';
+  | 'Browser Trainable' | 'Browser Inference' | 'Educational' | 'Educational Simplified' | 'Upcoming';
 
 export interface NavItem {
   label: string;
@@ -186,10 +186,10 @@ export const navigationData: NavCategory[] = [
   {
     category: 'AI Algorithms Virtual Labs',
     icon: 'Brain',
-    items: aiVirtualLabs.map((lab) => ({
+    items: allAiVirtualLabs.map((lab) => ({
       label: lab.title,
       route: aiVirtualLabRoute(lab.slug),
-      badge: 'Advanced' as const,
+      badge: 'family' in lab ? 'Upcoming' as const : 'Advanced' as const,
     })),
   },
   {

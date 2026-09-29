@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BrainCircuit, ChevronDown, ChevronRight, Search, X } from 'lucide-react';
-import { aiVirtualLabs, aiVirtualLabRoute } from './catalog';
+import { allAiVirtualLabs, aiVirtualLabs, aiVirtualLabRoute } from './catalog';
 import { AiAlgorithmIllustration } from './AiAlgorithmIllustration';
 import './AiAlgorithmsSection.css';
 
@@ -57,6 +57,21 @@ const cardDescriptions: Record<string, string> = {
   'markov-decision-process-explorer': 'Inspect transitions, rewards and policies',
   'sarsa-learning': 'Learn action values from on-policy updates',
   'hidden-markov-model-forward-viterbi': 'Decode sequences from hidden states',
+  'depth-limited-search': 'Stop DFS at a chosen depth',
+  'iterative-deepening-a-star': 'Repeat A* with rising cost bounds',
+  'recursive-best-first-search': 'Best-first search with linear memory',
+  'ao-star-search': 'Solve AND/OR goal graphs',
+  'csp-backtracking': 'Assign values without conflicts',
+  'forward-checking': 'Prune future variable domains',
+  'ac-3-arc-consistency': 'Enforce arc consistency',
+  'min-conflicts': 'Repair conflicting assignments',
+  'expectimax-search': 'Plan around chance outcomes',
+  'variable-elimination': 'Sum out Bayesian variables',
+  'belief-propagation': 'Pass probabilistic messages',
+  'particle-filtering': 'Track hidden state with samples',
+  'pomdp-belief-state-planning': 'Plan under partial observation',
+  'monte-carlo-control': 'Improve policy from episodes',
+  'deep-q-network': 'Learn action values with a neural net',
 };
 
 function normalized(value: string) {
@@ -77,9 +92,9 @@ export function AiAlgorithmsSection({ globalRoutes }: { globalRoutes?: string[] 
   const navigate = useNavigate();
   const routeSet = React.useMemo(() => globalRoutes ? new Set(globalRoutes) : null, [globalRoutes]);
   const words = normalized(query).split(/\s+/).filter(Boolean);
-  const labs = aiVirtualLabs.filter((lab) => {
+  const labs = allAiVirtualLabs.filter((lab) => {
     if (routeSet && !routeSet.has(aiVirtualLabRoute(lab.slug))) return false;
-    const text = normalized(`${lab.title} ${lab.summary} ${terms[lab.slug] ?? ''}`);
+    const text = normalized(`${lab.title} ${lab.summary} ${'family' in lab ? `${lab.family} ${lab.concepts.join(' ')}` : terms[lab.slug] ?? ''}`);
     return words.every((word) => text.includes(word));
   });
   const isCollapsed = collapsed;
@@ -90,17 +105,18 @@ export function AiAlgorithmsSection({ globalRoutes }: { globalRoutes?: string[] 
       <div className="hl-ai-heading"><h3 id="hl-ai-title">AI Algorithms Virtual Labs</h3><p>Explore · Visualize · Experiment · Master popular AI algorithms</p></div>
       <div className="hl-ai-tools">
         {!isCollapsed && <label className="hl-ai-search"><Search aria-hidden="true" /><input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search algorithms..." aria-label="Search AI algorithms" />{query && <button type="button" onClick={() => setQuery('')} aria-label="Clear AI algorithm search"><X /></button>}</label>}
-        {isCollapsed && <span className="hl-ai-count">{aiVirtualLabs.length} Labs</span>}
+        {isCollapsed && <span className="hl-ai-count">{aiVirtualLabs.length} Labs · {allAiVirtualLabs.length - aiVirtualLabs.length} Upcoming</span>}
         <button className="hl-ai-toggle" type="button" onClick={() => setCollapsed(!collapsed)} aria-expanded={!isCollapsed} aria-controls="hl-ai-grid-body">{isCollapsed ? 'Expand' : 'Collapse'}<ChevronDown aria-hidden="true" /></button>
       </div>
     </header>
     <div className="hl-ai-body-wrap" id="hl-ai-grid-body" aria-hidden={isCollapsed} inert={isCollapsed}>
       <div className="hl-ai-body">
-        {labs.length ? <div className="hl-ai-grid">{labs.map((lab) => <Link className={`hl-ai-card hl-ai-card-${lab.sourceKey}`} key={lab.slug} to={aiVirtualLabRoute(lab.slug)} aria-label={`Open ${lab.title} lab`} onKeyDown={(event) => { if (event.key === ' ') { event.preventDefault(); navigate(aiVirtualLabRoute(lab.slug)); } }}>
+        {labs.length ? <div className="hl-ai-grid">{labs.map((lab) => <Link className={`hl-ai-card hl-ai-card-${'family' in lab ? 'upcoming' : lab.sourceKey}`} key={lab.slug} to={aiVirtualLabRoute(lab.slug)} aria-label={`${'family' in lab ? 'View upcoming' : 'Open'} ${lab.title} lab`} onKeyDown={(event) => { if (event.key === ' ') { event.preventDefault(); navigate(aiVirtualLabRoute(lab.slug)); } }}>
           <span className="hl-ai-copy"><strong><Title title={lab.title} query={query} /></strong><span>{cardDescriptions[lab.slug] ?? lab.summary}</span></span>
-          <AiAlgorithmIllustration slug={lab.slug} />
-          <span className="hl-ai-card-actions" aria-hidden="true"><span className="hl-ai-open">Open Lab</span><span className="hl-ai-arrow"><ChevronRight /></span></span>
-          {lab.sourceKey === 'astar' && <span className="hl-ai-hint">✦ Try different heuristics and see the path change!</span>}
+          <AiAlgorithmIllustration slug={lab.slug} family={'family' in lab ? lab.family : undefined} />
+          <span className="hl-ai-card-actions" aria-hidden="true"><span className="hl-ai-open">{'family' in lab ? 'Upcoming' : 'Open Lab'}</span><span className="hl-ai-arrow"><ChevronRight /></span></span>
+          {'family' in lab && <span className="hl-ai-upcoming-tag">{lab.family}</span>}
+          {'sourceKey' in lab && lab.sourceKey === 'astar' && <span className="hl-ai-hint">✦ Try different heuristics and see the path change!</span>}
         </Link>)}</div> : <div className="hl-ai-empty"><Search aria-hidden="true" /><strong>No algorithms found</strong><span>Try another algorithm name, concept, or category.</span><button type="button" onClick={() => setQuery('')}>Clear search</button></div>}
       </div>
     </div>

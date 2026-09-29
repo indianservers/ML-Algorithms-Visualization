@@ -147,6 +147,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, onToggle = () => un
             <option>Educational</option>
             <option>Concept</option>
             <option>Scaffold</option>
+            <option>Upcoming</option>
           </select>
           <select value={badgeFilter} onChange={event => setBadgeFilter(event.target.value as BadgeType | 'All')} className="min-h-10 rounded-md border border-gray-200 bg-gray-50 px-2 py-2 text-xs text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
             <option>All</option>

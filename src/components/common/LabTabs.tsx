@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { ArrowRight, BarChart3, Lightbulb, Play, Scale, Target } from "lucide-react";
 import {
   getAlgorithmByRoute,
   getAllAlgorithms,
@@ -14,6 +15,7 @@ import {
   markSectionVisited,
 } from "../../stores/learningStore";
 import { LabSectionEmpty } from "./LabChrome";
+import { AlgorithmGlyph } from "./AlgorithmGlyph";
 import "./LabTabs.css";
 
 export const LAB_TABS = [
@@ -195,7 +197,14 @@ function GuideLearnBody({ route, heroMedia, learnActions }: { route: string; her
           {learn.story ? <p>{learn.story}</p> : null}
           {idea?.teach ? <p className="lab-tab-tip">{idea.teach}</p> : null}
         </div>
-        {heroMedia}
+        {heroMedia ?? (
+          <div className="lab-guide-art" aria-label={`${learn.label} in three steps`}>
+            <div className="lab-guide-art-mark"><AlgorithmGlyph route={route} label={learn.label} size={94} /></div>
+            <ol>
+              {learn.howItThinks.slice(0, 3).map((step) => <li key={step}>{step}</li>)}
+            </ol>
+          </div>
+        )}
       </section>
 
       {learn.important.length ? (
@@ -209,7 +218,14 @@ function GuideLearnBody({ route, heroMedia, learnActions }: { route: string; her
         </section>
       ) : null}
 
-      {learnActions}
+      {learnActions ?? (
+        <div className="lab-guide-actions" aria-label="Continue learning">
+          <Link to={`${route}?tab=visualize`} className="lab-guide-action-try"><Target /><span><b>Try it yourself</b><small>Explore the live visualization.</small></span><ArrowRight /></Link>
+          <Link to={`${route}?tab=train`} className="lab-guide-action-watch"><Play /><span><b>Watch it work</b><small>Run the algorithm step by step.</small></span><ArrowRight /></Link>
+          <Link to={`${route}?tab=metrics`} className="lab-guide-action-numbers"><BarChart3 /><span><b>Check the numbers</b><small>Inspect the results and measures.</small></span><ArrowRight /></Link>
+          <Link to={`${route}?tab=compare`} className="lab-guide-action-compare"><Scale /><span><b>Compare models</b><small>See how related methods differ.</small></span><Lightbulb /></Link>
+        </div>
+      )}
 
       {learn.theory.length ? (
         <section className="lab-guide-theory">

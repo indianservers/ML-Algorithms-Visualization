@@ -361,6 +361,24 @@ const authored: Record<
     parameters: ["k (cluster count)", "distance metric", "initialization (random or k-medoids++)"],
     miniExample: "Three shop locations among customer dots: the medoid is a real customer address, never a GPS average in a lake.",
   },
+  "/ml/clustering/hierarchical-clustering": {
+    important: [
+      "Agglomerative clustering begins with one cluster per sample and merges the closest pair at each step. The full merge history is a dendrogram.",
+      "A horizontal cut through the dendrogram defines the final groups. Raising the cut joins groups; lowering it splits them.",
+      "Single linkage uses the closest cross-cluster pair and can form chains. Complete linkage uses the farthest pair and favors tighter groups.",
+      "Average linkage uses mean cross-cluster distance. Ward linkage merges the pair with the smallest increase in within-cluster squared error.",
+      "Changing the cut height reuses the same hierarchy; changing linkage or metric rebuilds it.",
+      "Feature scales shape distances. Standardize unlike units before treating the dendrogram as evidence of natural groups.",
+    ],
+    theory: [
+      "At each agglomerative step, compute the distance between every eligible pair of current clusters, merge the closest pair under the selected linkage rule, and record the merge height. Repeat until one cluster remains.",
+      "Single: min pairwise distance. Complete: max pairwise distance. Average: mean pairwise distance. Ward: increase in within-cluster sum of squares, implemented here with Euclidean distance.",
+      "The dendrogram records merge order and heights, not ground-truth labels. Use the scatter plot and silhouette, Calinski–Harabasz, and Davies–Bouldin scores to judge a chosen cut; no one score proves the clusters are meaningful.",
+    ],
+    formula: "d_single(A,B) = min_{a∈A,b∈B} d(a,b);  d_complete(A,B) = max_{a∈A,b∈B} d(a,b)",
+    parameters: ["Linkage method", "Distance metric", "Cut height", "Maximum clusters"],
+    miniExample: "Two dense blobs joined by a thin bridge may merge early with single linkage because neighboring bridge points are close. Complete linkage often keeps the blobs separate longer.",
+  },
   "/ml/clustering/mean-shift": {
     important: [
       "Mean Shift does not take K. It climbs the density. Bandwidth is the neighborhood radius used to estimate that density.",

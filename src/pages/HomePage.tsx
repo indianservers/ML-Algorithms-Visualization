@@ -101,6 +101,7 @@ function HomePageOriginal() {
     },
     { label: "Concept", count: summary.counts.Concept, color: "bg-purple-500" },
     { label: "Scaffold", count: summary.counts.Scaffold, color: "bg-red-500" },
+    { label: "Upcoming", count: summary.counts.Upcoming, color: "bg-violet-500" },
   ];
   const categoryCoverage = navigationData.map((category) => {
     const items = category.items;
@@ -312,7 +313,7 @@ function HomePageOriginal() {
           <p className="mb-4 text-sm font-semibold text-gray-700 dark:text-gray-200">
             {summary.counts.Implemented} Implemented ·{" "}
             {summary.counts.Educational} Educational · {summary.counts.Concept}{" "}
-            Concept · {summary.counts.Scaffold} Scaffold · {summary.total} Total
+            Concept · {summary.counts.Scaffold} Scaffold · {summary.counts.Upcoming} Upcoming · {summary.total} Total
           </p>
           <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             {categoryCoverage.slice(0, 12).map((item) => (

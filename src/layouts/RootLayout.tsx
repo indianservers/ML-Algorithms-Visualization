@@ -36,6 +36,8 @@ import {
 import { GuideMode } from "../components/common/GuideMode";
 import { FitToViewport } from "../components/common/FitToViewport";
 import { SiteFooter } from "../components/common/SiteFooter";
+import { AlgorithmTabPresentation } from "../components/common/AlgorithmTabPresentation";
+import { TrainingActivityPanel } from "../components/common/TrainingActivityPanel";
 import { useGuideMode } from "../stores/uiStore";
 import "../styles/labTheme.css";
 import "../styles/nestedLabLayout.css";
@@ -433,7 +435,7 @@ export const RootLayout: React.FC = () => {
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={location.pathname}
-        className={location.pathname === "/" ? "min-h-full" : "h-full min-h-0"}
+        className={location.pathname === "/" || location.pathname.startsWith("/ai-algorithms/") ? "min-h-full" : "h-full min-h-0"}
         initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -6 }}
@@ -469,12 +471,14 @@ export const RootLayout: React.FC = () => {
   if (location.pathname === "/") {
     return (
       <div
-        className="h-screen min-h-0 w-full overflow-x-hidden overflow-y-auto"
+        className="flex h-screen min-h-0 w-full flex-col overflow-hidden"
         style={{ background: "var(--bg-app)", color: "var(--text-primary)" }}
       >
         <RouteProgressBar />
         <GuideMode />
-        {page}
+        <main className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+          {page}
+        </main>
         <SiteFooter />
         {chrome}
       </div>
@@ -488,6 +492,7 @@ export const RootLayout: React.FC = () => {
     >
       <RouteProgressBar />
       <GuideMode />
+      <AlgorithmTabPresentation />
       <a href="#main-content" className="skip-link print:hidden">
         Skip to content
       </a>
@@ -575,8 +580,9 @@ export const RootLayout: React.FC = () => {
         ) : (
           page
         )}
-        <SiteFooter />
       </main>
+      <SiteFooter />
+      <TrainingActivityPanel />
       {chrome}
     </div>
   );

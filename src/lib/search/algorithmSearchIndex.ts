@@ -23,6 +23,7 @@ export const LEVEL_OF_BADGE: Record<BadgeType, AlgorithmLevel> = {
   'Browser Inference': 'Advanced',
   Educational: 'Beginner',
   'Educational Simplified': 'Beginner',
+  Upcoming: 'Advanced',
 };
 
 export interface AlgorithmSearchEntry extends NavItem {

@@ -8,12 +8,16 @@
   color: var(--text);
   background: var(--bg);
   font-size: 14px;
+  padding: 12px 18px 28px !important;
 }
 
 #main-content .dt-redesign > main {
+  position: relative !important;
+  inset: auto !important;
   margin: 0 !important;
   width: 100% !important;
   min-width: 0;
+  height: auto !important;
   padding: 0 !important;
 }
 
@@ -633,6 +637,7 @@ html.dark #main-content .dt-redesign .dt-learn-action b { color: #e5edfb; }
 }
 
 @media (max-width: 700px) {
+  #main-content .dt-redesign { padding: 10px 8px 24px !important; }
   .dt-redesign .dt-header { display: block; padding: 12px 4px 8px; }
   .dt-redesign .dt-header > div > p { margin-bottom: 12px; font-size: 11px; }
   .dt-redesign .dt-header > div > section > i { display: grid; flex-basis: 46px; width: 46px; height: 46px; }

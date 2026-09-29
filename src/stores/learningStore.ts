@@ -141,7 +141,7 @@ export function recordChallengeRun(route: string) {
 export function getLearningStats() {
   const progress = readProgress();
   const algorithms = getAllAlgorithms();
-  const completable = algorithms.filter(item => getImplementationStatus(item.route) !== 'Scaffold');
+  const completable = algorithms.filter(item => !['Scaffold', 'Upcoming'].includes(getImplementationStatus(item.route)));
   const completedSet = new Set(progress.completedRoutes);
   const completed = completable.filter(item => completedSet.has(item.route));
   const quizAverage = progress.quizResults.length

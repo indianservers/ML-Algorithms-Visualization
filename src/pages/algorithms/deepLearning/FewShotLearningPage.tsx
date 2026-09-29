@@ -37,8 +37,7 @@ const names = [
   glyphs = ["🐦", "🐸", "⛵", "🚗", "🐶", "🐱", "✈️", "🦌", "🐴", "🚚"];
 export default function FewShotLearningPage() {
   const { tab, setTab } = useLabTabs("Learn");
-  const [advanced, setAdvanced] = useState(false),
-    [nWay, setNWay] = useState(5),
+  const [nWay, setNWay] = useState(5),
     [kShot, setKShot] = useState(5),
     [batch, setBatch] = useState(false),
     [metric, setMetric] = useState<FewShotMetric>("euclidean"),
@@ -73,17 +72,6 @@ export default function FewShotLearningPage() {
     setSeed(3);
     setToast("Parameters reset");
   };
-  if (advanced)
-    return (
-      <div className="few-advanced">
-        <button onClick={() => setAdvanced(false)}>
-          ← Return to Episode Visualizer
-        </button>
-        <Suspense fallback={<p>Loading TensorFlow.js lab…</p>}>
-          <FewShotMobileNetLab />
-        </Suspense>
-      </div>
-    );
   return (
     <div className="few-page">
       <aside className="few-side">
@@ -144,7 +132,6 @@ export default function FewShotLearningPage() {
               className={tab === name ? "active" : ""}
               onClick={() => {
                 setTab(name);
-                if (name === "Build / Train") setAdvanced(true);
               }}
               key={name}
             >
@@ -164,6 +151,7 @@ export default function FewShotLearningPage() {
         </div>
       </header>
       <LabLessonOrWork tab={tab} route="/ml/deep-learning/few-shot-learning">
+      {tab === "Build / Train" ? <div className="few-advanced"><Suspense fallback={<p>Loading MobileNet lab…</p>}><FewShotMobileNetLab /></Suspense></div> : tab === "Dataset" ? <section className="few-tab-panel panel"><h2>Episode dataset</h2><p>Each episode samples a small labeled support set and a query. The prototypes summarize the support examples for each class.</p><div className="few-metric-grid"><article><span>Classes per episode</span><strong>{nWay}</strong></article><article><span>Examples per class</span><strong>{kShot}</strong></article><article><span>Total support examples</span><strong>{nWay * kShot}</strong></article><article><span>Queries</span><strong>{episode.queries.length}</strong></article></div><div className="few-dataset-controls"><label>Dataset shape <select value={datasetFamily} onChange={(event) => setDatasetFamily(Number(event.target.value))}><option value={3}>Synthetic class blobs A</option><option value={9}>Synthetic class blobs B</option></select></label><label>Classes (N-way) <input type="range" min="2" max="7" value={nWay} onChange={(event) => setNWay(Number(event.target.value))} /></label><label>Support examples (K-shot) <input type="range" min="1" max="8" value={kShot} onChange={(event) => setKShot(Number(event.target.value))} /></label></div><button type="button" onClick={() => setSeed(seed + 1)}>Generate new episode</button><p>Current classes: {names.slice(0, nWay).join(", ")}</p></section> : tab === "Metrics" ? <section className="few-tab-panel panel"><h2>Classification metrics</h2><p>The query is assigned to its nearest class prototype in the selected embedding and distance metric.</p><div className="few-metric-grid"><article><span>Predicted class</span><strong>{names[prediction.classIndex]}</strong></article><article><span>True class</span><strong>{names[query.classIndex]}</strong></article><article><span>Nearest distance</span><strong>{prediction.distance.toFixed(3)}</strong></article><article><span>Current query</span><strong>{prediction.classIndex === query.classIndex ? "Correct" : "Incorrect"}</strong></article></div><ol>{prediction.distances.map((distance, index) => <li key={index}>{names[index]}: {distance.toFixed(3)}</li>)}</ol></section> : <>
       <main>
         <section className="few-title panel">
           <h1>⚙ Few-Shot Learning</h1>
@@ -181,7 +169,7 @@ export default function FewShotLearningPage() {
               <option value={9}>Synthetic 2-D class blobs B</option>
             </select>
           </label>
-          <button onClick={() => setAdvanced(true)}>
+          <button onClick={() => setTab("Build / Train")}>
             <Upload /> Upload / Switch
           </button>
         </section>
@@ -451,6 +439,7 @@ export default function FewShotLearningPage() {
         <button onClick={() => setSeed(seed + 1)}>Next Episode ›</button>
         <em>{toast}</em>
       </footer>
+      </>}
       </LabLessonOrWork>
     </div>
   );

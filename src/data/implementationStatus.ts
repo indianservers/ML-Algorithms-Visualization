@@ -1,7 +1,8 @@
 import { navigationData } from './navigation';
 import type { BadgeType } from './navigation';
+import { upcomingAiVirtualLabs } from '../features/ai-virtual-labs/catalog';
 
-export type ImplementationStatus = 'Implemented' | 'Educational' | 'Concept' | 'Scaffold';
+export type ImplementationStatus = 'Implemented' | 'Educational' | 'Concept' | 'Scaffold' | 'Upcoming';
 export type AlgorithmNavItem = {
   label: string;
   route: string;
@@ -179,6 +180,7 @@ const conceptRoutes = new Set(
 );
 
 export function getImplementationStatus(route: string): ImplementationStatus {
+  if (upcomingAiVirtualLabs.some(lab => route === `/ai-algorithms/${lab.slug}`)) return 'Upcoming';
   if (route.startsWith('/ai-algorithms/')) return 'Implemented';
   if (route === '/ml/terms-studio' || route.startsWith('/ml/terms-studio/')) return 'Educational';
   if (implementedRoutes.has(route)) return 'Implemented';
@@ -195,6 +197,7 @@ export function implementationSummary() {
     Educational: 0,
     Concept: 0,
     Scaffold: 0,
+    Upcoming: 0,
   };
   items.forEach(item => {
     counts[getImplementationStatus(item.route)]++;

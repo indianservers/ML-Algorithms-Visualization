@@ -41,8 +41,10 @@ export function getSeoMetadata(pathname: string): SeoRoute {
     const aiLab = algorithm.category === 'AI Algorithms Virtual Labs';
     return {
       path: algorithm.route,
-      title: `${algorithm.label} ${aiLab ? 'Virtual Lab' : 'Visualization'} | ${siteConfig.name}`,
-      description: aiLab
+      title: `${algorithm.label} ${status === 'Upcoming' ? 'Upcoming Virtual Lab' : aiLab ? 'Virtual Lab' : 'Visualization'} | ${siteConfig.name}`,
+      description: status === 'Upcoming'
+        ? `Upcoming AI Virtual Lab for ${algorithm.label}. Preview the concepts and explore a related live lab while the interactive simulator is being developed.`
+        : aiLab
         ? `Explore ${algorithm.label} with an interactive browser lab, step-by-step controls, visualizations, and live algorithm state.`
         : `${algorithm.label} in ${algorithm.category}: an interactive ${algorithm.badge.toLowerCase()} machine learning module with ${status.toLowerCase()} browser learning tools, visual explanations, and experiment details.`,
       keywords: [
@@ -54,7 +56,7 @@ export function getSeoMetadata(pathname: string): SeoRoute {
         'interactive visualization',
         'algorithm tutorial',
       ],
-      priority: status === 'Implemented' ? 0.8 : 0.6,
+      priority: status === 'Implemented' ? 0.8 : status === 'Upcoming' ? 0.3 : 0.6,
       changeFrequency: 'monthly',
     };
   }

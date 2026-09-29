@@ -53,6 +53,10 @@
 .hl-ai-card-astar:hover .hl-ai-hint, .hl-ai-card-astar:focus-visible .hl-ai-hint { opacity: 1; transform: none; }
 .hl-ai-card-astar:hover .hl-ai-card-actions, .hl-ai-card-astar:focus-visible .hl-ai-card-actions { bottom: 41px; }
 .hl-ai-card .ai-ill-motion { transition: opacity .28s, transform .28s, filter .28s; transform-origin: center; }
+.hl-ai-card-upcoming{background:linear-gradient(120deg,#fdfcff,#f4f1ff);border-color:#dcd7f3}
+.hl-ai-card-upcoming .hl-ai-open{background:linear-gradient(135deg,#796dc9,#6957b2);box-shadow:0 5px 10px #7667ba35}
+.hl-ai-card-upcoming:hover .hl-ai-open,.hl-ai-card-upcoming:focus-visible .hl-ai-open{background:linear-gradient(135deg,#6f60be,#5a4aa8)}
+.hl-ai-upcoming-tag{position:absolute;right:10px;bottom:22px;z-index:1;max-width:calc(100% - 172px);padding:4px 6px;border:1px solid #dcd4f4;border-radius:6px;background:#f3efff;color:#625398;font-size:10px;font-weight:700;text-align:center;line-height:1.15}
 .hl-ai-card:hover .ai-ill-motion, .hl-ai-card:focus-visible .ai-ill-motion { filter: brightness(1.13) saturate(1.15); transform: translateY(-2px); }
 .hl-ai-card-astar .ai-astar-path { transition: fill .2s; }
 .hl-ai-card-astar:hover .ai-astar-path, .hl-ai-card-astar:focus-visible .ai-astar-path { animation: ai-path-reveal .35s both; }
@@ -74,6 +78,8 @@ html.dark .hl-ai-heading p, html.dark .hl-ai-copy span { color: #b5c0db; }
 html.dark .hl-ai-card { background: linear-gradient(125deg, #1c2943, #202d4a); border-color: #3a4a69; }
 html.dark .hl-ai-card:nth-child(5n + 2), html.dark .hl-ai-card:nth-child(7n + 3) { background: linear-gradient(125deg, #1c2943, #202d4a); }
 html.dark .hl-ai-card:hover, html.dark .hl-ai-card:focus-visible { background: #253455; border-color: #8e75ff; }
+html.dark .hl-ai-card-upcoming{background:linear-gradient(125deg,#262447,#22233e);border-color:#655b8d}
+html.dark .hl-ai-upcoming-tag{background:#302b55;border-color:#62569a;color:#dfd7ff}
 html.dark .hl-ai-search { background: #1b2943; border-color: #3d4e72; }
 html.dark .hl-ai-search input { color: #f0f3ff; }
 html.dark .hl-ai-search input::placeholder { color: #b5c0db; }

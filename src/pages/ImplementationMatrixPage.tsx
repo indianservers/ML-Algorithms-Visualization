@@ -17,6 +17,7 @@ const statusRank: Record<ImplementationStatus, number> = {
   Educational: 1,
   Concept: 2,
   Scaffold: 3,
+  Upcoming: 4,
 };
 
 function ImplementationMatrixPageOriginal() {

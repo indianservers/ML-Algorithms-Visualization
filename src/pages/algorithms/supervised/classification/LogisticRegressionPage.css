@@ -212,7 +212,7 @@
 /* ----------------------------------------------------------- chart card */
 
 .lr-chart-card {
-  padding: 15px 17px 0;
+  padding: 15px 17px 8px;
 }
 
 .lr-chart-head {
@@ -354,6 +354,16 @@
   margin: 8px -17px 0;
   padding: 13px 17px 4px;
   border-top: 1px solid var(--lab-line);
+}
+
+.lr-chart-card--logodds .lr-logodds {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.lr-logodds-legend {
+  margin-top: 10px;
 }
 
 .lr-logodds .lr-plot text {
@@ -1123,11 +1133,11 @@
     row-gap: 12px;
   }
 
-  .lr-head-icon {
+  .lr-head > .lr-head-icon {
     grid-area: icon;
   }
 
-  .lr-head > div:not(.lr-progress) {
+  .lr-head > div:not(.lr-progress):not(.lr-head-icon) {
     grid-area: title;
   }
 
@@ -1152,4 +1162,81 @@
     flex-wrap: wrap;
     gap: 10px;
   }
+}
+
+/* Probability teaching view: binary observations, sigmoid and threshold are
+   deliberately separate marks. Keep all overrides local to this lab. */
+.logistic-page .lr-head-note { display: inline-block; margin-top: 7px; color: #315b88; font-size: 12px; }
+.logistic-page .lr-head-icon { background: #e4f7f4; color: #078f88; }
+.logistic-page .lr-head-icon svg { width: 25px; height: 25px; }
+.logistic-page .lr-chart-card { padding: 20px 24px 18px; box-shadow: 0 5px 22px rgba(33, 63, 111, .05); }
+.logistic-page .lr-chart-head { gap: 14px; }
+.logistic-page .lr-chart-head h2 { margin: 0; color: var(--lab-text-strong); font-size: clamp(17px, 1.5vw, 21px); line-height: 1.25; }
+.logistic-page .lr-chart-head p { margin: 5px 0 0; color: var(--lab-muted); font-size: 12px; line-height: 1.5; }
+.logistic-page .lr-legend { padding: 0; gap: 15px; flex-wrap: wrap; font-size: 11px; }
+.logistic-page .lr-legend i.pos { background: #245de0; }
+.logistic-page .lr-legend i.neg { background: #e84e53; }
+.logistic-page .lr-legend i.lr-legend-curve { width: 18px; height: 0; border-top: 3px solid #079e89; border-radius: 0; }
+.logistic-page .lr-legend i.lr-legend-threshold { width: 18px; height: 0; border-top: 2px dashed #e89b2d; border-radius: 0; }
+.logistic-page .lr-legend i.lr-legend-boundary { width: 2px; height: 14px; border-left: 2px dashed #315fc5; border-radius: 0; }
+.logistic-page .lr-chart-card > .lr-plot { margin-top: 9px; max-height: 510px; }
+.logistic-page .lr-plot .grid { stroke: #d7e2f3; }
+.logistic-page .lr-plot .sigmoid { stroke: #079e89; stroke-width: 4; filter: drop-shadow(0 2px 2px rgba(0, 153, 127, .15)); pointer-events: none; }
+.logistic-page .lr-plot .lr-region-zero { fill: rgba(233, 78, 82, .035); pointer-events: none; }
+.logistic-page .lr-plot .lr-region-one { fill: rgba(39, 97, 224, .035); pointer-events: none; }
+.logistic-page .lr-plot .lr-plot-hit-area { cursor: crosshair; }
+.logistic-page .lr-plot .lr-probability-threshold { stroke: #e89b2d; stroke-width: 1.7; stroke-dasharray: 7 5; pointer-events: none; }
+.logistic-page .lr-plot .lr-decision-boundary { stroke: #315fc5; stroke-width: 1.6; stroke-dasharray: 4 5; pointer-events: none; }
+.logistic-page .lr-plot .lr-logit-line { fill: none; stroke: #079e89; stroke-width: 3; stroke-linecap: round; }
+.logistic-page .lr-logodds-copy { margin: 6px 0 0; color: var(--lab-muted); font-size: 11px; line-height: 1.5; }
+.logistic-page .lr-plot .lr-threshold-label { text-anchor: end; fill: #9c6718; font-size: 12px; font-weight: 800; pointer-events: none; }
+.logistic-page .lr-plot .lr-boundary-label,
+.logistic-page .lr-plot .lr-boundary-value { fill: #2250a8; font-size: 12px; font-weight: 800; pointer-events: none; }
+.logistic-page .lr-plot .lr-intersection { fill: #fff; stroke: #098e82; stroke-width: 3; pointer-events: none; }
+.logistic-page .lr-plot .lr-axis-tick { font-size: 12px; }
+.logistic-page .lr-plot .grid + text { text-anchor: end; }
+.logistic-page .lr-plot .pt-pos { fill: #245de0; stroke: #fff; stroke-width: .5; }
+.logistic-page .lr-plot .pt-neg { fill: #e84e53; stroke: #fff; stroke-width: .5; }
+.logistic-page .lr-plot .lr-observation { cursor: pointer; transition: opacity .2s ease, r .2s ease; }
+.logistic-page .lr-plot .lr-observation:hover,
+.logistic-page .lr-plot .lr-observation.is-selected { stroke: #102b5f; stroke-width: 2; }
+.logistic-page .lr-plot .lr-observation.is-dimmed { opacity: .1; }
+.logistic-page .lr-plot .lr-observation:focus-visible { outline: 2px solid #245de0; outline-offset: 2px; }
+.logistic-page .lr-plot .lr-probe line { stroke: #607796; stroke-width: 1; stroke-dasharray: 2 4; pointer-events: none; }
+.logistic-page .lr-plot .lr-probe circle { fill: #243b65; stroke: #fff; stroke-width: 2; pointer-events: none; }
+.logistic-page .lr-chart-footer { display: grid; gap: 9px; margin-top: 1px; }
+.logistic-page .lr-equations { display: flex; gap: 8px; flex-wrap: wrap; }
+.logistic-page .lr-equations span { padding: 7px 10px; border: 1px solid #dae7f3; border-radius: 8px; background: #f8fbff; color: #496384; font-size: 11px; }
+.logistic-page .lr-equations b { color: #174276; font-weight: 700; }
+.logistic-page .lr-boundary-note { margin: 0; padding: 9px 11px; border-radius: 8px; background: #f0f6ff; color: #285078; font-size: 12px; }
+.logistic-page .lr-boundary-note b { color: #163d79; }
+.logistic-page .lr-boundary-note span { padding: 0 9px; color: #6680a1; }
+.logistic-page .lr-chart-tip { margin: 0; color: var(--lab-muted); font-size: 11px; line-height: 1.5; }
+.logistic-page .lr-selected-sample { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 12px; padding: 10px 12px; border: 1px solid #c8dbf7; border-radius: 9px; background: #f4f8ff; color: #214579; font-size: 11px; }
+.logistic-page .lr-selected-sample > * { padding-right: 8px; border-right: 1px solid #d1dff1; }
+.logistic-page .lr-selected-sample > :last-child { border: 0; }
+.logistic-page .lr-selected-sample b { color: #194986; }
+.logistic-page .lr-confusion td { padding: 0; }
+.logistic-page .lr-confusion td button { display: block; width: 100%; padding: 8px 2px; border: 0; background: transparent; color: inherit; font-weight: 800; }
+.logistic-page .lr-confusion td button:hover,
+.logistic-page .lr-confusion td button.active { background: #e5efff; box-shadow: inset 0 0 0 2px #3670db; }
+.logistic-page .lr-filter-note { margin: 0; color: #315b88; font-size: 11px; }
+.logistic-page .lr-field > span label { display: inline-flex; align-items: center; gap: 5px; }
+.logistic-page .lr-field > span label svg { width: 13px; height: 13px; color: #738aad; cursor: help; }
+.logistic-page .lr-change-note { display: flex; gap: 8px; padding: 10px; border: 1px solid #d7e7f2; border-radius: 9px; background: #f4fbfc; color: #315678; font-size: 11px; line-height: 1.5; }
+.logistic-page .lr-change-note svg { width: 17px; height: 17px; color: #078f88; }
+.logistic-page .lr-change-note b { display: block; color: #164575; }
+.logistic-page button:focus-visible,
+.logistic-page input:focus-visible,
+.logistic-page select:focus-visible,
+.logistic-page a:focus-visible { outline: 2px solid #2768e8; outline-offset: 2px; }
+@media (max-width: 640px) {
+  .logistic-page .lr-chart-card { padding: 14px 12px; }
+  .logistic-page .lr-chart-card > .lr-plot { min-width: 0; }
+  .logistic-page .lr-chart-head h2 { font-size: 17px; }
+  .logistic-page .lr-equations { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .logistic-page .lr-boundary-note span { padding: 0 3px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .logistic-page .lr-plot .lr-observation { transition: none; }
 }
