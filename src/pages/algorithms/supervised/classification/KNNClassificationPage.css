@@ -1293,6 +1293,33 @@
   background: var(--glow-toast-bg);
   color: white;
 }
+/* The suite hides the old lesson rail. Reclaim its 254px offset for every tab. */
+#main-content .knn-page > .knn-nav {
+  display: none !important;
+}
+#main-content .knn-page > main {
+  position: relative;
+  inset: auto;
+  left: 0;
+  right: auto;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  overflow: visible;
+}
+#main-content .knn-workspace {
+  width: 100%;
+  min-width: 0;
+}
+@media (min-width: 701px) {
+  #main-content .knn-plot-card {
+    height: auto;
+  }
+  #main-content .knn-chart {
+    height: auto !important;
+    aspect-ratio: 930 / 410;
+  }
+}
 @media (max-width: 1200px) {
   .knn-page {
     overflow: auto;
