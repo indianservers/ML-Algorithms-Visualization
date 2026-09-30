@@ -39,8 +39,8 @@ test('each regression tab contains its own relevant content', async ({ page }) =
   await expect(lab.locator('.slr2-manual-line')).toBeVisible();
   await expect(lab.locator('.slr2-residual-plot')).toHaveCount(0);
 
-  await lab.getByRole('tab', { name: 'Explain' }).click();
-  await expect(lab.locator('.slr2-formula')).toHaveCount(3);
+  await lab.getByRole('tab', { name: 'Live test/inference' }).click();
+  await expect(lab.locator('.slr2-inference-result')).toBeVisible();
   await expect(lab.locator('.slr2-plot')).toHaveCount(0);
   expect(errors).toEqual([]);
 });
@@ -79,4 +79,43 @@ test('mobile layout has no page-level horizontal overflow', async ({ page }) => 
   await expect(page.locator('.slr2-page')).toBeVisible();
   const widths = await page.evaluate(() => ({ page: document.documentElement.scrollWidth, viewport: innerWidth }));
   expect(widths.page).toBeLessThanOrEqual(widths.viewport + 1);
+});
+
+test('editing dataset points retrains the fitted line immediately', async ({ page }) => {
+  await page.goto(`${route}?tab=dataset`);
+  const lab = page.locator('.slr2-page');
+  await lab.getByRole('combobox', { name: 'Regression dataset' }).selectOption('positive');
+  await lab.getByRole('tab', { name: 'Visualize' }).click();
+  const first = lab.locator('.slr2-point').first();
+  const beforeY = Number(await first.getAttribute('cy'));
+  const beforeEquation = await lab.locator('.slr2-equation').innerText();
+  const box = await first.boundingBox();
+  expect(box).not.toBeNull();
+  await page.mouse.move(box!.x + box!.width / 2, box!.y + box!.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box!.x + box!.width / 2 + 30, box!.y + box!.height / 2 - 30, { steps: 5 });
+  await page.mouse.up();
+  expect(Number(await first.getAttribute('cy'))).not.toBe(beforeY);
+  await expect(lab.locator('.slr2-equation')).not.toHaveText(beforeEquation);
+  const originalCount = await lab.locator('.slr2-point').count();
+  await lab.getByRole('button', { name: 'Remove selected' }).click();
+  await expect(lab.locator('.slr2-point')).toHaveCount(originalCount - 1);
+  await lab.getByRole('button', { name: 'Reset points' }).click();
+  await expect(lab.locator('.slr2-point')).toHaveCount(originalCount);
+  await expect(lab.locator('.slr2-equation')).toHaveText(beforeEquation);
+
+  await lab.getByRole('button', { name: 'Edit all points' }).click();
+  const liveFit = lab.getByRole('status').filter({ hasText: 'Live fit:' });
+  const beforeEdit = await liveFit.innerText();
+  await lab.getByRole('spinbutton', { name: 'Point 1 y' }).fill('40');
+  await expect(liveFit).not.toHaveText(beforeEdit);
+  await lab.getByRole('spinbutton', { name: 'New point x' }).fill('8');
+  await lab.getByRole('spinbutton', { name: 'New point y' }).fill('60');
+  const count = await lab.locator('.slr2-data-table tbody tr').count();
+  await lab.getByRole('button', { name: 'Add point' }).click();
+  await expect(lab.locator('.slr2-data-table tbody tr')).toHaveCount(count + 1);
+  await lab.getByRole('button', { name: `Remove point ${count + 1}` }).click();
+  await expect(lab.locator('.slr2-data-table tbody tr')).toHaveCount(count);
+  await lab.getByRole('button', { name: 'Reset Dataset' }).click();
+  await expect(lab.getByRole('spinbutton', { name: 'Point 1 y' })).toHaveValue('3');
 });

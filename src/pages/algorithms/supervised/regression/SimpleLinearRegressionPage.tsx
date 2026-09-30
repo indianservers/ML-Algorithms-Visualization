@@ -93,10 +93,11 @@ function chartTicks(min: number, max: number, count = 6) {
   return ticks;
 }
 
-function RegressionChart({ points, model, autoModel, manualModel, xLabel, yLabel, predictionX, showProbe, showResiduals, showMean, showTriangle, showManual, selectedId, onSelect }: {
+function RegressionChart({ points, model, autoModel, manualModel, xLabel, yLabel, predictionX, showProbe, showResiduals, showMean, showTriangle, showManual, editable, selectedId, onSelect, onPointChange }: {
   points: Point[]; model: Model; autoModel: Model; manualModel: Model; xLabel: string; yLabel: string; predictionX: number;
-  showProbe: boolean; showResiduals: boolean; showMean: boolean; showTriangle: boolean; showManual: boolean;
+  showProbe: boolean; showResiduals: boolean; showMean: boolean; showTriangle: boolean; showManual: boolean; editable: boolean;
   selectedId: number | null; onSelect: (id: number) => void;
+  onPointChange: (id: number, x: number, y: number) => void;
 }) {
   const [hoverId, setHoverId] = useState<number | null>(null);
   const domain = chartDomain(points, autoModel);
@@ -123,7 +124,26 @@ function RegressionChart({ points, model, autoModel, manualModel, xLabel, yLabel
       {showManual && <line className="slr2-manual-line" x1={sx(xMin)} y1={sy(manualModel.intercept+manualModel.slope*xMin)} x2={sx(xMax)} y2={sy(manualModel.intercept+manualModel.slope*xMax)} />}
       {showMean && <g className="slr2-mean"><line x1={sx(autoModel.meanX)} x2={sx(autoModel.meanX)} y1={top} y2={height-bottom} /><line x1={left} x2={width-right} y1={sy(autoModel.meanY)} y2={sy(autoModel.meanY)} /><circle cx={sx(autoModel.meanX)} cy={sy(autoModel.meanY)} r="7" /><text x={sx(autoModel.meanX)+11} y={sy(autoModel.meanY)-8}>Mean (x̄, ȳ)</text></g>}
       {showTriangle && <g className="slr2-triangle"><path d={`M${sx(baseX)},${sy(baseY)} L${sx(tipX)},${sy(baseY)} L${sx(tipX)},${sy(tipY)}`} /><text x={(sx(baseX)+sx(tipX))/2} y={sy(baseY)+16}>Run</text><text x={sx(tipX)+22} y={(sy(baseY)+sy(tipY))/2}>Rise</text></g>}
-      {points.map(point => <circle key={point.id} className={`slr2-point${point.id === (hoverId ?? selectedId) ? ' selected' : ''}`} cx={sx(point.x)} cy={sy(point.y)} r={point.id === (hoverId ?? selectedId) ? 5.5 : 3.7} tabIndex={0} role="button" aria-label={`Point ${point.id+1}: x ${point.x.toFixed(2)}, actual y ${point.y.toFixed(2)}`} onMouseEnter={() => setHoverId(point.id)} onMouseLeave={() => setHoverId(null)} onFocus={() => setHoverId(point.id)} onBlur={() => setHoverId(null)} onClick={() => onSelect(point.id)} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect(point.id); } }} />)}
+      {points.map(point => <circle key={point.id} className={`slr2-point${point.id === (hoverId ?? selectedId) ? ' selected' : ''}${editable ? ' editable' : ''}`} cx={sx(point.x)} cy={sy(point.y)} r={point.id === (hoverId ?? selectedId) ? 6 : 4.5} tabIndex={0} role="button" aria-label={`Point ${point.id+1}: x ${point.x.toFixed(2)}, actual y ${point.y.toFixed(2)}${editable ? '. Drag or use arrow keys to edit' : ''}`} onMouseEnter={() => setHoverId(point.id)} onMouseLeave={() => setHoverId(null)} onFocus={() => setHoverId(point.id)} onBlur={() => setHoverId(null)} onClick={() => onSelect(point.id)} onPointerDown={event => {
+        if (!editable) return;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        onSelect(point.id);
+      }} onPointerMove={event => {
+        if (!editable || !event.currentTarget.hasPointerCapture(event.pointerId)) return;
+        const svg = event.currentTarget.ownerSVGElement;
+        const matrix = svg?.getScreenCTM();
+        if (!svg || !matrix) return;
+        const cursor = svg.createSVGPoint();
+        cursor.x = event.clientX; cursor.y = event.clientY;
+        const position = cursor.matrixTransform(matrix.inverse());
+        onPointChange(point.id, clamp(xMin + (position.x-left)/(width-left-right)*(xMax-xMin), xMin, xMax), clamp(yMax - (position.y-top)/(height-top-bottom)*(yMax-yMin), yMin, yMax));
+      }} onPointerUp={event => { if (editable && event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId); }} onKeyDown={event => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect(point.id); return; }
+        if (!editable || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+        event.preventDefault(); onSelect(point.id);
+        const dx = (xMax-xMin)/100, dy = (yMax-yMin)/100;
+        onPointChange(point.id, clamp(point.x + (event.key === 'ArrowRight' ? dx : event.key === 'ArrowLeft' ? -dx : 0), xMin, xMax), clamp(point.y + (event.key === 'ArrowUp' ? dy : event.key === 'ArrowDown' ? -dy : 0), yMin, yMax));
+      }} />)}
       {showProbe && <g className="slr2-probe"><line x1={sx(predictionX)} x2={sx(predictionX)} y1={sy(predictionY)} y2={height-bottom} /><circle cx={sx(predictionX)} cy={sy(predictionY)} r="5" /></g>}
     </svg>
     {highlighted && <div className="slr2-tooltip" style={{ left: `${clamp(sx(highlighted.x)/width*100, 15, 86)}%`, top: `${clamp(sy(highlighted.y)/height*100, 19, 80)}%` }} role="status"><b>x = {highlighted.x.toFixed(2)}</b><span>actual y = {highlighted.y.toFixed(2)}</span><span>predicted ŷ = {(model.intercept+model.slope*highlighted.x).toFixed(2)}</span><span>residual = {signed(highlighted.y-(model.intercept+model.slope*highlighted.x))}</span></div>}
@@ -152,6 +172,7 @@ export default function SimpleLinearRegressionPage() {
   const [showMean, setShowMean] = useState(false);
   const [showTriangle, setShowTriangle] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [newPoint, setNewPoint] = useState({ x: 6.5, y: 80 });
   const [step, setStep] = useState(4);
   const [playing, setPlaying] = useState(false);
   const [dataMessage, setDataMessage] = useState('');
@@ -169,12 +190,35 @@ export default function SimpleLinearRegressionPage() {
   const selected = points.find(point => point.id === selectedId) ?? null;
   const progress = Math.round((step+1)/steps.length*100);
 
+  const editPoint = (id: number, x: number, y: number) => {
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    setPoints(current => {
+      const next = current.map(point => point.id === id ? { ...point, x, y } : point);
+      return fitLine(next) ? next : current;
+    });
+  };
+  const addPoint = () => {
+    if (!Number.isFinite(newPoint.x) || !Number.isFinite(newPoint.y)) { setDataMessage('Enter finite x and y values.'); return; }
+    const id = Math.max(-1, ...points.map(point => point.id)) + 1;
+    setPoints(current => [...current, { id, ...newPoint }]);
+    setSelectedId(id);
+    setDataMessage('Point added. The fitted model and metrics updated immediately.');
+  };
+  const removePoint = (id: number) => {
+    const next = points.filter(point => point.id !== id);
+    if (!fitLine(next)) { setDataMessage('Keep at least two points with different x values.'); return; }
+    setPoints(next);
+    setSelectedId(null);
+    setDataMessage('Point removed. The fitted model and metrics updated immediately.');
+  };
+
   const applyDataset = (next: Dataset, key: DatasetKey) => {
     const copied = next.points.map(point => ({ ...point }));
     const nextFit = fitLine(copied);
     if (!nextFit) { setDataMessage('The dataset needs at least two different x values.'); return; }
     setDatasetKey(key); setPoints(copied); setManual({ slope: nextFit.slope, intercept: nextFit.intercept });
     setPredictionX(key === 'study' ? 6.5 : nextFit.meanX);
+    setNewPoint({ x: nextFit.meanX, y: nextFit.meanY });
     setSelectedId(null);
     setStep(4); setPlaying(false); setShowResiduals(true); setShowMean(false); setShowTriangle(false); setDataMessage('');
   };
@@ -263,7 +307,7 @@ export default function SimpleLinearRegressionPage() {
     {pendingCsv && <div className="slr2-csv-panel"><strong>Import {pendingCsv.name}</strong><label>X Feature<select value={csvX} onChange={event => setCsvX(event.target.value)}>{pendingCsv.columns.map(column => <option key={column}>{column}</option>)}</select></label><label>Y Target<select value={csvY} onChange={event => setCsvY(event.target.value)}>{pendingCsv.columns.map(column => <option key={column}>{column}</option>)}</select></label><button type="button" onClick={importCsv}>Load CSV</button><button type="button" onClick={() => setPendingCsv(null)}>Cancel</button></div>}
     {dataMessage && <p className="slr2-message" role="status">{dataMessage}</p>}</>}
 
-    {tab === 'Learn' ? <div className="slr2-other"><LabLessonPanel tab="Learn" route="/ml/supervised/simple-linear-regression" /></div> : tab === 'Dataset' ? <section className="slr2-other slr2-data-table"><h2>{dataset.name}</h2><p>{dataset.description}</p><table><thead><tr><th>#</th><th>{dataset.xLabel}</th><th>{dataset.yLabel}</th></tr></thead><tbody>{points.map((point, index) => <tr key={point.id}><td>{index+1}</td><td>{point.x.toFixed(2)}</td><td>{point.y.toFixed(2)}</td></tr>)}</tbody></table></section> : tab === 'Metrics' ? <section className="slr2-other"><h2>Model metrics from {points.length} observations</h2><p>Metrics describe the least-squares fit on the current dataset. R² measures the share of target variation explained by the line.</p><div className="slr2-metric-grid">{[['R²', bestStats.r2 === null ? '—' : bestStats.r2.toFixed(3)], ['MSE', bestStats.mse.toFixed(2)], ['RMSE', bestStats.rmse.toFixed(2)], ['MAE', bestStats.mae.toFixed(2)], ['SSE', bestStats.sse.toFixed(1)]].map(([name, value]) => <article key={name}><span>{name}</span><strong>{value}</strong></article>)}</div><h3>Residuals by predicted value</h3><ResidualPlot points={points} model={best}/><p>Residual = actual − predicted. A random spread around zero supports a linear fit; a curved pattern suggests the line misses structure.</p></section> : tab === 'Explain' ? <section className="slr2-other slr2-inference">
+    {tab === 'Learn' ? <div className="slr2-other"><LabLessonPanel tab="Learn" route="/ml/supervised/simple-linear-regression" /></div> : tab === 'Dataset' ? <section className="slr2-other slr2-data-table"><h2>{dataset.name}</h2><p>{dataset.description} Edit a value to retrain the line immediately, or add and remove points below.</p><div className="slr2-point-editor"><label>New {dataset.xLabel}<input aria-label="New point x" type="number" step="any" value={newPoint.x} onChange={event => setNewPoint(current => ({ ...current, x: Number(event.target.value) }))}/></label><label>New {dataset.yLabel}<input aria-label="New point y" type="number" step="any" value={newPoint.y} onChange={event => setNewPoint(current => ({ ...current, y: Number(event.target.value) }))}/></label><button type="button" onClick={addPoint}>Add point</button><span role="status">Live fit: {equation(best)} · R² {bestStats.r2?.toFixed(3) ?? '—'}</span></div><table><thead><tr><th>#</th><th>{dataset.xLabel}</th><th>{dataset.yLabel}</th><th>Action</th></tr></thead><tbody>{points.map((point, index) => <tr key={point.id}><td>{index+1}</td><td><input aria-label={`Point ${index+1} x`} type="number" step="any" value={point.x} onChange={event => editPoint(point.id, Number(event.target.value), point.y)}/></td><td><input aria-label={`Point ${index+1} y`} type="number" step="any" value={point.y} onChange={event => editPoint(point.id, point.x, Number(event.target.value))}/></td><td><button type="button" aria-label={`Remove point ${index+1}`} onClick={() => removePoint(point.id)}>Remove</button></td></tr>)}</tbody></table></section> : tab === 'Metrics' ? <section className="slr2-other"><h2>Model metrics from {points.length} observations</h2><p>Metrics describe the least-squares fit on the current dataset. R² measures the share of target variation explained by the line.</p><div className="slr2-metric-grid">{[['R²', bestStats.r2 === null ? '—' : bestStats.r2.toFixed(3)], ['MSE', bestStats.mse.toFixed(2)], ['RMSE', bestStats.rmse.toFixed(2)], ['MAE', bestStats.mae.toFixed(2)], ['SSE', bestStats.sse.toFixed(1)]].map(([name, value]) => <article key={name}><span>{name}</span><strong>{value}</strong></article>)}</div><h3>Residuals by predicted value</h3><ResidualPlot points={points} model={best}/><p>Residual = actual − predicted. A random spread around zero supports a linear fit; a curved pattern suggests the line misses structure.</p></section> : tab === 'Explain' ? <section className="slr2-other slr2-inference">
       <h2>Live test / inference</h2>
       <p>Enter a new {dataset.xLabel.toLowerCase()} value to predict {dataset.yLabel.toLowerCase()} with the fitted line from {dataset.name}.</p>
       <label>{dataset.xLabel}<input aria-label="Inference input" type="number" step="any" value={predictionX} onChange={event => setPredictionX(Number(event.target.value))}/></label>
@@ -275,15 +319,18 @@ export default function SimpleLinearRegressionPage() {
         {tab === 'Train' && <div className="slr2-step-list"><h2>Training walkthrough</h2>{steps.map((name, index) => <button key={name} type="button" className={step === index ? 'active' : ''} onClick={() => { setStep(index); setPlaying(false); }}>{index+1}. {name}</button>)}</div>}
         {tab === 'Compare' && <div className="slr2-compare-note"><b>Compare fit lines</b><span>Best-fit SSE {bestStats.sse.toFixed(1)} · Manual SSE {measure(points, { ...best, ...manual }).sse.toFixed(1)}</span></div>}
         <article className="slr2-chart-card"><div className="slr2-chart-heading"><strong>{tab === 'Train' ? 'Fit the regression line' : tab === 'Compare' ? 'Compare fitted and manual lines' : 'Explore the regression fit'}</strong>{tab === 'Train' && <div><button type="button" onClick={() => startPlayback(true)}><Play size={16}/>Play</button><button type="button" onClick={() => { if (playing) setPlaying(false); else startPlayback(false); }}>{playing ? <Pause size={16}/> : <Play size={16}/ >}{playing ? 'Pause' : 'Resume'}</button><button type="button" onClick={() => { setPlaying(false); setStep(current => Math.min(9, current+1)); }}><SkipForward size={16}/>Step</button><button type="button" onClick={() => { setPlaying(false); setStep(0); }}><RotateCcw size={16}/>Restart</button><span>Step {step+1} / 10 · {steps[step]}</span></div>}</div>
-          <RegressionChart points={points} model={tab === 'Compare' ? { ...best, ...manual } : best} autoModel={best} manualModel={{ ...best, ...manual }} xLabel={dataset.xLabel} yLabel={dataset.yLabel} predictionX={predictionX} showProbe={tab === 'Visualize'} showResiduals={tab === 'Visualize' && showResiduals} showMean={tab === 'Visualize' && showMean} showTriangle={tab === 'Visualize' && showTriangle} showManual={tab === 'Compare'} selectedId={selectedId} onSelect={setSelectedId}/>
-          <p className="slr2-chart-caption">{tab === 'Compare' ? 'Blue is the least-squares line; orange is your manual line.' : tab === 'Train' ? 'Follow the ten steps from inspecting the observations to evaluating the fitted line.' : 'Select a point to inspect its actual value, prediction, and residual.'}</p>
+          <RegressionChart points={points} model={tab === 'Compare' ? { ...best, ...manual } : best} autoModel={best} manualModel={{ ...best, ...manual }} xLabel={dataset.xLabel} yLabel={dataset.yLabel} predictionX={predictionX} showProbe={tab === 'Visualize'} showResiduals={tab === 'Visualize' && showResiduals} showMean={tab === 'Visualize' && showMean} showTriangle={tab === 'Visualize' && showTriangle} showManual={tab === 'Compare'} editable={tab === 'Visualize'} selectedId={selectedId} onSelect={setSelectedId} onPointChange={editPoint}/>
+          <p className="slr2-chart-caption">{tab === 'Compare' ? 'Blue is the least-squares line; orange is your manual line.' : tab === 'Train' ? 'Follow the ten steps from inspecting the observations to evaluating the fitted line.' : 'Drag a point to change the dataset. The line, prediction, residuals, and metrics retrain immediately. Select a point for details.'}</p>
         </article>
         {tab === 'Visualize' && <div className="slr2-visual-summary"><article className="slr2-equation-card"><h3><Sigma size={22}/>Fitted line</h3><div className="slr2-equation">{equation(best)}</div></article><article className="slr2-prediction-card"><h3><Target size={18}/>Prediction at x = {predictionX.toFixed(2)}</h3><b>ŷ = {(best.intercept + best.slope * predictionX).toFixed(2)}</b></article></div>}
         {tab === 'Train' && <div className="slr2-training-status" role="status"><strong>{playing ? 'Training walkthrough running' : step === 9 ? 'Training walkthrough completed' : 'Training walkthrough paused'}</strong><span>Step {step+1} of 10 · {steps[step]}</span><div className="slr2-progress"><i style={{ width: `${progress}%` }} /></div></div>}
       </div>
       <aside className="slr2-right">
         {tab === 'Visualize' && <section className="slr2-controls"><h2><SlidersHorizontal size={19}/>VISUALIZATION CONTROLS</h2>
+          <p className="slr2-live-fit" role="status">● Live auto-fit · {points.length} points · R² {bestStats.r2?.toFixed(3) ?? '—'}</p>
           <p className="slr2-field-label">Fitted parameters</p><div className="slr2-parameters"><div><span>Slope (b₁)</span><strong>{best.slope.toFixed(2)}</strong></div><div><span>Intercept (b₀)</span><strong>{best.intercept.toFixed(2)}</strong></div></div>
+          <div className="slr2-point-editor slr2-sidebar-editor"><label>New {dataset.xLabel}<input aria-label="New point x" type="number" step="any" value={newPoint.x} onChange={event => setNewPoint(current => ({ ...current, x: Number(event.target.value) }))}/></label><label>New {dataset.yLabel}<input aria-label="New point y" type="number" step="any" value={newPoint.y} onChange={event => setNewPoint(current => ({ ...current, y: Number(event.target.value) }))}/></label><button type="button" onClick={addPoint}>Add point</button>{selected && <button type="button" onClick={() => removePoint(selected.id)}>Remove selected</button>}</div>
+          <div className="slr2-editor-actions"><button type="button" onClick={() => setTab('Dataset')}>Edit all points</button><button type="button" onClick={reset}><RotateCcw size={14}/>Reset points</button></div>
           <label className="slr2-prediction-slider">Prediction X ({dataset.xLabel}) <output>{predictionX.toFixed(2)}</output><input aria-label="Prediction X" type="range" min={xMin} max={xMax} step={(xMax-xMin)/200} value={predictionX} onChange={event => setPredictionX(Number(event.target.value))}/><span><small>{Number(xMin.toFixed(1))}</small><small>{Number(xMax.toFixed(1))}</small></span></label>
           <div className="slr2-switches"><label><input type="checkbox" checked={showResiduals} onChange={event => setShowResiduals(event.target.checked)}/><span/>Show Residuals</label><label><input type="checkbox" checked={showMean} onChange={event => setShowMean(event.target.checked)}/><span/>Show Mean Point</label><label><input type="checkbox" checked={showTriangle} onChange={event => setShowTriangle(event.target.checked)}/><span/>Show Slope Triangle</label></div>
         </section>}

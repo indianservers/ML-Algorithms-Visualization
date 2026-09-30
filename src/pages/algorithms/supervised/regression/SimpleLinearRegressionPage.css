@@ -65,6 +65,8 @@
 .slr2-fit-line { stroke: #088ebe; stroke-width: 3; }
 .slr2-manual-line { stroke: #e29127; stroke-width: 2.5; stroke-dasharray: 7 4; }
 .slr2-point { fill: #149fce; stroke: white; stroke-width: .7; cursor: pointer; }
+.slr2-point.editable { cursor: grab; touch-action: none; }
+.slr2-point.editable:active { cursor: grabbing; }
 .slr2-point.selected { fill: #f7b543; stroke: #855a17; stroke-width: 1.5; }
 .slr2-probe line { stroke: #665fe0; stroke-dasharray: 4 4; }
 .slr2-probe circle { fill: #7358ec; stroke: white; }
@@ -107,6 +109,20 @@
 .slr2-data-table { max-height: 65vh; overflow: auto; }
 .slr2-data-table table { width: 100%; border-collapse: collapse; }
 .slr2-data-table th, .slr2-data-table td { padding: 8px; border-bottom: 1px solid var(--slr-border); text-align: left; }
+.slr2-data-table td input, .slr2-point-editor input { width: 100%; min-width: 0; padding: 7px 9px; border: 1px solid var(--slr-border); border-radius: 7px; background: var(--slr-panel); color: var(--slr-text); }
+.slr2-data-table td input { max-width: 155px; }
+.slr2-data-table td button, .slr2-point-editor button { padding: 8px 11px; border: 1px solid var(--slr-border); border-radius: 7px; background: var(--slr-panel); color: var(--slr-text); font-weight: 700; }
+.slr2-data-table td button:hover, .slr2-point-editor button:hover { border-color: #2463eb; color: #2463eb; }
+.slr2-point-editor { display: flex; align-items: end; flex-wrap: wrap; gap: 9px; margin: 12px 0; }
+.slr2-point-editor label { display: grid; gap: 4px; min-width: 100px; flex: 1; color: var(--slr-muted); font-size: 12px; }
+.slr2-point-editor > span { width: 100%; color: var(--slr-muted); font-size: 12px; }
+.slr2-sidebar-editor { padding-top: 12px; border-top: 1px solid var(--slr-border); }
+.slr2-sidebar-editor button { flex: 1; white-space: nowrap; }
+.slr2-editor-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 3px; }
+.slr2-editor-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; flex: 1; min-width: 110px; padding: 7px 9px; border: 1px solid var(--slr-border); border-radius: 7px; background: var(--slr-panel); color: var(--slr-text); font-size: 12px; font-weight: 700; }
+.slr2-editor-actions button:hover { border-color: #2463eb; color: #2463eb; }
+.slr2-live-fit { margin: 0 0 12px !important; color: #087e62 !important; font-weight: 750; }
+html.dark .slr2-live-fit { color: #60e7b4 !important; }
 .slr2-metric-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 18px 0; }
 .slr2-metric-grid article { display: grid; gap: 7px; padding: 18px; border: 1px solid var(--slr-border); border-radius: 8px; background: var(--slr-panel); }
 .slr2-metric-grid strong { color: #1265d8; font-size: 24px; }
@@ -160,5 +176,6 @@ html.dark .slr2-formula, html.dark .slr2-manual-panel p { background: #1b3455; c
   .slr2-visual-summary { grid-template-columns: 1fr; }
   .slr2-metric-grid { grid-template-columns: repeat(2, 1fr); }
   .slr2-other { padding: 14px; }
+  .slr2-data-table { overflow-x: auto; }
   .slr2-compare-note span { margin-left: 0; }
 }
