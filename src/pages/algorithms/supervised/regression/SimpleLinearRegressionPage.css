@@ -55,6 +55,12 @@
 .slr2-chart-heading > div { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .slr2-chart-heading button, .slr2-step-list button, .slr2-compare-note button { display: inline-flex; align-items: center; gap: 5px; padding: 6px 9px; border: 1px solid var(--slr-border); border-radius: 7px; background: var(--slr-panel); color: var(--slr-text); }
 .slr2-chart-heading span { margin-left: 5px; color: var(--slr-muted); font-size: 12px; }
+.slr2-chart-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.slr2-chart-legend span { display: inline-flex; align-items: center; gap: 5px; margin: 0; }
+.slr2-chart-legend i { display: inline-block; flex: none; }
+.slr2-chart-legend i.point { width: 9px; height: 9px; border-radius: 50%; background: #1479d0; }
+.slr2-chart-legend i.fit, .slr2-chart-legend i.manual { width: 19px; height: 0; border-top: 4px solid #d95f0e; border-radius: 3px; }
+.slr2-chart-legend i.manual { border-top-color: #934bd6; border-top-style: dashed; }
 .slr2-plot-wrap { position: relative; }
 .slr2-plot { display: block; width: 100%; height: auto; overflow: visible; }
 .slr2-plot text { fill: var(--slr-muted); font-size: 12px; }
@@ -62,12 +68,12 @@
 .slr2-axis { stroke: #8a9cb7; }
 .slr2-axis-label { fill: var(--slr-text) !important; font-weight: 650; }
 .slr2-residual { stroke: #47aaf0; stroke-opacity: .6; stroke-width: 1; }
-.slr2-fit-line { stroke: #088ebe; stroke-width: 3; }
-.slr2-manual-line { stroke: #e29127; stroke-width: 2.5; stroke-dasharray: 7 4; }
-.slr2-point { fill: #149fce; stroke: white; stroke-width: .7; cursor: pointer; }
+.slr2-fit-line { stroke: #d95f0e; stroke-width: 4; }
+.slr2-manual-line { stroke: #934bd6; stroke-width: 3; stroke-dasharray: 7 4; }
+.slr2-point { fill: #1479d0; stroke: white; stroke-width: .7; cursor: pointer; }
 .slr2-point.editable { cursor: grab; touch-action: none; }
 .slr2-point.editable:active { cursor: grabbing; }
-.slr2-point.selected { fill: #f7b543; stroke: #855a17; stroke-width: 1.5; }
+.slr2-point.selected { fill: #ef4770; stroke: #872347; stroke-width: 1.5; }
 .slr2-probe line { stroke: #665fe0; stroke-dasharray: 4 4; }
 .slr2-probe circle { fill: #7358ec; stroke: white; }
 .slr2-mean line { stroke: #0aa676; stroke-dasharray: 5 4; }
@@ -150,6 +156,13 @@ html.dark .slr2-page { --slr-border: #345071; --slr-panel: #10233d; --slr-text: 
 html.dark .slr2-icon { background: #064c4d; }
 html.dark .slr2-dataset-badge { background: #342654; color: #d7c4ff; }
 html.dark .slr2-formula, html.dark .slr2-manual-panel p { background: #1b3455; color: #b6d7ff; }
+html.dark .slr2-fit-line { stroke: #ffb02e; }
+html.dark .slr2-manual-line { stroke: #cb9cff; }
+html.dark .slr2-point { fill: #3ab8ff; }
+html.dark .slr2-point.selected { fill: #ff6fa0; stroke: #68254d; }
+html.dark .slr2-chart-legend i.point { background: #3ab8ff; }
+html.dark .slr2-chart-legend i.fit { border-top-color: #ffb02e; }
+html.dark .slr2-chart-legend i.manual { border-top-color: #cb9cff; }
 @media (max-width: 1100px) {
   .slr2-header { grid-template-columns: 1fr; grid-template-areas: "crumb" "title" "actions"; }
   .slr2-header-actions { flex-wrap: wrap; }

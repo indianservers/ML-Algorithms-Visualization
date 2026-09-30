@@ -119,3 +119,20 @@ test('editing dataset points retrains the fitted line immediately', async ({ pag
   await lab.getByRole('button', { name: 'Reset Dataset' }).click();
   await expect(lab.getByRole('spinbutton', { name: 'Point 1 y' })).toHaveValue('3');
 });
+
+test('fitted line stays distinct from data points in light and dark themes', async ({ page }) => {
+  await page.goto(`${route}?tab=visualize`);
+  await expect(page.locator('.slr2-fit-line')).toBeAttached();
+  const colors = () => page.evaluate(() => ({
+    line: getComputedStyle(document.querySelector('.slr2-fit-line')!).stroke,
+    point: getComputedStyle(document.querySelector('.slr2-point')!).fill,
+  }));
+  expect(await colors()).toEqual({ line: 'rgb(217, 95, 14)', point: 'rgb(20, 121, 208)' });
+  await expect(page.locator('.slr2-chart-legend')).toContainText('Fitted line');
+  await page.evaluate(() => localStorage.setItem('ml-suite-theme-v3', 'dark'));
+  await page.reload();
+  await expect(page.locator('.slr2-fit-line')).toBeAttached();
+  expect(await colors()).toEqual({ line: 'rgb(255, 176, 46)', point: 'rgb(58, 184, 255)' });
+  await page.getByRole('tab', { name: 'Compare' }).click();
+  await expect(page.locator('.slr2-chart-legend')).toContainText('Manual line');
+});
