@@ -5,15 +5,19 @@ import { LabLessonPanel, useUrlTab } from "../../../../components/common/LabTabs
 import {
   Check,
   ChevronDown,
+  Database,
   Info,
   Lightbulb,
+  Pause,
   Play,
   RefreshCw,
+  RotateCcw,
+  SkipForward,
   Table2,
   Upload,
 } from "lucide-react";
 import { logisticRegression } from "../../../../lib/algorithms/classification/logisticRegression";
-import { binaryMetrics, prAuc, rocCurve } from "../../../../lib/math/metrics";
+import { binaryMetrics, logLoss, prAuc, rocCurve } from "../../../../lib/math/metrics";
 import {
   applyThreshold,
   classificationSplit,
@@ -29,7 +33,7 @@ import type { LoadedAlgorithmDataset } from "../../../../data/algorithmDatasets"
 import { reportTrainingActivity } from "../../../../lib/trainingActivity";
 
 type Point = { x: number; y: number; z?: number };
-type DatasetKey = "reference" | "overlap" | "imported";
+type DatasetKey = "reference" | "loan" | "student" | "disease" | "purchase" | "overlap" | "separable" | "noisy" | "imported";
 type View = "probability" | "logodds" | "both";
 type Outcome = "TP" | "TN" | "FP" | "FN";
 
@@ -43,11 +47,15 @@ const tabs = [
   "Explain",
 ] as const;
 type Tab = (typeof tabs)[number];
+const lessonSteps = [
+  "Inspect binary data", "Compute a linear score", "Understand log-odds", "Estimate the intercept", "Estimate the coefficient",
+  "Apply sigmoid and classify", "Apply the probability threshold", "Derive the decision boundary", "Build the confusion matrix", "Evaluate the model",
+];
 
 function sigmoid(z: number) {
   return z >= 0 ? 1 / (1 + Math.exp(-z)) : Math.exp(z) / (1 + Math.exp(z));
 }
-function logitProbability(p: number) { return Math.log(p / (1 - p)); }
+function logitProbability(p: number) { const safe = Math.min(1 - 1e-12, Math.max(1e-12, p)); return Math.log(safe / (1 - safe)); }
 function decisionBoundary(beta0: number, beta1: number, threshold: number) {
   return Math.abs(beta1) < 1e-10 ? null : (logitProbability(threshold) - beta0) / beta1;
 }
@@ -55,41 +63,86 @@ function outcome(actual: number, predicted: number): Outcome {
   return actual ? (predicted ? "TP" : "FN") : predicted ? "FP" : "TN";
 }
 
-// Fixed synthetic binary observations recreate the reference's 0–1 teaching
-// example. Their observed class is sampled once, never derived from the live fit.
-const referenceRows = (() => {
-  let seed = 2026;
-  const random = () => ((seed = (1664525 * seed + 1013904223) >>> 0) / 4294967296);
-  return Array.from({ length: 320 }, (_, i) => {
-    const x = (i + random()) / 320;
-    return { x, y: random() < sigmoid(12 * (x - 0.5)) ? 1 : 0 };
+function makeBinaryRows(seed: number, count: number, min: number, max: number, center: number, steepness: number, noise = 0): Point[] {
+  let state = seed;
+  const random = () => ((state = (1664525 * state + 1013904223) >>> 0) / 4294967296);
+  return Array.from({ length: count }, (_, index) => {
+    const x = min + ((index + .15 + random() * .7) / count) * (max - min);
+    const chance = Math.min(.98, Math.max(.02, sigmoid(steepness * (x - center)) * (1 - noise) + noise * .5));
+    return { x: Number(x.toFixed(2)), y: random() < chance ? 1 : 0 };
   });
-})();
+}
+
+const referenceRows = makeBinaryRows(2026, 100, 2, 98, 58, .15, .14).map((row, index) => index === 62 ? { ...row, x: 62 } : row);
 
 const datasets = {
   reference: {
-    name: "Sigmoid reference (0–1)",
-    feature: "Feature x",
+    name: "Exam Pass vs Study Score",
+    feature: "Study Score",
     source: "Recommended",
     rows: referenceRows,
   },
+  loan: { name: "Loan Approval vs Credit Score", feature: "Credit Score", source: "Lab", rows: makeBinaryRows(2041, 100, 350, 850, 615, .025) },
+  student: { name: "Student Risk Dataset", feature: "Attendance Score", source: "Lab", rows: makeBinaryRows(2042, 100, 5, 99, 60, -.12) },
+  disease: { name: "Disease Risk vs Marker Score", feature: "Marker Score", source: "Lab", rows: makeBinaryRows(2043, 100, 1, 100, 55, .10) },
+  purchase: { name: "Purchase vs Engagement Score", feature: "Engagement Score", source: "Lab", rows: makeBinaryRows(2044, 100, 0, 100, 52, .095) },
   overlap: {
     name: "Overlapping binary classes",
     feature: "Feature x",
     source: "Lab",
     rows: datasetB1D(),
   },
+  separable: { name: "Highly Separable Dataset", feature: "Feature x", source: "Lab", rows: makeBinaryRows(2045, 100, 0, 100, 50, .42) },
+  noisy: { name: "Noisy Dataset", feature: "Feature x", source: "Lab", rows: makeBinaryRows(2046, 100, 0, 100, 50, .08, .34) },
 };
 
-function parseCsv(text: string) {
-  const lines = text.trim().split(/\r?\n/).filter(Boolean);
+type CsvPreview = { name: string; columns: string[]; records: string[][] };
+
+function splitCsvLine(line: string): string[] {
+  const cells: string[] = [];
+  let cell = "";
+  let quoted = false;
+  for (let index = 0; index < line.length; index++) {
+    const char = line[index];
+    if (char === '"') {
+      if (quoted && line[index + 1] === '"') { cell += '"'; index++; }
+      else quoted = !quoted;
+    } else if (char === "," && !quoted) { cells.push(cell.trim()); cell = ""; }
+    else cell += char;
+  }
+  if (quoted) throw Error("CSV has an unclosed quoted value.");
+  cells.push(cell.trim());
+  return cells;
+}
+
+function parseCsv(text: string, name: string): CsvPreview {
+  const lines = text.replace(/^\uFEFF/, "").trim().split(/\r?\n/).filter(line => line.trim());
   if (lines.length < 5) throw Error("CSV requires a header and at least four labeled rows.");
-  return lines.slice(1).map((line) => {
-    const v = line.split(",").map(Number);
-    if (!Number.isFinite(v[0]) || ![0, 1].includes(v.at(-1)!))
-      throw Error("CSV needs a numeric feature and binary target.");
-    return { x: v[0], y: v.at(-1)! };
+  const columns = splitCsvLine(lines[0]);
+  if (columns.length < 2 || columns.some(column => !column)) throw Error("CSV needs named feature and target columns.");
+  const records = lines.slice(1).map(splitCsvLine);
+  if (records.some(record => record.length !== columns.length)) throw Error("CSV rows must have the same number of columns as the header.");
+  return { name, columns, records };
+}
+
+function binaryLabel(value: string): number | null {
+  const label = value.trim().toLowerCase();
+  if (["0", "no", "false", "fail", "denied", "negative", "low"].includes(label)) return 0;
+  if (["1", "yes", "true", "pass", "approved", "positive", "high"].includes(label)) return 1;
+  return null;
+}
+
+function csvPoints(preview: CsvPreview, featureIndex: number, targetIndex: number): Point[] {
+  if (featureIndex === targetIndex) throw Error("Choose different feature and target columns.");
+  const points = preview.records.map((record, index) => {
+    const feature = record[featureIndex];
+    const x = feature === "" ? NaN : Number(feature);
+    const y = binaryLabel(record[targetIndex] ?? "");
+    if (!Number.isFinite(x) || y === null) throw Error(`Row ${index + 2} needs a numeric feature and a binary target (0/1, Yes/No, or Pass/Fail).`);
+    return { x, y };
   });
+  if (new Set(points.map(point => point.y)).size !== 2) throw Error("The target must contain both binary classes.");
+  return points;
 }
 
 function rowsFromLoaded(dataset: LoadedAlgorithmDataset): Point[] {
@@ -102,14 +155,9 @@ function rowsFromLoaded(dataset: LoadedAlgorithmDataset): Point[] {
   if (!target) return [];
   const features = columns.filter((column) => column !== target);
   if (!features.length) return [];
-  return dataset.data.map((row) => {
-    const x = Number(row[features[0]]);
-    const yRaw = Number(row[target]);
-    return {
-      x: Number.isFinite(x) ? x : 0,
-      y: yRaw >= 0.5 ? 1 : 0,
-    };
-  });
+  try {
+    return csvPoints({ name: dataset.name, columns: [features[0], target], records: dataset.data.map(row => [String(row[features[0]] ?? ""), String(row[target] ?? "")]) }, 0, 1);
+  } catch { return []; }
 }
 
 function featuresOf(row: Point) {
@@ -194,6 +242,8 @@ function SigmoidPlot({
   probeX,
   selectedIndex,
   filterOutcome,
+  showRegions,
+  showSampleLabels,
   onProbe,
   onSelect,
 }: {
@@ -205,6 +255,8 @@ function SigmoidPlot({
   probeX: number;
   selectedIndex: number | null;
   filterOutcome: Outcome | null;
+  showRegions: boolean;
+  showSampleLabels: boolean;
   onProbe: (x: number) => void;
   onSelect: (index: number) => void;
 }) {
@@ -215,7 +267,7 @@ function SigmoidPlot({
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
   }, []);
-  const W = compact ? 400 : 1030, H = compact ? 400 : 430, L = compact ? 43 : 76, R = compact ? 12 : 36, T = compact ? 70 : 67, B = compact ? 54 : 63;
+  const W = compact ? 400 : 1030, H = compact ? 360 : 275, L = compact ? 43 : 70, R = compact ? 12 : 36, T = compact ? 55 : 36, B = compact ? 51 : 38;
   const xs = rows.map((v) => v.x);
   const rawMin = Math.min(...xs), rawMax = Math.max(...xs);
   const referenceScale = rawMin >= 0 && rawMax <= 1;
@@ -253,11 +305,11 @@ function SigmoidPlot({
     >
       <defs><clipPath id="lr-plot-clip"><rect x={L} y={T} width={W - L - R} height={H - T - B} /></clipPath></defs>
       <rect x={L} y={T} width={W - L - R} height={H - T - B} fill="transparent" className="lr-plot-hit-area" onClick={clickProbe} />
-      <g clipPath="url(#lr-plot-clip)">
+      {showRegions && <g clipPath="url(#lr-plot-clip)">
         <rect x={L} y={T} width={leftEdge - L} height={H - T - B} className={leftClass ? "lr-region-one" : "lr-region-zero"} />
         {visibleBoundary && <rect x={leftEdge} y={T} width={W - R - leftEdge} height={H - T - B} className={rightClass ? "lr-region-one" : "lr-region-zero"} />}
-      </g>
-      {[0, 0.5, 1].map((v) => (
+      </g>}
+      {[0, 0.2, 0.4, 0.6, 0.8, 1].map((v) => (
         <g key={v}>
           <line x1={L} x2={W - R} y1={sy(v)} y2={sy(v)} className="grid" />
           <text x={L - 16} y={sy(v) + 4} textAnchor="end">
@@ -282,6 +334,15 @@ function SigmoidPlot({
         </>
       )}
       <path d={path} className="sigmoid" />
+      {showRegions && !compact && (visibleBoundary ? [
+        { start: L, end: leftEdge, value: leftClass },
+        { start: leftEdge, end: W - R, value: rightClass },
+      ] : [{ start: L, end: W - R, value: leftClass }]).map((region, index) => region.end - region.start > 155 && (
+        <g key={index} className={region.value ? "lr-region-label positive" : "lr-region-label negative"}>
+          <text x={(region.start + region.end) / 2} y={sy(.74)}>Predicted Class {region.value}</text>
+          <text x={(region.start + region.end) / 2} y={sy(.67)}>{region.value ? `P ≥ ${threshold.toFixed(2)}` : `P < ${threshold.toFixed(2)}`}</text>
+        </g>
+      ))}
       {rows.map((v, i) => {
         const predicted = proba(v.x) >= threshold ? 1 : 0;
         const result = outcome(v.y, predicted);
@@ -290,9 +351,10 @@ function SigmoidPlot({
           className={`lr-observation ${v.y ? "pt-pos" : "pt-neg"}${selectedIndex === i ? " is-selected" : ""}${filterOutcome && filterOutcome !== result ? " is-dimmed" : ""}`}
           tabIndex={0} role="button" aria-label={`Sample ${i + 1}: actual class ${v.y}, predicted class ${predicted}, ${result}`}
           onClick={() => onSelect(i)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); onSelect(i); } }}>
-          <title>Sample #{i + 1} · x {v.x.toFixed(2)} · actual {v.y} · P {proba(v.x).toFixed(3)} · {result}</title>
+          <title>Sample #{i + 1} · x {v.x.toFixed(2)} · actual class {v.y} · P {proba(v.x).toFixed(3)} · threshold {threshold.toFixed(2)} · predicted class {predicted} · {result}</title>
         </circle>;
       })}
+      {showSampleLabels && rows.filter((_, index) => index % Math.max(1, Math.floor(rows.length / 14)) === 0).map((sample, index) => <text key={index} x={sx(sample.x)} y={sy(sample.y ? .88 : .12)} className="lr-sample-label">{sample.y}</text>)}
       {probeX >= xmin && probeX <= xmax && <g className="lr-probe" aria-hidden="true"><line x1={sx(probeX)} x2={sx(probeX)} y1={sy(proba(probeX))} y2={H-B} /><circle cx={sx(probeX)} cy={sy(proba(probeX))} r="5" /></g>}
       <text x={(L + W - R) / 2} y={H - 10} className="axis-title">
         {feature}
@@ -367,52 +429,6 @@ function LogOddsStrip({
         Feature x
       </text>
       <text transform={`translate(${compact ? 17 : 22} ${(T+H-B)/2}) rotate(-90)`} className="axis-title">Log-odds z</text>
-    </svg>
-  );
-}
-
-/* ---------------------------------------------------- probability bars */
-
-function ProbabilityHistogram({
-  scores,
-  threshold,
-}: {
-  scores: number[];
-  threshold: number;
-}) {
-  const bins = 20;
-  const counts = new Array(bins).fill(0) as number[];
-  scores.forEach((p) => {
-    const i = Math.min(bins - 1, Math.max(0, Math.floor(p * bins)));
-    counts[i] += 1;
-  });
-  const peak = Math.max(1, ...counts);
-  const W = 240,
-    H = 72,
-    B = 16,
-    bw = W / bins;
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Predicted probability distribution">
-      {counts.map((c, i) => {
-        const h = (c / peak) * (H - B - 2);
-        return (
-          <rect
-            key={i}
-            x={i * bw + 0.6}
-            y={H - B - h}
-            width={bw - 1.2}
-            height={h}
-            className={(i + 0.5) / bins >= threshold ? "hb-pos" : "hb-neg"}
-          />
-        );
-      })}
-      <line x1="0" x2={W} y1={H - B} y2={H - B} stroke="currentColor" strokeOpacity="0.2" />
-      {[0, 0.25, 0.5, 0.75, 1].map((t) => (
-        <text key={t} x={t * W} y={H - 4} textAnchor={t === 0 ? "start" : t === 1 ? "end" : "middle"}>
-          {t === 0 ? "0" : t.toFixed(2)}
-        </text>
-      ))}
     </svg>
   );
 }
@@ -528,14 +544,24 @@ export default function LogisticRegressionPage() {
     [threshold, setThreshold] = useState(0.5),
     [view, setView] = useState<View>("probability"),
     [coefficientOverride, setCoefficientOverride] = useState<{ beta0: number; beta1: number } | null>(null),
-    [selectedIndex, setSelectedIndex] = useState<number | null>(null),
+    [selectedIndex, setSelectedIndex] = useState<number | null>(62),
     [filterOutcome, setFilterOutcome] = useState<Outcome | null>(null),
     [changeNote, setChangeNote] = useState("Move a control to see how probability and predicted classes change."),
     [l2, setL2] = useState(1),
     [trained, setTrained] = useState(true),
     [dataLoaded, setDataLoaded] = useState(false),
     [status, setStatus] = useState("Last trained: just now");
-  const [predX, setPredX] = useState(0.5);
+  const [predX, setPredX] = useState(62);
+  const [step, setStep] = useState(5);
+  const [playing, setPlaying] = useState(false);
+  const [showRegions, setShowRegions] = useState(true);
+  const [showSampleLabels, setShowSampleLabels] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
+  const [fitMode, setFitMode] = useState<"auto" | "manual">("auto");
+  const [csvPreview, setCsvPreview] = useState<CsvPreview | null>(null);
+  const [csvFeatureIndex, setCsvFeatureIndex] = useState(0);
+  const [csvTargetIndex, setCsvTargetIndex] = useState(1);
+  const [csvError, setCsvError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null),
     appliedHandoffKey = useRef<string | null>(null),
     model = useMemo(() => {
@@ -589,15 +615,25 @@ export default function LogisticRegressionPage() {
   const inspectP = proba(predX);
   const inspectClass = inspectP >= threshold ? 1 : 0;
   const positive = rows.filter((v) => v.y).length / Math.max(1, rows.length);
+  const testLogLoss = model && testScores.length ? logLoss(model.split.testY, testScores) : null;
+  const testConfusion = testMetrics ?? metrics;
+  const odds = Math.exp(Math.max(-50, Math.min(50, inspectZ)));
+  const probeSample = selectedIndex === null ? null : rows[selectedIndex] ?? null;
+  const probeOutcome = probeSample ? outcome(probeSample.y, inspectClass) : null;
+  const classAtMin = proba(Math.min(...rows.map(row => row.x))) >= threshold ? 1 : 0;
+  const classAtMax = proba(Math.max(...rows.map(row => row.x))) >= threshold ? 1 : 0;
 
-  const posScores = allScores.filter((_, i) => rows[i].y);
-  const negScores = allScores.filter((_, i) => !rows[i].y);
-  const mean = (list: number[]) =>
-    list.length ? list.reduce((a, b) => a + b, 0) / list.length : 0;
-  const selected = selectedIndex === null ? null : rows[selectedIndex] ?? null;
-  const selectedProbability = selected ? proba(selected.x) : 0;
-  const selectedPredicted = selectedProbability >= threshold ? 1 : 0;
-  const selectedOutcome = selected ? outcome(selected.y, selectedPredicted) : null;
+  useEffect(() => {
+    if (!playing) return;
+    const timer = window.setInterval(() => setStep(current => {
+      if (current >= lessonSteps.length - 1) {
+        setPlaying(false);
+        return current;
+      }
+      return current + 1;
+    }), 950);
+    return () => window.clearInterval(timer);
+  }, [playing]);
 
   const current =
     dataset === "imported"
@@ -620,8 +656,9 @@ export default function LogisticRegressionPage() {
     setSelectedIndex(null);
     setFilterOutcome(null);
     setChangeNote(`Switched to ${key === "imported" ? importedLabel : datasets[key].name}. The model fit and axis range updated.`);
-    setTrained(false);
-    setStatus("Dataset changed — retrain to refresh the fit");
+    setThreshold(0.5);
+    setTrained(true);
+    setStatus("Auto fit recalculated for the selected dataset");
   };
 
   const applyLoaded = (next: LoadedAlgorithmDataset) => {
@@ -675,9 +712,17 @@ export default function LogisticRegressionPage() {
     setThreshold(0.5);
     setView("probability");
     setL2(1);
-    setPredX(0.5);
+    setPredX(62);
+    setStep(5);
+    setPlaying(false);
+    setShowRegions(true);
+    setShowSampleLabels(false);
+    setManualOpen(false);
+    setFitMode("auto");
+    setCsvPreview(null);
+    setCsvError("");
     setCoefficientOverride(null);
-    setSelectedIndex(null);
+    setSelectedIndex(62);
     setFilterOutcome(null);
     setChangeNote("Restored the fitted reference model and probability threshold 0.50.");
     setTrained(true);
@@ -728,13 +773,6 @@ export default function LogisticRegressionPage() {
     }
   };
 
-  const bars = [
-    ["Accuracy", metrics.accuracy],
-    ["Precision (PPV)", metrics.precision],
-    ["Recall (Sensitivity)", metrics.recall],
-    ["F1 Score", metrics.f1],
-  ] as const;
-
   const xMin = Math.min(...rows.map((v) => v.x));
   const xMax = Math.max(...rows.map((v) => v.x));
   const featureCount = rows.some((r) => r.z !== undefined) ? 2 : 1;
@@ -754,26 +792,49 @@ export default function LogisticRegressionPage() {
       : `β0 changed from ${old.toFixed(2)} to ${next.toFixed(2)}, shifting the sigmoid ${beta1 >= 0 ? (next > old ? "left" : "right") : (next > old ? "right" : "left")}. ${nextBoundary === null ? "There is no finite decision boundary." : `Decision boundary: x = ${nextBoundary.toFixed(2)}.`}`);
   };
 
+  const commitCsv = (preview: CsvPreview, featureIndex: number, targetIndex: number) => {
+    try {
+      const points = csvPoints(preview, featureIndex, targetIndex);
+      setImported(points);
+      setImportedLabel(preview.name);
+      setImportedFeature(preview.columns[featureIndex]);
+      setRows(points);
+      setDataset("imported");
+      setPredX(medianX(points));
+      setThreshold(.5);
+      setCoefficientOverride(null);
+      setSelectedIndex(null);
+      setFilterOutcome(null);
+      setTrained(true);
+      setStatus(`Imported ${points.length} labeled observations`);
+      setCsvPreview(null);
+      setCsvError("");
+    } catch (error) {
+      setCsvError(error instanceof Error ? error.message : "Import failed.");
+    }
+  };
+
   return (
     <div className="logistic-page">
+      <div className="lr-breadcrumb">Supervised Learning <span>›</span> Logistic Regression <span>›</span> <strong>{tab}</strong></div>
       <header className="lr-head">
         <div className="lr-head-icon">
-          <svg viewBox="0 0 28 28" fill="none" aria-hidden="true"><path d="M3 3v22h22" stroke="currentColor" strokeWidth="2"/><path d="M4 22C9 22 9 21 12 17S16 7 24 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/></svg>
+          <svg viewBox="0 0 36 36" fill="none" aria-hidden="true"><path d="M6 5v26h25" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/><path d="M8 27c8 0 8-17 18-17h4" stroke="currentColor" strokeWidth="2.7" strokeLinecap="round"/><circle cx="10" cy="23" r="2.4" fill="currentColor"/><circle cx="26" cy="11" r="2.4" fill="currentColor"/></svg>
         </div>
         <div>
           <h1>Logistic Regression</h1>
           <p>
             Learn how logistic regression converts a linear score into probability and classifies binary outcomes.
           </p>
-          <small className="lr-head-note">Logistic Regression predicts probability, then applies a threshold to determine the class.</small>
         </div>
+        <span className="lr-head-dataset">{dataset === "reference" ? "Student Risk Dataset" : current.name}</span>
         <div className="lr-progress">
           <span>
             Lesson Progress
           </span>
           <LabProgressMeter />
         </div>
-        <button className="lr-resume" onClick={() => setStatus("Progress saved")}>
+        <button className="lr-resume" onClick={() => { setTab("Visualize"); setPlaying(true); }}>
           <Play />
           Resume
         </button>
@@ -792,7 +853,29 @@ export default function LogisticRegressionPage() {
         ))}
       </nav>
 
-      <section className="lr-body">
+      {tab === "Visualize" && <div className="lr-dataset-toolbar">
+        <strong>DATASET</strong>
+        <Database aria-hidden="true" />
+        <select aria-label="Dataset" value={dataset} onChange={event => choose(event.target.value as DatasetKey)}>
+          {Object.entries(datasets).map(([key, item]) => <option key={key} value={key}>{item.name}</option>)}
+          {imported && <option value="imported">{importedLabel}</option>}
+        </select>
+        <span>{rows.length} samples · {featureCount} feature{featureCount === 1 ? "" : "s"} · binary target</span>
+        <div className="lr-toolbar-actions">
+          <button onClick={reset}><RefreshCw />Reset Dataset</button>
+          <button onClick={() => fileRef.current?.click()}><Upload />Upload CSV</button>
+        </div>
+      </div>}
+      {tab === "Visualize" && csvPreview && <div className="lr-csv-preview" role="group" aria-label="Map CSV columns">
+        <strong>Map columns from {csvPreview.name}</strong>
+        <label>Numeric feature <select aria-label="CSV feature column" value={csvFeatureIndex} onChange={event => setCsvFeatureIndex(Number(event.target.value))}>{csvPreview.columns.map((column, index) => <option key={index} value={index}>{column}</option>)}</select></label>
+        <label>Binary target <select aria-label="CSV target column" value={csvTargetIndex} onChange={event => setCsvTargetIndex(Number(event.target.value))}>{csvPreview.columns.map((column, index) => <option key={index} value={index}>{column}</option>)}</select></label>
+        <button onClick={() => commitCsv(csvPreview, csvFeatureIndex, csvTargetIndex)}>Load {csvPreview.records.length} rows</button>
+        <button onClick={() => { setCsvPreview(null); setCsvError(""); }}>Cancel</button>
+      </div>}
+      {csvError && <p className="lr-csv-error" role="alert">{csvError}</p>}
+
+      <section className={`lr-body ${tab === "Visualize" ? "lr-visual-layout" : ""}`}>
         <div className="lr-main">
           {tab === "Learn" ? (
             <LabLessonPanel tab="Learn" route="/ml/supervised/logistic-regression" />
@@ -823,13 +906,20 @@ export default function LogisticRegressionPage() {
                 {view !== "logodds" && (
                   <>
                     <div className="lr-chart-head">
-                      <div><h2>Logistic Regression — Probability Curve &amp; Decision Boundary</h2><p>Each observation belongs to class 0 or 1. The sigmoid shows the model’s predicted probability P(y = 1 | x).</p></div>
+                      <h2>Probability Curve &amp; Decision Boundary</h2>
+                      <div className="lr-playback" aria-label="Training walkthrough">
+                        <button onClick={() => { setStep(0); setPlaying(true); }}><Play />Play</button>
+                        <button onClick={() => setPlaying(value => !value)}>{playing ? <Pause /> : <Play />}{playing ? "Pause" : "Resume"}</button>
+                        <button onClick={() => { setPlaying(false); setStep(value => Math.min(lessonSteps.length - 1, value + 1)); }}><SkipForward />Step</button>
+                        <button onClick={() => { setPlaying(false); setStep(0); }}><RotateCcw />Restart</button>
+                        <span>Step {step + 1} / {lessonSteps.length} · {lessonSteps[step]}</span>
+                      </div>
                       <div className="lr-legend">
-                        <span><i className="pos" />Actual class 1</span>
-                        <span><i className="neg" />Actual class 0</span>
-                        <span><i className="lr-legend-curve" />Predicted probability</span>
-                        <span><i className="lr-legend-threshold" />Probability threshold</span>
-                        <span><i className="lr-legend-boundary" />Decision boundary</span>
+                        <span><i className="neg" />Actual class 0 (Fail)</span>
+                        <span><i className="pos" />Actual class 1 (Pass)</span>
+                        <span><i className="lr-legend-curve" />Predicted probability (sigmoid)</span>
+                        <span><i className="lr-legend-threshold" />Threshold (τ = {threshold.toFixed(2)})</span>
+                        <span><i className="lr-legend-boundary" />Decision boundary ({boundary === null ? "none" : `x = ${boundary.toFixed(1)}`})</span>
                       </div>
                     </div>
                     <SigmoidPlot
@@ -841,15 +931,30 @@ export default function LogisticRegressionPage() {
                       probeX={predX}
                       selectedIndex={selectedIndex}
                       filterOutcome={filterOutcome}
+                      showRegions={showRegions}
+                      showSampleLabels={showSampleLabels}
                       onProbe={(x) => { setPredX(x); setSelectedIndex(null); }}
                       onSelect={(index) => { setSelectedIndex(index); setPredX(rows[index].x); }}
                     />
-                    <div className="lr-chart-footer">
-                      <div className="lr-equations" aria-label="Logistic regression equations"><span>Linear score: <b>z = β₀ + β₁x</b></span><span>Probability: <b>P(y = 1 | x) = σ(z)</b></span><span>Sigmoid: <b>σ(z) = 1 / (1 + e⁻ᶻ)</b></span><span>Log-odds: <b>ln(P / (1 − P)) = β₀ + β₁x</b></span></div>
-                      <p className="lr-boundary-note" title="The feature value where the predicted probability equals the chosen probability threshold.">Probability threshold <b>τ = {threshold.toFixed(2)}</b> <span>→</span> Decision boundary <b>{boundary === null ? "No finite x boundary" : `x = ${boundary.toFixed(2)}`}</b>{boundary !== null && (boundary < xMin || boundary > xMax) ? " (outside the visible feature range)" : ""}</p>
-                      <p className="lr-chart-tip">Logistic Regression is a classification model: the curve gives probability; the threshold converts it into a class. Click a sample or the plot to inspect a value.</p>
+                    <div className="lr-probe-tooltip" role="status">
+                      <b>x = {predX.toFixed(1)}</b>
+                      <span>Actual class = {probeSample ? (probeSample.y ? "Pass" : "Fail") : "unlabeled probe"}</span>
+                      <span>P(y = 1) = {inspectP.toFixed(2)}</span>
+                      <span>Threshold = {threshold.toFixed(2)}</span>
+                      <span>Predicted = {inspectClass ? "Pass" : "Fail"}</span>
+                      <strong>{probeOutcome ? `Result = ${probeOutcome} · ${probeOutcome === "TP" ? "True Positive" : probeOutcome === "TN" ? "True Negative" : probeOutcome === "FP" ? "False Positive" : "False Negative"}` : "Select an observed point to see TP / TN / FP / FN"}</strong>
                     </div>
-                    {selected && <div className="lr-selected-sample" role="status"><strong>Sample #{selectedIndex! + 1}</strong><span>x = {selected.x.toFixed(2)}</span><span>Actual class {selected.y}</span><span>P(y = 1 | x) = {selectedProbability.toFixed(3)}</span><span>τ = {threshold.toFixed(2)}</span><span>Predicted class {selectedPredicted}</span><b>{selectedOutcome} · {selectedOutcome === "TP" ? "True Positive" : selectedOutcome === "TN" ? "True Negative" : selectedOutcome === "FP" ? "False Positive" : "False Negative"}</b></div>}
+                    <div className="lr-feature-strip" aria-label="Feature-Space Classification">
+                      <strong>Feature-Space Classification <Info /></strong>
+                      <div className="lr-strip-track">
+                        {boundary !== null && boundary > xMin && boundary < xMax ? <>
+                          <div className={classAtMin ? "positive" : "negative"} style={{ width: `${((boundary - xMin) / (xMax - xMin)) * 100}%` }}><b>Class {classAtMin} region</b><span>x &lt; {boundary.toFixed(1)} → predict {classAtMin}</span></div>
+                          <div className={classAtMax ? "positive" : "negative"} style={{ flex: 1 }}><b>Class {classAtMax} region</b><span>x ≥ {boundary.toFixed(1)} → predict {classAtMax}</span></div>
+                          <em style={{ left: `${((boundary - xMin) / (xMax - xMin)) * 100}%` }}>x = {boundary.toFixed(1)}</em>
+                        </> : <div className={classAtMin ? "positive" : "negative"} style={{ width: "100%" }}><b>Class {classAtMin} across this range</b><span>{boundary === null ? "No finite decision boundary" : "Boundary is outside the visible data range"}</span></div>}
+                      </div>
+                    </div>
+                    <div className="lr-plot-equations" aria-label="Logistic regression equations">z = β₀ + β₁x <span>·</span> P(y = 1 | x) = σ(z) <span>·</span> σ(z) = 1 / (1 + e⁻ᶻ)</div>
                   </>
                 )}
 
@@ -875,125 +980,68 @@ export default function LogisticRegressionPage() {
               </article>
 
               <div className="lr-metrics">
-                <article className="lr-card">
+                <article className="lr-card lr-analysis-confusion">
                   <span className="lr-card-title">
-                    Confusion Matrix (τ = {threshold.toFixed(2)})
-                    <span title="Counts of actual classes versus model predictions at the current threshold."><Info /></span>
+                    Confusion Matrix <span title="Held-out test set at the current threshold."><Info /></span>
                   </span>
                   <table className="lr-confusion">
                     <caption>Predicted</caption>
                     <thead>
                       <tr>
                         <th className="corner" />
-                        <th>Positive</th>
                         <th>Negative</th>
+                        <th>Positive</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr>
-                        <th>Positive</th>
-                        <td className="hit"><button type="button" className={filterOutcome === "TP" ? "active" : ""} aria-pressed={filterOutcome === "TP"} onClick={() => setFilterOutcome(filterOutcome === "TP" ? null : "TP")}>TP {metrics.tp}</button></td>
-                        <td className="miss"><button type="button" className={filterOutcome === "FN" ? "active" : ""} aria-pressed={filterOutcome === "FN"} onClick={() => setFilterOutcome(filterOutcome === "FN" ? null : "FN")}>FN {metrics.fn}</button></td>
+                        <th>Negative</th>
+                        <td className="hit"><button type="button" className={filterOutcome === "TN" ? "active" : ""} aria-pressed={filterOutcome === "TN"} onClick={() => setFilterOutcome(filterOutcome === "TN" ? null : "TN")}>TN {testConfusion.tn}</button></td>
+                        <td className="miss"><button type="button" className={filterOutcome === "FP" ? "active" : ""} aria-pressed={filterOutcome === "FP"} onClick={() => setFilterOutcome(filterOutcome === "FP" ? null : "FP")}>FP {testConfusion.fp}</button></td>
                       </tr>
                       <tr>
-                        <th>Negative</th>
-                        <td className="miss"><button type="button" className={filterOutcome === "FP" ? "active" : ""} aria-pressed={filterOutcome === "FP"} onClick={() => setFilterOutcome(filterOutcome === "FP" ? null : "FP")}>FP {metrics.fp}</button></td>
-                        <td className="hit"><button type="button" className={filterOutcome === "TN" ? "active" : ""} aria-pressed={filterOutcome === "TN"} onClick={() => setFilterOutcome(filterOutcome === "TN" ? null : "TN")}>TN {metrics.tn}</button></td>
+                        <th>Positive</th>
+                        <td className="miss"><button type="button" className={filterOutcome === "FN" ? "active" : ""} aria-pressed={filterOutcome === "FN"} onClick={() => setFilterOutcome(filterOutcome === "FN" ? null : "FN")}>FN {testConfusion.fn}</button></td>
+                        <td className="hit"><button type="button" className={filterOutcome === "TP" ? "active" : ""} aria-pressed={filterOutcome === "TP"} onClick={() => setFilterOutcome(filterOutcome === "TP" ? null : "TP")}>TP {testConfusion.tp}</button></td>
                       </tr>
                     </tbody>
                   </table>
                   {filterOutcome && <p className="lr-filter-note">Showing {filterOutcome} samples. Click the cell again to clear.</p>}
                 </article>
 
-                <article className="lr-card">
+                <article className="lr-card lr-analysis-metrics">
                   <span className="lr-card-title">
-                    Key Metrics
-                    <Info />
+                    Metrics (Test Set) <Info />
                   </span>
-                  <div className="lr-bars">
-                    {bars.map(([label, value], i) => (
-                      <label key={label}>
-                        {label}
-                        <strong>{(value * 100).toFixed(1)}%</strong>
-                        <i>
-                          <em
-                            className={`b${i + 1}`}
-                            style={{ width: `${value * 100}%` }}
-                          />
-                        </i>
-                      </label>
-                    ))}
+                  <div className="lr-test-metrics">
+                    <span>Accuracy <b>{(testConfusion.accuracy * 100).toFixed(1)}%</b></span>
+                    <span>Precision <b>{(testConfusion.precision * 100).toFixed(1)}%</b></span>
+                    <span>Recall <b>{(testConfusion.recall * 100).toFixed(1)}%</b></span>
+                    <span>F1 Score <b>{(testConfusion.f1 * 100).toFixed(1)}%</b></span>
+                    <span>Log Loss <b>{testLogLoss === null ? "—" : testLogLoss.toFixed(3)}</b></span>
                   </div>
                 </article>
 
-                <article className="lr-card">
-                  <span className="lr-card-title">
-                    Probability Overview
-                    <Info />
-                  </span>
-                  <dl className="lr-stats">
-                    <dt>Mean predicted probability</dt><dd>{mean(allScores).toFixed(2)}</dd>
-                    <dt>Mean P (Positive)</dt>
-                    <dd>{mean(posScores).toFixed(2)}</dd>
-                    <dt>Mean P (Negative)</dt>
-                    <dd>{mean(negScores).toFixed(2)}</dd>
-                    <dt>Min / Max Probability</dt>
-                    <dd>
-                      {allScores.length
-                        ? `${Math.min(...allScores).toFixed(2)} / ${Math.max(...allScores).toFixed(2)}`
-                        : "—"}
-                    </dd>
-                    <dt>Test ROC-AUC / PR-AUC</dt>
-                    <dd>
-                      {roc ? roc.auc.toFixed(3) : "—"} /{" "}
-                      {pr != null ? pr.toFixed(3) : "—"}
-                    </dd>
-                  </dl>
-                  <div className="lr-histogram">
-                    <ProbabilityHistogram
-                      scores={allScores}
-                      threshold={threshold}
-                    />
-                    <div style={{ textAlign: "center", fontSize: 10, color: "var(--lab-muted)" }}>
-                      P(Positive)
-                    </div>
-                  </div>
+                <article className="lr-card lr-analysis-equation">
+                  <span className="lr-card-title">Model Equation <Info /></span>
+                  <div className="lr-big-equation">z = <em>{beta0.toFixed(2)}</em> {beta1 < 0 ? "−" : "+"} <strong>{Math.abs(beta1).toFixed(2)}x</strong></div>
+                  <p>P(y = 1 | x) = σ(z)</p>
+                  <p>σ(z) = 1 / (1 + e⁻ᶻ)</p>
                 </article>
 
-                <article className="lr-card">
-                  <span className="lr-card-title">
-                    Odds Insight
-                    <Info />
-                  </span>
-                  <div className="lr-odds-row">
-                    Probability at probe <b>{inspectP.toFixed(3)}</b>
-                  </div>
-                  <div className="lr-odds-row">
-                    Odds P / (1 − P) <b>{Math.exp(Math.min(50, inspectZ)).toFixed(2)} : 1</b>
-                  </div>
-                  <div className="lr-odds-row">
-                    Log-odds ln(P / (1 − P)) <b>{inspectZ.toFixed(3)}</b>
-                  </div>
-                  <div className="lr-odds-row">Linear predictor β₀ + β₁x <b>{inspectZ.toFixed(3)}</b></div>
-                  <label className="lr-inline-field">
-                    Inspect {current.feature}
-                    <input
-                      aria-label="Prediction feature value"
-                      type="number"
-                      value={predX}
-                      onChange={(e) => setPredX(Number(e.target.value))}
-                    />
-                  </label>
-                  <p className="lr-odds-sub" style={{ textAlign: "left", margin: 0 }}>
-                    x = {predX.toFixed(2)} · predicted class {inspectClass} at τ = {threshold.toFixed(2)}
-                  </p>
-                  <div className="lr-callout">
-                    <Lightbulb />
-                    <span>
-                      Odds &gt; 1 favor the positive class. Odds &lt; 1 favor
-                      the negative class.
-                    </span>
-                  </div>
+                <article className="lr-card lr-analysis-prediction">
+                  <span className="lr-card-title">Prediction (at x = {predX.toFixed(1)}) <Info /></span>
+                  <p>x = {predX.toFixed(1)}</p>
+                  <p>z = {inspectZ.toFixed(2)}</p>
+                  <p>P(y = 1) = {inspectP.toFixed(2)}</p>
+                  <p>Prediction = <strong>{inspectClass ? "Positive" : "Negative"}</strong></p>
+                </article>
+
+                <article className="lr-card lr-analysis-insight">
+                  <span className="lr-card-title">Log-Odds Insight <Info /></span>
+                  <p className="lr-insight-formula">log(P / (1 − P)) = z</p>
+                  <p>At x = {predX.toFixed(1)}, log({inspectP.toFixed(2)} / {(1 - inspectP).toFixed(2)}) = {inspectZ.toFixed(2)}</p>
+                  <small>{inspectZ >= 0 ? "Positive log-odds favor class 1." : "Negative log-odds favor class 0."}</small>
                 </article>
               </div>
 
@@ -1029,6 +1077,48 @@ export default function LogisticRegressionPage() {
         </div>
 
         <aside className="lr-rail" aria-label="Lab settings">
+          {tab === "Visualize" && <div className="lr-visual-rail">
+            <section className="lr-card lr-model-controls">
+              <h2>⚙ <span>MODEL CONTROLS</span></h2>
+              <label className="lr-control-label" htmlFor="lr-fit-mode">Fit Mode</label>
+              <select id="lr-fit-mode" value={fitMode} onChange={event => {
+                const next = event.target.value as "auto" | "manual";
+                setFitMode(next);
+                setManualOpen(next === "manual");
+                if (next === "auto") setCoefficientOverride(null);
+              }}>
+                <option value="auto">Auto Fit (Recommended)</option>
+                <option value="manual">Manual Experiment</option>
+              </select>
+              <small className="lr-control-help">{fitMode === "auto" ? "Model coefficients are automatically estimated from the current dataset." : "Custom coefficients update the sigmoid without retraining."}</small>
+              <div className="lr-coeff-cards">
+                <div><span>Intercept (β₀)</span><strong>{beta0.toFixed(2)}</strong><small>{fitMode === "auto" ? "Calculated from current dataset" : "Manual value"}</small></div>
+                <div><span>Coefficient (β₁)</span><strong>{beta1.toFixed(3)}</strong><small>{fitMode === "auto" ? "Calculated from current dataset" : "Manual value"}</small></div>
+              </div>
+              <label className="lr-control-label" htmlFor="lr-visual-threshold">Probability Threshold (τ) <output>{threshold.toFixed(2)}</output></label>
+              <input id="lr-visual-threshold" aria-label="Probability Threshold" type="range" min="0.05" max="0.95" step="0.01" value={threshold} onChange={event => updateThreshold(Number(event.target.value))}/>
+              <div className="lr-range-ends"><span>0.05</span><span>0.95</span></div>
+              <label className="lr-control-label" htmlFor="lr-visual-prediction">Prediction X ({current.feature}) <output>{predX.toFixed(1)}</output></label>
+              <input id="lr-visual-prediction" aria-label={`Prediction X ${current.feature}`} type="range" min={xMin} max={xMax} step={Math.max(.01, (xMax - xMin) / 1000)} value={Math.max(xMin, Math.min(xMax, predX))} onChange={event => { setPredX(Number(event.target.value)); setSelectedIndex(null); }}/>
+              <div className="lr-range-ends"><span>{fmtTick(xMin)}</span><span>{fmtTick(xMax)}</span></div>
+              <div className="lr-visual-toggles">
+                <label><input type="checkbox" checked={showRegions} onChange={event => setShowRegions(event.target.checked)}/>Show Decision Regions</label>
+                <label><input type="checkbox" checked={showSampleLabels} onChange={event => setShowSampleLabels(event.target.checked)}/>Show Sample Labels</label>
+                <label><input type="checkbox" checked={view !== "probability"} onChange={event => setView(event.target.checked ? "both" : "probability")}/>Show Log-Odds</label>
+              </div>
+              <button className="lr-manual-toggle" aria-expanded={manualOpen} onClick={() => { setManualOpen(value => !value); setFitMode("manual"); }}>Manual Experiment (Custom β₀ &amp; β₁) <ChevronDown /></button>
+              {manualOpen && <div className="lr-manual-fields">
+                <label>Intercept β₀ <output>{beta0.toFixed(2)}</output><input aria-label="Intercept beta zero" type="range" min={-beta0Limit} max={beta0Limit} step="0.05" value={beta0} onChange={event => updateCoefficient("beta0", Number(event.target.value))}/></label>
+                <label>Coefficient β₁ <output>{beta1.toFixed(3)}</output><input aria-label="Coefficient beta one" type="range" min={-beta1Limit} max={beta1Limit} step="0.005" value={beta1} onChange={event => updateCoefficient("beta1", Number(event.target.value))}/></label>
+              </div>}
+              <small className="lr-control-help" role="status">{changeNote}</small>
+            </section>
+            <div className="lr-summary-column">
+              <section className="lr-card lr-odds-card"><h2>ODDS <small>(at x = {predX.toFixed(1)})</small></h2><strong>{odds >= 10000 ? odds.toExponential(2) : odds.toFixed(2)} : 1</strong><span>At current probe</span></section>
+              <section className="lr-card lr-fit-card"><h2>FIT QUALITY</h2><svg viewBox="0 0 200 110" role="img" aria-label={`Test ROC AUC ${roc?.auc.toFixed(2) ?? "unavailable"}`}><path d="M20 100 A80 80 0 0 1 180 100" className="lr-gauge-track"/><path d="M20 100 A80 80 0 0 1 180 100" className="lr-gauge-value" style={{ strokeDasharray: `${Math.max(0, Math.min(1, roc?.auc ?? 0)) * 251} 251` }}/></svg><strong>{roc?.auc.toFixed(2) ?? "—"}</strong><span>Test ROC AUC</span></section>
+            </div>
+          </div>}
+          <div className="lr-legacy-rail">
           <section>
             <header>
               <i>1</i>
@@ -1134,25 +1224,14 @@ export default function LogisticRegressionPage() {
                   const f = e.target.files?.[0];
                   if (!f) return;
                   try {
-                    const p = parseCsv(await f.text());
-                    setImported(p);
-                    setImportedLabel(
-                      f.name.replace(/\.csv$/i, "") || "Imported CSV",
-                    );
-                    setImportedFeature("Feature x");
-                    setRows(p);
-                    setDataset("imported");
-                    setPredX(medianX(p));
-                    setCoefficientOverride(null);
-                    setSelectedIndex(null);
-                    setFilterOutcome(null);
-                    setChangeNote(`Imported ${p.length} labeled observations. The model fit and chart range updated.`);
-                    setStatus(`Imported ${p.length} rows`);
+                    const preview = parseCsv(await f.text(), f.name.replace(/\.csv$/i, "") || "Imported CSV");
+                    setCsvError("");
+                    if (preview.columns.length === 2) commitCsv(preview, 0, 1);
+                    else { setCsvPreview(preview); setCsvFeatureIndex(0); setCsvTargetIndex(preview.columns.length - 1); }
                   } catch (err) {
-                    setStatus(
-                      err instanceof Error ? err.message : "Import failed",
-                    );
+                    setCsvError(err instanceof Error ? err.message : "Import failed");
                   }
+                  e.target.value = "";
                 }}
               />
             </div>
@@ -1247,6 +1326,7 @@ export default function LogisticRegressionPage() {
               </small>
             </div>
           </section>
+          </div>
         </aside>
       </section>
 

@@ -50,7 +50,6 @@ for (const route of [
 
 for (const route of [
   '/ml/supervised/decision-tree-classification',
-  '/ml/supervised/logistic-regression',
   '/ml/supervised/simple-linear-regression',
   '/ml/supervised/multiple-linear-regression',
   '/ml/supervised/support-vector-regression',
@@ -62,6 +61,11 @@ for (const route of [
     await expect(page).toHaveURL(/\?tab=explain$/);
   });
 }
+
+test('Logistic Regression uses the mockup Explain label', async ({ page }) => {
+  await page.goto(`${base}/ml/supervised/logistic-regression?tab=explain`);
+  await expect(page.locator('#main-content button[data-ml-tab="explain"]').first()).toHaveText(/Explain/);
+});
 
 test('simple linear regression inference responds to a new input', async ({ page }) => {
   await page.goto(`${base}/ml/supervised/simple-linear-regression?tab=explain`);

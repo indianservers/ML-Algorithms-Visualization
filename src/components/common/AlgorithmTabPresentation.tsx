@@ -75,7 +75,7 @@ export function AlgorithmTabPresentation() {
       if (frame) return;
       frame = requestAnimationFrame(() => {
         frame = 0;
-        decorateTabs(location.pathname.startsWith("/ml/supervised/"));
+        decorateTabs(location.pathname.startsWith("/ml/supervised/") && location.pathname !== "/ml/supervised/logistic-regression");
       });
     };
     const observer = new MutationObserver((records) => {

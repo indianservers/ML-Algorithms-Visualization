@@ -1247,3 +1247,211 @@
 .logistic-page .lr-inference-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
 .logistic-page .lr-inference-results>div{display:grid;gap:8px;padding:16px;border:1px solid #9cb5d6;border-radius:8px;background:rgba(55,110,210,.08)}
 .logistic-page .lr-inference-results strong{font-size:20px;color:inherit}
+
+/* Mockup-matched Visualize studio; scoped so every other lesson keeps its layout. */
+html:not(.dark) #main-content .logistic-page,
+html.dark #main-content .logistic-page {
+  --lab-bg:#061426;--lab-panel:#081c34;--lab-panel-2:#0b2441;--lab-line:#255276;
+  --lab-text:#dce9fb;--lab-text-strong:#f4f8ff;--lab-muted:#a8bad2;--lab-muted-2:#7e9ab9;
+  --lab-blue:#1265f2;--lab-cyan:#00d8e5;--lab-green:#0ee78f;--lab-red:#ff525f;
+  --bg-app:#061426;--bg-surface:#081c34;--text-primary:#f4f8ff;--text-secondary:#dce9fb;
+  --text-muted:#a8bad2;--border-default:#255276;--control-bg:#092039;--accent:#3a85ff;
+  background:#061426;color:#f4f8ff;color-scheme:dark;
+}
+.logistic-page{padding:8px 22px 26px;gap:10px;min-width:0}
+.logistic-page .lr-breadcrumb{display:flex;gap:12px;align-items:center;color:#bed1ed;font-size:12px;min-height:18px}
+.logistic-page .lr-breadcrumb span{color:#7193ba}
+.logistic-page .lr-breadcrumb strong{color:#f7fbff}
+.logistic-page .lr-head{min-height:66px;gap:14px}
+.logistic-page .lr-head-icon{width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,#00ac87,#08d1cd);color:#fff}
+.logistic-page .lr-head-icon svg{width:37px;height:37px}
+.logistic-page .lr-head h1{font-size:29px;line-height:1.1;color:#f8fbff}
+.logistic-page .lr-head p{font-size:13px;color:#d0dded;margin-top:5px}
+.logistic-page .lr-head-dataset{margin-left:auto;white-space:nowrap;padding:9px 14px;border-radius:20px;background:#3d216c;color:#f4eaff;font-size:11px;font-weight:700}
+.logistic-page .lr-progress{margin-left:0;width:225px}
+.logistic-page .lr-progress span{color:#e3edfb}
+.logistic-page .lr-resume{background:#1265f2;border-color:#2d82ff;color:#fff;min-height:38px;box-shadow:0 4px 16px #1265f255}
+.logistic-page .lr-tabs{width:100%;height:auto;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;border:0;background:transparent;overflow:visible}
+.logistic-page .lr-tabs button{min-width:0;min-height:43px;border:1px solid #24547d;border-radius:8px;background:#0b2340;color:#d6e8fc;font-size:13px;font-weight:750}
+.logistic-page .lr-tabs button.active{background:linear-gradient(110deg,#1e7fff,#0755e8);border-color:#2379ff;color:#fff;box-shadow:0 7px 18px #1265f255}
+.logistic-page .lr-dataset-toolbar{display:flex;align-items:center;gap:11px;min-height:45px;padding:5px 11px;border:1px solid #285377;border-radius:7px;background:#0b203a;font-size:12px}
+.logistic-page .lr-dataset-toolbar>strong{font-size:12px}
+.logistic-page .lr-dataset-toolbar>svg{width:18px;height:18px;color:#b663fa;margin-left:8px}
+.logistic-page .lr-dataset-toolbar select{width:min(32%,350px);min-width:190px;height:32px;padding:0 9px;border:1px solid #6386ac;border-radius:6px;background:#08172b;color:#f5f8ff}
+.logistic-page .lr-dataset-toolbar>span{color:#d5e2f2;white-space:nowrap}
+.logistic-page .lr-toolbar-actions{margin-left:auto;display:flex;gap:9px}
+.logistic-page .lr-toolbar-actions button{display:flex;align-items:center;justify-content:center;gap:8px;min-height:33px;padding:0 13px;border:1px solid #356394;border-radius:6px;background:#103155;color:#f5f9ff;font-weight:650;white-space:nowrap}
+.logistic-page .lr-toolbar-actions button:last-child{background:#1468f8;border-color:#2d80ff}
+.logistic-page .lr-toolbar-actions svg{width:15px;height:15px}
+.logistic-page .lr-visual-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(385px,470px);gap:9px;align-items:start}
+.logistic-page .lr-visual-layout>.lr-main{display:contents}
+.logistic-page .lr-visual-layout .lr-chart-card{grid-column:1;grid-row:1;min-width:0;padding:10px 12px 9px;border:1px solid #286189;border-radius:9px;background:#071c33;box-shadow:none;position:relative;overflow:hidden}
+.logistic-page .lr-chart-head{gap:6px}
+.logistic-page .lr-chart-head h2{font-size:17px;color:#f2f7ff}
+.logistic-page .lr-playback{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-height:34px}
+.logistic-page .lr-playback button{display:flex;align-items:center;gap:5px;min-height:32px;padding:0 10px;border:1px solid #6689b0;border-radius:5px;background:#0d2848;color:#f5f9ff;font-size:12px;font-weight:700}
+.logistic-page .lr-playback button:hover{background:#17416d}
+.logistic-page .lr-playback svg{width:15px;height:15px}
+.logistic-page .lr-playback>span{margin-left:10px;font-size:12px;font-weight:700;color:#e6effe}
+.logistic-page .lr-legend{position:absolute;right:14px;top:77px;z-index:2;display:grid;gap:7px;padding:9px 10px;border:1px solid #2e6086;border-radius:6px;background:#081c33e8;color:#e4efff;font-size:10px}
+.logistic-page .lr-legend i.pos{background:#0de486}.logistic-page .lr-legend i.neg{background:#ff4859}
+.logistic-page .lr-legend i.lr-legend-curve{border-top-color:#08ddec}
+.logistic-page .lr-legend i.lr-legend-threshold{border-top-color:#e7eef7}
+.logistic-page .lr-legend i.lr-legend-boundary{border-left-color:#e7eef7}
+.logistic-page .lr-chart-card>.lr-plot{margin-top:0;max-height:none}
+.logistic-page .lr-plot .grid{stroke:#3e5a77;stroke-dasharray:4 5}
+.logistic-page .lr-plot .sigmoid{stroke:#00d8e5;stroke-width:4;filter:drop-shadow(0 2px 4px #00d8e544)}
+.logistic-page .lr-plot .lr-region-zero{fill:rgba(232,48,67,.2)}
+.logistic-page .lr-plot .lr-region-one{fill:rgba(9,165,91,.18)}
+.logistic-page .lr-plot .lr-probability-threshold{stroke:#e6efff;stroke-width:1.5;stroke-dasharray:5 4}
+.logistic-page .lr-plot .lr-decision-boundary{stroke:#f3f7ff;stroke-width:1.6;stroke-dasharray:5 5}
+.logistic-page .lr-plot .lr-threshold-label{fill:#f0f7ff;font-size:11px}
+.logistic-page .lr-plot .lr-boundary-label,.logistic-page .lr-plot .lr-boundary-value{fill:#f8fbff;font-size:11px}
+.logistic-page .lr-plot .pt-pos{fill:#0eea86;stroke:#044a43;stroke-width:.6}
+.logistic-page .lr-plot .pt-neg{fill:#ff4e59;stroke:#812b3a;stroke-width:.6}
+.logistic-page .lr-plot text{fill:#c5d8ed}.logistic-page .lr-plot .axis-title{fill:#eff7ff}
+.logistic-page .lr-plot .lr-region-label text{font-size:18px;font-weight:800;fill:#ff6674}
+.logistic-page .lr-plot .lr-region-label.positive text{fill:#2cf0a1}
+.logistic-page .lr-plot .lr-region-label text+text{font-size:12px;font-weight:600}
+.logistic-page .lr-plot .lr-sample-label{font-size:9px;fill:#fff}
+.logistic-page .lr-plot .lr-probe circle{fill:#05d6e4;stroke:#fff}
+.logistic-page .lr-probe-tooltip{position:absolute;z-index:3;left:56%;top:145px;display:grid;gap:2px;min-width:155px;padding:8px 10px;border:1px solid #02c7ec;border-radius:7px;background:#06233eec;color:#ecf7ff;box-shadow:0 8px 25px #02121e99;font-size:11px;pointer-events:none}
+.logistic-page .lr-probe-tooltip strong{color:#19e3a8}
+.logistic-page .lr-feature-strip{display:grid;grid-template-columns:190px minmax(0,1fr);gap:9px;align-items:center;margin-top:-2px;padding:6px 9px;border:1px solid #295678;border-radius:6px;background:#0b2642;min-height:49px}
+.logistic-page .lr-feature-strip>strong{display:flex;align-items:center;gap:6px;font-size:11px;color:#f7fbff}
+.logistic-page .lr-feature-strip>strong svg{width:13px;height:13px}
+.logistic-page .lr-strip-track{position:relative;display:flex;width:100%;height:40px}
+.logistic-page .lr-strip-track>div{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;overflow:hidden;white-space:nowrap;font-size:10px}
+.logistic-page .lr-strip-track>div.negative{background:linear-gradient(90deg,#4b1833,#8b2a42);color:#ff8794}
+.logistic-page .lr-strip-track>div.positive{background:linear-gradient(90deg,#07543c,#0e6947);color:#80ffd1}
+.logistic-page .lr-strip-track b{font-size:11px}
+.logistic-page .lr-strip-track em{position:absolute;z-index:1;top:0;height:100%;padding:2px 4px;transform:translateX(-50%);border-left:2px dashed #fff;background:#0a2c45ad;color:#fff;font-size:10px;font-style:normal;white-space:nowrap}
+.logistic-page .lr-plot-equations{padding:6px 2px 0;color:#b6d1ea;font-size:11px;text-align:center}
+.logistic-page .lr-plot-equations span{padding:0 10px;color:#46a3cd}
+.logistic-page .lr-selected-sample{background:#0c2944;border-color:#35739b;color:#dceeff}
+.logistic-page .lr-selected-sample b{color:#50e9b7}
+.logistic-page .lr-visual-layout>.lr-rail{grid-column:2;grid-row:1;border:0;background:transparent;position:static;overflow:visible}
+.logistic-page .lr-visual-layout .lr-legacy-rail{display:none}
+.logistic-page .lr-visual-rail{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(150px,1fr);gap:9px;align-items:stretch}
+.logistic-page .lr-model-controls,.logistic-page .lr-summary-column>section{padding:12px;border-color:#286189;background:#081c34}
+.logistic-page .lr-model-controls{display:flex;flex-direction:column;gap:7px;min-width:0}
+.logistic-page .lr-model-controls h2,.logistic-page .lr-summary-column h2{display:flex;align-items:center;gap:7px;margin:0 0 6px;color:#f3f8ff;font-size:12px;font-weight:800}
+.logistic-page .lr-model-controls h2:first-letter{color:#1684ff;font-size:18px}
+.logistic-page .lr-control-label{display:flex;align-items:center;justify-content:space-between;color:#e6effc;font-size:11px;font-weight:650}
+.logistic-page .lr-control-label output{padding:3px 6px;border:1px solid #386d91;border-radius:5px;background:#0b2947;color:#fff}
+.logistic-page .lr-model-controls>select{width:100%;height:34px;padding:0 9px;border:1px solid #4a7195;border-radius:5px;background:#0b2340;color:#f8fbff}
+.logistic-page .lr-control-help{display:block;color:#a8bdd5;font-size:9px;line-height:1.35}
+.logistic-page .lr-coeff-cards{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.logistic-page .lr-coeff-cards>div{min-width:0;padding:8px;border:1px solid #34678f;border-radius:6px;background:#0a2747;display:grid;gap:3px}
+.logistic-page .lr-coeff-cards span{font-size:10px;color:#e2eafa}.logistic-page .lr-coeff-cards strong{font-size:18px;color:#2c93ff}
+.logistic-page .lr-coeff-cards>div+div strong{color:#3beca4}.logistic-page .lr-coeff-cards small{font-size:8px;color:#afc6e0}
+.logistic-page .lr-model-controls input[type=range]{width:100%;height:17px;accent-color:#2e80ff;cursor:pointer}
+.logistic-page .lr-range-ends{display:flex;justify-content:space-between;margin-top:-7px;font-size:9px;color:#a9bbd0}
+.logistic-page .lr-visual-toggles{display:grid;gap:5px;padding-top:2px}
+.logistic-page .lr-visual-toggles label{display:flex;align-items:center;gap:8px;font-size:10px;color:#f0f6ff;cursor:pointer}
+.logistic-page .lr-visual-toggles input{width:15px;height:15px;accent-color:#177aff}
+.logistic-page .lr-manual-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:30px;padding:3px 8px;border:1px solid #375d86;border-radius:6px;background:#0b2541;color:#ebf5ff;font-size:10px;text-align:left}
+.logistic-page .lr-manual-toggle svg{width:13px;height:13px;transform:rotate(-90deg)}
+.logistic-page .lr-manual-toggle[aria-expanded=true] svg{transform:none}
+.logistic-page .lr-manual-fields{display:grid;gap:7px;padding:7px;border:1px solid #35628b;border-radius:6px;background:#07192d}
+.logistic-page .lr-manual-fields label{display:grid;grid-template-columns:1fr auto;gap:4px;font-size:10px}
+.logistic-page .lr-manual-fields input{grid-column:1/-1}
+.logistic-page .lr-summary-column{display:grid;grid-template-rows:175px minmax(0,1fr);gap:9px;min-width:0}
+.logistic-page .lr-odds-card{display:flex;flex-direction:column;align-items:center;text-align:center}
+.logistic-page .lr-odds-card h2{align-self:flex-start;white-space:nowrap}
+.logistic-page .lr-odds-card h2 small{font-weight:400;font-size:9px;color:#bbcce1}
+.logistic-page .lr-odds-card>strong{font-size:26px;margin:auto 0 8px;white-space:nowrap}
+.logistic-page .lr-odds-card>span,.logistic-page .lr-fit-card>span{font-size:10px;color:#c4d3e6}
+.logistic-page .lr-fit-card{display:flex;flex-direction:column;align-items:center;text-align:center;position:relative}
+.logistic-page .lr-fit-card h2{align-self:flex-start}
+.logistic-page .lr-fit-card svg{width:100%;margin:auto 0 0;overflow:visible}
+.logistic-page .lr-fit-card svg path{fill:none;stroke-width:16;stroke-linecap:round}
+.logistic-page .lr-fit-card .lr-gauge-track{stroke:#2b4668}
+.logistic-page .lr-fit-card .lr-gauge-value{stroke:#15e5ab}
+.logistic-page .lr-fit-card>strong{font-size:23px;margin-top:-31px}
+.logistic-page .lr-visual-layout .lr-metrics{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:1.13fr 1.17fr 1.35fr .95fr 1.03fr;gap:8px}
+.logistic-page .lr-visual-layout .lr-metrics>article{min-width:0;min-height:126px;padding:10px 12px;gap:7px;border-color:#286189;background:#081c34}
+.logistic-page .lr-analysis-equation{order:1}.logistic-page .lr-analysis-metrics{order:2}.logistic-page .lr-analysis-confusion{order:3}.logistic-page .lr-analysis-prediction{order:4}.logistic-page .lr-analysis-insight{order:5}
+.logistic-page .lr-metrics .lr-card-title{color:#f2f7ff;font-size:12px}
+.logistic-page .lr-big-equation{text-align:center;font:italic 21px Georgia,serif;white-space:nowrap}
+.logistic-page .lr-big-equation em{color:#3299ff;font-style:normal}.logistic-page .lr-big-equation strong{color:#26e5a6;font-weight:700}
+.logistic-page .lr-analysis-equation p,.logistic-page .lr-analysis-prediction p,.logistic-page .lr-analysis-insight p{margin:0;text-align:center;font-size:12px;color:#dfeafb}
+.logistic-page .lr-analysis-prediction strong{color:#1ceaa7}
+.logistic-page .lr-test-metrics{display:grid;grid-template-columns:1fr 1fr;gap:5px 10px;font-size:11px}
+.logistic-page .lr-test-metrics span{display:flex;justify-content:space-between;gap:6px}.logistic-page .lr-test-metrics b{color:#f7fbff}
+.logistic-page .lr-confusion{font-size:10px}.logistic-page .lr-confusion caption{color:#e0edfb}
+.logistic-page .lr-confusion th,.logistic-page .lr-confusion td{border-color:#315577;color:#e9f4ff;padding:2px}
+.logistic-page .lr-confusion td.hit{background:#126440}.logistic-page .lr-confusion td.miss{background:#73314b}
+.logistic-page .lr-confusion td button{padding:3px;color:#fff}
+.logistic-page .lr-analysis-insight .lr-insight-formula{font:italic 15px Georgia,serif}
+.logistic-page .lr-analysis-insight small{color:#bcd2e7;font-size:10px;line-height:1.3}
+.logistic-page .lr-visual-layout .lr-main>.classification-diagnostics-panel{grid-column:1/-1;grid-row:3}
+.logistic-page .lr-visual-layout .lr-main>*:last-child:not(.lr-metrics):not(.lr-chart-card){grid-column:1/-1;grid-row:3}
+.logistic-page .lr-visual-layout .lr-legacy-rail{display:none}
+.logistic-page .lr-visual-layout+.lr-statusbar{display:none}
+.logistic-page .lr-legacy-rail>section{padding:14px 16px 16px;display:flex;flex-direction:column;gap:12px}
+.logistic-page .lr-legacy-rail>section+section{border-top:1px solid var(--lab-line)}
+@media(max-width:1200px){
+  .logistic-page .lr-visual-layout{grid-template-columns:minmax(0,1fr) 350px}
+  .logistic-page .lr-visual-rail{grid-template-columns:minmax(0,1fr)}
+  .logistic-page .lr-summary-column{grid-template-columns:1fr 1fr;grid-template-rows:auto}
+  .logistic-page .lr-visual-layout .lr-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .logistic-page .lr-legend{position:static;display:flex;background:transparent;border:0;padding:0}
+}
+@media(max-width:900px){
+  .logistic-page .lr-visual-layout{display:flex;flex-direction:column}
+  .logistic-page .lr-visual-layout>.lr-main{display:contents}
+  .logistic-page .lr-visual-layout>.lr-chart-card,.logistic-page .lr-visual-layout>.lr-rail,.logistic-page .lr-visual-layout .lr-metrics{width:100%}
+  .logistic-page .lr-head-dataset{display:none}
+  .logistic-page .lr-dataset-toolbar{flex-wrap:wrap}
+  .logistic-page .lr-dataset-toolbar>span{white-space:normal}
+  .logistic-page .lr-toolbar-actions{margin-left:0;width:100%}
+  .logistic-page .lr-toolbar-actions button{flex:1}
+  .logistic-page .lr-visual-rail{grid-template-columns:1fr 1fr}
+  .logistic-page .lr-visual-layout .lr-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:600px){
+  .logistic-page{padding:8px 10px 20px}
+  .logistic-page .lr-breadcrumb{font-size:10px}
+  .logistic-page .lr-head{display:grid;grid-template-columns:48px 1fr;grid-template-areas:'icon title' 'prog prog' 'resume resume';min-height:0}
+  .logistic-page .lr-head-icon{width:47px;height:47px}
+  .logistic-page .lr-head h1{font-size:23px}
+  .logistic-page .lr-head p{font-size:11px}
+  .logistic-page .lr-resume{justify-self:start}
+  .logistic-page .lr-tabs{display:flex;overflow-x:auto;padding-bottom:3px}
+  .logistic-page .lr-tabs button{flex:0 0 115px}
+  .logistic-page .lr-dataset-toolbar select{min-width:0;width:calc(100% - 80px)}
+  .logistic-page .lr-dataset-toolbar>span{width:100%}
+  .logistic-page .lr-chart-card{padding:10px 8px}
+  .logistic-page .lr-chart-head h2{font-size:15px}
+  .logistic-page .lr-playback>span{width:100%;margin:0}
+  .logistic-page .lr-legend{font-size:9px}
+  .logistic-page .lr-probe-tooltip{position:static;min-width:0;margin:5px 0}
+  .logistic-page .lr-feature-strip{grid-template-columns:1fr}
+  .logistic-page .lr-visual-rail{grid-template-columns:1fr}
+  .logistic-page .lr-summary-column{grid-template-columns:1fr 1fr}
+  .logistic-page .lr-visual-layout .lr-metrics{grid-template-columns:1fr}
+  .logistic-page .lr-big-equation{font-size:18px}
+}
+.logistic-page .lr-csv-preview{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:10px 12px;border:1px solid #3a79a3;border-radius:7px;background:#0b2948;font-size:11px}
+.logistic-page .lr-csv-preview label{display:flex;align-items:center;gap:6px}
+.logistic-page .lr-csv-preview select{min-width:110px;padding:5px;border:1px solid #4d83ad;border-radius:4px;background:#061b32;color:#fff}
+.logistic-page .lr-csv-preview button{padding:6px 10px;border:1px solid #4b87b7;border-radius:5px;background:#104a81;color:#fff}
+.logistic-page .lr-csv-error{margin:0;padding:8px 12px;border:1px solid #e65d6a;border-radius:6px;background:#5d2234;color:#fff}
+.logistic-page .lr-model-controls{gap:4px;padding:9px 11px}
+.logistic-page .lr-summary-column{grid-template-rows:150px minmax(0,1fr)}
+.logistic-page .lr-odds-card>strong{margin:auto 0 4px}
+@media(max-width:900px){
+  #main-content .logistic-page .lr-visual-layout{display:flex!important;flex-direction:column!important;gap:10px!important}
+  #main-content .logistic-page .lr-visual-layout .lr-chart-card,
+  #main-content .logistic-page .lr-visual-layout .lr-rail,
+  #main-content .logistic-page .lr-visual-layout .lr-metrics,
+  #main-content .logistic-page .lr-visual-layout .classification-diagnostics-panel{grid-column:auto!important;grid-row:auto!important;width:100%!important;min-width:0!important}
+  #main-content .logistic-page .lr-visual-layout .lr-chart-card{order:1}
+  #main-content .logistic-page .lr-visual-layout .lr-rail{order:2}
+  #main-content .logistic-page .lr-visual-layout .lr-metrics{order:3}
+  #main-content .logistic-page .lr-visual-layout .classification-diagnostics-panel{order:4}
+}
+@media(max-width:900px){
+  #main-content .logistic-page .lr-visual-layout .cdp{order:4;grid-column:auto!important;grid-row:auto!important;width:100%!important;min-width:0!important}
+}
