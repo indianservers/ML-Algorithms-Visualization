@@ -194,7 +194,7 @@ export default function MultipleLinearRegressionPage() {
     setColorFeature(next.features[2] ?? next.features[0]);
     setSelectedRow(0);
     setActiveTab('dataset');
-  }, [applyModel]);
+  }, [applyModel, setActiveTab]);
 
   const appliedHandoffKey = React.useRef<string | null>(null);
   React.useEffect(() => {
@@ -318,8 +318,14 @@ export default function MultipleLinearRegressionPage() {
     setCoefficients(current => current.map((coefficient, coefficientIndex) => coefficientIndex === index ? value : coefficient));
   };
 
+  const updatePoint = (rowIndex: number, values: Row) => {
+    if (Object.values(values).some(value => !Number.isFinite(value))) return;
+    const next = rows.map((row, index) => index === rowIndex ? { ...row, ...values } : row);
+    setRows(next);
+    applyModel(next, definition, selectedFeatures);
+  };
   const updateRow = (rowIndex: number, field: string, value: number) => {
-    setRows(current => current.map((row, index) => index === rowIndex ? { ...row, [field]: value } : row));
+    updatePoint(rowIndex, { [field]: value });
   };
 
   const addRow = () => {
@@ -406,7 +412,7 @@ export default function MultipleLinearRegressionPage() {
         {fitError && <p className="mlr-help" style={{ color: '#f87171', padding: '0 16px' }}>{fitError}</p>}
         {csvError && <p className="mlr-help" style={{ color: '#f87171', padding: '0 16px' }}>{csvError}</p>}
         {activeTab === 'visualize' ? (
-          <VisualizeView definition={definition} rows={rows} predictions={predictions} residuals={residuals} coefficients={coefficients} trained={trained ? [trained.intercept, ...trained.coefficients] : coefficients} stdErrors={trained?.coefficientStdErrors} tStats={trained?.tStatistics} rankWarning={trained?.rankWarning ?? false} selectedFeatures={selectedFeatures} inputs={inputs} predictedValue={visiblePrediction} residualStd={residualStd} score={typeof score === 'number' ? score : 0} metricRmse={metricRmse} trainR2={trainMetrics?.r2 ?? null} testR2={testMetrics?.r2 ?? null} nTrain={split?.nTrain ?? rows.length} nTest={split?.nTest ?? 0} xFeature={xFeature} yFeature={yFeature} colorFeature={colorFeature} showPlane={showPlane} showPoints={showPoints} showResiduals={showResiduals} autoUpdate={autoUpdate} training={training} predict={predict} onXFeature={setXFeature} onYFeature={setYFeature} onColorFeature={setColorFeature} onShowPlane={setShowPlane} onShowPoints={setShowPoints} onShowResiduals={setShowResiduals} onResetView={resetView} onCoefficient={updateCoefficient} onInput={(feature, value) => setInputs(current => ({ ...current, [feature]: value }))} onAutoUpdate={value => { setAutoUpdate(value); setLockedPrediction(value ? null : predictedValue); }} onTrain={train} onDataset={() => setActiveTab('dataset')} onUpload={() => fileRef.current?.click()} onDownload={downloadReport} onSave={saveView} onToggleFeature={(feature) => {
+          <VisualizeView definition={definition} rows={rows} predictions={predictions} residuals={residuals} coefficients={coefficients} trained={trained ? [trained.intercept, ...trained.coefficients] : coefficients} stdErrors={trained?.coefficientStdErrors} tStats={trained?.tStatistics} rankWarning={trained?.rankWarning ?? false} selectedFeatures={selectedFeatures} inputs={inputs} predictedValue={visiblePrediction} residualStd={residualStd} score={typeof score === 'number' ? score : 0} metricRmse={metricRmse} trainR2={trainMetrics?.r2 ?? null} testR2={testMetrics?.r2 ?? null} nTrain={split?.nTrain ?? rows.length} nTest={split?.nTest ?? 0} xFeature={xFeature} yFeature={yFeature} colorFeature={colorFeature} showPlane={showPlane} showPoints={showPoints} showResiduals={showResiduals} autoUpdate={autoUpdate} training={training} predict={predict} selectedRow={selectedRow} onSelectRow={setSelectedRow} onPointChange={updatePoint} onXFeature={setXFeature} onYFeature={setYFeature} onColorFeature={setColorFeature} onShowPlane={setShowPlane} onShowPoints={setShowPoints} onShowResiduals={setShowResiduals} onResetView={resetView} onCoefficient={updateCoefficient} onInput={(feature, value) => setInputs(current => ({ ...current, [feature]: value }))} onAutoUpdate={value => { setAutoUpdate(value); setLockedPrediction(value ? null : predictedValue); }} onTrain={train} onDataset={() => setActiveTab('dataset')} onUpload={() => fileRef.current?.click()} onDownload={downloadReport} onSave={saveView} onToggleFeature={(feature) => {
             const next = selectedFeatures.includes(feature)
               ? selectedFeatures.filter(name => name !== feature)
               : [...selectedFeatures, feature];
@@ -433,6 +439,7 @@ type VisualizeProps = {
   onShowPlane: (value: boolean) => void; onShowPoints: (value: boolean) => void; onShowResiduals: (value: boolean) => void;
   onResetView: () => void; onCoefficient: (index: number, value: number) => void; onInput: (feature: string, value: number) => void;
   onAutoUpdate: (value: boolean) => void; onTrain: () => void; onDataset: () => void; onUpload: () => void; onDownload: () => void; onSave: () => void;
+  selectedRow: number; onSelectRow: (index: number) => void; onPointChange: (index: number, values: Row) => void;
   onToggleFeature?: (feature: string) => void;
 };
 
@@ -441,7 +448,7 @@ function VisualizeView(props: VisualizeProps) {
   return <div className="mlr-visualize">
     <section className="mlr-visual-card">
       <div className="mlr-feature-bar"><div><small>Choose features (showing 2 of {definition.features.length})</small><span><label>X Axis <select value={props.xFeature} onChange={event => props.onXFeature(event.target.value)}>{definition.features.map(feature => <option key={feature} value={feature}>{definition.labels[feature]}</option>)}</select></label><label>Y Axis <select value={props.yFeature} onChange={event => props.onYFeature(event.target.value)}>{definition.features.map(feature => <option key={feature} value={feature}>{definition.labels[feature]}</option>)}</select></label><label>Color by <select value={props.colorFeature} onChange={event => props.onColorFeature(event.target.value)}>{definition.features.map(feature => <option key={feature} value={feature}>{definition.labels[feature]}</option>)}</select></label></span></div><div className="mlr-color-key"><small>{definition.labels[props.colorFeature]}</small><span><i />Low <i />Mid <i />High <i />Max</span></div><button onClick={props.onResetView}><RotateCcw />Reset View</button></div>
-      <div className="mlr-plot-wrap"><div className="mlr-plot-legend"><Toggle label="Fitted surface" checked={props.showPlane} onChange={props.onShowPlane} /><Toggle label="Data Points" checked={props.showPoints} onChange={props.onShowPoints} /><Toggle label="Residuals" checked={props.showResiduals} onChange={props.onShowResiduals} /><hr /><p>R² (train) <b>{formatR2(props.trainR2)}</b></p><p>R² (test) <b>{formatR2(props.testR2)}</b></p><p>RMSE <b>{formatNumber(props.metricRmse, 1)}</b></p></div><Regression3D definition={definition} rows={rows} predictions={predictions} xFeature={props.xFeature} yFeature={props.yFeature} colorFeature={props.colorFeature} showPlane={props.showPlane} showPoints={props.showPoints} showResiduals={props.showResiduals} predict={props.predict} /><div className="mlr-rotate-hint">Drag to rotate · Scroll to zoom · Shift + Drag to pan ⓘ</div></div>
+      <div className="mlr-plot-wrap"><div className="mlr-plot-legend"><Toggle label="Fitted surface" checked={props.showPlane} onChange={props.onShowPlane} /><Toggle label="Data Points" checked={props.showPoints} onChange={props.onShowPoints} /><Toggle label="Residuals" checked={props.showResiduals} onChange={props.onShowResiduals} /><hr /><p>R² (train) <b>{formatR2(props.trainR2)}</b></p><p>R² (test) <b>{formatR2(props.testR2)}</b></p><p>RMSE <b>{formatNumber(props.metricRmse, 1)}</b></p></div><Regression3D definition={definition} rows={rows} predictions={predictions} xFeature={props.xFeature} yFeature={props.yFeature} colorFeature={props.colorFeature} showPlane={props.showPlane} showPoints={props.showPoints} showResiduals={props.showResiduals} predict={props.predict} selectedRow={props.selectedRow} onSelectRow={props.onSelectRow} onPointChange={props.onPointChange} /><div className="mlr-rotate-hint">Drag points to edit X and target · Use the editor for exact values</div><div className="mlr-point-editor"><strong>Edit point {props.selectedRow + 1}</strong><span>Drag a point or change its values. The model retrains immediately.</span>{[props.xFeature, props.yFeature, definition.target].filter((field, index, all) => all.indexOf(field) === index).map(field => <label key={field}>{definition.labels[field] ?? field}<input aria-label={`Selected point ${field}`} type="number" step="any" value={rows[props.selectedRow]?.[field] ?? 0} onChange={event => props.onPointChange(props.selectedRow, { [field]: Number(event.target.value) })} /></label>)}</div></div>
     </section>
     <section className="mlr-model-card"><h3>Model Equation</h3><p className="mlr-equation">{`ŷ = ${formatNumber(coefficients[0], 2)}` + (props.selectedFeatures ?? definition.features).map((feature, index) => ` + ${formatNumber(coefficients[index + 1] ?? 0, 2)}·${definition.labels[feature]}`).join("")}</p><div>{definition.features.map(feature => <label key={feature} style={{ display: 'inline-flex', gap: 6, marginRight: 12, fontSize: 12 }}><input type="checkbox" checked={(props.selectedFeatures ?? definition.features).includes(feature)} onChange={() => props.onToggleFeature?.(feature)} />{definition.labels[feature]}</label>)}</div></section>
     <section className="mlr-coeff-card"><h3>Coefficients <CircleHelp /></h3><div className="mlr-coeff-head"><span>Feature</span><span>Coefficient (β)</span><span>Std. Error</span><span>t-stat</span></div>{['Intercept', ...(props.selectedFeatures ?? definition.features)].map((feature, index) => <div className="mlr-coeff-row" key={feature}><span style={{ '--accent': ['#6284ff','#23c8e3','#52d58d','#9ce56c','#ff8b55'][index] } as React.CSSProperties}>{index === 0 ? 'Intercept (β₀)' : `${definition.labels[feature]} (β${index})`}</span><b>{formatNumber(coefficients[index], 2)}</b><span>{formatNumber(props.stdErrors?.[index] ?? Number.NaN, 2)}</span><span>{formatNumber(props.tStats?.[index] ?? Number.NaN, 2)}</span></div>)}<div className="mlr-adjust-title"><b>Adjust Coefficients (live) <CircleHelp /></b><button onClick={() => trained.forEach((value, index) => props.onCoefficient(index, value))}>Reset to Trained</button></div>{coefficients.map((coefficient, index) => { const span = Math.max(Math.abs(trained[index]) * 1.8, 1); return <label className="mlr-coeff-slider" key={index}><span>β{index} <small>{index === 0 ? 'Intercept' : definition.labels[definition.features[index - 1]]}</small></span><input aria-label={`Coefficient beta ${index}`} type="range" min={trained[index] - span} max={trained[index] + span} step={span / 100} value={coefficient} onChange={event => props.onCoefficient(index, Number(event.target.value))} /><input aria-label={`Coefficient beta ${index} value`} type="number" step="any" value={Number(coefficient.toFixed(4))} onChange={event => props.onCoefficient(index, Number(event.target.value))} /></label>;})}</section>
@@ -455,7 +462,8 @@ function VisualizeView(props: VisualizeProps) {
 
 function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (checked: boolean) => void }) { return <label className="mlr-toggle"><input type="checkbox" checked={checked} onChange={event => onChange(event.target.checked)} /><span />{label}</label>; }
 
-function Regression3D({ definition, rows, predictions, xFeature, yFeature, colorFeature, showPlane, showPoints, showResiduals, predict }: { definition: DatasetDefinition; rows: Row[]; predictions: number[]; xFeature: string; yFeature: string; colorFeature: string; showPlane: boolean; showPoints: boolean; showResiduals: boolean; predict?: (row: Row) => number }) {
+function Regression3D({ definition, rows, predictions, xFeature, yFeature, colorFeature, showPlane, showPoints, showResiduals, predict, selectedRow, onSelectRow, onPointChange }: { definition: DatasetDefinition; rows: Row[]; predictions: number[]; xFeature: string; yFeature: string; colorFeature: string; showPlane: boolean; showPoints: boolean; showResiduals: boolean; predict?: (row: Row) => number; selectedRow: number; onSelectRow: (index: number) => void; onPointChange: (index: number, values: Row) => void }) {
+  const drag = React.useRef<{ index: number; pointerId: number; startX: number; startY: number; feature: number; target: number; xMin: number; xSpan: number; zMin: number; zSpan: number } | null>(null);
   const sample = rows.length > 70 ? rows.filter((_, index) => index % Math.ceil(rows.length / 70) === 0) : rows;
   const indices = sample.map(row => rows.indexOf(row));
   const range = (values: number[]) => { const min = Math.min(...values); const max = Math.max(...values); return { min, span: max - min || 1 }; };
@@ -463,7 +471,23 @@ function Regression3D({ definition, rows, predictions, xFeature, yFeature, color
   const project = (x: number, y: number, z: number) => ({ x: 78 + x * 430 + y * 155, y: 365 - z * 250 - y * 65 + x * 28 });
   const normalize = (value: number, r: { min: number; span: number }) => (value - r.min) / r.span;
   const projected = sample.map((row, index) => { const sourceIndex = indices[index]; const x = normalize(row[xFeature], xr), y = normalize(row[yFeature], yr), z = normalize(row[definition.target], zr), pz = normalize(predictions[sourceIndex], zr); return { row, sourceIndex, p: project(x,y,z), fitted: project(x,y,pz), color: normalize(row[colorFeature], cr) }; });
-  return <svg className="mlr-3d" viewBox="0 0 730 430" role="img" aria-label="Multiple regression plot from the current OLS fit">
+  const svgPoint = (svg: SVGSVGElement, clientX: number, clientY: number) => {
+    const inverse = svg.getScreenCTM()?.inverse();
+    return inverse ? new DOMPoint(clientX, clientY).matrixTransform(inverse) : null;
+  };
+  const movePoint = (event: React.PointerEvent<SVGSVGElement>) => {
+    const current = drag.current;
+    if (!current || current.pointerId !== event.pointerId) return;
+    const position = svgPoint(event.currentTarget, event.clientX, event.clientY);
+    if (!position) return;
+    const deltaX = (position.x - current.startX) / 430;
+    const deltaZ = (28 * deltaX - (position.y - current.startY)) / 250;
+    onPointChange(current.index, {
+      [xFeature]: clamp(current.feature + deltaX * current.xSpan, current.xMin, current.xMin + current.xSpan),
+      [definition.target]: clamp(current.target + deltaZ * current.zSpan, current.zMin, current.zMin + current.zSpan),
+    });
+  };
+  return <svg className="mlr-3d" viewBox="0 0 730 430" role="img" aria-label="Multiple regression plot from the current OLS fit" onPointerMove={movePoint} onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }}>
     <defs><linearGradient id="plane" x1="0" x2="1"><stop stopColor="#00d7e5" stopOpacity=".16"/><stop offset="1" stopColor="#00a0d0" stopOpacity=".04"/></linearGradient></defs>
     {Array.from({length:9},(_,i)=>i/8).map(t=><g key={t}><line x1={project(t,0,0).x} y1={project(t,0,0).y} x2={project(t,1,0).x} y2={project(t,1,0).y}/><line x1={project(0,t,0).x} y1={project(0,t,0).y} x2={project(1,t,0).x} y2={project(1,t,0).y}/><line x1={project(0,t,0).x} y1={project(0,t,0).y} x2={project(0,t,1).x} y2={project(0,t,1).y}/></g>)}
     {showPlane && (() => {
@@ -485,7 +509,7 @@ function Regression3D({ definition, rows, predictions, xFeature, yFeature, color
       })}</>;
     })()}
     {showResiduals && projected.map(point=><line key={`r-${point.sourceIndex}`} x1={point.p.x} y1={point.p.y} x2={point.fitted.x} y2={point.fitted.y} className="mlr-residual"/>)}
-    {showPoints && projected.map(point=><circle key={point.sourceIndex} cx={point.p.x} cy={point.p.y} r="4" fill={`hsl(${205-point.color*180} 88% 58%)`} className="mlr-dot"><title>{definition.labels[xFeature]}: {point.row[xFeature]}, {definition.targetLabel}: {point.row[definition.target]}</title></circle>)}
+    {showPoints && projected.map(point=><circle key={point.sourceIndex} cx={point.p.x} cy={point.p.y} r={selectedRow === point.sourceIndex ? 6 : 5} fill={`hsl(${205-point.color*180} 88% 58%)`} className={`mlr-dot${selectedRow === point.sourceIndex ? ' selected' : ''}`} role="button" tabIndex={0} aria-label={`Edit point ${point.sourceIndex + 1}`} onClick={() => onSelectRow(point.sourceIndex)} onPointerDown={event => { const svg = event.currentTarget.ownerSVGElement; if (!svg) return; const position = svgPoint(svg, event.clientX, event.clientY); if (!position) return; onSelectRow(point.sourceIndex); drag.current = { index: point.sourceIndex, pointerId: event.pointerId, startX: position.x, startY: position.y, feature: point.row[xFeature], target: point.row[definition.target], xMin: xr.min, xSpan: xr.span, zMin: zr.min, zSpan: zr.span }; svg.setPointerCapture(event.pointerId); event.preventDefault(); }} onKeyDown={event => { if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return; event.preventDefault(); onSelectRow(point.sourceIndex); const horizontal = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0; const vertical = event.key === 'ArrowUp' ? 1 : event.key === 'ArrowDown' ? -1 : 0; onPointChange(point.sourceIndex, { [xFeature]: point.row[xFeature] + horizontal * xr.span / 100, [definition.target]: point.row[definition.target] + vertical * zr.span / 100 }); }}><title>{definition.labels[xFeature]}: {point.row[xFeature]}, {definition.targetLabel}: {point.row[definition.target]}. Drag or use arrow keys to edit.</title></circle>)}
     <text x="355" y="421">{definition.labels[xFeature]}</text><text x="26" y="395">{definition.labels[yFeature]}</text><text x="12" y="160" transform="rotate(-90 12 160)">{definition.targetLabel}</text>
   </svg>;
 }

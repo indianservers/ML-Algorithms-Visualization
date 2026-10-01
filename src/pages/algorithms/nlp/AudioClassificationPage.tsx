@@ -7,6 +7,11 @@ import { Card, InfoBox } from '../../../components/common/Card';
 import { stopMediaStream } from '../../../lib/media/streams';
 import { generateExperimentId, saveModelMetadata } from '../../../stores/experimentStore';
 import { AUDIO_DEMO_CLASSES, bandEnergies, demoClip, featureScaler, isSilent, resampleLinear, rms, stereoToMono, stft, zeroCrossingRate } from '../../../lib/nlp/audioFeatures';
+import { LabLessonPanel, useUrlTab } from '../../../components/common/LabTabs';
+import { LearningStageTabs, type LearningStage } from '../../../components/common/LearningStageTabs';
+import { TopicQuickQuiz } from '../../../components/common/TopicQuickQuiz';
+import { nlpConceptQuestions } from '../../../data/topicQuizQuestions';
+import './NlpLearningStages.css';
 
 type AudioClass = { id: string; name: string; color: string };
 type AudioExample = { id: string; classId: string; feature: number[]; frames: number[][]; samples?: number[]; createdAt: number };
@@ -89,6 +94,10 @@ function downloadJson(filename: string, payload: unknown) {
 }
 
 export default function AudioClassificationPage() {
+  const route = '/ml/nlp/audio-classification';
+  const [stageId, setStageId] = useUrlTab<'learn' | 'visualize' | 'train' | 'inference' | 'quiz'>('learn');
+  const stage: LearningStage = ({ learn: 'Learn', visualize: 'Visualize', train: 'Train', inference: 'Inference', quiz: 'Quick Quiz' } as const)[stageId] ?? 'Learn';
+  const chooseStage = (next: LearningStage) => setStageId(({ Learn: 'learn', Visualize: 'visualize', Train: 'train', Inference: 'inference', 'Quick Quiz': 'quiz' } as const)[next]);
   const contextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -476,9 +485,15 @@ export default function AudioClassificationPage() {
         badge="Browser Trainable"
         category="Browser Training"
         icon={<Mic size={22} />}
+        showAlgorithmIntro={false}
+        showAlgorithmTools={false}
       />
 
-      <div className="grid gap-6 xl:grid-cols-[360px_1fr_360px]">
+      <LearningStageTabs value={stage} onChange={chooseStage} />
+      {stageId === 'learn' && <LabLessonPanel tab="Learn" route={route} />}
+      {stageId === 'quiz' && <TopicQuickQuiz title="Audio Classification" questions={nlpConceptQuestions[route]} />}
+
+      <div className={`nlp-audio-stage nlp-audio-${stageId} grid gap-6 xl:grid-cols-[360px_1fr_360px]`}>
         <div className="space-y-4">
           <Card
             title="Class Samples"
@@ -538,7 +553,7 @@ export default function AudioClassificationPage() {
         </div>
 
         <div className="space-y-4">
-          <Card title="PCM waveform and STFT (not a decorative sine)">
+          <Card title="PCM waveform and STFT (not a decorative sine)" className="audio-wave-panel">
             {pcm.length ? (
               <>
                 <p className="text-xs">Samples {pcm.length} · RMS {rms(pcm).toFixed(3)} · ZCR {zeroCrossingRate(pcm).toFixed(3)} · class {pcmExample?.classId}{isSilent(pcm) ? " · Low-information input (near-silent)." : ""}</p>
@@ -566,7 +581,7 @@ export default function AudioClassificationPage() {
             )}
             {predictions.length > 0 && <p className="text-xs">Softmax mass {probSum.toFixed(3)}. Closed-set softmax must choose among known classes; probability does not guarantee the clip belongs to one of them.</p>}
           </Card>
-          <Card title="Training Controls">
+          <Card title="Training Controls" className="audio-train-panel">
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="text-sm font-semibold text-gray-600 dark:text-gray-300">
                 Epochs: <span className="font-mono text-blue-600">{epochs}</span>
@@ -586,7 +601,7 @@ export default function AudioClassificationPage() {
             </div>
           </Card>
 
-          <Card title="Live Mel Bands">
+          <Card title="Live Mel Bands" className="audio-mel-panel">
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={liveBands.map((value, band) => ({ band: band + 1, value }))}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -598,7 +613,7 @@ export default function AudioClassificationPage() {
             </ResponsiveContainer>
           </Card>
 
-          <Card title="Training Accuracy / Loss">
+          <Card title="Training Accuracy / Loss" className="audio-accuracy-panel">
             {epochData.length ? (
               <ResponsiveContainer width="100%" height={260}>
                 <LineChart data={epochData}>
@@ -619,7 +634,7 @@ export default function AudioClassificationPage() {
 
         <div className="space-y-4">
           {holdout && (
-            <Card title="Hold-out confusion matrix">
+            <Card title="Hold-out confusion matrix" className="audio-holdout-panel">
               <table className="text-xs">
                 <thead><tr><th /><th className="p-1" colSpan={holdout.labels.length}>predicted</th></tr>
                   <tr><th />{holdout.labels.map((label) => <th key={label} className="p-1">{label}</th>)}</tr>
@@ -632,7 +647,7 @@ export default function AudioClassificationPage() {
               </table>
             </Card>
           )}
-          <Card title="Live Inference">
+          <Card title="Live Inference" className="audio-inference-panel">
             <div className={`rounded-2xl p-5 text-center ${displayLabel === 'Uncertain' ? 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-200' : 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-200'}`}>
               <p className="text-xs font-bold uppercase tracking-wide">Top prediction</p>
               <p className="mt-1 text-3xl font-black">{displayLabel}</p>

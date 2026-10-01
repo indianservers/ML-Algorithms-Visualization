@@ -12,6 +12,10 @@ import { bagOfWordsMatrix, cosineSimilarity, inspectTerm, tfidfMatrix, transform
 import { nlpCatalog, textsFromTable } from '../../../lib/nlp/nlpDatasets';
 import { matrixToLoadedDataset } from '../../../lib/nlp/nlpExport';
 import { useActiveLoadedDataset } from '../../../lib/timeSeries/useActiveTimeSeries';
+import { LabLessonPanel, useUrlTab } from '../../../components/common/LabTabs';
+import { LearningStageTabs, type LearningStage } from '../../../components/common/LearningStageTabs';
+import { TopicQuickQuiz } from '../../../components/common/TopicQuickQuiz';
+import { nlpConceptQuestions } from '../../../data/topicQuizQuestions';
 
 // ─── Default documents ────────────────────────────────────────────────────────
 const DEFAULT_DOCS = [
@@ -44,6 +48,10 @@ function matrixToCSV(
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function TFIDFPage() {
+  const route = '/ml/nlp/tf-idf';
+  const [stageId, setStageId] = useUrlTab<'learn' | 'visualize' | 'train' | 'inference' | 'quiz'>('learn');
+  const stage: LearningStage = ({ learn: 'Learn', visualize: 'Visualize', train: 'Train', inference: 'Inference', quiz: 'Quick Quiz' } as const)[stageId] ?? 'Learn';
+  const chooseStage = (next: LearningStage) => setStageId(({ Learn: 'learn', Visualize: 'visualize', Train: 'train', Inference: 'inference', 'Quick Quiz': 'quiz' } as const)[next]);
   const [docs, setDocs]       = useState<string[]>(DEFAULT_DOCS);
   const [normMode, setNormMode] = useState<"none" | "l1" | "l2">("none");
   const [inspectDoc, setInspectDoc] = useState(0);
@@ -131,9 +139,16 @@ export default function TFIDFPage() {
         badge="nlp"
         category="Natural Language Processing"
         icon={<FileText size={22} />}
+        showAlgorithmIntro={false}
+        showAlgorithmTools={false}
       />
 
+      <LearningStageTabs value={stage} onChange={chooseStage} />
+      {stageId === 'learn' && <LabLessonPanel tab="Learn" route={route} />}
+      {stageId === 'quiz' && <TopicQuickQuiz title="TF-IDF" questions={nlpConceptQuestions[route]} />}
+
       {/* Formulas */}
+      <div hidden={stageId !== 'learn'}>
       <Card title="Formulas">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
@@ -151,8 +166,10 @@ export default function TFIDFPage() {
           N = total documents, df(t) = documents containing t. TF is the raw count in this lab (not divided by document length). Optional L2 is off unless you enable it.
         </p>
       </Card>
+      </div>
 
       {/* Document inputs */}
+      <div hidden={stageId !== 'train'}>
       <Card
         title={`Documents (${docs.length})`}
         actions={
@@ -222,8 +239,10 @@ export default function TFIDFPage() {
           </button>
         </div>
       </Card>
+      </div>
 
       {/* Results */}
+      <div hidden={stageId !== 'visualize'}>
       {result ? (
         <Tabs tabs={[
           { id: 'matrix',   label: 'TF-IDF Matrix'    },
@@ -456,7 +475,9 @@ export default function TFIDFPage() {
           Enter at least one non-empty document. TF-IDF updates as you type.
         </InfoBox>
       )}
+      </div>
 
+      <div hidden={stageId !== 'inference'}>
       {fitted.model.vocabulary.length > 0 && (
         <div className="grid gap-4 lg:grid-cols-2">
           <Card title="Term inspector (real TF / DF / IDF)">
@@ -526,8 +547,10 @@ export default function TFIDFPage() {
           </Card>
         </div>
       )}
+      </div>
 
       {/* Interpretation */}
+      <div hidden={stageId !== 'learn'}>
       <Card title="Interpretation Guide">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <InfoBox type="success" title="High TF-IDF">
@@ -544,6 +567,7 @@ export default function TFIDFPage() {
           </InfoBox>
         </div>
       </Card>
+      </div>
     </div>
   );
 }

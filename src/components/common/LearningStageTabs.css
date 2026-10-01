@@ -1,0 +1,8 @@
+.learning-stage-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 4px 0 16px; }
+.learning-stage-tabs:has(button:nth-child(4):last-child) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.learning-stage-tabs button { display: flex; align-items: center; justify-content: center; gap: 9px; min-height: 49px; padding: 8px 11px; border: 1px solid #bcd0ee; border-radius: 11px; background: #f7faff; color: #1a3865; font-weight: 700; cursor: pointer; }
+.learning-stage-tabs button:hover, .learning-stage-tabs button:focus-visible { border-color: #326bff; outline: none; box-shadow: 0 0 0 2px #326bff35; }
+.learning-stage-tabs button[aria-selected="true"] { border-color: #255df4; background: linear-gradient(125deg, #3480ff, #2052e9); color: white; box-shadow: 0 5px 15px #2052e945; }
+.dark .learning-stage-tabs button { border-color: #2c4773; background: #102341; color: #e5eeff; }
+.dark .learning-stage-tabs button[aria-selected="true"] { border-color: #4f82ff; background: linear-gradient(125deg, #2b66f4, #344de1); color: white; }
+@media (max-width: 650px) { .learning-stage-tabs { display: flex; overflow-x: auto; padding-bottom: 4px; } .learning-stage-tabs button { flex: 0 0 auto; min-width: 125px; } }

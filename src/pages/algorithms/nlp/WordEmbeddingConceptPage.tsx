@@ -16,10 +16,19 @@ import {
 import { cosineSimilarity } from "../../../lib/nlp/vectorize";
 import { tokenizeText } from "../../../lib/nlp/textPrep";
 import { nlpCatalog } from "../../../lib/nlp/nlpDatasets";
+import { LabLessonPanel, useUrlTab } from "../../../components/common/LabTabs";
+import { LearningStageTabs, type LearningStage } from "../../../components/common/LearningStageTabs";
+import { TopicQuickQuiz } from "../../../components/common/TopicQuickQuiz";
+import { nlpConceptQuestions } from "../../../data/topicQuizQuestions";
+import "./NlpLearningStages.css";
 
 const words = Object.keys(EMBEDDING_WORDS);
 
 export default function WordEmbeddingConceptPage() {
+  const route = "/ml/nlp/word-embedding-concept";
+  const [tab, setTab] = useUrlTab<"learn" | "visualize" | "inference" | "quiz">("learn");
+  const stage: LearningStage = ({ learn: "Learn", visualize: "Visualize", inference: "Inference", quiz: "Quick Quiz" } as const)[tab] ?? "Learn";
+  const chooseStage = (next: LearningStage) => setTab(({ Learn: "learn", Visualize: "visualize", Train: "visualize", Inference: "inference", "Quick Quiz": "quiz" } as const)[next]);
   const [word, setWord] = useState("king");
   const [query, setQuery] = useState("apple");
   const [custom, setCustom] = useState("");
@@ -43,8 +52,13 @@ export default function WordEmbeddingConceptPage() {
         badge="Intermediate"
         category="NLP"
         icon={<Network size={22} />}
+        showAlgorithmIntro={false}
+        showAlgorithmTools={false}
       />
-      <div className="grid gap-6 lg:grid-cols-2">
+      <LearningStageTabs value={stage} onChange={chooseStage} stages={["Learn", "Visualize", "Inference", "Quick Quiz"]} />
+      {tab === "learn" && <LabLessonPanel tab="Learn" route={route} />}
+      {tab === "quiz" && <TopicQuickQuiz title="Word Embedding" questions={nlpConceptQuestions[route]} />}
+      <div className={`nlp-embedding-stage nlp-embedding-${tab} grid gap-6 lg:grid-cols-2`}>
         <Card title="Vector inspector">
           <label className="text-xs">Word
             <select value={word} onChange={(e) => setWord(e.target.value)} className="mt-1 w-full rounded border px-2 py-1">

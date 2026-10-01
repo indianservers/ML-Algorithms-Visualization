@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState, type ChangeEvent } from "react";
 import { Link } from "react-router-dom";
 import { Download, Moon, Play, RotateCcw, Save, Settings } from "lucide-react";
-import { LAB_TABS, LabLessonOrWork, useLabTabs } from "../../../components/common/LabTabs";
+import { DEEP_LEARNING_TABS, LabLessonOrWork, useLabTabs } from "../../../components/common/LabTabs";
 import {
   runGRU,
   type GRUActivation,
@@ -194,7 +194,7 @@ export default function GRUPage() {
           hidden state across time.
         </p>
         <nav role="tablist" aria-label="GRU sections">
-          {LAB_TABS.map((name) => (
+          {DEEP_LEARNING_TABS.map((name) => (
             <button
               role="tab"
               aria-selected={tab === name}

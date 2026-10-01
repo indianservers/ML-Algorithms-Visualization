@@ -10,6 +10,8 @@ import {
   Scatter, ScatterChart, Tooltip, XAxis, YAxis, Legend, ReferenceArea,
 } from 'recharts';
 import { PageHeader } from '../../../components/common/PageHeader';
+import { EditableNumericScatter } from '../../../components/dataset/EditableNumericScatter';
+import { EditableDataGrid } from '../../../components/dataset/EditableDataGrid';
 import { Card, InfoBox } from '../../../components/common/Card';
 import type { BadgeType } from '../../../data/navigation';
 import { allSampleDatasets, generateSyntheticBlobs } from '../../../data/sampleDatasets';
@@ -159,6 +161,8 @@ export default function ConceptAlgorithmPage({ config }: { config: AlgorithmModu
   const [tfHistory, setTfHistory] = useState<Array<{ epoch: number; loss: number; metric: number }>>([]);
   const [tfPrediction, setTfPrediction] = useState<{ label: string; confidence: number; raw: number[] } | null>(null);
   const [uploadedRows, setUploadedRows] = useState<Array<Record<string, number>>>([]);
+  const [editedRows, setEditedRows] = useState<Array<Record<string, number>> | null>(null);
+  const [editedDatasetId, setEditedDatasetId] = useState<string | null>(null);
   const [uploadName, setUploadName] = useState('');
   const tfModelRef = useRef<LayersModel | null>(null);
   const autoTrainRunRef = useRef(0);
@@ -178,12 +182,19 @@ export default function ConceptAlgorithmPage({ config }: { config: AlgorithmModu
 
   const selectedDataset = algorithmDatasets.find(ds => ds.id === datasetId) ?? algorithmDatasets[0] ?? allSampleDatasets[0];
   const numericDatasetRows = useMemo(() => {
-    if (uploadedRows.length > 0) return uploadedRows;
+    if (editedRows && editedDatasetId === datasetId) return editedRows;
+    if (datasetId === 'uploaded') return uploadedRows;
     const rows = selectedDataset?.data as Array<Record<string, unknown>> | undefined;
     return (rows ?? [])
       .map(row => Object.fromEntries(Object.entries(row).filter(([, value]) => typeof value === 'number')) as Record<string, number>)
       .filter(row => Object.keys(row).length >= 2);
-  }, [selectedDataset, uploadedRows]);
+  }, [selectedDataset, uploadedRows, datasetId, editedRows, editedDatasetId]);
+  const editNumericRows = (next: Array<Record<string, unknown>>) => {
+    const numeric = next.map(row => Object.fromEntries(Object.entries(row).map(([key, value]) => [key, Number(value)])));
+    if (numeric.some(row => Object.values(row).some(value => !Number.isFinite(value)))) return;
+    setEditedRows(numeric);
+    setEditedDatasetId(datasetId);
+  };
 
   const tfDataset = useMemo(() => {
     const usable = numericDatasetRows.length >= 8
@@ -651,6 +662,14 @@ export default function ConceptAlgorithmPage({ config }: { config: AlgorithmModu
               </div>
               <p>{selectedDataset?.description}</p>
               <p className="font-mono">Rows: {selectedDataset?.data.length ?? 0} Columns: {selectedDataset?.columns.join(', ')}</p>
+              {numericDatasetRows.length > 0 && <details className="rounded border border-gray-200 p-2 dark:border-gray-700">
+                <summary className="cursor-pointer font-semibold">Edit points and dataset values</summary>
+                <div className="mt-3 space-y-3">
+                  <EditableNumericScatter rows={numericDatasetRows} columns={Object.keys(numericDatasetRows[0])} onChange={editNumericRows} hint="Point edits update this lab's computations." />
+                  <EditableDataGrid rows={numericDatasetRows} columns={Object.keys(numericDatasetRows[0])} onChange={editNumericRows} />
+                  <button className="rounded border border-gray-200 px-3 py-2 dark:border-gray-700" onClick={() => { setEditedRows(null); setEditedDatasetId(null); }}>Reset dataset edits</button>
+                </div>
+              </details>}
             </div>
           </Card>
 

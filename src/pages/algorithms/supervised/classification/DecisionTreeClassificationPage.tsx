@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { LabProgressMeter } from "../../../../components/common/LabChrome";
 import { LabLessonPanel, useUrlTab } from "../../../../components/common/LabTabs";
 import { DecisionTreeLearnIllustration } from "../../../../components/learning/DecisionTreeLearnIllustration";
+import { EditableNumericScatter } from "../../../../components/dataset/EditableNumericScatter";
 import {
   ArrowRight,
   BarChart3,
@@ -907,6 +908,18 @@ export default function DecisionTreeClassificationPage() {
             Edit samples directly; the CART tree, regions, confusion matrix, and
             importance update immediately.
           </p>
+          <EditableNumericScatter
+            rows={rows.map(row => Object.fromEntries([...SHORT.map((name, index) => [name, row.features[index]]), ["label", row.label]]))}
+            columns={[...SHORT, "label"]}
+            target={SHORT[1]}
+            onChange={edited => {
+              const next = edited.map(row => ({
+                features: SHORT.map(name => Number(row[name])),
+                label: Math.max(0, Math.min(2, Math.round(Number(row.label)))),
+              }));
+              if (next.every(row => row.features.every(Number.isFinite) && Number.isFinite(row.label))) setRows(next);
+            }}
+          />
           <div>
             <table>
               <thead>

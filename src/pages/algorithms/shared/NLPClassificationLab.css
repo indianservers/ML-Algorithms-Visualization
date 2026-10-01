@@ -1,0 +1,13 @@
+.nlp-lab-stage-learn, .nlp-lab-stage-quiz { display: none !important; }
+.nlp-lab-stage-visualize > :first-child > :nth-child(-n+3),
+.nlp-lab-stage-inference > :first-child > :nth-child(-n+3) { display: none; }
+.nlp-lab-stage-train > :first-child > :nth-child(4) { display: none; }
+.nlp-lab-stage-train > :nth-child(2) > :nth-child(1),
+.nlp-lab-stage-train > :nth-child(2) > :nth-child(3),
+.nlp-lab-stage-train > :nth-child(2) > :nth-child(5) { display: none; }
+.nlp-lab-stage-visualize > :nth-child(2) > :nth-child(2),
+.nlp-lab-stage-visualize > :nth-child(2) > :nth-child(4),
+.nlp-lab-stage-inference > :nth-child(2) > :nth-child(2),
+.nlp-lab-stage-inference > :nth-child(2) > :nth-child(4),
+.nlp-lab-stage-inference > :nth-child(2) > :nth-child(5) { display: none; }
+@media (max-width: 850px) { .nlp-lab-stage { grid-template-columns: minmax(0, 1fr) !important; } }

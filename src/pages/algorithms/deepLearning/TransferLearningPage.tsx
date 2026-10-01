@@ -4,7 +4,7 @@ import { BookOpen, Database, Play, RotateCcw, Upload } from "lucide-react";
 import { inferTransferEmbedding, runTransferLearning } from "../../../lib/algorithms/neural/transferLearning";
 import { downloadJsonArtifact } from "../../../lib/modelArtifacts/downloadJsonArtifact";
 import {
-  LAB_TABS,
+  DEEP_LEARNING_TABS,
   LabLessonOrWork,
   labHide,
   useLabTabs,
@@ -176,7 +176,7 @@ export default function TransferLearningPage() {
           />
         </div>
         <nav role="tablist" aria-label="Transfer Learning sections">
-          {LAB_TABS.map((name) => (
+          {DEEP_LEARNING_TABS.map((name) => (
             <button
               role="tab"
               aria-selected={tab === name}

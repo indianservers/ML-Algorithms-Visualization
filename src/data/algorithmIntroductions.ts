@@ -1,4 +1,5 @@
 import type { AlgorithmNavItem } from './implementationStatus';
+import { algorithmSearchMeta } from './algorithmSearchMeta';
 
 export interface AlgorithmIntroduction {
   summary: string;
@@ -79,6 +80,10 @@ const categoryIntro: Record<string, Omit<AlgorithmIntroduction, 'summary'>> = {
     useWhen: 'Use it when comparing experiments, managing datasets, saving results, or preparing reports.',
     watchFor: 'Watch reproducibility, consistent metrics, dataset versions, random seeds, and notes that explain why results changed.',
   },
+  'AI Algorithms Virtual Labs': {
+    useWhen: 'Use the lab to trace this algorithm on a small example before applying it to a larger problem.',
+    watchFor: 'Check each transition or decision against the stated rule and inspect the case where the algorithm fails or makes a trade-off.',
+  },
   'Terms Studio': {
     useWhen: 'Use it when a short ML word (ReLU, loss, epoch, softmax) is blocking the rest of a lesson.',
     watchFor: 'Watch that the analogy matches the math, then open the linked lab and try the same idea on data.',
@@ -86,6 +91,35 @@ const categoryIntro: Record<string, Omit<AlgorithmIntroduction, 'summary'>> = {
 };
 
 const routeIntro: Record<string, Partial<AlgorithmIntroduction>> = {
+  '/ml/supervised/multinomial-logistic-regression': {
+    useWhen: 'Use softmax regression when each example belongs to one of three or more mutually exclusive classes.',
+    watchFor: 'Probabilities across classes sum to one. A binary 0.5 threshold and sigmoid plot do not describe the multiclass prediction rule.',
+  },
+  '/ml/dimensionality-reduction/lda': {
+    useWhen: 'Use supervised LDA to project labeled examples onto axes that separate classes; at most C−1 discriminant axes exist for C classes.',
+    watchFor: 'LDA needs class labels to fit the projection. Evaluate separation on held-out labeled data before trusting the view.',
+  },
+  '/ml/ensemble/boosting': {
+    useWhen: 'Use this AdaBoost lab to study how reweighting misclassified rows makes later weak learners focus on harder examples.',
+    watchFor: 'This lab uses weighted examples and votes. Gradient boosting instead follows a loss gradient with additive corrections.',
+  },
+  '/ml/time-series/anomaly-detection': {
+    useWhen: 'Use anomaly detection to flag unusual observations or patterns for review, with time order and seasonality taken into account.',
+    watchFor: 'An unusual point is not automatically an error or fraud. Check false alarms across normal changes in trend and seasonality.',
+  },
+  '/ml/deep-learning/perceptron': {
+    summary: 'A perceptron is the smallest useful neural classifier: it learns a linear boundary from mistakes.',
+    useWhen: 'Use it to learn the mechanics of a single linear threshold classifier on linearly separable labeled data.',
+    watchFor: 'A single perceptron cannot solve XOR without feature engineering. Inspect mistakes and the position of the linear boundary.',
+  },
+  '/ml/reinforcement-learning/markov-decision-process': {
+    useWhen: 'Use an MDP to describe states, actions, transition probabilities, and rewards before solving for a policy.',
+    watchFor: 'The Markov assumption says the current state contains the information needed to predict the next state. Check that the state definition is sufficient.',
+  },
+  '/ml/optimization/adam': {
+    useWhen: 'Use Adam to optimize differentiable objectives with adaptive per-parameter steps, especially when gradients are noisy or vary in scale.',
+    watchFor: 'Adam still needs a suitable learning rate and validation. Fast training loss reduction does not guarantee good generalization.',
+  },
   '/ml/clustering/k-means': {
     summary: 'K-Means partitions unlabeled data into K groups by repeatedly assigning points to the nearest centroid and moving each centroid to the middle of its assigned points.',
     useWhen: 'Use it for fast, interpretable grouping when clusters are roughly compact and numeric features can be scaled.',
@@ -121,9 +155,6 @@ const routeIntro: Record<string, Partial<AlgorithmIntroduction>> = {
   },
   '/ml/dimensionality-reduction/pca': {
     summary: 'PCA rotates features into directions of maximum variance, then keeps the most informative directions.',
-  },
-  '/ml/deep-learning/perceptron': {
-    summary: 'A perceptron is the smallest useful neural classifier: it learns a linear boundary from mistakes.',
   },
   '/ml/deep-learning/nn-playground': {
     summary: 'A live neural-net sandbox: play epochs, hover neurons, toggle features, and grade the boundary on a held-out test set.',
@@ -166,7 +197,7 @@ export function getAlgorithmIntroduction(item: AlgorithmNavItem): AlgorithmIntro
   const specific = routeIntro[item.route] ?? {};
 
   return {
-    summary: specific.summary ?? defaultSummary(item),
+    summary: specific.summary ?? algorithmSearchMeta[item.route]?.description ?? defaultSummary(item),
     useWhen: specific.useWhen ?? category.useWhen,
     watchFor: specific.watchFor ?? category.watchFor,
   };

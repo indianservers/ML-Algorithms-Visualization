@@ -111,6 +111,27 @@ const clampK = (value: number, limit: number) =>
   Math.max(1, Math.min(Math.max(1, limit), Math.round(value) || 1));
 const pct = (value: number) => `${Math.round(value * 100)}%`;
 
+/** Classify a moved sample from its neighbors, excluding the sample itself. */
+function classAtMovedPoint(
+  samples: Point[],
+  movedIndex: number,
+  position: { x: number; y: number },
+  k: number,
+  metric: DistanceMetric,
+  weight: KnnWeight,
+) {
+  const others = samples.filter((_, index) => index !== movedIndex);
+  if (!others.length) return samples[movedIndex].label;
+  return knnPredict(
+    others.map((point) => [point.x, point.y]),
+    others.map((point) => point.label),
+    [position.x, position.y],
+    Math.min(k, others.length),
+    metric,
+    weight,
+  ).predictedClass;
+}
+
 export default function KNNClassificationPage() {
   const [tab, setTab] = useUrlTab<TabId>("learn");
   const [datasetId, setDatasetId] = useState<DatasetId>("iris");
@@ -466,7 +487,25 @@ export default function KNNClassificationPage() {
       ),
     );
   };
-  const plotPointerUp = () => setDrag(null);
+  const plotPointerUp = (event: React.PointerEvent<SVGSVGElement>) => {
+    if (drag?.target.kind === "point") {
+      const index = drag.target.index;
+      const at = toData(event);
+      const original = drag.points[index];
+      const movedPixels = Math.hypot(
+        (at.x - original.x) * xScale,
+        (at.y - original.y) * yScale,
+      );
+      if (movedPixels >= 5) {
+        const label = classAtMovedPoint(drag.points, index, at, safeK, metric, weight);
+        setPoints((current) => current.map((point, pointIndex) =>
+          pointIndex === index ? { ...point, x: at.x, y: at.y, label } : point,
+        ));
+        if (label !== original.label) setToast(`Moved sample mapped to ${names[label]}`);
+      }
+    }
+    setDrag(null);
+  };
   const plotKeyDown = (event: React.KeyboardEvent<SVGSVGElement>) => {
     const nudgeX = (domain.xMax - domain.xMin) / 60;
     const nudgeY = (domain.yMax - domain.yMin) / 60;
@@ -497,7 +536,7 @@ export default function KNNClassificationPage() {
             ? `Click to add ${names[paintClass]} samples`
             : tool === "erase"
               ? "Click a sample to delete it"
-              : "Drag the query or any sample • arrow keys nudge"}
+            : "Drag the query or any sample • moved samples take the nearby KNN class"}
         </small>
         <div className="knn-plot-legend">
           {classIds.map((label) => (
@@ -1295,7 +1334,7 @@ export default function KNNClassificationPage() {
               </div>
               <p className="knn-tool-hint">
                 {tool === "move"
-                  ? "Drag the query crosshair or any training sample."
+                  ? "Drag a sample into another region to map it to the nearby KNN class. Click without moving to keep its label."
                   : tool === "paint"
                     ? "Click the plot to drop a new labelled sample."
                     : "Click a sample to remove it from the dataset."}

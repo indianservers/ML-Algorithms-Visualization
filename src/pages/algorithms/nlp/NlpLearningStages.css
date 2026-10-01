@@ -1,0 +1,13 @@
+.nlp-embedding-learn, .nlp-embedding-quiz { display: none !important; }
+.nlp-embedding-visualize > :nth-child(2), .nlp-embedding-visualize > :nth-child(3),
+.nlp-embedding-inference > :nth-child(4), .nlp-embedding-inference > :nth-child(5) { display: none; }
+.nlp-audio-learn, .nlp-audio-quiz { display: none !important; }
+.nlp-audio-visualize { grid-template-columns: minmax(0, 1fr) !important; }
+.nlp-audio-visualize > :first-child, .nlp-audio-visualize > :last-child,
+.nlp-audio-visualize .audio-train-panel, .nlp-audio-visualize .audio-accuracy-panel { display: none; }
+.nlp-audio-train .audio-wave-panel, .nlp-audio-train .audio-mel-panel,
+.nlp-audio-train .audio-inference-panel { display: none; }
+.nlp-audio-inference { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; }
+.nlp-audio-inference > :first-child, .nlp-audio-inference .audio-wave-panel,
+.nlp-audio-inference .audio-accuracy-panel, .nlp-audio-inference .audio-holdout-panel { display: none; }
+@media (max-width: 850px) { .nlp-audio-stage { grid-template-columns: minmax(0, 1fr) !important; } }

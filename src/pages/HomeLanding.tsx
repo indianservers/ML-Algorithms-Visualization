@@ -12,16 +12,23 @@ import {
   Eye,
   FlaskConical,
   Gamepad2,
-  Infinity as InfinityIcon,
+  Gauge,
+  Heart,
+  Home,
+  Lightbulb,
   Layers,
   MessageSquare,
   Minimize2,
   Moon,
+  Network,
   Play,
   Quote,
   Search,
+  ShieldCheck,
+  SlidersHorizontal,
   Sparkles,
   Sun,
+  TrendingUp,
   Users,
   Zap,
 } from "lucide-react";
@@ -30,12 +37,15 @@ import { allSampleDatasets } from "../data/sampleDatasets";
 import { searchAlgorithms } from "../lib/search/algorithmSearchIndex";
 import { useTheme } from "../stores/uiStore";
 import { AlgorithmArt, type ArtKey } from "../components/home/AlgorithmArt";
+import { ReferenceLabArt } from "../components/home/ReferenceLabArt";
+import { algorithmSearchMeta } from "../data/algorithmSearchMeta";
 import { BrainVisual } from "../components/home/BrainVisual";
 import { visionLabThumb } from "../features/computer-vision/catalog";
 import { aiVirtualLabs, aiVirtualLabRoute } from "../features/ai-virtual-labs/catalog";
 import { AiAlgorithmsSection } from "../features/ai-virtual-labs/AiAlgorithmsSection";
 import "./HomeLanding.css";
 import "./HomeLauncherCards.css";
+import "./HomeReference.css";
 
 type Level = "Beginner" | "Intermediate" | "Advanced";
 
@@ -94,6 +104,42 @@ function card(route: string, blurb: string, level: Level, label?: string, artKey
 
 const groups: Group[] = [
   {
+    id: "dimensionality",
+    title: "Dimensionality Reduction",
+    blurb: "Reduce complexity. Reveal structure. Visualize high-dimensional data.",
+    tone: "purple",
+    icon: <Layers />,
+    categories: ["Dimensionality Reduction"],
+    featured: byCategory(["Dimensionality Reduction"]).map((item) => card(item.route, algorithmSearchMeta[item.route]?.description ?? item.label, LEVEL_OF[item.badge])),
+  },
+  {
+    id: "time-series",
+    title: "Time Series",
+    blurb: "Understand patterns. Forecast the future. Turn data into insights.",
+    tone: "blue",
+    icon: <Activity />,
+    categories: ["Time Series"],
+    featured: byCategory(["Time Series"]).map((item) => card(item.route, algorithmSearchMeta[item.route]?.description ?? item.label, LEVEL_OF[item.badge])),
+  },
+  {
+    id: "nlp",
+    title: "NLP & Text",
+    blurb: "Transform language into intelligence. Explore text processing, semantics, and modern NLP techniques.",
+    tone: "purple",
+    icon: <MessageSquare />,
+    categories: ["NLP"],
+    featured: byCategory(["NLP"]).map((item) => card(item.route, algorithmSearchMeta[item.route]?.description ?? item.label, LEVEL_OF[item.badge])),
+  },
+  {
+    id: "reinforcement",
+    title: "Reinforcement Learning",
+    blurb: "Learn through interaction. Explore decision making, agents, and sequential learning.",
+    tone: "cyan",
+    icon: <Network />,
+    categories: ["Reinforcement Learning"],
+    featured: byCategory(["Reinforcement Learning"]).map((item) => card(item.route, algorithmSearchMeta[item.route]?.description ?? item.label, LEVEL_OF[item.badge])),
+  },
+  {
     id: "supervised",
     title: "Supervised Learning",
     blurb: "Learn from labeled data to predict outcomes",
@@ -115,14 +161,11 @@ const groups: Group[] = [
     blurb: "Find hidden patterns in unlabeled data",
     tone: "green",
     icon: <Layers />,
-    categories: ["Clustering", "Dimensionality Reduction"],
+    categories: ["Clustering"],
     featured: [
       card("/ml/clustering/k-means", "Group similar data", "Beginner", "K-Means Clustering"),
       card("/ml/clustering/hierarchical-clustering", "Tree-based clustering", "Intermediate"),
-      card("/ml/dimensionality-reduction/pca", "Dimensionality reduction", "Intermediate"),
-      card("/ml/dimensionality-reduction/tsne", "Visualize high-dimensional data", "Advanced", "t-SNE"),
       card("/ml/clustering/dbscan", "Density-based clustering", "Advanced"),
-      card("/ml/dimensionality-reduction/autoencoder", "Neural dimensionality reduction", "Advanced", "Autoencoders"),
     ],
   },
   {
@@ -169,7 +212,35 @@ const groups: Group[] = [
       card(aiVirtualLabRoute(lab.slug), lab.summary, "Advanced", lab.title),
     ),
   },
+  ...([
+    { id: "evaluation", title: "Evaluation", category: "Evaluation", blurb: "Measure what a model gets right, wrong, and uncertain.", icon: <Gauge />, tone: "blue" },
+    { id: "preprocessing", title: "Preprocessing", category: "Preprocessing", blurb: "Prepare trustworthy data before fitting a model.", icon: <SlidersHorizontal />, tone: "cyan" },
+    { id: "recommendation", title: "Recommendation", category: "Recommendation", blurb: "Find relevant items from preferences and interactions.", icon: <Heart />, tone: "purple" },
+    { id: "explainability", title: "Explainability", category: "Explainability", blurb: "Inspect why a model makes a prediction.", icon: <Lightbulb />, tone: "blue" },
+    { id: "optimization", title: "Optimization", category: "Optimization", blurb: "Follow the update rules that improve a model.", icon: <TrendingUp />, tone: "cyan" },
+    { id: "ensemble", title: "Ensemble Methods", category: "Ensemble", blurb: "Combine learners into a stronger prediction.", icon: <Layers />, tone: "purple" },
+    { id: "probabilistic", title: "Probabilistic Models", category: "Probabilistic", blurb: "Reason with likelihoods, beliefs, and uncertainty.", icon: <BrainCircuit />, tone: "blue" },
+    { id: "deployment", title: "Deployment", category: "Deployment", blurb: "Take models from experiments to reliable inference.", icon: <ShieldCheck />, tone: "cyan" },
+    { id: "algorithm-lab", title: "Algorithm Lab", category: "Lab", blurb: "Compare, save, and report your experiments.", icon: <FlaskConical />, tone: "purple" },
+    { id: "terms-studio", title: "Terms Studio", category: "Terms Studio", blurb: "Explore the ideas and vocabulary behind every lab.", icon: <BookOpen />, tone: "blue" },
+  ] as const).map((entry): Group => ({
+    id: entry.id,
+    title: entry.title,
+    blurb: entry.blurb,
+    tone: entry.tone,
+    icon: entry.icon,
+    categories: [entry.category],
+    featured: byCategory([entry.category]).slice(0, 6).map((item) => card(item.route, algorithmSearchMeta[item.route]?.description ?? item.label, LEVEL_OF[item.badge])),
+  })),
 ];
+
+groups.sort((a, b) => {
+  const priority = ["supervised", "unsupervised", "reinforcement", "computer-vision", "deep-learning"];
+  const aRank = priority.indexOf(a.id);
+  const bRank = priority.indexOf(b.id);
+  if (aRank !== -1 || bRank !== -1) return (aRank === -1 ? priority.length : aRank) - (bRank === -1 ? priority.length : bRank);
+  return 0;
+});
 
 const miniCategories = [
   {
@@ -257,7 +328,7 @@ function toCard(item: NavItem & { category: string }): Card {
     : undefined;
   return {
     label: item.label,
-    blurb: aiLab?.summary ?? item.category.replace(" - ", " · "),
+    blurb: aiLab?.summary ?? algorithmSearchMeta[item.route]?.description ?? item.category.replace(" - ", " · "),
     route: item.route,
     level: LEVEL_OF[item.badge],
     category: item.category,
@@ -312,24 +383,28 @@ const panelId = (category: string) => `hl-mini-panel-${category.toLowerCase().re
 
 function AlgorithmCard({ item, enterIndex = -1 }: { item: Card; enterIndex?: number }) {
   const thumb = visionLabThumb(item.route);
+  const isReference = ["Dimensionality Reduction", "Time Series", "NLP", "Reinforcement Learning", "Evaluation", "Preprocessing"].includes(item.category);
   return (
     <Link
       to={item.route}
-      className={["hl-ai-card", "hl-home-card", enterIndex >= 0 ? "hl-card-enter" : "", thumb ? "has-thumb" : ""].filter(Boolean).join(" ")}
+      className={["hl-ai-card", "hl-home-card", isReference ? "hl-reference-card" : "", enterIndex >= 0 ? "hl-card-enter" : "", thumb ? "has-thumb" : ""].filter(Boolean).join(" ")}
       style={enterIndex >= 0 ? { animationDelay: `${Math.min(enterIndex, 11) * 22}ms` } : undefined}
       aria-label={`Open ${item.label} lab`}
     >
       <span className="hl-ai-copy hl-home-card-copy">
         <strong>{item.label}</strong>
-        <span>{item.blurb}</span>
+        {isReference && <em className="hl-home-card-category">{item.category}</em>}
       </span>
       <span className="hl-home-card-art" aria-hidden="true">
         {thumb ? (
           <img src={thumb} alt="" loading="lazy" />
+        ) : isReference ? (
+          <ReferenceLabArt route={item.route} />
         ) : (
           <AlgorithmArt route={item.route} category={item.category} artKey={item.artKey} compact />
         )}
       </span>
+      <span className="hl-home-card-description">{item.blurb}</span>
       <span className="hl-ai-card-actions" aria-hidden="true">
         <span className="hl-ai-open">Open Lab</span>
         <span className="hl-ai-arrow"><ChevronRight /></span>
@@ -341,14 +416,15 @@ function AlgorithmCard({ item, enterIndex = -1 }: { item: Card; enterIndex?: num
 
 export default function HomeLanding() {
   const navigate = useNavigate();
-  const { theme, setTheme } = useTheme();
+  const { setTheme } = useTheme();
+  const [homeTheme, setHomeTheme] = React.useState<"dark" | "light">("dark");
   const [query, setQuery] = React.useState("");
   const [level, setLevel] = React.useState<Level | "All">("All");
   const [navOpen, setNavOpen] = React.useState(false);
   const [navIndex, setNavIndex] = React.useState(0);
   const navRef = React.useRef<HTMLLabelElement>(null);
 
-  const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>({});
+  const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>({ dimensionality: true, "time-series": true, nlp: true, reinforcement: true });
   const [openMinis, setOpenMinis] = React.useState<Record<string, boolean>>({});
 
   const filtering = query.trim().length > 0 || level !== "All";
@@ -366,7 +442,8 @@ export default function HomeLanding() {
           return { group, cards: matchAlgorithms(full, query, level), total: full.length, expanded: true, forced: true };
         }
         const expanded = Boolean(openGroups[group.id]);
-        return { group, cards: expanded ? full : group.featured, total: full.length, expanded, forced: false };
+        const referenceGroup = ["dimensionality", "time-series", "nlp", "reinforcement"].includes(group.id);
+        return { group, cards: expanded ? full : referenceGroup ? [] : group.featured, total: full.length, expanded, forced: false };
       }),
     [filtering, level, query, openGroups],
   );
@@ -419,15 +496,15 @@ export default function HomeLanding() {
   ];
 
   return (
-    <div className="home-landing">
+    <div className={`home-landing${homeTheme === "light" ? " hl-light" : ""}`}>
       <header className="hl-nav">
         <Link to="/" className="hl-brand">
           <span className="hl-brand-mark">
-            <InfinityIcon />
+            <Zap />
           </span>
           <span className="hl-brand-text">
-            <strong>Mega ML</strong>
-            <em>Algorithms Suite</em>
+            <strong>Mega ML Algorithms Suite</strong>
+            <em>Visualize · Learn · Experiment · Master</em>
           </span>
         </Link>
 
@@ -465,7 +542,7 @@ export default function HomeLanding() {
                 }
               }
             }}
-            placeholder="Search algorithms, topics, or experiment..."
+            placeholder="Search algorithms, e.g. PCA, LSTM..."
             aria-label="Search algorithms, topics, or experiments"
             aria-expanded={navOpen && query.trim().length > 0}
             aria-controls="hl-search-results"
@@ -496,43 +573,33 @@ export default function HomeLanding() {
         </label>
 
         <nav className="hl-nav-links" aria-label="Primary">
+          <Link to="/"><Home />Home</Link>
+          <a href="#hl-catalog-start"><Boxes />Algorithms</a>
           <Link to="/ml/terms-studio">
             <BookMarked />
-            Terms
+            Terms Studio
           </Link>
           <Link to="/documentation">
             <BookOpen />
-            Learn
-          </Link>
-          <Link to="/ml/lab/algorithm-comparison">
-            <Zap />
-            Practice
-          </Link>
-          <Link to="/dataset-library">
-            <Database />
-            Datasets
-          </Link>
-          <Link to="/ml/deep-learning/nn-playground">
-            <Gamepad2 />
-            Playground
+            Guide
           </Link>
         </nav>
 
         <div className="hl-theme" role="group" aria-label="Colour theme">
           <button
             type="button"
-            className={theme === "light" ? "is-on" : ""}
-            aria-pressed={theme === "light"}
-            onClick={() => setTheme("light")}
+            className={homeTheme === "light" ? "is-on" : ""}
+            aria-pressed={homeTheme === "light"}
+            onClick={() => { setHomeTheme("light"); setTheme("light"); }}
           >
             <Sun />
             <span className="hl-sr">Light theme</span>
           </button>
           <button
             type="button"
-            className={theme === "dark" ? "is-on" : ""}
-            aria-pressed={theme === "dark"}
-            onClick={() => setTheme("dark")}
+            className={homeTheme === "dark" ? "is-on" : ""}
+            aria-pressed={homeTheme === "dark"}
+            onClick={() => { setHomeTheme("dark"); setTheme("dark"); }}
           >
             <Moon />
             <span className="hl-sr">Dark theme</span>
@@ -547,6 +614,15 @@ export default function HomeLanding() {
           </span>
         </Link>
       </header>
+
+      <aside className="hl-side" aria-label="Catalog shortcuts">
+        <Link to="/" className="is-current" aria-current="page" aria-label="Home"><Home /><span>Home</span></Link>
+        <a href="#hl-group-supervised" aria-label="Machine learning algorithms"><Boxes /><span>ML</span></a>
+        <a href="#hl-group-nlp" aria-label="NLP and text"><MessageSquare /><span>NLP</span></a>
+        <a href="#hl-group-reinforcement" aria-label="Reinforcement learning"><Gamepad2 /><span>RL</span></a>
+        <Link to="/ml/lab/saved-experiments" aria-label="Saved experiments"><Heart /><span>Saved</span></Link>
+        <small>Build<br />Explore<br />Learn<br />Repeat</small>
+      </aside>
 
       <section className="hl-hero">
         <div className="hl-hero-copy">
@@ -615,7 +691,7 @@ export default function HomeLanding() {
         ))}
       </section>
 
-      <section className="hl-catalog">
+      <section className="hl-catalog" id="hl-catalog-start">
         <div className="hl-catalog-head">
           <h2>Machine Learning Algorithms</h2>
           <div className="hl-catalog-tools">
@@ -666,13 +742,14 @@ export default function HomeLanding() {
             return <AiAlgorithmsSection key={group.id} globalRoutes={forced ? cards.map((item) => item.route) : undefined} />;
           }
           return (
-            <section key={group.id} className={`hl-group tone-${group.tone}`}>
+            <section key={group.id} id={`hl-group-${group.id}`} className={`hl-group tone-${group.tone} ${["dimensionality", "time-series", "nlp", "reinforcement"].includes(group.id) ? "hl-reference-group" : ""}`}>
               <header className="hl-group-head">
                 <span className="hl-group-icon">{group.icon}</span>
                 <span className="hl-group-title">
                   <h3>{group.title}</h3>
                   <p>{group.blurb}</p>
                 </span>
+                {["dimensionality", "time-series", "nlp", "reinforcement"].includes(group.id) && <span className="hl-lab-count">{total} Labs</span>}
                 {forced ? (
                   <span className="hl-view-all is-static">
                     {cards.length} of {total}
@@ -685,7 +762,7 @@ export default function HomeLanding() {
                     aria-controls={`hl-cards-${group.id}`}
                     onClick={() => toggle(setOpenGroups, group.id)}
                   >
-                    {expanded ? "Collapse" : "Expand"} ({total})
+                    {["dimensionality", "time-series", "nlp", "reinforcement"].includes(group.id) ? (expanded ? "Collapse" : "View all") : (expanded ? "Collapse" : `Expand (${total})`)}
                     <ChevronDown className="hl-chev" aria-hidden />
                   </button>
                 )}
@@ -704,7 +781,7 @@ export default function HomeLanding() {
         })}
 
         <div className="hl-mini-row">
-          {minis.map(({ entry, total, open, forced }) => (
+          {minis.filter(({ entry }) => !groupedCategories.has(entry.category)).map(({ entry, total, open, forced }) => (
             <div key={entry.title} className={`hl-mini tone-${entry.tone}`}>
               <Link to={entry.route} className="hl-mini-link">
                 <span className="hl-mini-icon">{entry.icon}</span>
@@ -728,7 +805,7 @@ export default function HomeLanding() {
           ))}
         </div>
 
-        {minis.map(({ entry, cards, open }) => (
+        {minis.filter(({ entry }) => !groupedCategories.has(entry.category)).map(({ entry, cards, open }) => (
           <section
             key={entry.category}
             id={panelId(entry.category)}

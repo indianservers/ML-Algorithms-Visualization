@@ -31,6 +31,7 @@ import "./LogisticRegressionPage.css";
 import { loadActiveDatasetMap } from "../../../../lib/experimentWorkspace";
 import type { LoadedAlgorithmDataset } from "../../../../data/algorithmDatasets";
 import { reportTrainingActivity } from "../../../../lib/trainingActivity";
+import { EditableNumericScatter } from "../../../../components/dataset/EditableNumericScatter";
 
 type Point = { x: number; y: number; z?: number };
 type DatasetKey = "reference" | "loan" | "student" | "disease" | "purchase" | "overlap" | "separable" | "noisy" | "imported";
@@ -880,7 +881,13 @@ export default function LogisticRegressionPage() {
           {tab === "Learn" ? (
             <LabLessonPanel tab="Learn" route="/ml/supervised/logistic-regression" />
           ) : tab === "Dataset" ? (
-            <DataTable rows={rows} setRows={setRows} feature={current.feature} />
+            <div className="lr-editable-dataset">
+              <EditableNumericScatter rows={rows} columns={["x", "y"]} target="y" onChange={edited => {
+                const next = edited.map(row => ({ x: Number(row.x), y: Number(row.y) >= 0.5 ? 1 : 0 }));
+                if (next.every(point => Number.isFinite(point.x))) setRows(next);
+              }} />
+              <DataTable rows={rows} setRows={setRows} feature={current.feature} />
+            </div>
           ) : tab === "Explain" ? (
             <article className="lr-card lr-panel lr-inference">
               <h2>Live test / inference</h2>

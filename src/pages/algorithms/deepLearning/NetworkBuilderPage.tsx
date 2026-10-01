@@ -10,7 +10,7 @@ import {
   Share2,
   Trash2,
 } from "lucide-react";
-import { LAB_TABS, LabLessonOrWork, useLabTabs } from "../../../components/common/LabTabs";
+import { DEEP_LEARNING_TABS, LabLessonOrWork, useLabTabs } from "../../../components/common/LabTabs";
 import {
   evaluateNetwork,
   MAX_NETWORK_LAYERS,
@@ -202,7 +202,7 @@ export default function NetworkBuilderPage() {
           </button>
         </div>
         <nav role="tablist" aria-label="Network builder sections">
-          {LAB_TABS.map((name) => (
+          {DEEP_LEARNING_TABS.map((name) => (
             <button
               role="tab"
               aria-selected={tab === name}

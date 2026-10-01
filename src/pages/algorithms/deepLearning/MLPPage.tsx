@@ -455,6 +455,8 @@ export default function MLPPage() {
             "Metrics",
             "Compare",
             "Explain",
+            "Inference",
+            "Quick Quiz",
           ].map((n) => (
             <button
               className={tab === n ? "active" : ""}

@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { GuideLearnBody } from "../../../../components/common/LabTabs";
 import {
   Activity,
   Bookmark,
@@ -1238,6 +1239,7 @@ function LearnPanel() {
           </div>
         </article>
       </div>
+      <GuideLearnBody route="/ml/supervised/ridge-regression" learnActions={<></>} />
     </section>
   );
 }

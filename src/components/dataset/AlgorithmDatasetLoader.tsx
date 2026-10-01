@@ -12,6 +12,7 @@ import { applyAlgorithmDataset, bestFitSummary, scoreDatasetForAlgorithms } from
 import { loadDatasets, type SavedDataset } from '../../stores/experimentStore';
 import { Card } from '../common/Card';
 import { EditableDataGrid } from './EditableDataGrid';
+import { EditableNumericScatter } from './EditableNumericScatter';
 
 const ACTIVE_DATASETS_KEY = 'mlSuite.activeAlgorithmDatasets';
 
@@ -392,6 +393,13 @@ export function AlgorithmDatasetLoader({ route, category }: { route: string; cat
                 maxRows={Math.min(24, Math.max(12, editableDataset.data.length))}
                 onColumnsChange={handleGridColumnsChange}
                 onChange={handleGridRowsChange}
+              />
+              <EditableNumericScatter
+                columns={editableDataset.columns}
+                rows={editableDataset.data}
+                target={editableDataset.target}
+                onChange={handleGridRowsChange}
+                hint="Drag points or edit exact values, then choose Apply Edits."
               />
             </div>
           )}

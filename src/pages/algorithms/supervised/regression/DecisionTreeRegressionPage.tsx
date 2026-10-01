@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { LabProgressMeter } from "../../../../components/common/LabChrome";
 import { useUrlTab } from "../../../../components/common/LabTabs";
+import { EditableNumericScatter } from "../../../../components/dataset/EditableNumericScatter";
 import {
   Activity,
   BarChart3,
@@ -1057,6 +1058,7 @@ function DatasetPanel({
   datasetId,
   onDataset,
   onEdit,
+  onRows,
   onAdd,
   onRemove,
   onUpload,
@@ -1067,6 +1069,7 @@ function DatasetPanel({
   datasetId: DatasetId;
   onDataset: (id: BuiltInDatasetId) => void;
   onEdit: (r: number, c: number | "target", v: number) => void;
+  onRows: (rows: TreeRow[]) => void;
   onAdd: () => void;
   onRemove: () => void;
   onUpload: () => void;
@@ -1103,6 +1106,15 @@ function DatasetPanel({
           </button>
         </div>
       </div>
+      <EditableNumericScatter
+        rows={rows.map(row => Object.fromEntries([...names.map((name, index) => [name, row.features[index]]), [targetName, row.target]]))}
+        columns={[...names, targetName]}
+        target={targetName}
+        onChange={edited => {
+          const next = edited.map(row => ({ features: names.map(name => Number(row[name])), target: Number(row[targetName]) }));
+          if (next.every(row => row.features.every(Number.isFinite) && Number.isFinite(row.target))) onRows(next);
+        }}
+      />
       <div className="tree-data-table">
         <table>
           <thead>
@@ -1605,6 +1617,7 @@ export default function DecisionTreeRegressionPage() {
                 datasetId={datasetId}
                 onDataset={selectDataset}
                 onEdit={edit}
+                onRows={next => { setRows(next); dirty(); }}
                 onAdd={() => {
                   setRows((current) => [
                     ...current,

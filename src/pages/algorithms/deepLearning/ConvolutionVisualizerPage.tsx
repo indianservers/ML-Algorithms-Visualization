@@ -13,7 +13,7 @@ import {
   normalizeFeatureMap,
   type ImageMatrix,
 } from "../../../lib/algorithms/neural/cnn";
-import { LAB_TABS, LabLessonOrWork, useLabTabs } from "../../../components/common/LabTabs";
+import { DEEP_LEARNING_TABS, LabLessonOrWork, useLabTabs } from "../../../components/common/LabTabs";
 import "./ConvolutionVisualizerPage.css";
 
 const baseImage: ImageMatrix = [
@@ -299,7 +299,7 @@ export default function ConvolutionVisualizerPage() {
       </aside>
       <header className="cv-top">
         <nav role="tablist" aria-label="Convolution sections">
-          {LAB_TABS.map((name) => (
+          {DEEP_LEARNING_TABS.map((name) => (
             <button
               role="tab"
               aria-selected={tab === name}

@@ -8,10 +8,13 @@ import {
   type PerceptronStep,
 } from "../../../lib/algorithms/neural/perceptron";
 import {
-  LAB_TABS,
+  DEEP_LEARNING_TABS,
   LabLessonPanel,
   useLabTabs,
 } from "../../../components/common/LabTabs";
+import { DeepLearningExtraPanel } from "../../../components/common/DeepLearningExtraPanel";
+import { EditableNumericScatter } from "../../../components/dataset/EditableNumericScatter";
+import { EditableDataGrid } from "../../../components/dataset/EditableDataGrid";
 import "./PerceptronPage.css";
 
 type Point = { x: number; y: number; label: number };
@@ -260,6 +263,16 @@ export default function PerceptronPage() {
     setStepIndex(0);
     setPlaying(false);
   };
+  const editPoints = (edited: Record<string, unknown>[]) => {
+    const next = edited.map((row) => ({
+      x: Number(row.x),
+      y: Number(row.y),
+      label: Number(row.label) >= 0.5 ? 1 : 0,
+    }));
+    if (next.length < 2 || next.some((point) => !Number.isFinite(point.x) || !Number.isFinite(point.y))) return;
+    setPoints(next);
+    clearRun();
+  };
   const setWeight = (index: number, value: number) => {
     setManualWeights((current) =>
       current.map((item, itemIndex) => (itemIndex === index ? value : item)),
@@ -369,7 +382,7 @@ export default function PerceptronPage() {
           </p>
         </div>
         <nav role="tablist" aria-label="Perceptron sections">
-          {LAB_TABS.map((item) => (
+          {DEEP_LEARNING_TABS.map((item) => (
             <button
               key={item}
               role="tab"
@@ -391,7 +404,10 @@ export default function PerceptronPage() {
           </button>
         </section>
       </header>
-      <main className={layout.trim()}>
+      <main
+        className={`${layout.trim()}${tab === "Visualize" || tab === "Inference" ? " pc-visualize-layout" : ""}`}
+      >
+        <DeepLearningExtraPanel tab={tab} route="/ml/deep-learning/perceptron" />
         {lesson && (
           <LabLessonPanel tab={tab} route="/ml/deep-learning/perceptron" />
         )}
@@ -463,7 +479,7 @@ export default function PerceptronPage() {
             <p className="formula">ŷ = 1 if (w·x + b) ≥ θ, else 0</p>
           </div>
         </section>
-        <section className={`pc-decision panel${panel("Metrics")}`}>
+        <section className={`pc-decision panel${panel("Visualize", "Metrics")}`}>
           <h3>DECISION BOUNDARY ⓘ</h3>
           <div className="legend">
             <i /> Class 0 <i /> Class 1 <i /> Boundary
@@ -475,7 +491,13 @@ export default function PerceptronPage() {
             threshold={threshold}
           />
           <footer>
-            <button onClick={() => setPlaying((value) => !value)}>
+            <button
+              aria-label={playing ? "Pause training" : "Play training"}
+              onClick={() => {
+                if (run) setPlaying((value) => !value);
+                else train();
+              }}
+            >
               {playing ? "Ⅱ" : <Play />}
             </button>
             <input
@@ -502,10 +524,10 @@ export default function PerceptronPage() {
             </label>
           </footer>
         </section>
-        <aside className={`pc-controls panel${panel("Build / Train")}`}>
+        <aside className={`pc-controls panel${panel("Visualize", "Build / Train")}`}>
           <nav>
             <button className="active">Parameters</button>
-            <button onClick={() => setToast("Dataset controls below")}>
+            <button onClick={() => setTab("Dataset")}>
               Dataset
             </button>
           </nav>
@@ -690,6 +712,12 @@ export default function PerceptronPage() {
             <Upload /> Upload CSV
           </button>
           <input ref={fileRef} type="file" accept=".csv" onChange={upload} />
+        </section>
+        <section className={`pc-data-editor panel${panel("Dataset")}`}>
+          <h3>EDIT TRAINING DATA</h3>
+          <p>Drag points to change their coordinates, or edit x, y, and class in the table. Train again to fit the changed data.</p>
+          <EditableNumericScatter rows={points} columns={["x", "y", "label"]} target="y" onChange={editPoints} />
+          <EditableDataGrid rows={points} columns={["x", "y", "label"]} onChange={editPoints} maxRows={20} />
         </section>
         <section className={`pc-progress panel${panel("Build / Train")}`}>
           <h3>TRAINING PROGRESS ⓘ</h3>

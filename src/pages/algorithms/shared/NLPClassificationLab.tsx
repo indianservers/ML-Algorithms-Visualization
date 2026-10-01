@@ -18,6 +18,11 @@ import { lexiconSentiment } from "../../../lib/nlp/lexiconSentiment";
 import { bagOfWordsMatrix, cosineSimilarity, oovStats, tfidfMatrix } from "../../../lib/nlp/vectorize";
 import { inspectPreprocess, preprocessDocument, type TextPrepOptions } from "../../../lib/nlp/textPrep";
 import { useActiveLoadedDataset } from "../../../lib/timeSeries/useActiveTimeSeries";
+import { useUrlTab, LabLessonPanel } from "../../../components/common/LabTabs";
+import { LearningStageTabs, type LearningStage } from "../../../components/common/LearningStageTabs";
+import { TopicQuickQuiz } from "../../../components/common/TopicQuickQuiz";
+import { classifierQuestions } from "../../../data/topicQuizQuestions";
+import "./NLPClassificationLab.css";
 
 type Mode = "sentiment" | "text" | "spam";
 type Row = { text: string; label: string };
@@ -53,6 +58,9 @@ function starter(mode: Mode): Row[] {
 export default function NLPClassificationLab({ mode }: { mode: Mode }) {
   const meta = copy[mode];
   const route = mode === "spam" ? "/ml/nlp/naive-bayes-spam" : mode === "sentiment" ? "/ml/nlp/sentiment-analysis" : "/ml/nlp/text-classification";
+  const [tab, setTab] = useUrlTab<"learn" | "visualize" | "train" | "inference" | "quiz">("learn");
+  const stage: LearningStage = ({ learn: "Learn", visualize: "Visualize", train: "Train", inference: "Inference", quiz: "Quick Quiz" } as const)[tab] ?? "Learn";
+  const chooseStage = (next: LearningStage) => setTab(({ Learn: "learn", Visualize: "visualize", Train: "train", Inference: "inference", "Quick Quiz": "quiz" } as const)[next]);
   const starterRows = useMemo(() => starter(mode), [mode]);
   const [rows, setRows] = useState<Row[]>(starterRows);
   const [fittedRows, setFittedRows] = useState<Row[]>(starterRows);
@@ -129,8 +137,11 @@ export default function NLPClassificationLab({ mode }: { mode: Mode }) {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4">
-      <PageHeader title={meta.title} subtitle={meta.subtitle} badge="Intermediate" category="NLP" icon={<MessageSquare size={22} />} />
-      <div className="grid gap-6 lg:grid-cols-[350px_1fr]">
+      <PageHeader title={meta.title} subtitle={meta.subtitle} badge="Intermediate" category="NLP" icon={<MessageSquare size={22} />} showAlgorithmIntro={false} showAlgorithmTools={false} />
+      <LearningStageTabs value={stage} onChange={chooseStage} />
+      {tab === "learn" && <LabLessonPanel tab="Learn" route={route} />}
+      {tab === "quiz" && <TopicQuickQuiz key={mode} title={meta.title} questions={classifierQuestions[mode]} />}
+      <div className={`nlp-lab-stage nlp-lab-stage-${tab} grid gap-6 lg:grid-cols-[350px_1fr]`}>
         <div className="space-y-4">
           <Card title="Labeled corpus">
             <select

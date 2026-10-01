@@ -177,6 +177,19 @@
 .pc-progress { grid-area: 2 / 2 / 3 / 3; }
 .pc-metrics { grid-area: 2 / 3 / 3 / 4; }
 .pc-summary { grid-area: 2 / 4 / 3 / 5; }
+/* The Visualize tab has a plot and its controls, so give the plot the
+   available width instead of keeping the four-column dashboard layout. */
+#main-content .pc-page > main.pc-visualize-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px) !important;
+  grid-template-rows: minmax(520px, auto) !important;
+}
+#main-content .pc-page > main.pc-visualize-layout > .pc-decision,
+#main-content .pc-page > main.pc-visualize-layout > .pc-controls {
+  min-height: 520px;
+}
+#main-content .pc-page > main.pc-visualize-layout .pc-plot {
+  height: calc(100% - 112px);
+}
 .panel {
   position: relative;
   border: 1px solid var(--border);
@@ -593,6 +606,18 @@
 .pc-dataset > input {
   display: none;
 }
+.pc-page > main.lab-tab-focus > .pc-data-editor {
+  grid-column: 1 / -1 !important;
+  min-width: 0;
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+}
+.pc-data-editor > p {
+  margin: 0;
+  color: #9ba9bf;
+  font-size: 12px;
+}
 .pc-progress {
   padding: 12px;
 }
@@ -757,6 +782,16 @@
   .pc-summary { grid-area: auto; }
 }
 @media (max-width: 760px) {
+  #main-content .pc-page > main.pc-visualize-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: auto !important;
+  }
+  #main-content .pc-page > main.pc-visualize-layout > .pc-decision {
+    min-height: 420px;
+  }
+  #main-content .pc-page > main.pc-visualize-layout > .pc-controls {
+    min-height: 0;
+  }
   .pc-page {
     padding: 10px;
     overflow: auto;

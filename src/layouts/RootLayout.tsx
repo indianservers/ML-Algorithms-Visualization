@@ -37,6 +37,7 @@ import { GuideMode } from "../components/common/GuideMode";
 import { FitToViewport } from "../components/common/FitToViewport";
 import { SiteFooter } from "../components/common/SiteFooter";
 import { AlgorithmTabPresentation } from "../components/common/AlgorithmTabPresentation";
+import { AlgorithmTheoryDrawer } from "../components/learning/AlgorithmTheoryDrawer";
 import { TrainingActivityPanel } from "../components/common/TrainingActivityPanel";
 import { useGuideMode } from "../stores/uiStore";
 import "../styles/labTheme.css";
@@ -186,6 +187,7 @@ export const RootLayout: React.FC = () => {
   const location = useLocation();
   const [routeSearchOpen, setRouteSearchOpen] = React.useState(false);
   const [shortcutsOpen, setShortcutsOpen] = React.useState(false);
+  const [theoryRoute, setTheoryRoute] = React.useState<string | null>(null);
   const [fullscreen, setFullscreen] = React.useState(false);
   const [hasRouteDataset, setHasRouteDataset] = React.useState(() =>
     hasActiveDatasetForRoute(location.pathname),
@@ -544,6 +546,10 @@ export const RootLayout: React.FC = () => {
           <Compass />
           Guide
         </button>
+        {currentItem && <button type="button" onClick={() => setTheoryRoute(currentItem.route)} aria-label={`Open ${currentItem.label} theory`}>
+          <BookOpenText />
+          Theory
+        </button>}
         <button
           type="button"
           onClick={() => window.dispatchEvent(new Event("ml:open-settings"))}
@@ -582,6 +588,7 @@ export const RootLayout: React.FC = () => {
         )}
       </main>
       <SiteFooter />
+      {theoryRoute === currentItem?.route && <AlgorithmTheoryDrawer route={theoryRoute} onClose={() => setTheoryRoute(null)} />}
       <TrainingActivityPanel />
       {chrome}
     </div>

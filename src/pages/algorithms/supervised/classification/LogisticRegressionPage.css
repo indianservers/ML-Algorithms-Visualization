@@ -1455,3 +1455,4 @@ html.dark #main-content .logistic-page {
 @media(max-width:900px){
   #main-content .logistic-page .lr-visual-layout .cdp{order:4;grid-column:auto!important;grid-row:auto!important;width:100%!important;min-width:0!important}
 }
+.lr-editable-dataset{display:grid;gap:12px;min-width:0}

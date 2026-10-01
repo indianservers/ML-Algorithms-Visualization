@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { Link } from "react-router-dom";
 import { BookOpen, Moon, Play, RotateCcw, Share2, Upload } from "lucide-react";
-import { LAB_TABS, useLabTabs } from "../../../components/common/LabTabs";
+import { DEEP_LEARNING_TABS, useLabTabs } from "../../../components/common/LabTabs";
+import { DeepLearningExtraPanel } from "../../../components/common/DeepLearningExtraPanel";
 import {
   activationGlyph,
   bpttStrip,
@@ -426,7 +427,7 @@ export default function LSTMPage() {
         </nav>
       </header>
       <nav className="lstm-tabs" role="tablist" aria-label="LSTM lab tabs">
-        {LAB_TABS.map((name) => (
+        {DEEP_LEARNING_TABS.map((name) => (
           <button
             key={name}
             role="tab"
@@ -439,6 +440,7 @@ export default function LSTMPage() {
         ))}
       </nav>
       <main>
+        <DeepLearningExtraPanel tab={tab} route="/ml/deep-learning/lstm" />
         {tab === "Learn" && (
           <LSTMLearnPanel
             active={active}
@@ -702,7 +704,7 @@ export default function LSTMPage() {
             </table>
           </section>
         )}
-        {tab === "Visualize" && (
+        {(tab === "Visualize" || tab === "Inference") && (
           <>
             <section className="lstm-cell panel" data-beat={beat}>
               <header>

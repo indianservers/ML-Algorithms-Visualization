@@ -20,7 +20,8 @@ import {
   Undo2,
   Upload,
 } from "lucide-react";
-import { LAB_TABS, useLabTabs } from "../../../components/common/LabTabs";
+import { DEEP_LEARNING_TABS, useLabTabs } from "../../../components/common/LabTabs";
+import { DeepLearningExtraPanel } from "../../../components/common/DeepLearningExtraPanel";
 import {
   cloneBiases,
   cloneWeights,
@@ -65,13 +66,15 @@ const TAB_ALIAS: Record<string, string> = {
   Metrics: "metrics",
   Compare: "compare",
   Explain: "explain",
+  Inference: "inference",
+  "Quick Quiz": "quiz",
 };
 
 function tabFromQuery(value: string | null) {
   if (!value) return "Visualize";
   const key = value.trim().toLowerCase();
   return (
-    LAB_TABS.find(
+    DEEP_LEARNING_TABS.find(
       (name) => name.toLowerCase() === key || TAB_ALIAS[name] === key,
     ) ?? "Visualize"
   );
@@ -545,8 +548,8 @@ export default function NeuralNetworkPlaygroundPage() {
       }
       if (event.key === "r" || event.key === "R") resetNet();
       const digit = Number(event.key);
-      if (digit >= 1 && digit <= LAB_TABS.length && !event.metaKey && !event.ctrlKey)
-        chooseTab(LAB_TABS[digit - 1] ?? "Visualize");
+      if (digit >= 1 && digit <= DEEP_LEARNING_TABS.length && !event.metaKey && !event.ctrlKey)
+        chooseTab(DEEP_LEARNING_TABS[digit - 1] ?? "Visualize");
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -1205,16 +1208,16 @@ export default function NeuralNetworkPlaygroundPage() {
         role="tablist"
         aria-label="Playground tabs"
         onKeyDown={(event: KeyboardEvent<HTMLElement>) => {
-          const index = LAB_TABS.indexOf(tab as (typeof LAB_TABS)[number]);
+          const index = DEEP_LEARNING_TABS.indexOf(tab as (typeof DEEP_LEARNING_TABS)[number]);
           let next = index;
-          if (event.key === "ArrowRight") next = (index + 1) % LAB_TABS.length;
+          if (event.key === "ArrowRight") next = (index + 1) % DEEP_LEARNING_TABS.length;
           else if (event.key === "ArrowLeft")
-            next = (index - 1 + LAB_TABS.length) % LAB_TABS.length;
+            next = (index - 1 + DEEP_LEARNING_TABS.length) % DEEP_LEARNING_TABS.length;
           else if (event.key === "Home") next = 0;
-          else if (event.key === "End") next = LAB_TABS.length - 1;
+          else if (event.key === "End") next = DEEP_LEARNING_TABS.length - 1;
           else return;
           event.preventDefault();
-          const name = LAB_TABS[next] ?? "Visualize";
+          const name = DEEP_LEARNING_TABS[next] ?? "Visualize";
           chooseTab(name);
           window.setTimeout(
             () => document.getElementById(`nnp-tab-${TAB_ALIAS[name]}`)?.focus(),
@@ -1222,7 +1225,7 @@ export default function NeuralNetworkPlaygroundPage() {
           );
         }}
       >
-        {LAB_TABS.map((name) => (
+        {DEEP_LEARNING_TABS.map((name) => (
           <button
             key={name}
             type="button"
@@ -1239,10 +1242,11 @@ export default function NeuralNetworkPlaygroundPage() {
         ))}
       </nav>
       <main>
+        <DeepLearningExtraPanel tab={tab} route="/ml/deep-learning/nn-playground" />
         {tab === "Learn" && (
           <PlaygroundLearn onOpen={chooseTab} />
         )}
-        {tab === "Visualize" && (
+        {(tab === "Visualize" || tab === "Inference") && (
           <section className="nnp-stage" id="nnp-panel-visualize" role="tabpanel">
             <article className="panel nnp-net-wrap">
               <header>

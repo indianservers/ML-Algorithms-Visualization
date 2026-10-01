@@ -20,6 +20,9 @@ export type LearnPageContent = {
   applications: string[];
   mistakes: string[];
   terms: Array<{ slug: string; label: string }>;
+  assumptions: string;
+  evaluation: string;
+  experiment: string;
 };
 
 function sentences(text: string | undefined): string[] {
@@ -50,6 +53,10 @@ function stepsFromHow(text: string | undefined): string[] {
     .filter((part) => part.length > 12 && !/^how /i.test(part));
   if (numbered.length >= 3) return numbered.slice(0, 6);
   return sentences(text).slice(0, 4);
+}
+
+function isBoilerplate(text: string | undefined) {
+  return !text || /interactive controls on this page are designed|transforms observed data into a useful representation|focus on the visible input-to-output behavior/i.test(text);
 }
 
 const authored: Record<
@@ -142,13 +149,20 @@ const authored: Record<
     important: [
       "Ridge adds λ Σβ² to squared error. Coefficients shrink toward zero but almost never land exactly on zero.",
       "Larger λ is a stronger leash. Correlated features share the blame more calmly than ordinary least squares.",
+      "Standardize numeric features before fitting: otherwise the same penalty treats coefficients measured in different units unequally.",
+      "Choose λ on validation data, then report the final result on a separate test set. Training error alone favors a penalty that is too weak.",
     ],
     theory: [
-      "Minimize ‖y − Xβ‖² + λ ‖β‖² (usually without shrinking the intercept). This is L2 regularization, not feature selection.",
+      "Ordinary least squares minimizes the squared residuals ‖y − Xβ‖². Ridge adds λ‖β‖², so a coefficient must improve fit enough to justify its size. The intercept is usually excluded from the penalty.",
+      "As λ approaches zero, Ridge approaches ordinary least squares. As λ grows, the slopes approach zero and predictions move toward the intercept-only baseline; the coefficients generally do not become exactly zero.",
+      "With standardized features, a one-unit coefficient has a comparable meaning across columns. Without scaling, a feature measured in thousands can get a tiny coefficient and face a very different effective penalty than a feature measured in tenths.",
+      "The closed-form solution is β̂ = (XᵀX + λI)⁻¹Xᵀy when the intercept is handled separately. The λI term makes the estimate more stable when columns are highly correlated or XᵀX is nearly singular.",
+      "Ridge deliberately trades a little bias for lower variance. Compare training and validation error as λ changes: the best value is usually near the bottom of the validation-error curve, not the training-error curve.",
+      "Unlike Lasso, the L2 penalty rarely removes a feature entirely. If a sparse, easy-to-explain set of features matters, compare Lasso or Elastic Net on the same split.",
     ],
     formula: "L = Σ(yᵢ − ŷᵢ)² + λ Σ βⱼ²",
-    parameters: ["λ / alpha — L2 penalty strength"],
-    miniExample: "Two almost-duplicate predictors: OLS fights over huge opposite weights; Ridge splits a modest weight between them.",
+    parameters: ["λ / alpha — L2 penalty strength", "Feature standardization — puts coefficients on comparable scales", "Fit intercept — usually enabled and not penalized"],
+    miniExample: "Two almost-duplicate predictors: OLS may assign +40 and −39, which nearly cancel. Ridge can assign smaller, steadier weights to both while keeping similar predictions.",
   },
   "/ml/supervised/lasso-regression": {
     important: [
@@ -554,6 +568,117 @@ const categoryImportant: Record<string, (label: string) => string[]> = {
   ],
 };
 
+const categoryStudy: Record<string, [string, string, string]> = {
+  "Supervised - Regression": [
+    "The training rows must represent the values where predictions will be made. Inspect missing values, outliers, correlated features, and the scale of numeric columns before interpreting coefficients.",
+    "Keep a held-out test set. Compare MAE or RMSE with a simple baseline, then inspect residuals for curves, changing spread, and systematic errors in important subgroups.",
+    "Change one parameter while keeping the split and random seed fixed. Predict which way training error and test error will move before running the model.",
+  ],
+  "Supervised - Classification": [
+    "Labels must mean the same thing in training and future data. Check class balance, leakage, and whether the available features exist at prediction time.",
+    "Inspect a confusion matrix and class-specific precision and recall. For probabilities, also check calibration and vary the decision threshold to match the cost of each error.",
+    "Move one example near the decision boundary. Predict whether its class or confidence changes, then inspect the confusion matrix rather than accuracy alone.",
+  ],
+  Clustering: [
+    "The chosen distance or similarity defines what a group means. Scale features when units differ, and remember that cluster numbers have no inherent class names.",
+    "Compare assignments across seeds and parameter choices. Inspect within-group cohesion and whether groups make sense for the actual task; an attractive plot is insufficient.",
+    "Add an outlier or move two groups closer. Predict which assignments will change and whether the method treats the point as noise or forces it into a cluster.",
+  ],
+  "Dimensionality Reduction": [
+    "A low-dimensional picture is a projection. It may preserve variance, local neighbors, or reconstruction quality depending on the method, but cannot preserve every relation.",
+    "Check the property the method promises to preserve, then evaluate downstream behavior on held-out data when using the projection as features.",
+    "Change the target dimension or neighborhood setting. Predict which structure should survive and which may be distorted before comparing projections.",
+  ],
+  "Deep Learning": [
+    "Architecture and loss define what the network can learn. Input normalization, adequate data, and a separate validation set matter as much as extra layers.",
+    "Plot training and validation loss together. A widening gap suggests overfitting; stalled or unstable curves suggest a learning-rate, data, or model-capacity problem.",
+    "Change one architecture or optimizer setting. Predict how the loss curves and prediction errors should respond, then compare runs on the same data split.",
+  ],
+  "Time Series": [
+    "Future observations cannot be used to construct today's features or fit preprocessing. Trend, seasonality, and regime changes can make older patterns unreliable.",
+    "Use a chronological holdout or rolling backtest. Compare with a naive last-value or seasonal baseline, and inspect errors at different forecast horizons.",
+    "Hide the final segment, make a forecast, then reveal it. Change one window or smoothing parameter and explain the lag-versus-noise trade-off.",
+  ],
+  Evaluation: [
+    "A metric is useful only when its definition matches the problem, data split, class balance, and cost of errors.",
+    "Compute the metric from a small hand-worked example, then compare it with a baseline and a second metric that exposes a different failure mode.",
+    "Change a threshold or one prediction. Predict which numerator and denominator in the metric change before reading the new score.",
+  ],
+  Preprocessing: [
+    "Learn transformation statistics on the training split only. Apply the fitted rule unchanged to validation, test, and future inputs.",
+    "Compare downstream held-out performance and inspect whether the transformed values preserve the information the model needs.",
+    "Edit one unusual or missing value. Predict how the fitted transform changes, then repeat with that value only in the test set to spot leakage.",
+  ],
+  NLP: [
+    "Tokenization, vocabulary, language, and text length affect what the model can represent. A word absent from the vocabulary may lose its meaning entirely.",
+    "Evaluate on held-out text from the intended domain. Inspect examples containing negation, rare words, and context rather than a single aggregate score.",
+    "Change one word or its context. Predict how tokens or weights change and whether the final output should change for a meaningful reason.",
+  ],
+  "Computer Vision": [
+    "Pixels depend on lighting, camera position, resolution, and background. A model trained on one setting may fail when those conditions change.",
+    "Test on new images from the intended environment. Inspect false detections, missed objects, and performance across lighting and viewpoint changes.",
+    "Change one image condition, such as brightness or position. Predict which feature or detection will change, then inspect the visual result.",
+  ],
+  Recommendation: [
+    "Observed clicks and ratings are incomplete signals of preference. Sparse histories and new users or items create a cold-start problem.",
+    "Evaluate on later interactions and compare with a popularity baseline. Inspect relevance, diversity, and coverage rather than accuracy alone.",
+    "Remove a user's history or add a new item. Predict whether the recommendations become generic and which signals can recover useful ranking.",
+  ],
+  "Reinforcement Learning": [
+    "The state, available actions, transition rules, and reward define the task the agent actually learns. A useful policy depends on enough exploration.",
+    "Evaluate the learned policy over several episodes and seeds. Track return, success rate, and unsafe outcomes, not only a single lucky trajectory.",
+    "Change one reward or exploration setting. Predict how the policy and visited states will change before running more episodes.",
+  ],
+  Explainability: [
+    "An explanation describes a model's behavior under a chosen method and reference data; it is not proof that a feature causes an outcome.",
+    "Check whether explanations stay similar for nearby examples and whether removing an influential feature really changes predictions.",
+    "Choose two contrasting examples. Predict which features will matter locally, then compare that explanation with global importance.",
+  ],
+  Optimization: [
+    "The update rule follows information supplied by the objective and its gradients. Scale, curvature, and noisy batches affect the path to a minimum.",
+    "Track objective value and stability across steps and seeds. Compare convergence speed at equal computational effort, not only equal iteration counts.",
+    "Increase the step size gradually. Predict when progress speeds up, overshoots, or diverges, then inspect the optimization path.",
+  ],
+  Ensemble: [
+    "Combining models helps when their errors differ. Identical learners with identical mistakes add complexity without much benefit.",
+    "Compare the ensemble with each component on the same held-out split, including error by subgroup and the cost of extra computation.",
+    "Make one base learner weaker or more correlated with the others. Predict how the combined output changes before rerunning.",
+  ],
+  Probabilistic: [
+    "A probability estimate depends on assumptions about distributions, priors, independence, or hidden states. Uncertainty is meaningful only when those assumptions fit.",
+    "Evaluate both predictions and uncertainty: compare predicted probabilities with observed frequencies and inspect cases with wide uncertainty.",
+    "Change a prior or noise setting while holding observations fixed. Predict which posterior beliefs move most and explain why.",
+  ],
+  Deployment: [
+    "A deployed model needs the same preprocessing, feature order, and input meanings used during training. Version the model and its metadata together.",
+    "Test representative valid and invalid inputs, compare outputs with the development model, and measure latency and failure behavior.",
+    "Change one input field or model version. Predict what validation catches and verify that a mismatch cannot silently produce a plausible result.",
+  ],
+  Lab: [
+    "An experiment is interpretable only when data, split, model version, settings, and random seed are recorded.",
+    "Compare runs on the same evaluation set and include a simple baseline. Inspect whether the improvement persists beyond one seed.",
+    "Change one setting while holding the rest fixed. Write down the expected effect, run the experiment, then explain any surprise.",
+  ],
+};
+
+function studyPrompts(route: string, category: string, label: string): [string, string, string] {
+  if (route === '/ml/time-series/anomaly-detection') return [
+    'A normal baseline depends on time of day, season, trend, and the cost of false alarms. Keep later observations out of fitting the baseline.',
+    'Review flagged and missed cases on later periods. Compare precision and recall at different alert thresholds, and check whether normal seasonal peaks are mistaken for anomalies.',
+    'Introduce one unusual spike and one normal seasonal peak. Predict which should be flagged, then vary the threshold while holding the time series fixed.',
+  ];
+  if (route === "/ml/supervised/ridge-regression") return [
+    "Ridge assumes a useful linear relationship in the supplied features. Standardize numeric columns before applying an L2 penalty, and usually leave the intercept unpenalized. Correlated columns are allowed, but predictions outside the observed range still require caution.",
+    "Choose λ using validation data or cross-validation on the training portion. Compare held-out RMSE or MAE with ordinary least squares and an intercept-only baseline; inspect the coefficient paths and the train–test gap as λ grows.",
+    "First predict what happens at λ = 0, a moderate λ, and a very large λ. Keep the same dataset and split, then compare coefficient sizes, training error, test error, and the fitted curve. Which λ improves generalization without flattening the signal?",
+  ];
+  return categoryStudy[category] ?? [
+    `Identify the input, output, and assumptions of ${label} before using its result. Check whether the data available here represents future use.`,
+    "Compare the result with a simple baseline on data the method has not seen, and inspect examples where it fails.",
+    "Change one input or setting, predict the effect first, then compare the new output with your prediction.",
+  ];
+}
+
 const LEARN_TERMS: Record<string, Array<{ slug: string; label: string }>> = {
   '/ml/supervised/decision-tree-classification': [
     { slug: 'gini-impurity', label: 'Gini impurity' },
@@ -649,12 +774,13 @@ export function getLearnPageContent(route: string): LearnPageContent {
   const steps = getAlgorithmGuideSteps(route);
   const meta = algorithmSearchMeta[route];
   const extra = authored[route];
+  const [assumptions, evaluation, experiment] = studyPrompts(route, category, label);
 
   const idea =
-    steps[0]?.purpose ??
-    intro?.summary ??
-    meta?.description ??
-    lesson.lessons[0]?.simpleExplanation ??
+    (!isBoilerplate(steps[0]?.purpose) ? steps[0].purpose : "") ||
+    meta?.description ||
+    (!isBoilerplate(intro?.summary) ? intro?.summary : "") ||
+    (!isBoilerplate(lesson.lessons[0]?.simpleExplanation) ? lesson.lessons[0]?.simpleExplanation : "") ||
     `${label} turns data into a prediction, grouping, or view you can inspect.`;
 
   const story =
@@ -665,7 +791,7 @@ export function getLearnPageContent(route: string): LearnPageContent {
   const fromGuides = steps
     .slice(1)
     .map((step) => step.purpose)
-    .filter((text) => text.length > 24);
+    .filter((text) => text.length > 24 && !isBoilerplate(text));
 
   const important = unique([
     ...(extra?.important ?? []),
@@ -686,7 +812,7 @@ export function getLearnPageContent(route: string): LearnPageContent {
     lesson.lessons[1]?.simpleExplanation ?? "",
     lesson.lessons[3]?.simpleExplanation ?? "",
     lesson.lessons[3]?.realtimeExample ?? "",
-  ]).slice(0, 5);
+  ].filter((text) => !isBoilerplate(text))).slice(0, 8);
 
   const applications = unique([
     ...(lesson.lessons[4]?.realtimeApplications ?? []),
@@ -709,5 +835,8 @@ export function getLearnPageContent(route: string): LearnPageContent {
     applications,
     mistakes: lesson.mistakes.slice(0, 5),
     terms: LEARN_TERMS[route] ?? [],
+    assumptions,
+    evaluation,
+    experiment,
   };
 }

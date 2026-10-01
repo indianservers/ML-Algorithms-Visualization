@@ -21,6 +21,7 @@ interface PageHeaderProps {
   icon?: React.ReactNode;
   showAlgorithmIntro?: boolean;
   showAlgorithmTools?: boolean;
+  showDatasetSuggestions?: boolean;
 }
 
 export const PageHeader: React.FC<PageHeaderProps> = ({
@@ -31,6 +32,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   icon,
   showAlgorithmIntro = true,
   showAlgorithmTools = true,
+  showDatasetSuggestions = true,
 }) => {
   const location = useLocation();
   const parts = location.pathname.split('/').filter(Boolean);
@@ -96,7 +98,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
               ))}
             </div>
           )}
-          {datasetSuggestions.length > 0 && (
+          {showDatasetSuggestions && datasetSuggestions.length > 0 && (
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <span className="text-[11px] font-bold uppercase tracking-wide text-gray-400">Datasets</span>
               {datasetSuggestions.map(dataset => (

@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState } from "react";
 import { Link } from "react-router-dom";
 import { Moon, Share2, Upload } from "lucide-react";
-import { LAB_TABS, LabLessonOrWork, useLabTabs } from "../../../components/common/LabTabs";
+import { DEEP_LEARNING_TABS, LabLessonOrWork, useLabTabs } from "../../../components/common/LabTabs";
 import {
   createFewShotEpisode,
   type FewShotMetric,
@@ -125,7 +125,7 @@ export default function FewShotLearningPage() {
           ◉ Learn › <b>Few-Shot Learning</b>
         </h3>
         <nav role="tablist" aria-label="Few-shot sections">
-          {LAB_TABS.map((name) => (
+          {DEEP_LEARNING_TABS.map((name) => (
             <button
               role="tab"
               aria-selected={tab === name}

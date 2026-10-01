@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { runAttention } from "../../../lib/algorithms/neural/attention";
-import { LAB_TABS, LabLessonOrWork, labHide, useLabTabs } from "../../../components/common/LabTabs";
+import { DEEP_LEARNING_TABS, LabLessonOrWork, labHide, useLabTabs } from "../../../components/common/LabTabs";
 import { LabHeatmap } from "../../../components/common/LabHeatmap";
 import { LabPipeline } from "../../../components/common/LabPipeline";
 import "./TransformerAttentionPage.css";
@@ -89,7 +89,7 @@ export default function TransformerAttentionPage() {
           </label>
         </div>
         <nav role="tablist" aria-label="Transformer sections">
-          {LAB_TABS.map((name) => (
+          {DEEP_LEARNING_TABS.map((name) => (
             <button
               role="tab"
               aria-selected={tab === name}

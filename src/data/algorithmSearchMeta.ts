@@ -1,4 +1,5 @@
 import { termsStudioSearchMeta } from './termsStudio';
+import { allAiVirtualLabs } from '../features/ai-virtual-labs/catalog';
 
 // Hand-authored search metadata for the algorithm catalogue. Keyed by the same
 // route slugs used in `navigation.ts` so the two files stay in lock step; every
@@ -96,7 +97,7 @@ export const categorySearchMeta: Record<string, CategorySearchMeta> = {
   },
   'Terms Studio': {
     section: 'Terms Studio · Understand the words',
-    tags: ['glossary', 'terms', 'beginner', 'concepts', 'studio'],
+    tags: ['glossary', 'terms', 'concepts', 'studio'],
   },
 };
 
@@ -260,7 +261,7 @@ export const algorithmSearchMeta: Record<string, AlgorithmSearchMeta> = {
     tags: ['visualization', 'perplexity', 'manifold', 'neighbourhood', 'scatter plot'],
   },
   '/ml/dimensionality-reduction/umap-concept': {
-    description: 'Manifold embedding that keeps more global structure than t-SNE.',
+    description: 'Build a low-dimensional manifold embedding that aims to preserve local neighborhoods; some broader structure may also remain.',
     synonyms: ['umap', 'uniform manifold approximation and projection'],
     tags: ['visualization', 'manifold', 'neighbourhood', 'topology', 'embedding'],
   },
@@ -723,7 +724,7 @@ export const algorithmSearchMeta: Record<string, AlgorithmSearchMeta> = {
   '/ml/ensemble/boosting': {
     description: 'Chain weak learners so each one fixes the previous mistakes.',
     synonyms: ['boosting', 'sequential ensemble', 'weak learners'],
-    tags: ['sequential', 'bias', 'residuals', 'tree', 'learning rate'],
+    tags: ['sequential', 'sample weights', 'decision stumps', 'weighted vote', 'AdaBoost'],
   },
   '/ml/ensemble/stacking': {
     description: 'Feed base-model predictions into a meta-learner that blends them.',
@@ -893,5 +894,9 @@ export const algorithmSearchMeta: Record<string, AlgorithmSearchMeta> = {
     synonyms: ['report builder', 'report generator', 'export report'],
     tags: ['reporting', 'export', 'charts', 'documentation'],
   },
+  ...Object.fromEntries(allAiVirtualLabs.map((lab) => [
+    `/ai-algorithms/${lab.slug}`,
+    { description: lab.summary, synonyms: [lab.title], tags: ['AI virtual lab', 'interactive algorithm'] },
+  ])),
   ...termsStudioSearchMeta,
 };

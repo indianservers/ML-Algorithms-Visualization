@@ -1,0 +1,13 @@
+.topic-quick-quiz { display: grid; gap: 14px; padding: 20px; border: 1px solid #bed0ea; border-radius: 12px; background: #f8fbff; color: #18315b; }
+.topic-quick-quiz h2 { margin: 0; font-size: 21px; font-weight: 800; }
+.topic-quick-quiz header p { margin: 4px 0 0; }
+.topic-quick-quiz fieldset { display: grid; gap: 7px; padding: 15px; border: 1px solid #cad8ed; border-radius: 10px; }
+.topic-quick-quiz legend { padding: 0 4px; font-weight: 700; }
+.topic-quick-quiz label { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 7px; cursor: pointer; }
+.topic-quick-quiz label:hover, .topic-quick-quiz label.chosen { background: #e5edff; }
+.topic-quick-quiz p.correct { color: #05764a; } .topic-quick-quiz p.incorrect { color: #a53a15; }
+.topic-quick-quiz-score { font-weight: 700; }
+.topic-quick-quiz > button { justify-self: start; padding: 8px 14px; border-radius: 7px; background: #255cf2; color: white; }
+.dark .topic-quick-quiz { border-color: #304d7a; background: #101f3b; color: #ecf3ff; }
+.dark .topic-quick-quiz fieldset { border-color: #3b527b; }
+.dark .topic-quick-quiz label:hover, .dark .topic-quick-quiz label.chosen { background: #233e6e; }

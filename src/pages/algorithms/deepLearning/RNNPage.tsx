@@ -10,7 +10,8 @@ import {
 } from "recharts";
 import { Play, Repeat, RotateCcw, Upload } from "lucide-react";
 import { PageHeader } from "../../../components/common/PageHeader";
-import { LAB_TABS, LabLessonPanel, isLabTab, useLabTabs } from "../../../components/common/LabTabs";
+import { DEEP_LEARNING_TABS, LabLessonPanel, isLabTab, useLabTabs } from "../../../components/common/LabTabs";
+import { DeepLearningExtraPanel } from "../../../components/common/DeepLearningExtraPanel";
 import { Formula } from "../../../components/common/Formula";
 import {
   createRnnWeights,
@@ -356,12 +357,13 @@ export default function RNNPage() {
         showAlgorithmTools={false}
       />
       <nav className="rnn-tabs" role="tablist" aria-label="RNN lab tabs">
-        {LAB_TABS.map((name) => (
+        {DEEP_LEARNING_TABS.map((name) => (
           <button key={name} role="tab" aria-selected={tab === name} onClick={() => setTab(name)}>
             {name}
           </button>
         ))}
       </nav>
+      <DeepLearningExtraPanel tab={tab} route={ROUTE} />
       <div className="rnn-strip">
         <span>
           Dataset <b>{dataset.name}</b>
@@ -398,7 +400,7 @@ export default function RNNPage() {
         </div>
       )}
 
-      {isLabTab(tab, "Visualize") && (
+      {isLabTab(tab, "Visualize", "Inference") && (
         <div className="rnn-grid">
           <article className="rnn-card">
             <header style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>

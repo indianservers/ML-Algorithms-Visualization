@@ -16,6 +16,8 @@ import {
 } from "../../stores/learningStore";
 import { LabSectionEmpty } from "./LabChrome";
 import { AlgorithmGlyph } from "./AlgorithmGlyph";
+import { TopicQuickQuiz } from "./TopicQuickQuiz";
+import { deepLearningQuestions } from "../../data/topicQuizQuestions";
 import "./LabTabs.css";
 
 export const LAB_TABS = [
@@ -27,6 +29,8 @@ export const LAB_TABS = [
   "Compare",
   "Explain",
 ] as const;
+
+export const DEEP_LEARNING_TABS = [...LAB_TABS, "Inference", "Quick Quiz"] as const;
 
 export type LabTabView = {
   tab: string;
@@ -54,6 +58,7 @@ function canonTab(tab: string) {
   ) {
     return "train";
   }
+  if (text === "quick quiz") return "quiz";
   return text;
 }
 
@@ -65,7 +70,7 @@ export function isLabTab(current: string, ...names: string[]) {
 
 /** Append to a className to hide a block unless the active tab is listed. */
 export function labHide(current: string, ...showOn: string[]) {
-  return isLabTab(current, ...showOn) ? "" : " lab-tab-hidden";
+  return (isLabTab(current, ...showOn) || (isLabTab(current, "Inference") && showOn.some((name) => isLabTab(name, "Visualize")))) ? "" : " lab-tab-hidden";
 }
 
 export function isLessonTab(tab: string) {
@@ -87,14 +92,14 @@ export function useLabTabs(
   const urlTab = params.get("tab");
   const [tab, setTabState] = useState(() => {
     if (!urlTab) return initial;
-    return LAB_TABS.find((name) => canonTab(name) === canonTab(urlTab)) ?? urlTab;
+    return DEEP_LEARNING_TABS.find((name) => canonTab(name) === canonTab(urlTab)) ?? urlTab;
   });
 
   useEffect(() => {
     if (!urlTab) return;
     setTabState((current) => {
       if (canonTab(current) === canonTab(urlTab)) return current;
-      return LAB_TABS.find((name) => canonTab(name) === canonTab(urlTab)) ?? urlTab;
+      return DEEP_LEARNING_TABS.find((name) => canonTab(name) === canonTab(urlTab)) ?? urlTab;
     });
   }, [urlTab]);
 
@@ -117,7 +122,7 @@ export function useLabTabs(
     setTab,
     panel: (...tabs) => {
       if (lesson) return " lab-tab-hidden";
-      if (tabs.some((item) => isLabTab(item, tab))) return "";
+      if (tabs.some((item) => isLabTab(item, tab)) || (isLabTab(tab, "Inference") && tabs.some((item) => isLabTab(item, "Visualize")))) return "";
       return " lab-tab-hidden";
     },
     layout: " lab-tab-focus",
@@ -181,7 +186,7 @@ function LessonList({ title, items }: { title: string; items: string[] }) {
   );
 }
 
-function GuideLearnBody({ route, heroMedia, learnActions }: { route: string; heroMedia?: ReactNode; learnActions?: ReactNode }) {
+export function GuideLearnBody({ route, heroMedia, learnActions }: { route: string; heroMedia?: ReactNode; learnActions?: ReactNode }) {
   const tour = useMemo(() => getGuideTour(route), [route]);
   const steps = useMemo(() => getAlgorithmGuideSteps(route), [route]);
   const learn = useMemo(() => getLearnPageContent(route), [route]);
@@ -238,6 +243,21 @@ function GuideLearnBody({ route, heroMedia, learnActions }: { route: string; her
           ) : null}
         </section>
       ) : null}
+
+      <div className="lab-guide-grid" aria-label="Reasoning about the algorithm">
+        <article>
+          <h3>Assumptions and inputs</h3>
+          <p>{learn.assumptions}</p>
+        </article>
+        <article>
+          <h3>How to judge the result</h3>
+          <p>{learn.evaluation}</p>
+        </article>
+        <article>
+          <h3>Test your understanding</h3>
+          <p>{learn.experiment}</p>
+        </article>
+      </div>
 
       {learn.howItThinks.length ? (
         <section>
@@ -329,11 +349,17 @@ export function LabLessonOrWork({
   visualize?: ReactNode;
   children: ReactNode;
 }) {
+  if (isLabTab(tab, "Quick Quiz")) {
+    return <TopicQuickQuiz title={getAlgorithmByRoute(route)?.label ?? "Deep Learning"} questions={deepLearningQuestions[route] ?? []} />;
+  }
   if (isLabTab(tab, "Learn")) {
     return <>{learn ?? <LabLessonPanel tab="Learn" route={route} />}</>;
   }
   if (isLabTab(tab, "Visualize")) {
     return <>{visualize ?? children}</>;
+  }
+  if (isLabTab(tab, "Inference")) {
+    return <section className="lab-inference-stage"><h2>Live test / inference</h2><p>Use the current inputs and fitted model to inspect the output. Train the model first when this lab requires fitted weights.</p>{visualize ?? children}</section>;
   }
   if (isLessonTab(tab)) {
     return <LabLessonPanel tab={tab} route={route} />;
@@ -411,12 +437,12 @@ export function LabLessonPanel({
     body = (
       <>
         <section>
-          <h3>What the model optimizes</h3>
+          <h3>Core rule</h3>
           <p className="lab-tab-formula">{content.formula}</p>
         </section>
         <LessonList title="Step by step" items={content.pseudocode} />
         <section>
-          <h3>Equivalent code</h3>
+          <h3>Conceptual pseudocode</h3>
           <pre>{content.python}</pre>
         </section>
         <LessonList title="Watch out for" items={content.mistakes} />

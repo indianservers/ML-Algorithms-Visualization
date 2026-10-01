@@ -1,7 +1,7 @@
 import { useEffect, useState, type ChangeEvent } from "react";
 import { Link } from "react-router-dom";
 import { HelpCircle, Play, Save, Sun } from "lucide-react";
-import { LAB_TABS, LabLessonOrWork, useLabTabs } from "../../../components/common/LabTabs";
+import { DEEP_LEARNING_TABS, LabLessonOrWork, useLabTabs } from "../../../components/common/LabTabs";
 import {
   runBackpropagation,
   type BackpropActivation,
@@ -139,7 +139,7 @@ export default function BackpropagationVisualizerPage() {
           <small>AI OBSERVATORY</small>
         </Link>
         <nav role="tablist" aria-label="Backpropagation sections">
-          {LAB_TABS.map((name) => (
+          {DEEP_LEARNING_TABS.map((name) => (
             <button
               role="tab"
               aria-selected={tab === name}

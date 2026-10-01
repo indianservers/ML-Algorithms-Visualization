@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { runMultiHeadAttention } from "../../../lib/algorithms/neural/attention";
 import {
-  LAB_TABS,
+  DEEP_LEARNING_TABS,
   LabLessonOrWork,
   useLabTabs,
 } from "../../../components/common/LabTabs";
@@ -203,7 +203,7 @@ export default function MultiHeadAttentionPage() {
           “syntax vs semantics.”
         </p>
         <nav role="tablist" aria-label="Multi-Head Attention sections">
-          {LAB_TABS.map((name) => (
+          {DEEP_LEARNING_TABS.map((name) => (
             <button
               role="tab"
               aria-selected={tab === name}

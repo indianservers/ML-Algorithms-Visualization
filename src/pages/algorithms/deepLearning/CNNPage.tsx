@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { Play, RotateCcw, Scan } from "lucide-react";
 import { PageHeader } from "../../../components/common/PageHeader";
 import { Formula } from "../../../components/common/Formula";
-import { LAB_TABS, LabLessonPanel, isLabTab, useLabTabs } from "../../../components/common/LabTabs";
+import { DEEP_LEARNING_TABS, LabLessonPanel, isLabTab, useLabTabs } from "../../../components/common/LabTabs";
+import { DeepLearningExtraPanel } from "../../../components/common/DeepLearningExtraPanel";
 import { imageSample } from "../../../lib/algorithms/neural/toySamples";
 import {
   applyBank,
@@ -583,12 +584,13 @@ export default function CNNPage() {
         showAlgorithmTools={false}
       />
       <nav className="cnn-tabs" role="tablist" aria-label="CNN lab tabs">
-        {LAB_TABS.map((name) => (
+        {DEEP_LEARNING_TABS.map((name) => (
           <button key={name} role="tab" aria-selected={tab === name} onClick={() => setTab(name)}>
             {name}
           </button>
         ))}
       </nav>
+      <DeepLearningExtraPanel tab={tab} route={ROUTE} />
       <div className="cnn-strip">
         <span>
           Picture <b>{seed + 1}</b> / {SAMPLE_COUNT}
@@ -627,7 +629,7 @@ export default function CNNPage() {
         </div>
       )}
 
-      {isLabTab(tab, "Visualize") && (
+      {isLabTab(tab, "Visualize", "Inference") && (
         <div className="cnn-viz" data-guide="algo-visualize">
           <div className="cnn-viz-main">
             <section className="cnn-card cnn-samples-row">
