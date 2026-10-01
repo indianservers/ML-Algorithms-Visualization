@@ -1343,6 +1343,47 @@
   border-color: var(--ts-line);
 }
 
+.ts-examples-intro {
+  color: var(--ts-muted);
+}
+
+.ts-examples-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.ts-example-card {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--ts-line);
+  border-radius: 14px;
+  background: var(--ts-paper);
+}
+
+.ts-example-card h3 {
+  margin: 0;
+  color: var(--ts-ink);
+  font-size: 15px;
+}
+
+.ts-example-card p,
+.ts-example-card li {
+  color: var(--ts-ink);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.ts-example-card .ts-example-takeaway {
+  margin-top: 12px;
+  padding: 9px 11px;
+  border-left: 3px solid var(--ts-teal);
+  border-radius: 0 8px 8px 0;
+  background: rgba(15, 118, 110, 0.08);
+  font-weight: 600;
+}
+
 @media (max-width: 700px) {
   .ts-term-page,
   .ts-cm,

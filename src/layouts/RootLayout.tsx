@@ -39,6 +39,7 @@ import { SiteFooter } from "../components/common/SiteFooter";
 import { AlgorithmTabPresentation } from "../components/common/AlgorithmTabPresentation";
 import { AlgorithmTheoryDrawer } from "../components/learning/AlgorithmTheoryDrawer";
 import { TrainingActivityPanel } from "../components/common/TrainingActivityPanel";
+import { trackPageView } from "../lib/analytics";
 import { useGuideMode } from "../stores/uiStore";
 import "../styles/labTheme.css";
 import "../styles/nestedLabLayout.css";
@@ -196,6 +197,8 @@ export const RootLayout: React.FC = () => {
     () => getSeoMetadata(location.pathname),
     [location.pathname],
   );
+  const lastAnalyticsPath = React.useRef<string | null>(null);
+  const lastAnalyticsUrl = React.useRef<string | undefined>(undefined);
   useRouteProgress(location.pathname);
   const reduceMotion = useReducedMotion();
   const currentItem = getAlgorithmByRoute(location.pathname);
@@ -365,6 +368,13 @@ export const RootLayout: React.FC = () => {
       existingBreadcrumbScript?.remove();
     }
   }, [seo, currentItem, categoryRoute]);
+
+  React.useEffect(() => {
+    const path = location.pathname + location.search;
+    if (lastAnalyticsPath.current === path) return;
+    lastAnalyticsUrl.current = trackPageView(seo.title, lastAnalyticsUrl.current);
+    lastAnalyticsPath.current = path;
+  }, [location.pathname, location.search, seo.title]);
 
   React.useEffect(() => {
     const sync = () => setFullscreen(Boolean(document.fullscreenElement));

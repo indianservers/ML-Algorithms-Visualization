@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useState, useSyncExternalStore } from 'react';
 import { Link, Navigate, useLocation, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check, Printer } from 'lucide-react';
 import { Formula } from '../../components/common/Formula';
@@ -16,6 +16,7 @@ import {
   getTermEnhance,
   smarterRelated,
 } from '../../data/termsStudioEnhance';
+import { getTermExamples } from '../../data/termsStudioExamples';
 import {
   getTermsLanguage,
   isTermLearned,
@@ -35,14 +36,9 @@ export default function TermsStudioTermPage() {
   const slug = params.slug ?? location.pathname.split('/').filter(Boolean).pop() ?? '';
   const term = getTermLesson(slug);
   const [lang, setLang] = useState<TermLanguage>(getTermsLanguage);
-  const [learned, setLearned] = useState(false);
-  const [quizPick, setQuizPick] = useState<Array<number | null>>([null, null, null]);
-
-  useEffect(() => {
-    setLearned(isTermLearned(slug));
-    setQuizPick([null, null, null]);
-    return subscribeTermsProgress(() => setLearned(isTermLearned(slug)));
-  }, [slug]);
+  const learned = useSyncExternalStore(subscribeTermsProgress, () => isTermLearned(slug), () => false);
+  const [quizState, setQuizState] = useState<{ slug: string; picks: Array<number | null> }>({ slug, picks: [null, null, null] });
+  const quizPick = quizState.slug === slug ? quizState.picks : [null, null, null];
 
   if (!term) {
     return <Navigate to={TERMS_STUDIO_HUB_ROUTE} replace />;
@@ -60,6 +56,7 @@ export default function TermsStudioTermPage() {
     .filter((item) => item !== term.blurb)
     .slice(0, 4);
   const caption = extra.diagramCaption?.startsWith('This demo is the picture') ? undefined : extra.diagramCaption;
+  const examples = getTermExamples(term);
 
   const changeLang = (nextLang: TermLanguage) => {
     setLang(nextLang);
@@ -92,7 +89,7 @@ export default function TermsStudioTermPage() {
         <button
           type="button"
           className={learned ? 'is-on' : ''}
-          onClick={() => setLearned(toggleTermLearned(term.slug).includes(term.slug))}
+          onClick={() => toggleTermLearned(term.slug)}
         >
           <Check size={14} /> {learned ? 'Learned' : 'Mark learned'}
         </button>
@@ -133,6 +130,23 @@ export default function TermsStudioTermPage() {
         {analogy && analogy !== term.blurb && <p className="ts-take">{analogy}</p>}
       </section>
 
+      <section className="ts-panel ts-examples" aria-label={`Examples of ${term.label}`}>
+        <h2>Examples in everyday terms</h2>
+        <p className="ts-examples-intro">See how {term.label.toLowerCase()} works with real numbers or familiar situations.</p>
+        <div className="ts-examples-grid">
+          {examples.map((example) => (
+            <article className="ts-example-card" key={example.title}>
+              <h3>{example.title}</h3>
+              <p>{example.description}</p>
+              {example.steps && example.steps.length > 0 && (
+                <ol className="ts-steps">{example.steps.map((step) => <li key={step}>{step}</li>)}</ol>
+              )}
+              {example.takeaway && <p className="ts-example-takeaway">{example.takeaway}</p>}
+            </article>
+          ))}
+        </div>
+      </section>
+
       {term.formula && (
         <section className="ts-panel">
           <h2>Formula</h2>
@@ -166,17 +180,7 @@ export default function TermsStudioTermPage() {
       )}
 
       <details className="ts-more">
-        <summary>More examples and a short quiz</summary>
-        <section className="ts-panel">
-          <h2>{term.workedExample.title}</h2>
-          <p>{term.workedExample.setup}</p>
-          <ol className="ts-steps">
-            {term.workedExample.steps.map((step) => (
-              <li key={step}>{step}</li>
-            ))}
-          </ol>
-          <p className="ts-take">{term.workedExample.takeaway}</p>
-        </section>
+        <summary>Quick quiz and common mistakes</summary>
         <section className="ts-panel">
           <h2>Three quick checks</h2>
           {extra.quiz.map((item, index) => (
@@ -192,7 +196,7 @@ export default function TermsStudioTermPage() {
                       key={choice}
                       type="button"
                       className={revealed && correct ? 'is-on' : revealed && picked === choiceIndex ? 'is-off' : ''}
-                      onClick={() => setQuizPick((current) => current.map((value, i) => (i === index ? choiceIndex : value)))}
+                      onClick={() => setQuizState({ slug, picks: quizPick.map((value, i) => (i === index ? choiceIndex : value)) })}
                     >
                       {choice}
                     </button>

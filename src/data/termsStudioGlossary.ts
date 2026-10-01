@@ -215,6 +215,10 @@ function stub(term: {
   category: TermLesson['category'];
   badge: TermLesson['badge'];
   blurb: string;
+  explanation?: string[];
+  analogy?: string;
+  whenToUse?: string;
+  watchFor?: string;
   synonyms?: string[];
   tags?: string[];
   related?: string[];
@@ -250,6 +254,12 @@ export const termsStudioGlossaryExtras: TermLesson[] = [
     category: 'neural',
     badge: 'Intermediate',
     blurb: 'Model architecture based on self-attention.',
+    explanation: [
+      'A Transformer reads tokens together and uses attention to decide which other tokens matter for each one.',
+      'Position information keeps word order available. Layers of attention and small neural networks build context-sensitive representations.',
+    ],
+    analogy: 'A study group where every word can ask the others for relevant clues before writing its own summary.',
+    whenToUse: 'Text, images, audio, and other sequences where distant parts may need to share information.',
     synonyms: ['transformers', 'encoder decoder', 'bert', 'gpt'],
     tags: ['nlp', 'attention'],
     related: ['attention', 'token', 'residual-connection'],
@@ -262,6 +272,12 @@ export const termsStudioGlossaryExtras: TermLesson[] = [
     category: 'neural',
     badge: 'Beginner',
     blurb: 'Too simple to capture the underlying pattern.',
+    explanation: [
+      'An underfit model misses the main pattern even on the data it trained on.',
+      'Training and validation errors can both stay high because the model is too simple, too restricted, or not trained enough.',
+    ],
+    analogy: 'Trying to trace a curved road with a ruler: the straight line misses the bend everywhere.',
+    whenToUse: 'Use this diagnosis when both training and validation performance are poor.',
     synonyms: ['underfit', 'high bias'],
     tags: ['evaluation'],
     related: ['overfitting', 'bias-variance', 'learning-curve'],
@@ -272,6 +288,12 @@ export const termsStudioGlossaryExtras: TermLesson[] = [
     category: 'losses',
     badge: 'Beginner',
     blurb: 'Measures how wrong the model’s predictions are.',
+    explanation: [
+      'A loss function turns a prediction mistake into a number that training can try to reduce.',
+      'Different tasks need different scoreboards: squared error for numbers, cross-entropy for class probabilities.',
+    ],
+    analogy: 'A scoreboard that gives a larger penalty to mistakes the task considers more serious.',
+    whenToUse: 'Choose a loss that matches the kind of target and error you care about.',
     synonyms: ['cost', 'objective', 'error function'],
     tags: ['training'],
     related: ['mse-mae-huber', 'gradient-descent'],
@@ -282,6 +304,12 @@ export const termsStudioGlossaryExtras: TermLesson[] = [
     category: 'neural',
     badge: 'Beginner',
     blurb: 'A small subset of data used for one update step.',
+    explanation: [
+      'Rather than read the entire dataset before every update, training can process a smaller batch of rows.',
+      'The model combines the examples in that batch to estimate one gradient and make one parameter update.',
+    ],
+    analogy: 'Marking a stack of 25 quizzes, then adjusting the lesson before marking the next stack.',
+    whenToUse: 'Batching helps training fit in memory and controls how noisy each update is.',
     synonyms: ['mini-batch', 'batch size'],
     tags: ['training'],
     related: ['epochs-batches', 'sgd-mini-batch'],
@@ -292,6 +320,12 @@ export const termsStudioGlossaryExtras: TermLesson[] = [
     category: 'data-math',
     badge: 'Beginner',
     blurb: 'Data used to tune and evaluate the model.',
+    explanation: [
+      'The validation set is held out from fitting weights and used to compare settings such as tree depth or learning rate.',
+      'After choosing settings, a separate test set gives the final unbiased check. Repeatedly tuning on validation can still overfit it.',
+    ],
+    analogy: 'A practice exam for choosing a study plan; the final test stays sealed until the end.',
+    whenToUse: 'Use validation during model selection and early stopping, never as a substitute for a final test set.',
     synonyms: ['dev set', 'val set', 'holdout'],
     tags: ['evaluation'],
     related: ['train-val-test', 'overfitting'],
