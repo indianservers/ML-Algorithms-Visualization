@@ -2,6 +2,12 @@ import type { BadgeType, NavItem } from './navigation';
 import { termsStudioNewLessons } from './termsStudioNewTerms';
 import { termsStudioGlossaryExtras } from './termsStudioGlossary';
 import { termsStudioPhase4Lessons, termsStudioPhase4Patches } from './termsStudioPhase4';
+import { termsStudioMoreLessons } from './termsStudioMoreTerms';
+import { termsStudioExpansionLessons } from './termsStudioExpansionTerms';
+import { termsStudioAdditionalLessons } from './termsStudioAdditionalTerms';
+import { termsStudioAiLessons } from './termsStudioAiTerms';
+import { addAlgorithmTerms } from './termsStudioAlgorithmCoverage';
+import type { GlossaryLane } from './termsStudioGlossary';
 
 export type TermCategoryId =
   | 'optimization'
@@ -9,7 +15,16 @@ export type TermCategoryId =
   | 'losses'
   | 'regularization'
   | 'neural'
-  | 'data-math';
+  | 'data-math'
+  | 'evaluation'
+  | 'models'
+  | 'vision'
+  | 'language'
+  | 'time-series'
+  | 'reinforcement'
+  | 'ai-foundations'
+  | 'tasks'
+  | 'hugging-face';
 
 export type TermDemoKind =
   | 'activation'
@@ -103,7 +118,8 @@ export type TermDemoKind =
   | 'weights-bias'
   | 'epoch-visual'
   | 'loss-switch'
-  | 'fit-trio';
+  | 'fit-trio'
+  | 'concept-cards';
 
 const CONCEPT_DEMO_KINDS: ReadonlySet<TermDemoKind> = new Set([
   'decision-boundary',
@@ -192,6 +208,8 @@ export interface TermLesson {
   demo: { kind: TermDemoKind; variant?: string };
   synonyms: string[];
   tags: string[];
+  glossaryLane?: GlossaryLane;
+  moreExamples?: string[];
 }
 
 export interface WorkedBlock {
@@ -248,6 +266,15 @@ export const termCategories: TermCategory[] = [
   { id: 'regularization', title: 'Regularization', blurb: 'Seatbelts that stop a model from memorizing homework', tone: 'green' },
   { id: 'neural', title: 'Neural-net mechanics', blurb: 'The moving parts inside a tiny brain of numbers', tone: 'purple' },
   { id: 'data-math', title: 'Data math', blurb: 'The everyday number tricks every algorithm leans on', tone: 'teal' },
+  { id: 'evaluation', title: 'Evaluation', blurb: 'Measure how a model behaves on unseen examples', tone: 'green' },
+  { id: 'models', title: 'Models and ensembles', blurb: 'Methods that turn patterns into predictions', tone: 'blue' },
+  { id: 'vision', title: 'Computer vision', blurb: 'Learn how AI interprets images and video', tone: 'rose' },
+  { id: 'language', title: 'Language AI', blurb: 'Represent, understand, and generate text', tone: 'purple' },
+  { id: 'time-series', title: 'Time series', blurb: 'Understand changing data and forecast what comes next', tone: 'teal' },
+  { id: 'reinforcement', title: 'Reinforcement learning', blurb: 'Learn actions from rewards over time', tone: 'amber' },
+  { id: 'ai-foundations', title: 'AI search and reasoning', blurb: 'Explore states, plans, knowledge, and decisions', tone: 'blue' },
+  { id: 'tasks', title: 'AI and ML tasks', blurb: 'Discover what different models are trained to do', tone: 'teal' },
+  { id: 'hugging-face', title: 'Hugging Face', blurb: 'Find, evaluate, and share models and datasets', tone: 'amber' },
 ];
 
 export const termsStudioStartPath = [
@@ -1945,7 +1972,7 @@ export const termsStudioLessons: TermLesson[] = [
   },
 ];
 
-termsStudioLessons.push(...termsStudioNewLessons, ...termsStudioGlossaryExtras, ...termsStudioPhase4Lessons);
+termsStudioLessons.push(...termsStudioNewLessons, ...termsStudioGlossaryExtras, ...termsStudioPhase4Lessons, ...termsStudioMoreLessons, ...termsStudioExpansionLessons, ...termsStudioAdditionalLessons, ...termsStudioAiLessons);
 
 const termBySlug = new Map(termsStudioLessons.map((term) => [term.slug, term]));
 for (const [slug, patch] of Object.entries(termsStudioPhase4Patches)) {
@@ -1958,6 +1985,10 @@ for (const [slug, patch] of Object.entries(termsStudioPhase4Patches)) {
     demo: patch.demo ?? current.demo,
   });
 }
+
+export const termsStudioAlgorithmLessons = addAlgorithmTerms(termsStudioLessons);
+termsStudioLessons.push(...termsStudioAlgorithmLessons);
+for (const term of termsStudioAlgorithmLessons) termBySlug.set(term.slug, term);
 
 export function getTermLesson(slug: string): TermLesson | undefined {
   return termBySlug.get(slug);

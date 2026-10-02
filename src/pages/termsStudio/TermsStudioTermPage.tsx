@@ -102,6 +102,23 @@ export default function TermsStudioTermPage() {
         <p className="ts-one-line">{term.blurb}</p>
       </header>
 
+      {term.labLinks.length > 0 && (
+        <section className="ts-panel ts-explore-labs" aria-label="Explore this algorithm in our app">
+          <div>
+            <h2>Explore in our app</h2>
+            <p>Open the related algorithm page and connect this explanation to its visual lab.</p>
+          </div>
+          <div className="ts-related">
+            {term.labLinks.map((link) => (
+              <Link key={link.route} to={link.route}>
+                {link.label} · {link.route.startsWith('/ai-algorithms/') && term.tags.includes('upcoming') ? 'Preview upcoming lab' : 'Open lab'}
+                <ArrowRight size={15} aria-hidden="true" />
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
       <section id="try" className="ts-panel ts-visual">
         <h2>What it looks like</h2>
         <Suspense fallback={<p className="ts-demo-readout">Loading visual…</p>}>
@@ -153,17 +170,6 @@ export default function TermsStudioTermPage() {
           <div className="ts-formula">
             <Formula value={term.formula} block explanation={term.formulaPlain} />
             {term.formulaPlain && <small>{term.formulaPlain}</small>}
-          </div>
-        </section>
-      )}
-
-      {term.labLinks.length > 0 && (
-        <section className="ts-panel">
-          <h2>Used in</h2>
-          <div className="ts-related">
-            {term.labLinks.map((link) => (
-              <Link key={link.route} to={link.route}>{link.label}</Link>
-            ))}
           </div>
         </section>
       )}

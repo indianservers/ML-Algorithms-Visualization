@@ -11,7 +11,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { isTermConceptKind, type TermDemoKind } from '../../data/termsStudio';
+import { getTermLesson, isTermConceptKind, type TermDemoKind } from '../../data/termsStudio';
 
 const TermConceptDemo = lazy(() =>
   import('./TermConceptDemos').then((mod) => ({ default: mod.TermConceptDemo })),
@@ -1020,11 +1020,10 @@ function ResidualDemo() {
   const [skip, setSkip] = useState(1);
   const [edit, setEdit] = useState(0.4);
   const [layers, setLayers] = useState(4);
-  let signal = 1;
-  const bars = Array.from({ length: layers }, (_, i) => {
-    signal = skip ? signal + edit * 0.3 : signal * 0.55;
-    return { i: i + 1, v: signal };
-  });
+  const bars = Array.from({ length: layers }, (_, i) => ({
+    i: i + 1,
+    v: skip ? 1 + (i + 1) * edit * 0.3 : 0.55 ** (i + 1),
+  }));
   return (
     <div className="ts-demo">
       <div className="ts-demo-tools">
@@ -1385,6 +1384,16 @@ function DemoChrome({
 }
 
 export function TermDemo({ kind, variant, caption, unitsNote }: DemoProps) {
+  if (kind === 'concept-cards') {
+    const term = getTermLesson(variant ?? '');
+    return <DemoChrome caption={caption} unitsNote={unitsNote}>
+      {term && <div className="ts-concept-cards">
+        <article><span>Meaning</span><strong>{term.label}</strong><p>{term.blurb}</p></article>
+        <article><span>How it works</span><p>{term.explanation[0]}</p></article>
+        <article><span>In practice</span><p>{term.workedExample.setup}</p></article>
+      </div>}
+    </DemoChrome>;
+  }
   if (isTermConceptKind(kind)) {
     return (
       <DemoChrome caption={caption} unitsNote={unitsNote}>

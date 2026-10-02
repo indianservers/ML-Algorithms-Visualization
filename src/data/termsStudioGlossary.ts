@@ -13,7 +13,12 @@ export type GlossaryLane =
   | 'Trees'
   | 'CNN'
   | 'Sequence'
-  | 'Attention';
+  | 'Attention'
+  | 'AI'
+  | 'Reinforcement'
+  | 'Time Series'
+  | 'Tasks'
+  | 'Hugging Face';
 
 export const GLOSSARY_PILLS = [
   'All',
@@ -31,6 +36,11 @@ export const GLOSSARY_PILLS = [
   'Math',
   'NLP',
   'Vision',
+  'AI',
+  'Reinforcement',
+  'Time Series',
+  'Tasks',
+  'Hugging Face',
 ] as const;
 
 export type GlossaryPill = (typeof GLOSSARY_PILLS)[number];
@@ -195,10 +205,19 @@ const CATEGORY_LANE: Record<TermLesson['category'], GlossaryLane> = {
   regularization: 'Training',
   neural: 'Core',
   'data-math': 'Data',
+  evaluation: 'Evaluation',
+  models: 'Models',
+  vision: 'Vision',
+  language: 'NLP',
+  'time-series': 'Time Series',
+  reinforcement: 'Reinforcement',
+  'ai-foundations': 'AI',
+  tasks: 'Tasks',
+  'hugging-face': 'Hugging Face',
 };
 
 export function getGlossaryLane(term: TermLesson): GlossaryLane {
-  return LANE_BY_SLUG[term.slug] ?? CATEGORY_LANE[term.category];
+  return term.glossaryLane ?? LANE_BY_SLUG[term.slug] ?? CATEGORY_LANE[term.category];
 }
 
 export function getGlossaryLabel(term: TermLesson): string {

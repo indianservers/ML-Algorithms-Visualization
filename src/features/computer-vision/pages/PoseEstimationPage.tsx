@@ -1,26 +1,33 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import type { PoseLandmarker } from "@mediapipe/tasks-vision";
+import { useUrlTab } from "../../../components/common/LabTabs";
 import { VisionPageShell } from "../components/VisionPageShell";
 import { VisionCamera } from "../components/VisionCamera";
 import { PoseOverlay } from "../components/PoseOverlay";
 import { Skeleton3D } from "../components/Skeleton3D";
 import { useCamera } from "../hooks/useCamera";
 import { useRafLoop } from "../hooks/useRafLoop";
-import { createPoseLandmarker, formatVisionError, POSE_CONNECTIONS } from "../runtime/mediapipeRuntime";
+import { createPoseImageLandmarker, createPoseLandmarker, formatVisionError, POSE_CONNECTIONS } from "../runtime/mediapipeRuntime";
 import { emaPoints, POSE_NAMES, poseJointAngles, type Xyz } from "../utils/landmarkGeometry";
 import type { LandmarkPoint } from "../types";
 
 type Mode = "camera" | "image" | "video";
 type View = "front" | "side" | "top";
+const PoseTrainingPanel = lazy(() => import('../components/PoseTrainingPanel').then((module) => ({ default: module.PoseTrainingPanel })));
 
 export default function PoseEstimationPage() {
   const { pathname } = useLocation();
+  const [tab, setTab] = useUrlTab<'estimate' | 'train-poses'>('estimate');
+  const activeTab = tab === 'train-poses' ? 'train-poses' : 'estimate';
+  const [trainOpened, setTrainOpened] = useState(activeTab === 'train-poses');
   const camera = useCamera({ mirror: false });
   const landmarkerRef = useRef<PoseLandmarker | null>(null);
+  const imageLandmarkerRef = useRef<PoseLandmarker | null>(null);
+  const imageRef = useRef<HTMLImageElement | null>(null);
   const fileVideoRef = useRef<HTMLVideoElement | null>(null);
   const lastUi = useRef(0);
-  const fpsRef = useRef({ frames: 0, stamp: performance.now() });
+  const fpsRef = useRef({ frames: 0, stamp: 0 });
   const smoothRef = useRef<Xyz[] | null>(null);
 
   const [mode, setMode] = useState<Mode>("camera");
@@ -40,9 +47,20 @@ export default function PoseEstimationPage() {
   const [yaw, setYaw] = useState(0);
   const [smoothing, setSmoothing] = useState(0.35);
 
+  useEffect(() => {
+    if (activeTab !== 'train-poses' || trainOpened) return;
+    const frame = window.requestAnimationFrame(() => setTrainOpened(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, [activeTab, trainOpened]);
+
+  useEffect(() => () => { if (imageUrl) URL.revokeObjectURL(imageUrl); }, [imageUrl]);
+  useEffect(() => () => { if (videoUrl) URL.revokeObjectURL(videoUrl); }, [videoUrl]);
+
   useEffect(() => () => {
     landmarkerRef.current?.close();
     landmarkerRef.current = null;
+    imageLandmarkerRef.current?.close();
+    imageLandmarkerRef.current = null;
   }, []);
 
   const ensure = async () => {
@@ -51,6 +69,12 @@ export default function PoseEstimationPage() {
     landmarkerRef.current = await createPoseLandmarker(fullModel);
     setStatus("Pose landmarker ready. Angles use 3-point geometry; 3D view uses world landmarks when present.");
     return landmarkerRef.current;
+  };
+
+  const ensureImage = async () => {
+    if (imageLandmarkerRef.current) return imageLandmarkerRef.current;
+    imageLandmarkerRef.current = await createPoseImageLandmarker(fullModel);
+    return imageLandmarkerRef.current;
   };
 
   const publish = (points: LandmarkPoint[], worldPoints: Xyz[], w: number, h: number, ms: number, now: number) => {
@@ -62,6 +86,7 @@ export default function PoseEstimationPage() {
       setWorld(worldPoints);
       setLatency(ms);
       setSize({ w, h });
+      if (!fpsRef.current.stamp) fpsRef.current.stamp = now;
       fpsRef.current.frames += 1;
       if (now - fpsRef.current.stamp > 500) {
         setFps((fpsRef.current.frames * 1000) / (now - fpsRef.current.stamp));
@@ -101,21 +126,56 @@ export default function PoseEstimationPage() {
     }
   });
 
-  const detectStill = async (file: File) => {
+  const analyzeImage = async (file: File) => {
     const url = URL.createObjectURL(file);
-    setMode("image");
-    setImageUrl(url);
-    const image = new Image();
-    image.onload = async () => {
-      const landmarker = await ensure();
-      await landmarker.setOptions({ runningMode: "IMAGE" });
-      const started = performance.now();
+    try {
+      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const element = new Image();
+        element.onload = () => resolve(element);
+        element.onerror = () => reject(new Error(`Could not read ${file.name}.`));
+        element.src = url;
+      });
+      const landmarker = await ensureImage();
       const parsed = fromResult(landmarker.detect(image));
-      await landmarker.setOptions({ runningMode: "VIDEO" });
+      const canvas = document.createElement('canvas');
+      canvas.width = 160;
+      canvas.height = 120;
+      canvas.getContext('2d')?.drawImage(image, 0, 0, canvas.width, canvas.height);
+      return { ...parsed, width: image.width, height: image.height, preview: canvas.toDataURL('image/jpeg', 0.65) };
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const detectStill = async (file: File) => {
+    setMode('image');
+    setLandmarks([]);
+    setWorld([]);
+    smoothRef.current = null;
+    const displayUrl = URL.createObjectURL(file);
+    setImageUrl(displayUrl);
+    try {
+      setStatus('Detecting landmarks in uploaded image…');
+      const started = performance.now();
+      const result = await analyzeImage(file);
       lastUi.current = 0;
-      publish(parsed.points, parsed.worldPoints, image.width, image.height, performance.now() - started, performance.now());
-    };
-    image.src = url;
+      publish(result.points, result.worldPoints, result.width, result.height, performance.now() - started, performance.now());
+      setStatus(result.points.length ? 'Pose detected. Capture it in the Train poses tab or inspect the angles.' : 'No clear pose found in this image.');
+    } catch (caught) {
+      setStatus(formatVisionError(caught, 'Image pose detection failed.'));
+    }
+  };
+
+  const preview = () => {
+    const source = mode === 'camera' ? camera.videoRef.current : mode === 'video' ? fileVideoRef.current : imageRef.current;
+    if (!source) return '';
+    const canvas = document.createElement('canvas');
+    canvas.width = 160;
+    canvas.height = 120;
+    try {
+      canvas.getContext('2d')?.drawImage(source, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL('image/jpeg', 0.65);
+    } catch { return ''; }
   };
 
   const overlay = (
@@ -126,21 +186,28 @@ export default function PoseEstimationPage() {
 
   return (
     <VisionPageShell pathname={pathname} kicker="33 MediaPipe body landmarks, skeleton, world-space 3D, and joint angles.">
-      <div className="cv-pose-layout">
+      <nav className="cv-pose-tabs" aria-label="Pose Estimation sections">
+        <button type="button" aria-pressed={activeTab === 'estimate'} className={activeTab === 'estimate' ? 'is-on' : ''} onClick={() => setTab('estimate')}>Estimate pose</button>
+        <button type="button" aria-pressed={activeTab === 'train-poses'} className={activeTab === 'train-poses' ? 'is-on' : ''} onClick={() => setTab('train-poses')}>Train new poses</button>
+      </nav>
+      <div className={activeTab === 'train-poses' ? 'cv-pose-layout is-training' : 'cv-pose-layout'}>
         <div>
           <div className="cv-class-actions" style={{ marginBottom: 8 }}>
-            <button type="button" className={mode === "camera" ? "cv-btn-primary" : "cv-btn"} onClick={() => { setMode("camera"); setImageUrl(null); void camera.start(); }}>Live camera</button>
-            <label className="cv-btn">Image<input type="file" accept="image/*" hidden onChange={(event) => { const file = event.target.files?.[0]; if (file) void detectStill(file); }} /></label>
+            <button type="button" className={mode === "camera" ? "cv-btn-primary" : "cv-btn"} onClick={() => { setMode("camera"); setLandmarks([]); setWorld([]); smoothRef.current = null; setImageUrl(null); void camera.start(); }}>Live camera</button>
+            <label className="cv-btn">Image<input type="file" accept="image/*" hidden onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void detectStill(file); }} /></label>
             <label className="cv-btn">Video<input type="file" accept="video/*" hidden onChange={(event) => {
               const file = event.target.files?.[0];
               if (!file) return;
               setVideoUrl(URL.createObjectURL(file));
               setMode("video");
+              setLandmarks([]);
+              setWorld([]);
+              smoothRef.current = null;
               setImageUrl(null);
             }} /></label>
           </div>
           {mode === "image" && imageUrl ? (
-            <div className="cv-camera"><img src={imageUrl} alt="" />{overlay}</div>
+            <div className="cv-camera"><img ref={imageRef} src={imageUrl} alt="Uploaded pose" />{overlay}</div>
           ) : mode === "video" && videoUrl ? (
             <div className="cv-camera"><video ref={fileVideoRef} src={videoUrl} playsInline muted loop autoPlay />{overlay}</div>
           ) : (
@@ -169,10 +236,12 @@ export default function PoseEstimationPage() {
               setFullModel(event.target.checked);
               landmarkerRef.current?.close();
               landmarkerRef.current = null;
+              imageLandmarkerRef.current?.close();
+              imageLandmarkerRef.current = null;
             }} /> Full model</label>
           </div>
         </div>
-        <aside>
+        <aside hidden={activeTab !== 'estimate'}>
           <article className="cv-panel">
             <h2>3D pose</h2>
             <p>{world.length ? "World landmarks from MediaPipe" : "Waiting for world landmarks"}</p>
@@ -212,7 +281,7 @@ export default function PoseEstimationPage() {
             </div>
           </article>
         </aside>
-        <section className="cv-panel cv-pose-table">
+        <section className="cv-panel cv-pose-table" hidden={activeTab !== 'estimate'}>
           <h2>Landmark table</h2>
           <table className="cv-table">
             <thead>
@@ -232,6 +301,18 @@ export default function PoseEstimationPage() {
             </tbody>
           </table>
         </section>
+        {trainOpened && <Suspense fallback={<p className="cv-pose-train-loading">Loading pose trainer…</p>}>
+          <PoseTrainingPanel
+            active={activeTab === 'train-poses'}
+            liveSource={(mode === 'camera' && camera.status === 'live' && !paused) || (mode === 'video' && !paused)}
+            landmarks={landmarks}
+            preview={preview}
+            analyzeImage={async (file) => {
+              const result = await analyzeImage(file);
+              return { points: result.points, preview: result.preview };
+            }}
+          />
+        </Suspense>}
       </div>
     </VisionPageShell>
   );

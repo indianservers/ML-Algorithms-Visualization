@@ -142,6 +142,26 @@
   box-shadow: 0 8px 20px rgba(194, 65, 12, 0.08);
 }
 
+.ts-explore-labs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  border-color: #93c5fd;
+  background: linear-gradient(115deg, var(--ts-card), rgba(59, 130, 246, 0.1));
+}
+
+.ts-explore-labs h2 { margin-bottom: 4px; }
+.ts-explore-labs p { margin: 0; color: var(--ts-muted); }
+.ts-explore-labs .ts-related a {
+  border-color: #2563eb;
+  color: #1d4ed8;
+  background: var(--ts-card);
+}
+
+.dark .ts-explore-labs .ts-related a { color: #93c5fd; }
+
 .ts-cats {
   display: grid;
   gap: 26px;
@@ -1345,6 +1365,37 @@
 
 .ts-examples-intro {
   color: var(--ts-muted);
+}
+
+.ts-concept-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ts-concept-cards article {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--ts-line);
+  border-radius: 12px;
+  background: var(--ts-paper);
+}
+
+.ts-concept-cards span {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--ts-teal);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.ts-concept-cards strong { display: block; }
+.ts-concept-cards p { margin: 5px 0 0; font-size: 13px; line-height: 1.5; }
+
+@media (max-width: 700px) {
+  .ts-concept-cards { grid-template-columns: 1fr; }
 }
 
 .ts-examples-grid {

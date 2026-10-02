@@ -817,7 +817,6 @@ export default function LogisticRegressionPage() {
 
   return (
     <div className="logistic-page">
-      <div className="lr-breadcrumb">Supervised Learning <span>›</span> Logistic Regression <span>›</span> <strong>{tab}</strong></div>
       <header className="lr-head">
         <div className="lr-head-icon">
           <svg viewBox="0 0 36 36" fill="none" aria-hidden="true"><path d="M6 5v26h25" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/><path d="M8 27c8 0 8-17 18-17h4" stroke="currentColor" strokeWidth="2.7" strokeLinecap="round"/><circle cx="10" cy="23" r="2.4" fill="currentColor"/><circle cx="26" cy="11" r="2.4" fill="currentColor"/></svg>

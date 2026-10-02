@@ -111,6 +111,51 @@ export const categoryStories: Record<TermCategoryId, { minutes: string; story: s
     story: 'These are the kitchen tools. If the ruler is crooked or the final exam leaked into homework, no fancy model can save you.',
     sequence: ['dot-product', 'norms', 'one-hot', 'feature-scaling', 'train-val-test', 'cross-validation', 'baseline', 'data-leakage', 'token', 'embedding', 'cosine-similarity', 'padding'],
   },
+  evaluation: {
+    minutes: 'Start with calibration, then inspect the metric that fits your goal.',
+    story: 'A single score rarely tells the whole story. Check errors, confidence, and the cost of each kind of mistake.',
+    sequence: ['accuracy', 'confusion-matrix', 'precision-recall', 'calibration', 'brier-score', 'balanced-accuracy', 'threshold-tuning'],
+  },
+  models: {
+    minutes: 'Begin with a simple tree, then compare ensembles and probabilistic models.',
+    story: 'Different model families make different assumptions. Learn what each one can express before tuning its knobs.',
+    sequence: ['decision-stump', 'random-forest', 'gradient-boosting', 'naive-bayes', 'k-nearest-neighbors', 'hyperparameter'],
+  },
+  vision: {
+    minutes: 'First understand the receptive field; then move from class labels to locations and pixels.',
+    story: 'Vision models build useful features from local image patterns, then answer questions about whole images or regions.',
+    sequence: ['convolution', 'receptive-field', 'image-classification', 'object-detection', 'intersection-over-union', 'semantic-segmentation'],
+  },
+  language: {
+    minutes: 'Start with word counts, then read attention and generation.',
+    story: 'Language AI progresses from simple token statistics to context-aware representations and controlled generation.',
+    sequence: ['bag-of-words', 'tf-idf', 'n-gram', 'attention', 'multi-head-attention', 'autoregressive-model', 'beam-search'],
+  },
+  'time-series': {
+    minutes: 'Look for repeated patterns before choosing how far ahead to predict.',
+    story: 'Time matters: future observations must never leak into the past used for training.',
+    sequence: ['seasonality', 'autocorrelation', 'stationarity', 'time-series-split', 'forecast-horizon'],
+  },
+  reinforcement: {
+    minutes: 'State → action → reward → future value is the core loop.',
+    story: 'An agent learns what to do by trying actions, receiving rewards, and accounting for what happens later.',
+    sequence: ['markov-decision-process', 'policy', 'state-value-function', 'action-value-function', 'bellman-equation', 'epsilon-greedy', 'actor-critic'],
+  },
+  'ai-foundations': {
+    minutes: 'Begin with states and goals, then learn how search avoids exploring everything.',
+    story: 'Classical AI solves problems by representing possibilities, searching paths, and reasoning with explicit rules.',
+    sequence: ['state-space-search', 'admissible-heuristic', 'a-star-search', 'minimax', 'alpha-beta-pruning', 'constraint-satisfaction-problem'],
+  },
+  tasks: {
+    minutes: 'Start with the input and output, then choose a model suited to the task.',
+    story: 'Tasks describe what a system must do. A good model choice follows from the data, output, and evaluation goal.',
+    sequence: ['text-summarization', 'question-answering', 'image-captioning', 'speech-recognition', 'recommendation-task'],
+  },
+  'hugging-face': {
+    minutes: 'Read the card, inspect the files, and try a pipeline on a small example.',
+    story: 'The Hugging Face ecosystem helps people discover, document, test, and share models and datasets.',
+    sequence: ['hugging-face-hub', 'model-repository', 'model-card', 'dataset-card', 'hugging-face-space', 'transformers-pipeline'],
+  },
 };
 
 export const termsStudioEnhance: Record<string, TermEnhance> = {

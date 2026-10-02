@@ -1,5 +1,5 @@
 import type { AlgorithmNavItem } from './implementationStatus';
-import { algorithmSearchMeta } from './algorithmSearchMeta';
+import { algorithmCatalogSearchMeta } from './algorithmCatalogSearchMeta';
 
 export interface AlgorithmIntroduction {
   summary: string;
@@ -197,7 +197,7 @@ export function getAlgorithmIntroduction(item: AlgorithmNavItem): AlgorithmIntro
   const specific = routeIntro[item.route] ?? {};
 
   return {
-    summary: specific.summary ?? algorithmSearchMeta[item.route]?.description ?? defaultSummary(item),
+    summary: specific.summary ?? algorithmCatalogSearchMeta[item.route]?.description ?? defaultSummary(item),
     useWhen: specific.useWhen ?? category.useWhen,
     watchFor: specific.watchFor ?? category.watchFor,
   };

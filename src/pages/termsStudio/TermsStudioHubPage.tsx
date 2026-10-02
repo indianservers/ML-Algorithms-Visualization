@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   Activity, ArrowRight, Atom, BookOpen, Box, BrainCircuit, ChartNoAxesColumn,
   Check, ChevronRight, Database, Eye, Flag, GraduationCap, Grid2X2,
-  Image, Layers3, Leaf, Lightbulb, List, MessageCircle, Network, Pi,
+  Image, Layers3, Leaf, Lightbulb, List, MessageCircle, Network, Pi, Clock3, Gamepad2, Bot, Puzzle,
   Scale, Search, SlidersHorizontal, Sparkles, Target, TreePine, X, type LucideIcon,
 } from 'lucide-react';
 import { termRoute, termsStudioLessons, type TermLesson } from '../../data/termsStudio';
@@ -22,6 +22,8 @@ const pillIcons: Record<GlossaryPill, LucideIcon> = {
   Optimization: SlidersHorizontal, Training: GraduationCap, Data: Database,
   Models: Box, Trees: TreePine, CNN: Network, Sequence: Activity,
   Attention: Eye, Math: Pi, NLP: MessageCircle, Vision: Image,
+  AI: BrainCircuit, Reinforcement: Gamepad2, 'Time Series': Clock3,
+  Tasks: Puzzle, 'Hugging Face': Bot,
 };
 const termIcons: Record<string, LucideIcon> = {
   accuracy: Target, adam: Atom, attention: Eye, 'data-augmentation': Image,

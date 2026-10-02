@@ -18,7 +18,6 @@ import {
   X,
 } from "lucide-react";
 import {
-  getAllAlgorithms,
   getAlgorithmByRoute,
   getImplementationStatus,
   rememberRoute,
@@ -37,6 +36,8 @@ import { GuideMode } from "../components/common/GuideMode";
 import { FitToViewport } from "../components/common/FitToViewport";
 import { SiteFooter } from "../components/common/SiteFooter";
 import { AlgorithmTabPresentation } from "../components/common/AlgorithmTabPresentation";
+import { AlgorithmBreadcrumbs } from "../components/common/AlgorithmBreadcrumbs";
+import { categoryCatalogUrl } from "../data/algorithmBreadcrumbs";
 import { AlgorithmTheoryDrawer } from "../components/learning/AlgorithmTheoryDrawer";
 import { TrainingActivityPanel } from "../components/common/TrainingActivityPanel";
 import { trackPageView } from "../lib/analytics";
@@ -44,6 +45,7 @@ import { useGuideMode } from "../stores/uiStore";
 import "../styles/labTheme.css";
 import "../styles/nestedLabLayout.css";
 import "../styles/mobileFirst.css";
+import "../styles/algorithmBreadcrumbs.css";
 
 const ACTIVE_DATASETS_KEY = "mlSuite.activeAlgorithmDatasets";
 
@@ -216,11 +218,7 @@ export const RootLayout: React.FC = () => {
     hasRouteDataset &&
     !isUtilityRoute,
   );
-  // First route in the same category, used as the breadcrumb parent in JSON-LD.
-  const categoryRoute = currentItem
-    ? getAllAlgorithms().find((item) => item.category === currentItem.category)
-        ?.route
-    : undefined;
+  const categoryRoute = currentItem ? categoryCatalogUrl(currentItem.category) : undefined;
 
   React.useEffect(() => {
     const setMeta = (selector: string, attributes: Record<string, string>) => {
@@ -591,6 +589,9 @@ export const RootLayout: React.FC = () => {
         tabIndex={-1}
         className="relative isolate min-h-0 flex-1 overflow-x-hidden overflow-y-auto scrollbar-thin"
       >
+        {!location.pathname.startsWith('/ml/terms-studio/') && (
+          <AlgorithmBreadcrumbs item={location.pathname === '/ml/terms-studio' ? undefined : currentItem} pathname={location.pathname} search={location.search} />
+        )}
         {location.pathname.startsWith("/ml/") ? (
           <FitToViewport>{page}</FitToViewport>
         ) : (

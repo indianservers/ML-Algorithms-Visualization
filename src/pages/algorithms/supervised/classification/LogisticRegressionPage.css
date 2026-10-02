@@ -1259,9 +1259,6 @@ html.dark #main-content .logistic-page {
   background:#061426;color:#f4f8ff;color-scheme:dark;
 }
 .logistic-page{padding:8px 22px 26px;gap:10px;min-width:0}
-.logistic-page .lr-breadcrumb{display:flex;gap:12px;align-items:center;color:#bed1ed;font-size:12px;min-height:18px}
-.logistic-page .lr-breadcrumb span{color:#7193ba}
-.logistic-page .lr-breadcrumb strong{color:#f7fbff}
 .logistic-page .lr-head{min-height:66px;gap:14px}
 .logistic-page .lr-head-icon{width:58px;height:58px;border-radius:50%;background:linear-gradient(135deg,#00ac87,#08d1cd);color:#fff}
 .logistic-page .lr-head-icon svg{width:37px;height:37px}
@@ -1412,7 +1409,6 @@ html.dark #main-content .logistic-page {
 }
 @media(max-width:600px){
   .logistic-page{padding:8px 10px 20px}
-  .logistic-page .lr-breadcrumb{font-size:10px}
   .logistic-page .lr-head{display:grid;grid-template-columns:48px 1fr;grid-template-areas:'icon title' 'prog prog' 'resume resume';min-height:0}
   .logistic-page .lr-head-icon{width:47px;height:47px}
   .logistic-page .lr-head h1{font-size:23px}

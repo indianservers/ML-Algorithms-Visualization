@@ -1213,9 +1213,6 @@ export default function DecisionTreeClassificationPage() {
       <main>
         <header className="dt-header">
           <div>
-            <p>
-              Supervised Learning <span>›</span> Decision Tree <span>›</span> {TABS.find((item) => item.id === tab)?.label}
-            </p>
             <section>
               <i>
                 <GitBranch />

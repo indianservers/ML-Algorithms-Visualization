@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Activity,
   BookMarked,
@@ -416,6 +416,7 @@ function AlgorithmCard({ item, enterIndex = -1 }: { item: Card; enterIndex?: num
 
 export default function HomeLanding() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { setTheme } = useTheme();
   const [homeTheme, setHomeTheme] = React.useState<"dark" | "light">("dark");
   const [query, setQuery] = React.useState("");
@@ -426,6 +427,17 @@ export default function HomeLanding() {
 
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>({ dimensionality: true, "time-series": true, nlp: true, reinforcement: true });
   const [openMinis, setOpenMinis] = React.useState<Record<string, boolean>>({});
+  const requestedCategory = new URLSearchParams(location.search).get('category');
+
+  React.useEffect(() => {
+    if (!requestedCategory) return;
+    const group = groups.find((entry) => entry.categories.includes(requestedCategory));
+    const id = group ? `hl-group-${group.id}` : panelId(requestedCategory);
+    const frame = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: 'start' }));
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [requestedCategory]);
 
   const filtering = query.trim().length > 0 || level !== "All";
 
@@ -441,11 +453,11 @@ export default function HomeLanding() {
         if (filtering) {
           return { group, cards: matchAlgorithms(full, query, level), total: full.length, expanded: true, forced: true };
         }
-        const expanded = Boolean(openGroups[group.id]);
+        const expanded = Boolean(openGroups[group.id]) || group.categories.includes(requestedCategory ?? '');
         const referenceGroup = ["dimensionality", "time-series", "nlp", "reinforcement"].includes(group.id);
         return { group, cards: expanded ? full : referenceGroup ? [] : group.featured, total: full.length, expanded, forced: false };
       }),
-    [filtering, level, query, openGroups],
+    [filtering, level, query, openGroups, requestedCategory],
   );
 
   const minis = React.useMemo(
@@ -458,10 +470,10 @@ export default function HomeLanding() {
           const cards = matchAlgorithms(full, query, level);
           return { entry, cards, total: full.length, open: cards.length > 0, forced: true };
         }
-        const open = !filtering && Boolean(openMinis[entry.category]);
+        const open = !filtering && (Boolean(openMinis[entry.category]) || entry.category === requestedCategory);
         return { entry, cards: open ? full : [], total: full.length, open, forced: filtering };
       }),
-    [filtering, level, query, openMinis],
+    [filtering, level, query, openMinis, requestedCategory],
   );
 
   const totalMatches =
@@ -739,7 +751,7 @@ export default function HomeLanding() {
         {visible.map(({ group, cards, total, expanded, forced }) => {
           if (filtering && cards.length === 0) return null;
           if (group.id === "ai-virtual-labs") {
-            return <AiAlgorithmsSection key={group.id} globalRoutes={forced ? cards.map((item) => item.route) : undefined} />;
+            return <div key={group.id} id={`hl-group-${group.id}`}><AiAlgorithmsSection globalRoutes={forced ? cards.map((item) => item.route) : undefined} /></div>;
           }
           return (
             <section key={group.id} id={`hl-group-${group.id}`} className={`hl-group tone-${group.tone} ${["dimensionality", "time-series", "nlp", "reinforcement"].includes(group.id) ? "hl-reference-group" : ""}`}>

@@ -13,9 +13,7 @@
 .slr2-page button, .slr2-page input, .slr2-page select { font: inherit; }
 .slr2-page button { cursor: pointer; }
 .slr2-page :focus-visible { outline: 2px solid #2874fa; outline-offset: 2px; }
-.slr2-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "crumb actions" "title actions"; align-items: center; gap: 8px 14px; margin-bottom: 12px; }
-.slr2-breadcrumb { grid-area: crumb; color: var(--slr-muted); font-size: 12px; font-weight: 600; }
-.slr2-breadcrumb span { padding: 0 8px; }
+.slr2-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "title actions"; align-items: center; gap: 8px 14px; margin-bottom: 12px; }
 .slr2-title-area { grid-area: title; display: flex; align-items: center; gap: 12px; min-width: 0; }
 .slr2-icon { display: grid; place-items: center; width: 42px; height: 42px; flex: 0 0 42px; border-radius: 12px; background: #dff9f4; color: #00a989; }
 .slr2-icon svg { width: 29px; }
@@ -164,7 +162,7 @@ html.dark .slr2-chart-legend i.point { background: #3ab8ff; }
 html.dark .slr2-chart-legend i.fit { border-top-color: #ffb02e; }
 html.dark .slr2-chart-legend i.manual { border-top-color: #cb9cff; }
 @media (max-width: 1100px) {
-  .slr2-header { grid-template-columns: 1fr; grid-template-areas: "crumb" "title" "actions"; }
+  .slr2-header { grid-template-columns: 1fr; grid-template-areas: "title" "actions"; }
   .slr2-header-actions { flex-wrap: wrap; }
   #main-content .slr2-tabs { display: flex; overflow-x: auto; }
   #main-content .slr2-tabs > button { flex: 0 0 135px; }

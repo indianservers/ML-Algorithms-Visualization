@@ -309,6 +309,18 @@ export async function createPoseLandmarker(full = false) {
   })));
 }
 
+export async function createPoseImageLandmarker(full = false) {
+  const key = full ? 'pose-full:image' : 'pose-lite:image';
+  const modelAssetPath = full ? MODELS.poseFull : MODELS.pose;
+  return cachedTask(key, () => withDelegate((wasm, delegate) => PoseLandmarker.createFromOptions(wasm, {
+    baseOptions: { modelAssetPath, delegate },
+    runningMode: 'IMAGE',
+    numPoses: 1,
+    minPoseDetectionConfidence: 0.5,
+    minPosePresenceConfidence: 0.5,
+  })));
+}
+
 export type SegmenterKind = "deeplab" | "selfieMulti" | "selfie";
 
 export async function createImageSegmenter(kind: SegmenterKind, categoryMask = true) {

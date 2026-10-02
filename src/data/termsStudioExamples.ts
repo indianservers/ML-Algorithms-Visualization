@@ -211,6 +211,13 @@ export function getTermExamples(term: TermLesson): TermExample[] {
     steps: term.workedExample.steps,
     takeaway: term.workedExample.takeaway,
   }];
+  if (term.moreExamples?.length) {
+    examples.push(...term.moreExamples.slice(0, 2).map((description, index) => ({
+      title: `Example ${index + 2}`,
+      description,
+    })));
+    return examples.slice(0, 3);
+  }
   const second = getTermEnhance(term).secondExample;
   if (!second.title.startsWith('Another story for') && second.setup !== term.workedExample.setup) {
     examples.push({ title: second.title, description: second.setup, steps: second.steps, takeaway: second.takeaway });

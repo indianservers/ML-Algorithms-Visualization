@@ -298,7 +298,6 @@ export default function SimpleLinearRegressionPage() {
 
   return <div className="slr2-page">
     <header className="slr2-header">
-      <div className="slr2-breadcrumb">Supervised Learning <span>›</span> Simple Linear Regression <span>›</span> {tab}</div>
       <div className="slr2-title-area"><span className="slr2-icon"><svg viewBox="0 0 50 50" fill="none" aria-hidden="true"><path d="M8 5v37h37" stroke="currentColor" strokeWidth="2"/><path d="M10 35 22 27 31 20 43 9" stroke="currentColor" strokeWidth="2.5"/><circle cx="18" cy="29" r="2.5" fill="currentColor"/><circle cx="30" cy="23" r="2.5" fill="currentColor"/><circle cx="40" cy="12" r="2.5" fill="currentColor"/></svg></span><div><h1>Simple Linear Regression</h1><p>Learn how a straight line models the relationship between one input feature and a continuous target.</p></div></div>
       <div className="slr2-header-actions"><span className="slr2-dataset-badge">{datasetKey === 'study' ? 'Student Scores Dataset' : dataset.name}</span><span>Lesson Progress</span><div className="slr2-progress"><i style={{ width: `${progress}%` }} /></div><b>{progress}%</b><button type="button" onClick={() => { setTab('Train'); startPlayback(false); }}>Resume <Play size={16}/></button><CircleHelp size={20}/></div>
     </header>

@@ -2,7 +2,7 @@ import React, { lazy, Suspense } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { Badge } from './Badge';
 import type { BadgeType } from '../../data/navigation';
-import { ChevronRight, Clock, Home } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { getAlgorithmByRoute, getAllAlgorithms } from '../../data/implementationStatus';
 import { getAlgorithmDatasetSuggestions, loadAlgorithmDataset, suggestionRowCount } from '../../data/algorithmDatasets';
 import { applyAlgorithmDataset } from '../../lib/experimentWorkspace';
@@ -35,7 +35,6 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   showDatasetSuggestions = true,
 }) => {
   const location = useLocation();
-  const parts = location.pathname.split('/').filter(Boolean);
   const isAlgorithmRoute = location.pathname.startsWith('/ml/');
   const currentAlgorithm = isAlgorithmRoute ? getAlgorithmByRoute(location.pathname) : undefined;
   const related = getAllAlgorithms()
@@ -48,21 +47,6 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
 
   return (
     <div className="mb-5 sm:mb-6">
-      {/* Breadcrumb */}
-      <nav className="mb-3 flex items-center gap-1 overflow-x-auto text-xs text-gray-400 scrollbar-thin">
-        <Link to="/" className="flex min-h-10 shrink-0 items-center gap-1 hover:text-gray-600 dark:hover:text-gray-300">
-          <Home size={11} /> Home
-        </Link>
-        {parts.map((part, i) => (
-          <React.Fragment key={i}>
-            <ChevronRight size={11} />
-            <span className={`${i === parts.length - 1 ? 'text-gray-600 dark:text-gray-300 font-medium' : 'capitalize'} shrink-0`}>
-              {part.replace(/-/g, ' ')}
-            </span>
-          </React.Fragment>
-        ))}
-      </nav>
-
       {/* Header */}
       <div className="flex items-start gap-3 sm:gap-4">
         {icon && (
