@@ -60,3 +60,11 @@ html.dark .ai-upcoming-page{background:linear-gradient(155deg,#101a2e,#11192d)}h
   .ai-virtual-lab-page { padding: 10px 8px 24px; }
   .ai-virtual-lab-heading { margin: 0 6px 14px; }
 }
+@media (max-width: 900px) {
+  .ai-virtual-lab-heading { margin-bottom: 6px; }
+  .ai-virtual-lab-back { margin-bottom: 4px; }
+  .ai-virtual-lab-title { gap: 8px; }
+  .ai-virtual-lab-title h1 { font-size: 21px; }
+  .ai-virtual-lab-title > div > span { display: none; }
+  .ai-virtual-lab-mark { width: 36px; height: 36px; flex: none; }
+}

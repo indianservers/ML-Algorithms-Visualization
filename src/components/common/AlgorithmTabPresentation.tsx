@@ -19,13 +19,21 @@ const iconPaths: Record<string, string> = {
 function tabKind(text: string) {
   const label = text.toLowerCase().replace(/^[^a-z]+/, "").trim();
   if (label === "build / train" || label === "build/train") return "train";
+  if (label === "train and test") return "train";
   if (label === "live test/inference") return "inference";
   return iconPaths[label] ? label : "";
 }
 
-function decorateTabs(showInference: boolean) {
+function decorateTabs() {
   const host = document.getElementById("main-content");
   if (!host) return;
+  host.querySelectorAll('span, small, b, strong, h3, section').forEach(element => {
+    if (!/^(learning|lesson) progress$/i.test(element.textContent?.trim() ?? '')) return;
+    const panel = element.closest('[class*="lesson-progress"], [class*="learning-progress"]');
+    (panel ?? element).setAttribute('data-learning-progress', '');
+    const parent = element.parentElement;
+    parent?.querySelectorAll('progress, [class*="-progress"], b').forEach(meter => meter.setAttribute('data-learning-progress', ''));
+  });
   const groups = new Map<Element, HTMLButtonElement[]>();
   host.querySelectorAll("button").forEach((button) => {
     if (!(button instanceof HTMLButtonElement) || !button.parentElement) return;
@@ -41,19 +49,8 @@ function decorateTabs(showInference: boolean) {
     (container as HTMLElement).dataset.mlLessonTabs = "";
     (container as HTMLElement).style.setProperty("--ml-tab-count", String(buttons.length));
     buttons.forEach((button) => {
-      let kind = tabKind(button.textContent ?? "");
+      const kind = tabKind(button.textContent ?? "");
       if (!kind) return;
-      if (showInference && kind === "explain") {
-        const walker = document.createTreeWalker(button, NodeFilter.SHOW_TEXT);
-        let node: Node | null;
-        while ((node = walker.nextNode())) {
-          if (node.textContent?.trim() === "Explain") {
-            node.textContent = "Live test/inference";
-            break;
-          }
-        }
-        kind = "inference";
-      }
       button.dataset.mlTab = kind;
       // Decision Tree, PCA, and a few other labs already render SVG icons.
       if (button.querySelector("svg, .ml-tab-icon")) return;
@@ -63,6 +60,15 @@ function decorateTabs(showInference: boolean) {
       icon.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconPaths[kind]}</svg>`;
       button.prepend(icon);
     });
+    if (!container.querySelector('.ml-tab-more')) {
+      const more = document.createElement('button');
+      more.type = 'button';
+      more.className = 'ml-tab-more';
+      more.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg><span>More</span>';
+      more.setAttribute('aria-expanded', 'false');
+      more.onclick = () => { const open = container.classList.toggle('ml-tabs-expanded'); more.setAttribute('aria-expanded', String(open)); };
+      container.append(more);
+    }
   });
 }
 
@@ -75,7 +81,7 @@ export function AlgorithmTabPresentation() {
       if (frame) return;
       frame = requestAnimationFrame(() => {
         frame = 0;
-        decorateTabs(location.pathname.startsWith("/ml/supervised/") && location.pathname !== "/ml/supervised/logistic-regression");
+        decorateTabs();
       });
     };
     const observer = new MutationObserver((records) => {

@@ -82,7 +82,6 @@ export default function AiVirtualLabPage() {
           <div><p>AI Algorithms Virtual Labs</p><h1>{lab.title}</h1><span>{lab.summary}</span></div>
         </div>
       </div>
-      <LearningCompanion key={lab.slug} lab={lab} snapshot={snapshot} timeline={timeline} frameRef={frameRef} store={learningStore} setStore={setLearningStore} />
       {!ready && <div className="ai-virtual-lab-loading" aria-label="Loading virtual lab"><VisualizationSkeleton /></div>}
       <iframe
         key={frameUrl}
@@ -92,6 +91,7 @@ export default function AiVirtualLabPage() {
         className={`ai-virtual-lab-frame${ready ? ' is-ready' : ''}`}
         style={{ height }}
       />
+      <LearningCompanion key={lab.slug} lab={lab} snapshot={snapshot} timeline={timeline} frameRef={frameRef} store={learningStore} setStore={setLearningStore} />
     </main>
   );
 }

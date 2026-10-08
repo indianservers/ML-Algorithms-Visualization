@@ -192,6 +192,7 @@ export const RootLayout: React.FC = () => {
   const [shortcutsOpen, setShortcutsOpen] = React.useState(false);
   const [theoryRoute, setTheoryRoute] = React.useState<string | null>(null);
   const [fullscreen, setFullscreen] = React.useState(false);
+  const [mobileToolsOpen, setMobileToolsOpen] = React.useState(false);
   const [hasRouteDataset, setHasRouteDataset] = React.useState(() =>
     hasActiveDatasetForRoute(location.pathname),
   );
@@ -507,7 +508,7 @@ export const RootLayout: React.FC = () => {
         Skip to content
       </a>
       <nav
-        className={`lab-topbar print:hidden${location.pathname.startsWith("/ml/terms-studio") ? " lab-topbar-compact" : ""}`}
+        className={`lab-topbar print:hidden${mobileToolsOpen ? ' mobile-tools-open' : ''}${location.pathname.startsWith("/ml/terms-studio") ? " lab-topbar-compact" : ""}`}
         aria-label="Page links"
       >
         <button
@@ -558,14 +559,18 @@ export const RootLayout: React.FC = () => {
           <BookOpenText />
           Theory
         </button>}
+        <button type="button" className="lab-mobile-more" aria-label="More tools" aria-expanded={mobileToolsOpen} onClick={() => setMobileToolsOpen(!mobileToolsOpen)}><Settings />More</button>
         <button
+          className="lab-secondary-tool"
           type="button"
           onClick={() => window.dispatchEvent(new Event("ml:open-settings"))}
           aria-label="Settings"
         >
           <Settings />
+          <span className="lab-mobile-label">Settings</span>
         </button>
         <button
+          className="lab-secondary-tool"
           type="button"
           aria-label={fullscreen ? "Exit fullscreen" : "Fullscreen"}
           aria-pressed={fullscreen}
@@ -575,13 +580,16 @@ export const RootLayout: React.FC = () => {
           }}
         >
           {fullscreen ? <Minimize2 /> : <Maximize2 />}
+          <span className="lab-mobile-label">{fullscreen ? 'Exit full' : 'Full screen'}</span>
         </button>
         <button
+          className="lab-secondary-tool"
           type="button"
           onClick={toggleTheme}
           aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
         >
           {theme === "dark" ? <Sun /> : <Moon />}
+          <span className="lab-mobile-label">{theme === 'dark' ? 'Light' : 'Dark'}</span>
         </button>
       </nav>
       <main

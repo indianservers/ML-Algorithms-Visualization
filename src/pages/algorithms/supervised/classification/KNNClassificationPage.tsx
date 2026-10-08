@@ -220,29 +220,26 @@ export default function KNNClassificationPage() {
     };
   }, [points, query.x, query.y]);
   const domain = drag ? drag.domain : liveDomain;
-  // The boundary costs 800+ predictions per pass, far too slow to redo on every
-  // pointermove, so dragging a sample keeps the pre-drag snapshot on screen and
-  // the real boundary is recomputed once the gesture ends.
-  const boundaryPoints =
-    drag?.target.kind === "point" ? drag.points : points;
+  // Use a coarser grid while dragging so the decision regions follow the
+  // edited samples without making pointer movement feel sluggish.
+  const gridColumns = drag?.target.kind === "point" ? 25 : 39;
+  const gridRows = drag?.target.kind === "point" ? 14 : 21;
   const boundaryX = useMemo(
-    () => boundaryPoints.map((point) => [point.x, point.y]),
-    [boundaryPoints],
+    () => points.map((point) => [point.x, point.y]),
+    [points],
   );
   const boundaryY = useMemo(
-    () => boundaryPoints.map((point) => point.label),
-    [boundaryPoints],
+    () => points.map((point) => point.label),
+    [points],
   );
   const grid = useMemo(() => {
-    if (!showBoundary || !boundaryPoints.length) return [];
-    const columns = 39,
-      rows = 21,
-      xStep = (domain.xMax - domain.xMin) / columns,
-      yStep = (domain.yMax - domain.yMin) / rows;
-    const boundaryK = Math.min(safeK, boundaryPoints.length);
+    if (!showBoundary || !points.length) return [];
+    const xStep = (domain.xMax - domain.xMin) / gridColumns,
+      yStep = (domain.yMax - domain.yMin) / gridRows;
+    const boundaryK = Math.min(safeK, points.length);
     const cells: { x: number; y: number; label: number }[] = [];
-    for (let row = 0; row < rows; row += 1)
-      for (let column = 0; column < columns; column += 1) {
+    for (let row = 0; row < gridRows; row += 1)
+      for (let column = 0; column < gridColumns; column += 1) {
         const x = domain.xMin + (column + 0.5) * xStep,
           y = domain.yMin + (row + 0.5) * yStep;
         cells.push({
@@ -260,11 +257,13 @@ export default function KNNClassificationPage() {
       }
     return cells;
   }, [
-    boundaryPoints.length,
     boundaryX,
     boundaryY,
     domain,
+    gridColumns,
+    gridRows,
     metric,
+    points.length,
     safeK,
     showBoundary,
     weight,
@@ -411,15 +410,21 @@ export default function KNNClassificationPage() {
   const queryPixel = project(query),
     xScale = 834 / (domain.xMax - domain.xMin),
     yScale = 330 / (domain.yMax - domain.yMin);
-  /** Screen position -> feature-space position, plus whether it hit the canvas. */
+  /** Map screen coordinates through the SVG matrix, including letterboxing and CSS scaling. */
   const toData = (event: React.PointerEvent<SVGSVGElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const svgX = ((event.clientX - rect.left) / rect.width) * 930,
-      svgY = ((event.clientY - rect.top) / rect.height) * 410;
+    const svg = event.currentTarget;
+    const matrix = svg.getScreenCTM();
+    if (!matrix) return null;
+    const local = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
+    const svgX = local.x,
+      svgY = local.y;
+    const plotX = Math.max(48, Math.min(882, svgX));
+    const plotY = Math.max(44, Math.min(374, svgY));
     return {
       inside: svgX >= 48 && svgX <= 882 && svgY >= 44 && svgY <= 374,
-      x: domain.xMin + ((svgX - 48) / 834) * (domain.xMax - domain.xMin),
-      y: domain.yMin + ((374 - svgY) / 330) * (domain.yMax - domain.yMin),
+      x: domain.xMin + ((plotX - 48) / 834) * (domain.xMax - domain.xMin),
+      y: domain.yMin + ((374 - plotY) / 330) * (domain.yMax - domain.yMin),
+      scale: Math.hypot(matrix.a, matrix.b),
     };
   };
   const nearestIndex = (x: number, y: number, maxPixels = 13) => {
@@ -439,25 +444,25 @@ export default function KNNClassificationPage() {
   };
   const plotPointerDown = (event: React.PointerEvent<SVGSVGElement>) => {
     const at = toData(event);
-    if (!at.inside) return;
+    if (!at?.inside) return;
     event.currentTarget.setPointerCapture(event.pointerId);
     if (tool === "paint") {
       setPoints((current) => [
         ...current,
         { x: at.x, y: at.y, label: paintClass },
       ]);
-      setTrainedAt(`Added a ${names[paintClass]} sample — re-index to refresh`);
+      setTrainedAt(`Added a ${names[paintClass]} sample — KNN predictions updated`);
       return;
     }
     if (tool === "erase") {
-      const hit = nearestIndex(at.x, at.y, 18);
+      const hit = nearestIndex(at.x, at.y, Math.max(18, 24 / at.scale));
       if (hit < 0 || points.length <= 3) return;
       setPoints((current) =>
         current.filter((_, index) => index !== hit),
       );
       return;
     }
-    const hit = nearestIndex(at.x, at.y);
+    const hit = nearestIndex(at.x, at.y, Math.max(13, (event.pointerType === "touch" ? 24 : 10) / at.scale));
     if (hit >= 0) {
       setDrag({
         target: { kind: "point", index: hit },
@@ -471,6 +476,7 @@ export default function KNNClassificationPage() {
   };
   const plotPointerMove = (event: React.PointerEvent<SVGSVGElement>) => {
     const at = toData(event);
+    if (!at) return;
     if (!drag) {
       const hit = at.inside && tool !== "paint" ? nearestIndex(at.x, at.y) : -1;
       setHoverIndex(hit >= 0 ? hit : null);
@@ -491,6 +497,7 @@ export default function KNNClassificationPage() {
     if (drag?.target.kind === "point") {
       const index = drag.target.index;
       const at = toData(event);
+      if (!at) { setDrag(null); return; }
       const original = drag.points[index];
       const movedPixels = Math.hypot(
         (at.x - original.x) * xScale,
@@ -609,10 +616,10 @@ export default function KNNClassificationPage() {
               {grid.map((cell, index) => (
                 <rect
                   key={index}
-                  x={48 + cell.x * (834 / 39)}
-                  y={44 + (20 - cell.y) * (330 / 21)}
-                  width={834 / 39 + 0.6}
-                  height={330 / 21 + 0.6}
+                  x={48 + cell.x * (834 / gridColumns)}
+                  y={44 + (gridRows - 1 - cell.y) * (330 / gridRows)}
+                  width={834 / gridColumns + 0.6}
+                  height={330 / gridRows + 0.6}
                   fill={FILLS[cell.label]}
                 />
               ))}

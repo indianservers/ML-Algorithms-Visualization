@@ -88,7 +88,7 @@ function Title({ title, query }: { title: string; query: string }) {
 
 export function AiAlgorithmsSection({ globalRoutes }: { globalRoutes?: string[] }) {
   const [query, setQuery] = React.useState('');
-  const [collapsed, setCollapsed] = React.useState(false);
+  const [collapsed, setCollapsed] = React.useState(true);
   const navigate = useNavigate();
   const routeSet = React.useMemo(() => globalRoutes ? new Set(globalRoutes) : null, [globalRoutes]);
   const words = normalized(query).split(/\s+/).filter(Boolean);
@@ -97,9 +97,11 @@ export function AiAlgorithmsSection({ globalRoutes }: { globalRoutes?: string[] 
     const text = normalized(`${lab.title} ${lab.summary} ${'family' in lab ? `${lab.family} ${lab.concepts.join(' ')}` : terms[lab.slug] ?? ''}`);
     return words.every((word) => text.includes(word));
   });
-  const isCollapsed = collapsed;
+  const isCollapsed = collapsed && !query && !globalRoutes;
+  const featuredSlugs = ['a-star-search', 'hill-climbing-search', 'q-learning', 'minimax-search'];
+  const visibleLabs = isCollapsed ? featuredSlugs.flatMap(slug => labs.filter(lab => lab.slug === slug)) : labs;
 
-  return <section className={`hl-ai-section${isCollapsed ? ' is-collapsed' : ''}`} aria-labelledby="hl-ai-title">
+  return <section className="hl-ai-section" aria-labelledby="hl-ai-title">
     <header className="hl-ai-header">
       <span className="hl-ai-mark" aria-hidden="true"><BrainCircuit /></span>
       <div className="hl-ai-heading"><h3 id="hl-ai-title">AI Algorithms Virtual Labs</h3><p>Explore · Visualize · Experiment · Master popular AI algorithms</p></div>
@@ -109,9 +111,9 @@ export function AiAlgorithmsSection({ globalRoutes }: { globalRoutes?: string[] 
         <button className="hl-ai-toggle" type="button" onClick={() => setCollapsed(!collapsed)} aria-expanded={!isCollapsed} aria-controls="hl-ai-grid-body">{isCollapsed ? 'Expand' : 'Collapse'}<ChevronDown aria-hidden="true" /></button>
       </div>
     </header>
-    <div className="hl-ai-body-wrap" id="hl-ai-grid-body" aria-hidden={isCollapsed} inert={isCollapsed}>
+    <div className="hl-ai-body-wrap" id="hl-ai-grid-body">
       <div className="hl-ai-body">
-        {labs.length ? <div className="hl-ai-grid">{labs.map((lab) => <Link className={`hl-ai-card hl-ai-card-${'family' in lab ? 'upcoming' : lab.sourceKey}`} key={lab.slug} to={aiVirtualLabRoute(lab.slug)} aria-label={`${'family' in lab ? 'View upcoming' : 'Open'} ${lab.title} lab`} onKeyDown={(event) => { if (event.key === ' ') { event.preventDefault(); navigate(aiVirtualLabRoute(lab.slug)); } }}>
+        {labs.length ? <div className="hl-ai-grid">{visibleLabs.map((lab) => <Link className={`hl-ai-card hl-ai-card-${'family' in lab ? 'upcoming' : lab.sourceKey}`} key={lab.slug} to={aiVirtualLabRoute(lab.slug)} aria-label={`${'family' in lab ? 'View upcoming' : 'Open'} ${lab.title} lab`} onKeyDown={(event) => { if (event.key === ' ') { event.preventDefault(); navigate(aiVirtualLabRoute(lab.slug)); } }}>
           <span className="hl-ai-copy"><strong><Title title={lab.title} query={query} /></strong><span>{cardDescriptions[lab.slug] ?? lab.summary}</span></span>
           <AiAlgorithmIllustration slug={lab.slug} family={'family' in lab ? lab.family : undefined} />
           <span className="hl-ai-card-actions" aria-hidden="true"><span className="hl-ai-open">{'family' in lab ? 'Upcoming' : 'Open Lab'}</span><span className="hl-ai-arrow"><ChevronRight /></span></span>

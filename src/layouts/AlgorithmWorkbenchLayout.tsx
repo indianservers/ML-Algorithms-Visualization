@@ -30,8 +30,8 @@ export function AlgorithmWorkbenchLayout({
   const location = useLocation();
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[340px_1fr]">
-      <div className="space-y-4 lg:sticky lg:top-4 lg:self-start">
+    <div className="algorithm-workbench grid grid-cols-1 gap-4 lg:gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
+      <div className="min-w-0 space-y-4 lg:sticky lg:top-4 lg:self-start">
         <div data-guide="algo-params">{controls}</div>
         <div data-guide="algo-metrics">{metrics}</div>
         <Card title="Export and Save" subtitle="Keep a copy of this run or add it to your saved experiments.">
@@ -42,16 +42,16 @@ export function AlgorithmWorkbenchLayout({
           </div>
         </Card>
       </div>
-      <div className="space-y-4">
+      <div className="min-w-0 space-y-4 max-lg:order-first">
         <div data-guide="algo-visualize">{visualization}</div>
         {output}
-        <LearningCompanion route={location.pathname} />
         <InfoBox type="info" title="Try This Next">
           Change one parameter at a time, run the model again, and compare how the chart and metrics move. Small controlled changes make the lesson easier to see.
         </InfoBox>
         {warning && <InfoBox type="warning" title="Algorithm-Specific Warning">{warning}</InfoBox>}
         {notes}
       </div>
+      <div className="min-w-0 lg:col-span-2"><LearningCompanion route={location.pathname} /></div>
     </div>
   );
 }

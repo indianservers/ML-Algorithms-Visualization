@@ -10,3 +10,72 @@ html, body { background: transparent; overflow-x: hidden; }
 /* Read-only learning companion links the current state, Q row and update. */
 .qlearning .learning-linked { outline: 2px solid #7756f4; outline-offset: 2px; }
 .qlearning #td .learning-linked { border-radius: 6px; background: #f0ebff; }
+
+/* A phone gets a full-width interactive stage, then settings and results. */
+@media (max-width: 900px) {
+  .app :is(.layout, .lab-layout, .grid:has(> .controls)) {
+    display: flex !important;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .app :is(.layout, .lab-layout, .grid:has(> .controls)) > * { min-width: 0; width: 100%; }
+  .app :is(.layout, .lab-layout, .grid:has(> .controls)) > :is(.visual, .workspace, .canvas-card, .main-column) { order: -1; }
+  .app :is(.controls, .side, .workspace, .canvas-card) { min-height: 0 !important; padding: 12px; }
+  .app :is(.analytics, .right) { display: flex !important; flex-direction: column; }
+  .app :is(.headrow, .canvas-heading, .canvas-tools, .playback, .legend) { flex-wrap: wrap; }
+  .app :is(button, select, input:not([type=checkbox]):not([type=radio])) { min-height: 44px; }
+  .app :is(select, input[type=number], input[type=text]) { font-size: 16px; max-width: 100%; }
+  .app :is(.graph, .graph-area, .tree-area) { height: 380px; min-height: 0; overflow: auto; }
+  .app .graph-canvas { flex: none; max-width: 100%; overflow: auto; }
+  .app .search-svg { width: 100% !important; min-width: 0 !important; height: auto !important; }
+  .app .workspace8 { min-height: 0 !important; max-height: none !important; overflow: visible; }
+  .app .hill-top { min-width: 0 !important; grid-template-columns: minmax(0, 1fr); }
+  .app .queens-board { max-width: 100%; height: auto; }
+  .app .landscape8 { min-width: 0 !important; }
+  .app :is(.bottom7, .ga-bottom, .schedule-body, .model-layout) { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .app .evolution-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .app .evo-stage { min-height: 0; }
+  .app .tablewrap { max-width: 100%; overflow: auto; }
+}
+
+@media (max-width: 900px) {
+  /* Fit the diagram itself; never crop a desktop-sized graph into a scrollbox. */
+  .app :is(.graph-canvas, .graph-area, .graph, .workspace8) {
+    width: 100%; min-width: 0 !important; height: auto !important;
+    max-height: none !important; overflow: visible !important;
+  }
+  .app :is(.graph-canvas, .graph-area, .graph, .workspace8) > svg,
+  .app svg.queens-board,
+  .app svg.network-svg,
+  .app svg.minimax-tree,
+  .app .canvas > svg[viewBox] {
+    display: block; width: 100% !important; min-width: 0 !important;
+    max-width: 100%; height: auto !important;
+  }
+  .app canvas { display: block; max-width: 100%; }
+  .app .canvas:has(> svg[viewBox]) {
+    min-height: 0 !important; height: auto !important;
+    overflow: visible !important;
+  }
+  .app .landscape { height: auto; aspect-ratio: 1 / 1; }
+  .app .landscape canvas { width: 100%; height: 100%; }
+}
+
+.mobile-lab-dock { display: none; }
+@media (max-width: 900px) {
+  .mobile-lab-dock { display: flex; flex-wrap: wrap; gap: 5px; position: sticky; top: 0; z-index: 10; padding: 6px 0; background: #fff; }
+  .mobile-lab-dock button { flex: 1; min-height: 44px; border: 1px solid #bed2ee; border-radius: 8px; background: #edf4ff; color: #163c76; font-size: 12px; font-weight: 700; padding: 5px; }
+  .mobile-lab-dock button:nth-child(2) { background: #226fe5; color: white; }
+  .mobile-workspace .controls, .mobile-workspace .side { display: none !important; }
+  .mobile-workspace.mobile-config-open .controls, .mobile-workspace.mobile-config-open .side { display: block !important; position: fixed; inset: 58px 6px 6px; z-index: 20; overflow: auto; width: auto; max-height: none; box-shadow: 0 8px 35px #17375c40; }
+  .mobile-workspace :is(.graph-canvas, .graph-area, .graph) > svg { height: min(43dvh, 360px) !important; width: 100% !important; }
+  .mobile-workspace .canvas-card { padding: 8px; }
+  .mobile-workspace .canvas-title p { display: none; }
+  .mobile-workspace .canvas-heading { gap: 5px; }
+  .mobile-workspace .canvas-heading h2 { font-size: 15px; }
+  .mobile-workspace .legend { margin: 0; padding: 4px; font-size: 9px; }
+  .mobile-workspace .canvas-tools { min-height: 0; }
+}
+@media (max-width: 900px) {
+  .mobile-workspace.mobile-config-open .controls, .mobile-workspace.mobile-config-open .side { position: absolute; inset: 58px 6px auto; max-height: 43dvh !important; overflow-y: auto !important; }
+}
