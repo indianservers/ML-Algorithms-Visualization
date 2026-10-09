@@ -118,6 +118,8 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
     if (route) navigate(route);
   };
   const plotRef = useRef<HTMLDivElement>(null);
+  const [draggedPoint, setDraggedPoint] = useState<number | null>(null);
+  const [dragCamera, setDragCamera] = useState<Camera | null>(null);
   const safeK = Math.max(1, Math.min(k, Math.max(1, points.length)));
   const result = useMemo(
     () => kmeans(points, safeK, 50, init, seed),
@@ -174,7 +176,8 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
     [points, centroids],
   );
   const fitted = useMemo(() => fitCamera(plotSamples), [plotSamples]);
-  const camera = useMemo(() => zoomCamera(fitted, zoom), [fitted, zoom]);
+  const fittedCamera = useMemo(() => zoomCamera(fitted, zoom), [fitted, zoom]);
+  const camera = dragCamera ?? fittedCamera;
   const plotAt = (x: number, y: number) => ({
     left: ((x - camera.minX) / Math.max(1e-6, camera.maxX - camera.minX)) * 100,
     top: ((camera.maxY - y) / Math.max(1e-6, camera.maxY - camera.minY)) * 100,
@@ -188,6 +191,10 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
   };
   const interact = (event: React.PointerEvent | React.MouseEvent) => {
     const value = coords(event);
+    if (draggedPoint !== null) {
+      setPoints(current => current.map((point, index) => index === draggedPoint ? value : point));
+      return;
+    }
     if (dragging !== null) {
       setManual(centroids.map((c, i) => (i === dragging ? value : c)));
       return;
@@ -307,9 +314,10 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
         <section
           className="km-plot"
           ref={plotRef}
-          onPointerMove={(event) => dragging !== null && interact(event)}
-          onPointerUp={() => setDragging(null)}
-          onPointerLeave={() => setDragging(null)}
+          onPointerMove={(event) => (dragging !== null || draggedPoint !== null) && interact(event)}
+          onPointerUp={() => { setDragging(null); setDraggedPoint(null); setDragCamera(null); }}
+          onPointerCancel={() => { setDragging(null); setDraggedPoint(null); setDragCamera(null); }}
+          onLostPointerCapture={() => { setDragging(null); setDraggedPoint(null); setDragCamera(null); }}
           onClick={(event) => dragging === null && interact(event)}
         >
           <svg viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -360,6 +368,32 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
               <i
                 className="point"
                 key={i}
+                role="button"
+                tabIndex={0}
+                aria-label={`Data point ${i + 1}, cluster ${assignments[i] + 1}`}
+                data-cluster={assignments[i]}
+                data-x={p[0]}
+                data-y={p[1]}
+                onKeyDown={event => {
+                  if (tool !== 'select' || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+                  event.preventDefault();
+                  setPlaying(false);
+                  setManual(centroids.map(centroid => [...centroid]));
+                  const dx = (camera.maxX - camera.minX) / 100;
+                  const dy = (camera.maxY - camera.minY) / 100;
+                  setPoints(current => current.map((point, index) => index === i ? [point[0] + (event.key === 'ArrowRight' ? dx : event.key === 'ArrowLeft' ? -dx : 0), point[1] + (event.key === 'ArrowUp' ? dy : event.key === 'ArrowDown' ? -dy : 0)] : point));
+                }}
+                onPointerDown={event => {
+                  if (tool !== 'select') return;
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setPlaying(false);
+                  setManual(centroids.map(centroid => [...centroid]));
+                  setDragCamera(camera);
+                  setDraggedPoint(i);
+                  plotRef.current?.setPointerCapture(event.pointerId);
+                }}
+                onClick={event => { if (tool === 'select') event.stopPropagation(); }}
                 style={{
                   left: `${left}%`,
                   top: `${top}%`,
@@ -378,6 +412,9 @@ export default function KMeansReferenceLesson({ onAdvanced }: Props) {
                 key={i}
                 onPointerDown={(e) => {
                   e.stopPropagation();
+                  setPlaying(false);
+                  setDragCamera(camera);
+                  plotRef.current?.setPointerCapture(e.pointerId);
                   setDragging(i);
                 }}
                 style={{

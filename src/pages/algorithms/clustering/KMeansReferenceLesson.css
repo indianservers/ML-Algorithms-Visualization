@@ -737,3 +737,8 @@ html:not(.dark) #main-content .km-dark-only .km-page {
   background: var(--glow-page);
   color: #f4f6f9;
 }
+
+.km-plot .point { cursor: grab; touch-action: none; }
+.km-plot .point::after { content: ''; position: absolute; inset: -9px; border-radius: 50%; }
+.km-plot .point:active { cursor: grabbing; }
+.km-plot .point:focus-visible { outline: 2px solid #2563eb; outline-offset: 4px; }
