@@ -1,6 +1,6 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { LabProgressMeter } from "../../../../components/common/LabChrome";
+import { ForestInspector, FOREST_COLORS, FOREST_SYMBOLS } from "./ForestInspector";
 import { LabLessonPanel, useUrlTab } from "../../../../components/common/LabTabs";
 import {
   BarChart3,
@@ -47,17 +47,17 @@ type TabId =
   | "compare"
   | "explain";
 type MaxFeatures = "sqrt" | "log2" | "all";
-const COLORS = ["#32c7dc", "#55b947", "#8b57f0"];
+const COLORS = FOREST_COLORS;
 const NAMES = ["Setosa", "Versicolor", "Virginica"];
 const FEATURES = ["Sepal Length", "Sepal Width", "Petal Length", "Petal Width"];
 const TABS: { id: TabId; label: string }[] = [
   { id: "learn", label: "Learn" },
   { id: "visualize", label: "Visualize" },
   { id: "dataset", label: "Dataset" },
-  { id: "train", label: "Train" },
+  { id: "train", label: "Train and Test" },
   { id: "metrics", label: "Metrics" },
   { id: "compare", label: "Compare" },
-  { id: "explain", label: "Explain" },
+
 ];
 const BASE = datasetGIris().map((row) => ({
   features: row.features,
@@ -102,8 +102,8 @@ const BUILT_INS: Record<Exclude<DatasetId, "imported">, Row[]> = {
 };
 const LABELS: Record<DatasetId, string> = {
   iris: "Iris (Fisher's Iris)",
-  wine: "Wine Classification",
-  seeds: "Wheat Seeds",
+  wine: "Iris rescaled (wine-like demonstration)",
+  seeds: "Iris rescaled (seed-like demonstration)",
   synthetic: "Synthetic Classes",
   imported: "Imported Dataset",
 };
@@ -123,12 +123,12 @@ function MiniTree({
   prediction: number;
   inBag: number;
 }) {
-  const levels = Math.min(3, treeDepth(root));
+  const levels = treeDepth(root);
   return (
-    <article className="rfc-tree">
+    <article className="rfc-tree" role="button" tabIndex={0} aria-label={`Inspect tree ${index}`} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.currentTarget.click(); } }}>
       <header>
         <b>Tree {index}</b>
-        <span>In Bag: {inBag}%</span>
+        <span title="Distinct training samples included in this tree’s bootstrap draw">Training samples used: {inBag}%</span>
       </header>
       <svg viewBox="0 0 150 95">
         <line x1="75" y1="15" x2="47" y2="42" />
@@ -145,7 +145,7 @@ function MiniTree({
         <circle cx="89" cy="72" r="6" className="c2" />
         <circle cx="123" cy="72" r="6" className={`c${prediction}`} />
         <text x="75" y="92" textAnchor="middle">
-          depth {levels}
+          Full depth {levels} · simplified preview
         </text>
       </svg>
       <strong style={{ color: COLORS[prediction] }}>{NAMES[prediction]}</strong>
@@ -155,6 +155,11 @@ function MiniTree({
 
 export default function RandomForestClassificationPage() {
   const [tab, setTab] = useUrlTab<TabId>("visualize");
+  const [selectedSample, setSelectedSample] = useState<number | null>(null);
+  const [inspectedTree, setInspectedTree] = useState(0);
+  const [matrixExplanation, setMatrixExplanation] = useState('');
+  const [trainingRevision, setTrainingRevision] = useState(0);
+  useEffect(() => { if (tab === 'explain') setTab('train'); }, [tab, setTab]);
   const [datasetId, setDatasetId] = useState<DatasetId>("iris");
   const [rows, setRows] = useState<Row[]>(
       BASE.map((row) => ({ features: [...row.features], label: row.label })),
@@ -196,9 +201,11 @@ export default function RandomForestClassificationPage() {
         featureSampleRate: featureRate,
         seed: 2026,
       }),
-    [trainX, trainY, estimators, depth, maxFeatures, bootstrap, minSplit, featureRate],
+    [trainX, trainY, estimators, depth, maxFeatures, bootstrap, minSplit, featureRate, trainingRevision],
   );
-  const probabilities = model.predictProba(query),
+  const singleTree = useMemo(() => trainRandomForestClassification(trainX, trainY, { estimators: 1, maxDepth: depth >= 12 ? null : depth, maxFeatures, bootstrap, minSamplesSplit: minSplit, featureSampleRate: featureRate, seed: 2026 }), [trainX, trainY, depth, maxFeatures, bootstrap, minSplit, featureRate]);
+  const singleAccuracy = split ? split.testX.filter((row, i) => singleTree.predict(row) === split.testY[i]).length / split.nTest : null;
+  const probabilities = Object.fromEntries([0, 1, 2].map(label => [label, model.predictProba(query)[label] ?? 0])),
     prediction = model.predict(query),
     treeVotes = model.treePredictions(query),
     voteCounts = [0, 1, 2].map(
@@ -216,7 +223,7 @@ export default function RandomForestClassificationPage() {
         .length / split.nTest
     : accuracy;
   const oobReady = bootstrap && model.oobSampleCount > 0;
-  const oobLabel = !oob ? "Off" : oobReady ? model.oobAccuracy.toFixed(3) : "N/A";
+  const oobLabel = !oob ? "Off" : oobReady ? (model.oobAccuracy * 100).toFixed(1) + "%" : "N/A";
   const oobConfusion = useMemo(
     () =>
       Array.from({ length: 3 }, (_, actual) =>
@@ -264,9 +271,11 @@ export default function RandomForestClassificationPage() {
       })),
     };
   }, [X, model, query, rows]);
+  useEffect(() => { setSelectedSample(null); }, [rows]);
   const selectDataset = (next: DatasetId) => {
     const source = next === "imported" ? imported : BUILT_INS[next];
     if (!source.length) return;
+    setSelectedSample(null);
     setDatasetId(next);
     setRows(
       source.map((row) => ({ features: [...row.features], label: row.label })),
@@ -275,6 +284,7 @@ export default function RandomForestClassificationPage() {
     setTrained("Ready");
   };
   const reset = () => {
+    setSelectedSample(null);
     setDatasetId("iris");
     setRows(
       BASE.map((row) => ({ features: [...row.features], label: row.label })),
@@ -295,20 +305,18 @@ export default function RandomForestClassificationPage() {
   const upload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    const parsed = (await file.text())
-      .trim()
-      .split(/\r?\n/)
-      .slice(1)
-      .map((line) => line.split(",").map(Number))
-      .filter((values) => values.length >= 5 && values.every(Number.isFinite))
-      .map((values) => ({
-        features: values.slice(0, 4),
-        label: Math.max(0, Math.min(2, Math.round(values[4]))),
-      }));
-    if (parsed.length < 3) {
-      setToast("CSV needs four features and class");
-      return;
+    const lines = (await file.text()).trim().split(/\r?\n/);
+    const header = lines[0]?.split(',').map(value => value.trim().toLowerCase().replace(/[ _-]/g, ''));
+    const expected = ['sepallength', 'sepalwidth', 'petallength', 'petalwidth', 'class'];
+    if (!header || header.length !== 5 || header.some((value, i) => value !== expected[i])) {
+      setToast('CSV header must be Sepal Length,Sepal Width,Petal Length,Petal Width,Class. Class must be 0, 1, or 2.'); event.target.value = ''; return;
     }
+    const values = lines.slice(1).map(line => line.split(',').map(value => value.trim()));
+    if (values.length < 3 || values.some(row => row.length !== 5 || row.some(value => value === '' || !Number.isFinite(Number(value))) || row.slice(0, 4).some(value => Number(value) < 0) || ![0, 1, 2].includes(Number(row[4])))) {
+      setToast('Every row needs four finite nonnegative feature values and an integer class 0, 1, or 2. No rows were imported.'); event.target.value = ''; return;
+    }
+    const parsed = values.map(row => ({ features: row.slice(0, 4).map(Number), label: Number(row[4]) }));
+    setSelectedSample(null);
     setImported(parsed);
     setDatasetId("imported");
     setRows(parsed);
@@ -331,11 +339,18 @@ export default function RandomForestClassificationPage() {
     );
   const visual = (
     <>
+      <section className="forest-overview">
+        <h2 style={{ color: COLORS[prediction] }}>{FOREST_SYMBOLS[prediction]} {NAMES[prediction]} — {voteCounts[prediction]} of {estimators} trees agree</h2>
+        <p>Tree agreement describes votes, not a guarantee of correctness.</p>
+        {selectedSample !== null && <p>Sample {selectedSample + 1} · Actual: {NAMES[rows[selectedSample]?.label]} · Predicted: {NAMES[prediction]} · <strong>{rows[selectedSample]?.label === prediction ? 'Correct' : 'Misclassified'}</strong></p>}
+        <label>Inspect sample <select aria-label="Inspect sample" value={selectedSample ?? ''} onChange={event => { const index = Number(event.target.value); setSelectedSample(index); setQuery(rows[index].features.slice()); }}><option value="" disabled>Custom query</option>{rows.map((row, index) => <option key={index} value={index}>Sample {index + 1} · {NAMES[row.label]}</option>)}</select></label>
+        <details><summary>First experiment: find disagreement</summary><p>Select a point close to a colored boundary. Inspect its actual class, the forest prediction, and one tree’s path. Try a different forest size and see whether agreement changes.</p><button onClick={() => { const index = rows.reduce((best, row, i) => Math.max(...Object.values(model.predictProba(row.features))) < Math.max(...Object.values(model.predictProba(rows[best].features))) ? i : best, 0); setSelectedSample(index); setQuery(rows[index].features.slice()); }}>Find a sample with disagreement</button></details>
+      </section>
       <section className="rfc-visual">
         <h2>
           <Trees /> FOREST PREDICTION VISUALIZER
         </h2>
-        <div className="rfc-trees">
+        <div className="rfc-trees" onClick={event => { const card = (event.target as HTMLElement).closest(".rfc-tree"); if (card) { const label = card.querySelector("header b")?.textContent; setInspectedTree(Number(label?.replace("Tree ", "") ?? 1) - 1); } }}>
           {[0, 1, 2, 3].map((index) => (
             <MiniTree
               key={index}
@@ -345,7 +360,7 @@ export default function RandomForestClassificationPage() {
               inBag={Math.round(
                 (new Set(model.trees[index % model.trees.length].inBagIndices)
                   .size /
-                  rows.length) *
+                  trainX.length) *
                   100,
               )}
             />
@@ -356,7 +371,7 @@ export default function RandomForestClassificationPage() {
             index={estimators}
             prediction={treeVotes.at(-1)!}
             inBag={Math.round(
-              (new Set(model.trees.at(-1)!.inBagIndices).size / rows.length) *
+              (new Set(model.trees.at(-1)!.inBagIndices).size / trainX.length) *
                 100,
             )}
           />
@@ -404,30 +419,36 @@ export default function RandomForestClassificationPage() {
               />
             ))}
             {region.points.map((point, index) => (
-              <b
+              <button type="button" className={selectedSample === index ? 'rfc-data-point selected' : 'rfc-data-point'}
+                data-class={point.label}
+                aria-label={`Sample ${index + 1}: actual ${NAMES[point.label]}, predicted ${NAMES[model.predict(rows[index].features)]}`}
+                onClick={() => { setSelectedSample(index); setQuery(rows[index].features.slice()); }}
+
                 key={index}
                 style={{
                   left: `${point.x}%`,
                   top: `${point.y}%`,
                   background: COLORS[point.label],
+                  color: COLORS[point.label],
                 }}
               />
             ))}
-            <span>PC 1 / petal length</span>
+            <span>Petal length (cm)</span><span className="rfc-y-axis">Petal width (cm)</span>
           </div>
           <aside>
             {NAMES.map((name, index) => (
               <p key={name}>
                 <i style={{ background: COLORS[index] }} />
-                {name}
+                {FOREST_SYMBOLS[index]} {name}
               </p>
             ))}
           </aside>
           <footer>
-            Background shows predicted class regions. Points are actual samples.
+            Background shows predicted classes with sepal length {query[0].toFixed(2)} and sepal width {query[1].toFixed(2)} held fixed. Points show actual classes. Tap a point to inspect it.
           </footer>
         </div>
       </section>
+      <ForestInspector model={model} query={query} treeIndex={inspectedTree} setTreeIndex={setInspectedTree} names={NAMES} features={FEATURES} />
       <div className="rfc-bottom">
         <article className="rfc-vote-dist">
           <h3>
@@ -452,12 +473,10 @@ export default function RandomForestClassificationPage() {
               </p>
             ))}
           </section>
-          <footer>
-            Selected point <button />
-          </footer>
+          <footer>{selectedSample === null ? "Custom query" : `Selected sample ${selectedSample + 1}`}</footer>
         </article>
         <article className="rfc-oob">
-          <h3>OOB PERFORMANCE</h3>
+          <h3>OUT-OF-BAG PERFORMANCE</h3><p>Each training sample is evaluated only by trees that did not train on it. This estimate differs from the untouched test set.</p>
           <div>
             <i />
             <b>{oobLabel}</b>
@@ -475,7 +494,7 @@ export default function RandomForestClassificationPage() {
           <table>
             <thead>
               <tr>
-                <th />
+                <th>Actual ↓ / Predicted →</th>
                 <th>Setosa</th>
                 <th>Versicolor</th>
                 <th>Virginica</th>
@@ -486,16 +505,16 @@ export default function RandomForestClassificationPage() {
                 <tr key={index}>
                   <th>{NAMES[index]}</th>
                   {line.map((value, j) => (
-                    <td key={j}>{oob && oobReady ? value : "—"}</td>
+                    <td key={j}><button disabled={!oob || !oobReady} onClick={() => setMatrixExplanation(`${value} out-of-bag samples were actually ${NAMES[index]} and predicted as ${NAMES[j]}. ${index === j ? "Correct classifications." : "Misclassifications."}`)}>{oob && oobReady ? value : "—"}</button></td>
                   ))}
                 </tr>
               ))}
             </tbody>
           </table>
-          <p>OOB accuracy: {oobLabel}</p>
+          <p>OOB accuracy: {oobLabel}</p><p role="status">{matrixExplanation}</p>
         </article>
         <article className="rfc-importance">
-          <h3>FEATURE IMPORTANCE (MDI)</h3>
+          <h3>FEATURE IMPORTANCE</h3><p>Mean decrease in impurity (MDI): how much a feature reduces class mixing across splits. Importance is not causation and can favor features with many possible split values.</p>
           {model.featureImportance.map((value, index) => (
             <p key={index}>
               <span>{FEATURES[index]}</span>
@@ -517,7 +536,7 @@ export default function RandomForestClassificationPage() {
         <span>{LABELS[datasetId]}</span>
         <span>
           Samples: {rows.length} &nbsp;•&nbsp; Features: 4 &nbsp;•&nbsp;
-          Classes: 3 &nbsp;•&nbsp; Balanced
+          Classes: {new Set(rows.map(row => row.label)).size} &nbsp;•&nbsp; {NAMES.map((name, label) => `${name}: ${rows.filter(row => row.label === label).length}`).join(" · ")}
         </span>
         <button onClick={() => setTab("dataset")}>
           View Dataset <ChevronRight />
@@ -525,6 +544,57 @@ export default function RandomForestClassificationPage() {
       </section>
     </>
   );
+  const inferencePanel = (
+      <section className="rfc-generic rfc-explain">
+        <div className="rfc-title">
+          <span>
+            <FileText /> Live Forest Inference
+          </span>
+        </div>
+        <div className="rfc-query">
+          {FEATURES.map((name, index) => (
+            <label key={name}>
+              {name}
+              <input
+                aria-label={`Query ${name}`}
+                type="number"
+                step=".1"
+                value={query[index]}
+                onChange={(event) =>
+                  setQuery((old) =>
+                    old.map((value, i) =>
+                      i === index ? Number(event.target.value) : value,
+                    ),
+                  )
+                }
+              />
+            </label>
+          ))}
+        </div>
+        <h2>
+          Prediction:{" "}
+          <span style={{ color: COLORS[prediction] }}>{NAMES[prediction]}</span>
+        </h2>
+        <div className="rfc-query-votes">
+          {NAMES.map((name, index) => (
+            <article key={name}>
+              <b style={{ color: COLORS[index] }}>
+                {Math.round(probabilities[index] * 100)}%
+              </b>
+              <span>{name}</span>
+              <i>
+                <em
+                  style={{
+                    width: `${probabilities[index] * 100}%`,
+                    background: COLORS[index],
+                  }}
+                />
+              </i>
+            </article>
+          ))}
+        </div>
+      </section>
+    );
   const panel = () => {
     if (tab === "learn")
       return (
@@ -555,6 +625,7 @@ export default function RandomForestClassificationPage() {
           <p>
             Edit samples directly; every bootstrap tree, OOB vote, region,
             metric, and importance value updates.
+            CSV columns: Sepal Length, Sepal Width, Petal Length, Petal Width, Class. Use class 0 = Setosa, 1 = Versicolor, 2 = Virginica. The other built-ins are demonstrations, not independent wine or seed datasets.
           </p>
           <div>
             <table>
@@ -628,7 +699,7 @@ export default function RandomForestClassificationPage() {
       );
     if (tab === "train")
       return (
-        <section className="rfc-generic rfc-train">
+        <><section className="rfc-generic rfc-train">
           <Trees />
           <h2>Bootstrap and grow the forest</h2>
           <p>
@@ -659,12 +730,13 @@ export default function RandomForestClassificationPage() {
               <span>Train accuracy</span>
             </article>
             <article>
-              <b>{(testAccuracy * 100).toFixed(1)}%</b>
+              <b>{split ? `${(testAccuracy * 100).toFixed(1)}%` : 'Unavailable'}</b>
               <span>Test accuracy</span>
             </article>
           </div>
           <button
             onClick={() => {
+              setTrainingRevision(value => value + 1);
               setTrained(
                 `Trained ${estimators} trees with OOB ${oobLabel}`,
               );
@@ -673,8 +745,8 @@ export default function RandomForestClassificationPage() {
           >
             <Play /> Train / Retrain Forest
           </button>
-          <small>{trained}</small>
-        </section>
+          <small role="status">{trained}</small>
+        </section>{inferencePanel}{visual}</>
       );
     if (tab === "metrics")
       return (
@@ -690,7 +762,7 @@ export default function RandomForestClassificationPage() {
               <span>Train accuracy</span>
             </article>
             <article>
-              <b>{(testAccuracy * 100).toFixed(1)}%</b>
+              <b>{split ? `${(testAccuracy * 100).toFixed(1)}%` : 'Unavailable'}</b>
               <span>Test accuracy</span>
             </article>
             <article>
@@ -714,9 +786,10 @@ export default function RandomForestClassificationPage() {
         <section className="rfc-generic">
           <div className="rfc-title">
             <span>
-              <Network /> Feature Sampling Comparison
+              <Network /> Compare one tree with a forest
             </span>
           </div>
+          <p>Same 80/20 split, seed, depth and feature settings. Only the number of trees changes.</p><table><thead><tr><th>Model</th><th>Held-out test accuracy</th></tr></thead><tbody><tr><td>One tree</td><td>{singleAccuracy === null ? "Unavailable" : `${(singleAccuracy * 100).toFixed(1)}%`}</td></tr><tr><td>{estimators} trees</td><td>{split ? `${(testAccuracy * 100).toFixed(1)}%` : "Unavailable"}</td></tr></tbody></table><p>A forest combines varied trees and can reduce sensitivity to a single tree’s mistakes. More trees do not guarantee a higher score on this split.</p><h3>Try feature sampling</h3>
           <div className="rfc-compare">
             {(["sqrt", "log2", "all"] as MaxFeatures[]).map((option) => (
               <article
@@ -737,57 +810,7 @@ export default function RandomForestClassificationPage() {
           </div>
         </section>
       );
-    return (
-      <section className="rfc-generic rfc-explain">
-        <div className="rfc-title">
-          <span>
-            <FileText /> Live Forest Inference
-          </span>
-        </div>
-        <div className="rfc-query">
-          {FEATURES.map((name, index) => (
-            <label key={name}>
-              {name}
-              <input
-                aria-label={`Query ${name}`}
-                type="number"
-                step=".1"
-                value={query[index]}
-                onChange={(event) =>
-                  setQuery((old) =>
-                    old.map((value, i) =>
-                      i === index ? Number(event.target.value) : value,
-                    ),
-                  )
-                }
-              />
-            </label>
-          ))}
-        </div>
-        <h2>
-          Prediction:{" "}
-          <span style={{ color: COLORS[prediction] }}>{NAMES[prediction]}</span>
-        </h2>
-        <div className="rfc-query-votes">
-          {NAMES.map((name, index) => (
-            <article key={name}>
-              <b style={{ color: COLORS[index] }}>
-                {Math.round(probabilities[index] * 100)}%
-              </b>
-              <span>{name}</span>
-              <i>
-                <em
-                  style={{
-                    width: `${probabilities[index] * 100}%`,
-                    background: COLORS[index],
-                  }}
-                />
-              </i>
-            </article>
-          ))}
-        </div>
-      </section>
-    );
+    return null;
   };
   const sampleCount =
     sampleMode === "inbag"
@@ -880,9 +903,8 @@ export default function RandomForestClassificationPage() {
             </p>
           </div>
           <aside>
-            <span>LESSON PROGRESS</span>
-            <LabProgressMeter />
-            <button onClick={() => setToast("Documentation panel ready")}>
+
+            <button onClick={() => setTab("learn")}>
               <FileText /> Docs
             </button>
             <button
@@ -941,10 +963,10 @@ export default function RandomForestClassificationPage() {
         <div className="rfc-workspace">
           <div className="rfc-main">{panel()}</div>
           <aside className="rfc-controls">
-            <h2>MODEL CONTROLS</h2>
+            <h2>MODEL CONTROLS</h2><p className="forest-help">Settings update the model immediately. Train / Retrain recomputes the forest with the current settings and the same seed.</p>
             <section>
               <label>
-                Forest Size (n_estimators)
+                Number of trees (forest size)
                 <input
                   aria-label="Forest Size numeric"
                   type="number"
@@ -972,14 +994,14 @@ export default function RandomForestClassificationPage() {
                 <span>500</span>
               </div>
               <label>
-                Max Depth
+                Maximum tree depth
                 <input
                   aria-label="Max Depth numeric"
                   type="number"
                   min="1"
                   max="12"
                   value={depth}
-                  onChange={(event) => setDepth(Number(event.target.value))}
+                  onChange={(event) => setDepth(Math.max(1, Math.min(12, Number(event.target.value))))}
                 />
               </label>
               <input
@@ -1006,7 +1028,7 @@ export default function RandomForestClassificationPage() {
                 <option value="log2">log₂</option>
                 <option value="all">All features</option>
               </select>
-              <small>Number of features to consider at each split.</small>
+              <small>Only these randomly chosen features compete at each split. Different choices make the trees less alike. More trees smooth votes; deeper trees can memorize training samples.</small>
             </section>
             <section>
               <label>
@@ -1028,7 +1050,7 @@ export default function RandomForestClassificationPage() {
                   min="2"
                   max="20"
                   value={minSplit}
-                  onChange={(event) => setMinSplit(Number(event.target.value))}
+                  onChange={(event) => setMinSplit(Math.max(2, Math.min(20, Number(event.target.value))))}
                 />
               </label>
               <input
@@ -1071,7 +1093,7 @@ export default function RandomForestClassificationPage() {
                   step=".01"
                   value={featureRate}
                   onChange={(event) =>
-                    setFeatureRate(Number(event.target.value))
+                    setFeatureRate(Math.max(0.1, Math.min(1, Number(event.target.value))))
                   }
                 />
               </label>
@@ -1098,7 +1120,7 @@ export default function RandomForestClassificationPage() {
                   }
                 >
                   {Array.from(
-                    { length: Math.min(estimators, 20) },
+                    { length: estimators },
                     (_, index) => (
                       <option key={index} value={index + 1}>
                         Tree {index + 1}

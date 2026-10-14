@@ -9,7 +9,7 @@ import {
   YAxis,
 } from "recharts";
 import { Play, Repeat, RotateCcw, Upload } from "lucide-react";
-import { PageHeader } from "../../../components/common/PageHeader";
+import { RNNSequenceExplorer } from "./RNNSequenceExplorer";
 import { DEEP_LEARNING_TABS, LabLessonPanel, isLabTab, useLabTabs } from "../../../components/common/LabTabs";
 import { DeepLearningExtraPanel } from "../../../components/common/DeepLearningExtraPanel";
 import { Formula } from "../../../components/common/Formula";
@@ -59,8 +59,11 @@ export default function RNNPage() {
   const [noise, setNoise] = useState(0);
   const [step, setStep] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState(1000);
+  const [beforeTraining, setBeforeTraining] = useState("");
   const [training, setTraining] = useState(false);
   const [trained, setTrained] = useState(false);
+  const [modelDirty, setModelDirty] = useState(false);
   const [history, setHistory] = useState<RNNTrainEpoch[]>([]);
   const [prompt, setPrompt] = useState("");
   const [inferText, setInferText] = useState("");
@@ -92,7 +95,7 @@ export default function RNNPage() {
   }, [dataset, vocab]);
 
   const weights = useMemo(() => {
-    if (!weightsRef.current) {
+    if (!weightsRef.current || weightsRef.current.Whh.length !== hiddenSize || weightsRef.current.Wxh[0]?.length !== inputSize || weightsRef.current.Why.length !== outputSize) {
       weightsRef.current = createRnnWeights(hiddenSize, inputSize, outputSize, init, 0);
     }
     return weightsRef.current;
@@ -107,9 +110,7 @@ export default function RNNPage() {
         noise,
         dataset.kind,
         vocab,
-        dataset.kind === "text"
-          ? dataset.tokens.map((token) => Math.max(0, vocab.indexOf(token)))
-          : packed.view.map((row) => row[0] ?? 0),
+        packed.ys,
       ),
     [packed, weights, activation, noise, dataset, vocab],
   );
@@ -117,46 +118,6 @@ export default function RNNPage() {
   const maxStep = Math.max(0, (dataset.kind === "text" ? dataset.tokens.length : dataset.values.length) - 1);
   const visibleStep = Math.min(step, maxStep);
   const latest = history[history.length - 1];
-
-  const seriesChart = useMemo(() => {
-    if (dataset.kind !== "series") return [];
-    return dataset.values.map((value, index) => ({
-      t: dataset.labels[index] || `t${index}`,
-      actual: value,
-      predicted: denorm(result.predictions[index]?.value ?? 0, dataset.values),
-    }));
-  }, [dataset, result.predictions]);
-
-  const hiddenChart = useMemo(
-    () =>
-      result.states.slice(1).map((state, index) => ({
-        t: index,
-        h0: Number((state[0] ?? 0).toFixed(3)),
-        h1: Number((state[1] ?? 0).toFixed(3)),
-        h2: Number((state[2] ?? 0).toFixed(3)),
-      })),
-    [result.states],
-  );
-
-  const gradientChart = useMemo(
-    () => result.gradientNorms.map((value, index) => ({ t: index, g: Number(value.toFixed(4)) })),
-    [result.gradientNorms],
-  );
-
-  const shuffledMae = useMemo(() => {
-    if (dataset.kind !== "series" || dataset.values.length < 4) return result.mae;
-    const shuffled = [...dataset.values];
-    for (let i = shuffled.length - 1; i > 0; i -= 1) {
-      const j = (i * 17 + 5) % (i + 1);
-      const held = shuffled[i]!;
-      shuffled[i] = shuffled[j]!;
-      shuffled[j] = held;
-    }
-    const xs = encodeSeriesInputs(shuffled, dataset.extras).slice(0, -1);
-    const ys = encodeSeriesInputs(shuffled).slice(1).map((row) => row[0] ?? 0);
-    const run = forwardRnn(xs, weights, activation, 0, "series", [], ys);
-    return run.mae;
-  }, [dataset, weights, activation, result.mae]);
 
   const persistMae = useMemo(() => {
     if (dataset.kind !== "series") return 0;
@@ -173,10 +134,18 @@ export default function RNNPage() {
   useEffect(() => {
     if (!playing) return undefined;
     const timer = window.setInterval(() => {
-      setStep((current) => (current >= maxStep ? 0 : current + 1));
-    }, 700);
+      setStep(current => { if(current >= maxStep) {setPlaying(false); return maxStep;} return current+1; });
+    }, speed);
     return () => window.clearInterval(timer);
-  }, [playing, maxStep]);
+  }, [playing, maxStep, speed]);
+  useEffect(() => { if (isLabTab(tab, "Inference")) setTab("Build / Train"); }, [tab, setTab]);
+  const comparison = useMemo(() => {
+    const indices = Array.from({length:packed.view.length}, (_,i)=>i);
+    for(let i=indices.length-1;i>0;i--) { const j=(i*17+5)%(i+1); [indices[i],indices[j]]=[indices[j]!,indices[i]!]; }
+    const inputs=indices.map(i=>packed.view[i]!);
+    const targets=indices.slice(1).map(i=>dataset.kind==='text'?vocab.indexOf(dataset.tokens[i]!):packed.view[i]?.[0]??0);
+    return forwardRnn(inputs,weights,activation,noise,dataset.kind,vocab,targets);
+  }, [packed,weights,activation,noise,dataset,vocab]);
 
   useEffect(
     () => () => {
@@ -188,17 +157,18 @@ export default function RNNPage() {
   const rebuildWeights = () => {
     weightsRef.current = createRnnWeights(hiddenSize, inputSize, outputSize, init, 0);
     setHistory([]);
-    setTrained(false);
+    setTrained(false); setModelDirty(true);
     setStatus("Weights reinitialized. Train to fit this dataset.");
   };
 
   const loadDataset = (sample: RnnLabDataset) => {
     setDataset(cloneDataset(sample));
-    setStep(Math.min(3, sample.tokens.length - 1));
+    setStep(0);
+    setBeforeTraining("");
     setPlaying(false);
     weightsRef.current = null;
     setHistory([]);
-    setTrained(false);
+    setTrained(false); setModelDirty(true);
     setInferText("");
     setStatus(`Loaded ${sample.name}. Edit it, then train.`);
   };
@@ -218,7 +188,7 @@ export default function RNNPage() {
       extras: [],
     }));
     weightsRef.current = null;
-    setTrained(false);
+    setTrained(false); setModelDirty(true);
     setHistory([]);
     setStatus(`Edited text sequence · ${tokens.length} tokens. Train again.`);
   };
@@ -229,7 +199,7 @@ export default function RNNPage() {
       values[index] = next;
       return { ...current, id: `${current.id.split("-edit")[0]}-edit`, values, tokens: values.map(String) };
     });
-    setTrained(false);
+    setTrained(false); setModelDirty(true);
     setStatus("Dataset edited. Train to refresh weights.");
   };
 
@@ -241,7 +211,7 @@ export default function RNNPage() {
       const labels = [...current.labels, `t${values.length - 1}`];
       return { ...current, id: `${current.id.split("-edit")[0]}-edit`, values, extras, labels, tokens: values.map(String) };
     });
-    setTrained(false);
+    setTrained(false); setModelDirty(true);
   };
 
   const removeRow = (index: number) => {
@@ -252,7 +222,7 @@ export default function RNNPage() {
       const labels = current.labels.filter((_, i) => i !== index);
       return { ...current, values, extras, labels, tokens: values.map(String) };
     });
-    setTrained(false);
+    setTrained(false); setModelDirty(true);
   };
 
   const upload = (event: ChangeEvent<HTMLInputElement>) => {
@@ -307,6 +277,7 @@ export default function RNNPage() {
       return;
     }
     cancelRef.current = false;
+    setBeforeTraining(dataset.kind === "text" ? result.predictions[visibleStep]?.token ?? "" : denorm(result.predictions[visibleStep]?.value ?? 0, dataset.values).toFixed(2));
     setTraining(true);
     setStatus("Training vanilla RNN with BPTT…");
     let current = createRnnWeights(hiddenSize, inputSize, outputSize, init, 0);
@@ -320,7 +291,7 @@ export default function RNNPage() {
       setHistory([...nextHistory]);
       await new Promise((resolve) => window.requestAnimationFrame(() => resolve(null)));
     }
-    setTrained(true);
+    setTrained(true); setModelDirty(false);
     setTraining(false);
     const last = nextHistory[nextHistory.length - 1];
     setStatus(
@@ -334,6 +305,8 @@ export default function RNNPage() {
     if (dataset.kind === "text") {
       const extra = prompt.trim().split(/\s+/).filter(Boolean);
       const tokens = extra.length ? extra : dataset.tokens;
+      const unknown = tokens.filter(token => !vocab.includes(token));
+      if (unknown.length) {setInferText(`Unfamiliar tokens: ${[...new Set(unknown)].join(", ")}. Use words in the learned vocabulary.`); return;}
       const xs = encodeTextInputs(tokens, vocab);
       const pred = inferNext(xs, weights, activation, "text", vocab);
       setInferText(`${tokens.join(" ")} → ${pred.token} (${(pred.probability * 100).toFixed(0)}%)`);
@@ -346,20 +319,12 @@ export default function RNNPage() {
   const tokens = dataset.kind === "text" ? dataset.tokens : dataset.values.map((value) => value.toFixed(1));
 
   return (
-    <div className="rnn-lab">
-      <PageHeader
-        title="Recurrent Neural Network"
-        subtitle="Load a real sequence, edit it, train a vanilla RNN with BPTT, then watch hidden state, decay, and next-step inference update live."
-        badge="Advanced"
-        category="Deep Learning"
-        icon={<Repeat size={22} />}
-        showAlgorithmIntro={false}
-        showAlgorithmTools={false}
-      />
+    <div className="rnn-lab" data-training-feedback="inline">
+      <header className="rnn-compact-head"><Repeat size={22}/><h1>Recurrent Neural Network</h1><span>{training ? "Training" : trained ? "Trained" : modelDirty ? "Changes pending" : "Untrained"}</span></header>
       <nav className="rnn-tabs" role="tablist" aria-label="RNN lab tabs">
-        {DEEP_LEARNING_TABS.map((name) => (
-          <button key={name} role="tab" aria-selected={tab === name} onClick={() => setTab(name)}>
-            {name}
+        {DEEP_LEARNING_TABS.filter(name => name !== "Inference").map((name) => (
+          <button key={name} role="tab" disabled={training} aria-selected={tab === name} onClick={() => setTab(name)}>
+            {name === "Build / Train" ? "Train and Test" : name}
           </button>
         ))}
       </nav>
@@ -392,108 +357,15 @@ export default function RNNPage() {
           <article className="rnn-card">
             <h3>Why long stories fade</h3>
             <p>
-              Backprop multiplies W_hh at every lag. If those singular values sit below 1, early gradients vanish. That
-              is the Information Decay chart on Visualize — it is this dataset's hidden-state cosine, not decoration.
+              Backprop repeatedly applies recurrent weights and activation derivatives. Repeated shrinking can make early gradients tiny. That
+              is the Hidden-state similarity chart on Visualize — it is this dataset's signed hidden-state cosine, not a direct measure of retained information.
             </p>
-            <p>Open Dataset, pick Daily temperature, train, then check Metrics. Shuffle the series and the model should get worse if it actually used order.</p>
+            <p>Open Dataset, pick Daily temperature, train, then check Metrics. Compare the original and shuffled sequence to explore sensitivity to order.</p>
           </article>
         </div>
       )}
 
-      {isLabTab(tab, "Visualize", "Inference") && (
-        <div className="rnn-grid">
-          <article className="rnn-card">
-            <header style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-              <div>
-                <h2>Unrolled on {dataset.name}</h2>
-                <p>Each cell shares W_hh. Click a step or play to walk the current sequence.</p>
-              </div>
-              <div className="rnn-actions">
-                <button type="button" onClick={() => setPlaying((value) => !value)}>
-                  <Play size={14} /> {playing ? "Pause" : "Play"}
-                </button>
-              </div>
-            </header>
-            <div className="rnn-unroll">
-              {tokens.map((token, index) => (
-                <button
-                  type="button"
-                  key={`${token}-${index}`}
-                  className={`rnn-cell${index === visibleStep ? " on" : ""}`}
-                  onClick={() => setStep(index)}
-                >
-                  <b>t={index}</b>
-                  <strong>{token}</strong>
-                  <i>
-                    ŷ {dataset.kind === "text"
-                      ? result.predictions[index]?.token
-                      : denorm(result.predictions[index]?.value ?? 0, dataset.values).toFixed(1)}
-                  </i>
-                </button>
-              ))}
-            </div>
-          </article>
-          <div className="rnn-charts">
-            <article className="rnn-card">
-              <h3>Hidden trajectories</h3>
-              <p>First three units of h_t on this dataset.</p>
-              <ResponsiveContainer width="100%" height={180}>
-                <LineChart data={hiddenChart}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="t" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="h0" stroke="#2563eb" dot={false} />
-                  <Line type="monotone" dataKey="h1" stroke="#059669" dot={false} />
-                  <Line type="monotone" dataKey="h2" stroke="#d97706" dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </article>
-            <article className="rnn-card">
-              <h3>Gradient flow</h3>
-              <p>BPTT gradient norm walking backward from the last step.</p>
-              <ResponsiveContainer width="100%" height={180}>
-                <LineChart data={gradientChart}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="t" />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="g" stroke="#dc2626" dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </article>
-            <article className="rnn-card">
-              <h3>Information decay</h3>
-              <p>How much each past hidden state still matches the latest h_T.</p>
-              {result.decay.map((value, index) => (
-                <label className="rnn-bar" key={index}>
-                  t={index}
-                  <span>
-                    <i style={{ width: `${Math.max(4, value * 100)}%` }} />
-                  </span>
-                  {value.toFixed(2)}
-                </label>
-              ))}
-            </article>
-          </div>
-          {dataset.kind === "series" && (
-            <article className="rnn-card">
-              <h3>Live series vs prediction</h3>
-              <p>Actual values and the RNN readout after the current weights (train to tighten the fit).</p>
-              <ResponsiveContainer width="100%" height={220}>
-                <LineChart data={seriesChart}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="t" hide={seriesChart.length > 16} />
-                  <YAxis />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="actual" stroke="#0f172a" strokeWidth={2} dot={false} />
-                  <Line type="monotone" dataKey="predicted" stroke="#2563eb" strokeDasharray="4 3" dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </article>
-          )}
-        </div>
-      )}
+      {isLabTab(tab, "Visualize") && <RNNSequenceExplorer dataset={dataset} result={result} step={visibleStep} setStep={setStep} playing={playing} setPlaying={setPlaying} speed={speed} setSpeed={setSpeed} trained={trained} comparison={comparison} onDemo={() => {loadDataset(RNN_DATASETS[0]!);setSpeed(1800);setPlaying(true);}}/>}
 
       {isLabTab(tab, "Dataset") && (
         <div className="rnn-grid two">
@@ -580,7 +452,10 @@ export default function RNNPage() {
       {isLabTab(tab, "Build / Train") && (
         <div className="rnn-grid two">
           <article className="rnn-card">
-            <h2>Build / train</h2>
+            <h2>Train and Test</h2>
+            <fieldset disabled={training}>
+            <div className="rnn-actions">{[{name:"Quick demo",size:8,epochs:12},{name:"Small memory",size:4,epochs:24},{name:"Larger memory",size:16,epochs:36}].map(p => <button disabled={training} key={p.name} onClick={() => {setHiddenSize(p.size);setEpochs(p.epochs);setLearningRate(.08);weightsRef.current=null;setHistory([]);setTrained(false); setModelDirty(true);}}>{p.name}</button>)}</div>
+            <p>Hidden size = number of memory features. Learning rate = size of each weight update. Activation shapes the memory values. Initialization sets the starting weights; orthogonal is a useful recurrent default.</p>
             <p>Vanilla RNN, shared weights, real BPTT on the dataset in Dataset. Charts update every epoch.</p>
             <label>
               Hidden size {hiddenSize}
@@ -591,13 +466,13 @@ export default function RNNPage() {
                 value={hiddenSize}
                 onChange={(event) => {
                   setHiddenSize(Number(event.target.value));
-                  rebuildWeights();
+                  weightsRef.current=null; setHistory([]); setTrained(false); setModelDirty(true);
                 }}
               />
             </label>
             <label>
               Activation
-              <select value={activation} onChange={(event) => setActivation(event.target.value as RNNActivation)}>
+              <select value={activation} onChange={(event) => {setActivation(event.target.value as RNNActivation);setTrained(false);setModelDirty(true);setStatus("Activation changed. Train again.");}}>
                 <option value="tanh">tanh</option>
                 <option value="relu">ReLU</option>
                 <option value="sigmoid">sigmoid</option>
@@ -609,7 +484,7 @@ export default function RNNPage() {
                 value={init}
                 onChange={(event) => {
                   setInit(event.target.value as RNNWeightInit);
-                  rebuildWeights();
+                  weightsRef.current=null; setHistory([]); setTrained(false); setModelDirty(true);
                 }}
               >
                 <option value="orthogonal">Orthogonal W_hh</option>
@@ -640,7 +515,7 @@ export default function RNNPage() {
                 max={0.4}
                 step={0.05}
                 value={noise}
-                onChange={(event) => setNoise(Number(event.target.value))}
+                onChange={(event) => {setNoise(Number(event.target.value));setTrained(false);setModelDirty(true);}}
               />
             </label>
             <div className="rnn-actions">
@@ -651,6 +526,7 @@ export default function RNNPage() {
                 <RotateCcw size={14} /> Reset weights
               </button>
             </div>
+            </fieldset>
           </article>
           <article className="rnn-card">
             <h3>Live loss</h3>
@@ -671,7 +547,8 @@ export default function RNNPage() {
                 )}
               </LineChart>
             </ResponsiveContainer>
-            <h3>Live inference</h3>
+            {beforeTraining && <p>Before training at selected step: <b>{beforeTraining}</b> → Now: <b>{dataset.kind === "text" ? result.predictions[visibleStep]?.token : denorm(result.predictions[visibleStep]?.value ?? 0,dataset.values).toFixed(2)}</b></p>}
+            <h3>Test the trained model</h3>
             {dataset.kind === "text" ? (
               <label>
                 Prompt (blank = current sequence)
@@ -707,7 +584,7 @@ export default function RNNPage() {
           <article className="rnn-card">
             <h3>Last gradient norm</h3>
             <p className="rnn-metric">{(result.gradientNorms.at(-1) ?? 0).toFixed(4)}</p>
-            <small>If this collapses while the sequence is long, you are seeing vanishing gradients.</small>
+            <small>Final-state sensitivity propagated backward. A small norm alone does not measure retained information.</small>
           </article>
           <article className="rnn-card" style={{ gridColumn: "1 / -1" }}>
             <h3>Per-step readout</h3>
@@ -748,8 +625,8 @@ export default function RNNPage() {
           </article>
           <article className="rnn-card">
             <h3>Shuffled order</h3>
-            <p className="rnn-metric">{dataset.kind === "series" ? shuffledMae.toFixed(3) : "n/a"}</p>
-            <small>Same weights, scrambled time. A real RNN should do worse here.</small>
+            <p className="rnn-metric">{dataset.kind === "series" ? comparison.mae.toFixed(3) : `${(comparison.accuracy * 100).toFixed(0)}%`}</p>
+            <small>Same weights, scrambled time. Compare the measured result; shuffling does not guarantee a worse score.</small>
           </article>
           <article className="rnn-card">
             <h3>Persistence baseline</h3>
@@ -759,7 +636,7 @@ export default function RNNPage() {
           <article className="rnn-card" style={{ gridColumn: "1 / -1" }}>
             <h3>When to leave vanilla RNN</h3>
             <p>
-              If Information Decay on Visualize is already near zero by lag 6, LSTM/GRU gates are the next lab. This page
+              For long dependencies, compare vanilla RNN with LSTM/GRU; low similarity alone does not establish forgetting. This page
               stays a plain Elman RNN on purpose so that failure mode is visible.
             </p>
           </article>
@@ -782,13 +659,13 @@ export default function RNNPage() {
             </p>
             <p>
               Gradient at the earliest lag is {(result.gradientNorms.at(-1) ?? 0).toFixed(4)}. Decay at the first step is{" "}
-              {(result.decay[0] ?? 0).toFixed(2)}. If both are tiny, the notebook forgot the start of {dataset.name}.
+              {(result.decay[0] ?? 0).toFixed(2)}. These measure similarity and sensitivity; neither proves that the model forgot the sequence.
             </p>
           </article>
           <article className="rnn-card">
             <h3>How to read a good run</h3>
             <p>1. Dataset tab: pick a real series and edit a spike. 2. Train until loss drops. 3. Visualize: predicted line should chase the spike. 4. Compare: shuffled MAE should rise.</p>
-            <p>Text runs are next-token only inside this vocabulary. A token you never trained on maps to the first vocab slot.</p>
+            <p>Text runs are next-token only inside this vocabulary. Unfamiliar prompt tokens are flagged before inference.</p>
           </article>
         </div>
       )}

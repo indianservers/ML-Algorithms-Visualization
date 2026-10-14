@@ -17,6 +17,7 @@ type Run = {
 };
 
 function isTrainingAction(button: HTMLButtonElement) {
+  if (button.closest('[data-training-feedback="inline"]')) return false;
   if (button.disabled || button.closest('nav, [role="tablist"], [role="tab"], [data-ml-lesson-tabs], [class*="-tabs"]')) return false;
   if (button.closest(".training-activity")) return false;
   const label = `${button.getAttribute("aria-label") ?? ""} ${button.textContent ?? ""}`.replace(/\s+/g, " ").trim().toLowerCase();

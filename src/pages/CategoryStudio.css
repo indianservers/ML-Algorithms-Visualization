@@ -1,0 +1,19 @@
+.category-studio { min-height: calc(100dvh - 100px); }
+.category-studio .cv-sidebar { background: linear-gradient(180deg,#1d4ed8 0%,#1e3a8a 28%,#0f172a 100%) !important; color: #eef3ff; }
+.category-studio .cv-sidebar-nav a { color: #c9d8f5; }
+.category-studio .cv-sidebar-nav a.is-active { color: #fff; }
+.category-studio .cv-home-stats article { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.category-studio .cv-home-stats article b { font-size: 18px; }
+.category-studio .cv-home-stats article span { font-size: 12px; }
+.category-studio .cv-page-head h1 { display: flex; align-items: center; gap: 8px; }
+.studio-search { display: flex; align-items: center; gap: 10px; border: 1px solid var(--cv-line); border-radius: 12px; padding: 10px 12px; background: var(--cv-fill); margin: 16px 0; }
+.studio-search input { width: 100%; min-width: 0; color: var(--cv-ink); background: transparent; border: 0; font-size: 16px; }
+.studio-search button { background: transparent; border: 0; color: var(--cv-muted); min-width: 32px; min-height: 32px; }
+.category-studio .studio-thumb { display: grid; place-items: center; min-height: 130px; background: linear-gradient(135deg, var(--cv-accent-soft), var(--cv-wash)); position: relative; }
+.category-studio .cv-home-card-body strong { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.category-studio .cv-home-card-body small, .studio-count { color: var(--cv-muted); font-size: 12px; }
+.category-studio .cv-filters { flex-wrap: wrap; }
+.category-studio .cv-filters button { min-height: 40px; }
+.hl-studio-link { color: var(--text-primary); font-size: 12px; font-weight: 700; padding: 8px; white-space: nowrap; }
+@media (max-width: 960px) { .category-studio { display: flex; flex-direction: column; height: auto; } .category-studio .cv-studio-main { overflow: visible; } }
+@media (max-width: 600px) { .category-studio .cv-home-stats { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); } .category-studio .cv-home-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; } .category-studio .cv-home-card-body { padding: 10px; } .category-studio .cv-home-card-body strong { font-size: 13px; } .category-studio .cv-home-card-body em { font-size: 12px; } .category-studio .studio-thumb { min-height: 110px; } .category-studio .cv-page-head h1 { font-size: 18px; } .hl-group-head { flex-wrap: wrap; } }

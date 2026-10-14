@@ -1,5 +1,6 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { svmContours } from "./svmContours";
 import { LabProgressMeter } from "../../../../components/common/LabChrome";
 import { LabLessonPanel, useUrlTab } from "../../../../components/common/LabTabs";
 import {
@@ -54,10 +55,10 @@ const TABS: [Tab, string][] = [
   ["learn", "Learn"],
   ["visualize", "Visualize"],
   ["dataset", "Dataset"],
-  ["train", "Train"],
+  ["train", "Train and Test"],
   ["metrics", "Metrics"],
   ["compare", "Compare"],
-  ["explain", "Explain"],
+
 ];
 const LABELS: Record<Dataset, string> = {
   moons: "Moons",
@@ -87,6 +88,14 @@ const BUILT_INS = {
 
 export default function SVMClassificationLesson() {
   const [tab, setTab] = useUrlTab<Tab>("visualize");
+  const [selected, setSelected] = useState<number | null>(null);
+  const [degree, setDegree] = useState(3);
+  const [coef0, setCoef0] = useState(1);
+  const [revision, setRevision] = useState(0);
+  const dragRef = useRef<number | null>(null);
+  const plotRef = useRef<HTMLDivElement>(null);
+  const dragBounds = useRef<{ x0: number; x1: number; y0: number; y1: number } | null>(null);
+  useEffect(() => { if (tab === 'explain') setTab('train'); }, [tab, setTab]);
   const [dataset, setDataset] = useState<Dataset>("moons");
   const [points, setPoints] = useState<Point[]>(BUILT_INS.moons);
   const [imported, setImported] = useState<Point[]>([]);
@@ -121,12 +130,14 @@ export default function SVMClassificationLesson() {
           C: cValue,
           kernel,
           gamma,
+          degree,
+          coef0,
           standardize,
           maxPasses: 5,
           maxIterations: 600,
         },
       ),
-    [points, split, cValue, kernel, gamma, standardize],
+    [points, split, cValue, kernel, gamma, degree, coef0, standardize, revision],
   );
   const metrics = binaryMetrics(
     split?.testY ?? points.map((point) => point.label),
@@ -134,8 +145,20 @@ export default function SVMClassificationLesson() {
       model.predict(row),
     ),
   );
-  const support = new Set(model.supportIndices);
+  const trainingRows = split?.trainX ?? points.map(point => [point.x, point.y]);
+  const support = new Set(points.flatMap((point, index) => model.supportIndices.some(i => trainingRows[i]?.[0] === point.x && trainingRows[i]?.[1] === point.y) ? [index] : []));
+  const signedScore = model.score([query.x, query.y]);
+  const selectedPoint = selected === null ? null : points[selected];
+  const comparison = useMemo(() => tab !== 'compare' ? [] : (['linear', 'rbf', 'polynomial', 'sigmoid'] as SvmKernel[]).map(value => {
+    const start = performance.now();
+    const trainedModel = trainSvmClassification(split?.trainX ?? points.map(point => [point.x, point.y]), split?.trainY ?? points.map(point => point.label), { C: cValue, kernel: value, gamma, degree, coef0, standardize, maxPasses: 5, maxIterations: 600 });
+    const milliseconds = performance.now() - start;
+    const test = split?.testX ?? [];
+    const accuracy = test.length ? test.filter((row, i) => trainedModel.predict(row) === split!.testY[i]).length / test.length : null;
+    return { kernel: value, accuracy, support: trainedModel.supportIndices.length, milliseconds };
+  }), [tab, split, points, cValue, gamma, degree, coef0, standardize]);
   const bounds = useMemo(() => {
+    if (dragBounds.current) return dragBounds.current;
     const xs = points.map((point) => point.x),
       ys = points.map((point) => point.y);
     return {
@@ -144,7 +167,7 @@ export default function SVMClassificationLesson() {
       y0: Math.min(...ys) - 0.25,
       y1: Math.max(...ys) + 0.25,
     };
-  }, [points]);
+  }, [points, revision]);
   const grid = useMemo(
     () =>
       Array.from({ length: 40 * 24 }, (_, index) => {
@@ -163,9 +186,10 @@ export default function SVMClassificationLesson() {
   const chooseDataset = (next: Dataset) => {
     const data = next === "imported" ? imported : BUILT_INS[next];
     if (!data.length) return;
+    setSelected(null);
     setDataset(next);
     setPoints(data.map((point) => ({ ...point })));
-    setTrained("Ready");
+    setRevision(value => value + 1); setTrained("Ready");
   };
   const upload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -192,6 +216,8 @@ export default function SVMClassificationLesson() {
     event.target.value = "";
   };
   const reset = () => {
+    setSelected(null);
+    setDegree(3); setCoef0(1);
     setDataset("moons");
     setPoints(BUILT_INS.moons.map((point) => ({ ...point })));
     setKernel("linear");
@@ -206,7 +232,7 @@ export default function SVMClassificationLesson() {
   const plot = (
     <section className="svmc-plot">
       <header>
-        <h2>Maximum-Margin Separating Hyperplane</h2>
+        <h2>{kernel === 'linear' ? 'Linear separating boundary' : `${kernel.toUpperCase()} nonlinear boundary`}</h2>
         <span>
           <button
             aria-label="Reset plot"
@@ -225,62 +251,59 @@ export default function SVMClassificationLesson() {
       <div className="svmc-legend">
         <span>
           <i />
-          Decision Boundary (wᵀx + b = 0)
+          Decision boundary (score = 0)
         </span>
         <span>
           <i />
-          Margin Bounds (± 1 / ||w||)
+          {kernel === 'linear' ? 'Margin score contours (±1)' : 'Score contours (±1, not geometric distances)'}
         </span>
         <span>
           <i />
           Support Vectors
         </span>
       </div>
-      <div className="svmc-chart">
+      <div className="svmc-chart" ref={plotRef}
+        onPointerMove={event => {
+          if (dragRef.current === null || !dragBounds.current || !plotRef.current) return;
+          const rect = plotRef.current.getBoundingClientRect(), b = dragBounds.current;
+          const x = b.x0 + Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)) * (b.x1 - b.x0);
+          const y = b.y1 - Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height)) * (b.y1 - b.y0);
+          const index = dragRef.current;
+          setPoints(current => current.map((point, i) => i === index ? { ...point, x, y } : point)); setQuery({ x, y });
+        }} onPointerUp={() => { dragRef.current = null; dragBounds.current = null; setRevision(value => value + 1); }} onPointerCancel={() => { dragRef.current = null; dragBounds.current = null; setRevision(value => value + 1); }}
+        onLostPointerCapture={() => { dragRef.current = null; dragBounds.current = null; }}>
         {grid.map((item, index) => (
           <i
             key={index}
             style={{
               left: `${px(item.x)}%`,
               top: `${py(item.y)}%`,
-              background: item.score >= 0 ? "#09c8d70d" : "#ff624c0c",
+              background: item.score >= 0 ? "#d55e0028" : "#0072b228",
             }}
           />
         ))}
         {points.map((point, index) => (
           <button
-            aria-label={`Sample ${index + 1}`}
+            aria-label={`Sample ${index + 1}, actual class ${point.label}, predicted class ${model.predict([point.x, point.y])}${support.has(index) ? ", support vector" : ""}`}
             key={index}
-            className={`${point.label ? "one" : "zero"} ${support.has(index) ? "support" : ""}`}
+            className={`${point.label ? "one" : "zero"} ${support.has(index) ? "support" : ""} ${selected === index ? "selected" : ""} ${((point.label ? 1 : -1) * model.score([point.x, point.y])) < 0 ? "misclassified" : ((point.label ? 1 : -1) * model.score([point.x, point.y])) < 1 ? "violation" : ""}`}
+            data-x={point.x}
+            data-y={point.y}
             style={{ left: `${px(point.x)}%`, top: `${py(point.y)}%` }}
-            onClick={() => setQuery({ x: point.x, y: point.y })}
+            onClick={() => { setSelected(index); setQuery({ x: point.x, y: point.y }); }}
+            onPointerDown={event => { event.preventDefault(); setSelected(index); setQuery({ x: point.x, y: point.y }); dragRef.current = index; dragBounds.current = bounds; plotRef.current?.setPointerCapture(event.pointerId); }}
+            onKeyDown={event => { if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return; event.preventDefault(); const dx = (bounds.x1 - bounds.x0) / 100, dy = (bounds.y1 - bounds.y0) / 100; const x = point.x + (event.key === 'ArrowRight' ? dx : event.key === 'ArrowLeft' ? -dx : 0), y = point.y + (event.key === 'ArrowUp' ? dy : event.key === 'ArrowDown' ? -dy : 0); setPoints(current => current.map((entry, i) => i === index ? { ...entry, x, y } : entry)); setSelected(index); setQuery({ x, y }); }}
+
           />
         ))}
         <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-          {kernel === "linear" &&
-            model.weights &&
-            model.weights[1] !== 0 &&
-            [-1, 0, 1].map((level) => {
-              const ya =
-                -(model.weights![0] * bounds.x0 + model.bias - level) /
-                model.weights![1];
-              const yb =
-                -(model.weights![0] * bounds.x1 + model.bias - level) /
-                model.weights![1];
-              return (
-                <line
-                  key={level}
-                  x1="0"
-                  y1={py(ya)}
-                  x2="100"
-                  y2={py(yb)}
-                  className={level === 0 ? "boundary" : "margin"}
-                />
-              );
-            })}
+          {[-1, 0, 1].map(level => <path key={level} d={svmContours(model.score, bounds, level)} className={level === 0 ? 'boundary' : 'margin'} vectorEffect="non-scaling-stroke" />)}
+
         </svg>
-        <b>x₂</b>
-        <em>x₁</em>
+        <b>Feature 2 (original units)</b>
+        <em>Feature 1 (original units)</em>
+        {[0, .5, 1].map(t => <span className="svm-axis-tick" key={t} style={{ left: `${t * 100}%`, bottom: -18 }}>{(bounds.x0 + t * (bounds.x1 - bounds.x0)).toFixed(1)}</span>)}
+        {[0, .5, 1].map(t => <span className="svm-axis-tick" key={`y${t}`} style={{ left: -14, top: `${t * 100}%` }}>{(bounds.y1 - t * (bounds.y1 - bounds.y0)).toFixed(1)}</span>)}
       </div>
     </section>
   );
@@ -317,7 +340,7 @@ export default function SVMClassificationLesson() {
       </article>
       <article>
         <h3>Decision Function</h3>
-        <p className="svmc-formula">f(x) = wᵀx + b</p>
+        <p className="svmc-formula">{kernel === "linear" ? "f(x) = wᵀz + b" : "f(x) = Σ αᵢyᵢ K(zᵢ, z) + b"}</p><p>{standardize ? "z is standardized using training-set means and scales. Plot axes remain in original units." : "z uses the original feature values."}</p>
         <i className="svmc-scale" />
         <div className="svmc-scale-label">
           <span>
@@ -348,17 +371,63 @@ export default function SVMClassificationLesson() {
         <p>
           SVM finds the hyperplane that maximizes the margin between classes.
           Only the support vectors (circled points) define the decision
-          boundary. The larger the margin, the better the generalization.
+          boundary. A wider margin alone does not guarantee better test performance. C, kernel choice, scaling and the data all matter.
         </p>
       </article>
     </div>
   );
 
+
+  const inferencePanel = (
+      <section className="svmc-generic svmc-explain">
+        <h2>Live SVM Inference</h2>
+        <div className="svmc-query">
+          <label>
+            x₁
+            <input
+              aria-label="Query x1"
+              type="number"
+              step=".1"
+              value={query.x}
+              onChange={(event) =>
+                setQuery((old) => ({ ...old, x: Number(event.target.value) }))
+              }
+            />
+          </label>
+          <label>
+            x₂
+            <input
+              aria-label="Query x2"
+              type="number"
+              step=".1"
+              value={query.y}
+              onChange={(event) =>
+                setQuery((old) => ({ ...old, y: Number(event.target.value) }))
+              }
+            />
+          </label>
+        </div>
+        <div className="svmc-result">
+          Prediction <b style={{ color: model.predict([query.x, query.y]) ? '#d55e00' : '#0072b2' }}>Class {model.predict([query.x, query.y])}</b>
+          <span>
+            Decision score {model.score([query.x, query.y]).toFixed(3)}
+          </span>
+        </div>
+      </section>
+    );
   const content = () => {
     if (tab === "visualize")
       return (
         <>
+          <section className="svm-selection" aria-live="polite">
+            <h3>{selectedPoint ? `Sample ${selected! + 1} · Actual Class ${selectedPoint.label}` : 'Custom query'} → Predicted Class {model.predict([query.x, query.y])}</h3>
+            <p>{selectedPoint ? selectedPoint.label === model.predict([query.x, query.y]) ? 'Correct classification' : 'Misclassified' : 'Enter a query in Train and Test.'} · Score {signedScore.toFixed(3)}</p>
+            <p>Negative → Class 0. Positive → Class 1. Near zero → near the boundary. Scores are not calibrated probabilities.</p>
+            {selectedPoint && <p>{support.has(selected!) ? 'Support vector: a nonzero dual coefficient makes this sample influence the boundary.' : 'Not a support vector, or this sample is in the held-out test set.'} {(selectedPoint.label ? 1 : -1) * signedScore < 0 ? 'Wrong side of the boundary.' : (selectedPoint.label ? 1 : -1) * signedScore < 1 ? 'Correct side, but inside the margin score contour.' : 'Outside the margin score contour.'}</p>}
+          </section>
           {plot}
+          <p className="svm-plot-help">Blue dots = Class 0 · Orange dots = Class 1 · Subtle ring = support vector. Select a point to inspect errors and margin violations. Tap or drag a point; arrow keys also move it.</p>
+          <section className="svm-experiments"><h3>Three guided experiments</h3><button onClick={() => { chooseDataset('linear'); setKernel('linear'); }}>1. Separate linear classes</button><button onClick={() => { chooseDataset('moons'); setKernel('rbf'); }}>2. Fit Moons with RBF</button><p>3. Select a point near the boundary and drag it across. Inspect its score, support status, and the updated boundary.</p></section>
           {overview}
           <footer className="svmc-hint">
             <Lightbulb />
@@ -489,7 +558,7 @@ export default function SVMClassificationLesson() {
       );
     if (tab === "train")
       return (
-        <section className="svmc-generic svmc-center">
+        <><section className="svmc-generic svmc-center">
           <Network />
           <h2>Optimize the maximum margin</h2>
           <p>
@@ -506,6 +575,7 @@ export default function SVMClassificationLesson() {
           </div>
           <button
             onClick={() => {
+              setRevision(value => value + 1);
               setTrained(
                 `Trained ${kernel.toUpperCase()} SVM with ${model.supportIndices.length} support vectors`,
               );
@@ -514,13 +584,13 @@ export default function SVMClassificationLesson() {
           >
             <Play /> Retrain Model
           </button>
-          <small>{trained}</small>
-        </section>
+          <small role="status">{trained}</small>
+        </section>{inferencePanel}{plot}</>
       );
     if (tab === "metrics")
       return (
         <section className="svmc-generic">
-          <h2>Classification Metrics</h2>
+<h2>Classification Metrics</h2><p>{split ? 'Untouched test samples only. Precision, recall and F1 treat Class 1 as the positive class.' : 'No valid holdout split: metrics below describe the training samples.'}</p><h3>Confusion matrix</h3><table><thead><tr><th>Actual ↓ / Predicted →</th><th>Class 0</th><th>Class 1</th></tr></thead><tbody>{[0, 1].map(actual => <tr key={actual}><th>Class {actual}</th>{[0, 1].map(predicted => <td key={predicted}><button onClick={() => setToast(`Actual Class ${actual}, predicted Class ${predicted}: ${actual === predicted ? 'correct' : 'incorrect'} classifications`)}>{(split?.testY ?? points.map(point => point.label)).filter((label, index) => label === actual && model.predict((split?.testX ?? points.map(point => [point.x, point.y]))[index]) === predicted).length}</button></td>)}</tr>)}</tbody></table>
           <div className="svmc-metrics">
             {[
               ["Test accuracy", metrics.accuracy],
@@ -541,7 +611,7 @@ export default function SVMClassificationLesson() {
     if (tab === "compare")
       return (
         <section className="svmc-generic">
-          <h2>Compare Kernels</h2>
+<h2>Compare Kernels</h2><p>Same 80/20 split, seed, C and preprocessing for every kernel. Timing is approximate and depends on this device.</p><table><thead><tr><th>Kernel</th><th>Test accuracy</th><th>Support vectors</th><th>Training time</th></tr></thead><tbody>{comparison.map(row => <tr key={row.kernel}><td>{row.kernel}</td><td>{row.accuracy === null ? 'Unavailable' : (row.accuracy * 100).toFixed(1) + '%'}</td><td>{row.support}</td><td>{row.milliseconds.toFixed(1)} ms</td></tr>)}</tbody></table>
           <div className="svmc-compare">
             {(["linear", "rbf", "polynomial", "sigmoid"] as SvmKernel[]).map(
               (value) => (
@@ -564,44 +634,7 @@ export default function SVMClassificationLesson() {
           </div>
         </section>
       );
-    return (
-      <section className="svmc-generic svmc-explain">
-        <h2>Live SVM Inference</h2>
-        <div className="svmc-query">
-          <label>
-            x₁
-            <input
-              aria-label="Query x1"
-              type="number"
-              step=".1"
-              value={query.x}
-              onChange={(event) =>
-                setQuery((old) => ({ ...old, x: Number(event.target.value) }))
-              }
-            />
-          </label>
-          <label>
-            x₂
-            <input
-              aria-label="Query x2"
-              type="number"
-              step=".1"
-              value={query.y}
-              onChange={(event) =>
-                setQuery((old) => ({ ...old, y: Number(event.target.value) }))
-              }
-            />
-          </label>
-        </div>
-        <div className="svmc-result">
-          Prediction <b>Class {model.predict([query.x, query.y])}</b>
-          <span>
-            Decision score {model.score([query.x, query.y]).toFixed(3)}
-          </span>
-        </div>
-        {plot}
-      </section>
-    );
+    return null;
   };
 
   return (
@@ -747,7 +780,7 @@ export default function SVMClassificationLesson() {
                 ),
               )}
             </div>
-            <h3>Hyperparameters</h3>
+            <h3>Hyperparameters</h3><p>Settings retrain automatically. Retrain explicitly recomputes with the current settings. Higher C penalizes violations more; lower C allows more violations.</p>
             <label>
               C (Regularization) <CircleHelp />
               <input
@@ -783,7 +816,7 @@ export default function SVMClassificationLesson() {
             <label>
               Gamma (RBF/Poly/Sigmoid) <CircleHelp />
               <input
-                aria-label="Gamma numeric"
+                disabled={kernel === "linear"} aria-label="Gamma numeric"
                 type="number"
                 min=".001"
                 max="1000"
@@ -795,7 +828,7 @@ export default function SVMClassificationLesson() {
               />
             </label>
             <input
-              aria-label="Gamma slider"
+              disabled={kernel === "linear"} aria-label="Gamma slider"
               type="range"
               min="-3"
               max="3"
@@ -812,6 +845,9 @@ export default function SVMClassificationLesson() {
               <span>100</span>
               <span>1e3</span>
             </div>
+            <p>Gamma controls locality: larger values make similarity more local. Gamma has no effect for a linear kernel.</p>
+            {kernel === 'polynomial' && <label>Polynomial degree<input aria-label="Polynomial degree" type="number" min="1" max="6" value={degree} onChange={event => setDegree(Math.max(1, Math.min(6, Number(event.target.value))))} /></label>}
+            {(kernel === 'polynomial' || kernel === 'sigmoid') && <label>Kernel offset<input aria-label="Kernel offset" type="number" min="0" max="10" step=".1" value={coef0} onChange={event => setCoef0(Math.max(0, Math.min(10, Number(event.target.value))))} /></label>}
             <label>
               Standardize Features{" "}
               <button
@@ -824,6 +860,7 @@ export default function SVMClassificationLesson() {
             <button
               className="svmc-train"
               onClick={() => {
+                setRevision(value => value + 1);
                 setTrained("Model retrained");
                 setToast("SVM retrained");
               }}
@@ -838,7 +875,7 @@ export default function SVMClassificationLesson() {
                 <dd>{model.supportIndices.length}</dd>
               </div>
               <div>
-                <dt>Margin Width (2/||w||)</dt>
+                <dt>{kernel === "linear" ? "Margin width in model coordinates" : "Feature-space margin width"}</dt>
                 <dd>{model.marginWidth.toFixed(3)}</dd>
               </div>
               <div>
@@ -857,9 +894,8 @@ export default function SVMClassificationLesson() {
               <i />
               <i />
               <p>
-                Wider margin
-                <br />→ higher confidence
-                <br />→ better generalization
+                Compare held-out accuracy when changing margin settings.
+                A wider margin is not a guarantee of confidence or generalization.
               </p>
             </section>
             <button className="svmc-reset" onClick={reset}>

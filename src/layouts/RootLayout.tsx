@@ -35,6 +35,7 @@ import {
 import { GuideMode } from "../components/common/GuideMode";
 import { FitToViewport } from "../components/common/FitToViewport";
 import { SiteFooter } from "../components/common/SiteFooter";
+import { MobileCanvasPanels } from "../components/common/MobileCanvasPanels";
 import { AlgorithmTabPresentation } from "../components/common/AlgorithmTabPresentation";
 import { AlgorithmBreadcrumbs } from "../components/common/AlgorithmBreadcrumbs";
 import { categoryCatalogUrl } from "../data/algorithmBreadcrumbs";
@@ -504,6 +505,7 @@ export const RootLayout: React.FC = () => {
       <RouteProgressBar />
       <GuideMode />
       <AlgorithmTabPresentation />
+      <MobileCanvasPanels />
       <a href="#main-content" className="skip-link print:hidden">
         Skip to content
       </a>

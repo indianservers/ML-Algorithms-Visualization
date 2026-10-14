@@ -3,6 +3,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import { RootLayout } from '../layouts/RootLayout';
 const AiVirtualLabPage = lazy(() => import('../features/ai-virtual-labs/AiVirtualLabPage'));
 
+const CategoryStudio = lazy(() => import('../pages/CategoryStudio'));
 const HomePage = lazy(() => import('../pages/HomePage'));
 const ImplementationMatrixPage = lazy(() => import('../pages/ImplementationMatrixPage'));
 const DocumentationPage = lazy(() => import('../pages/DocumentationPage'));
@@ -212,6 +213,7 @@ export const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       { index: true, element: <HomePage /> },
+      { path: 'studios/:category', element: <CategoryStudio /> },
       { path: 'documentation', element: <DocumentationPage /> },
       { path: 'dataset-library', element: <DatasetLibraryPage /> },
       { path: 'sitemap', element: <SitemapPage /> },

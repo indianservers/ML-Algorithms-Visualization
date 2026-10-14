@@ -1,0 +1,36 @@
+import { test, expect } from '@playwright/test';
+test('mobile sequence, memory, advanced view and train/test',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('http://localhost:3355/ml/deep-learning/rnn?tab=visualize');
+  await expect(page.getByRole('heading',{name:'What does the RNN read, remember, and predict?'})).toBeVisible();
+  await page.getByRole('button',{name:'Next step',exact:true}).click();
+  await expect(page.getByLabel('Sequence step')).toHaveValue('1');
+  await page.getByRole('button',{name:'Show one recurrent cell'}).click();
+  await expect(page.locator('.rnn-sequence')).toHaveCount(0);
+  await page.locator('.rnn-state-grid button').nth(2).click();
+  await expect(page.getByRole('heading',{name:'Unit 3 through time'})).toBeVisible();
+  await page.getByRole('button',{name:'Advanced view',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'Hidden-state similarity',exact:true})).toBeVisible();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBeTruthy();
+  await page.getByRole('tab',{name:'Train and Test',exact:true}).click();
+  await page.getByRole('button',{name:'Quick demo',exact:true}).click();
+  await page.getByRole('button',{name:'Train live',exact:true}).click();
+  await expect(page.locator('.rnn-compact-head span')).toHaveText('Trained');
+  await page.locator('input[placeholder]').fill('unseenword');
+  await page.getByRole('button',{name:'Infer next',exact:true}).click();
+  await expect(page.getByText(/Unfamiliar tokens: unseenword/)).toBeVisible();
+});
+test('series targets and playback stop at the end',async({page})=>{
+  await page.goto('http://localhost:3355/ml/deep-learning/rnn?tab=dataset');
+  await page.locator('.rnn-data-grid button').nth(2).click();
+  await page.getByRole('tab',{name:'Visualize',exact:true}).click();
+  await expect(page.getByRole('heading',{name:'Observed values and next-step predictions'})).toBeVisible();
+  const slider=page.getByLabel('Sequence step');
+  const max=Number(await slider.getAttribute('max'));
+  await slider.fill(String(max-1));
+  await page.getByLabel('Speed',{exact:true}).selectOption('500');
+  await page.getByRole('button',{name:'Play',exact:true}).click();
+  await expect(slider).toHaveValue(String(max));
+  await expect(page.getByRole('button',{name:'Play',exact:true})).toBeVisible();
+  await expect(page.getByText('Unknown — future forecast',{exact:true})).toBeVisible();
+});

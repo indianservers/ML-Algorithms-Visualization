@@ -1,5 +1,2 @@
-import NLPClassificationLab from '../shared/NLPClassificationLab';
-
-export default function TextClassificationPage() {
-  return <NLPClassificationLab mode="text" />;
-}
+import TextClassificationStudio from "../shared/TextClassificationStudio";
+export default function TextClassificationPage() { return <TextClassificationStudio />; }

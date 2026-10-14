@@ -43,6 +43,9 @@ import { BrainVisual } from "../components/home/BrainVisual";
 import { visionLabThumb } from "../features/computer-vision/catalog";
 import { aiVirtualLabs, aiVirtualLabRoute } from "../features/ai-virtual-labs/catalog";
 import { AiAlgorithmsSection } from "../features/ai-virtual-labs/AiAlgorithmsSection";
+import { studios, studioItems, studioUrl } from "../data/studios";
+import "./HomeStudioCards.css";
+import "./CategoryStudio.css";
 import "./HomeLanding.css";
 import "./HomeLauncherCards.css";
 import "./HomeReference.css";
@@ -683,6 +686,38 @@ export default function HomeLanding() {
         </div>
       </section>
 
+      <section className="hl-studios" aria-labelledby="hl-studios-title">
+        <div className="hl-studios-heading">
+          <div><h2 id="hl-studios-title">Explore Learning Studios</h2><p>Choose a topic and explore its interactive labs.</p></div>
+          <span>{studios.length} studios</span>
+        </div>
+        <div className="hl-studios-grid">
+          {studios.map((studio) => {
+            const Icon = studio.icon;
+            const group = groups.find((entry) => entry.id === studio.id);
+            const labs = studioItems(studio.id);
+            return <Link key={studio.id} to={studioUrl(studio.id)} className={`hl-studio-card tone-${group?.tone ?? "blue"}`}
+              onPointerMove={(event) => {
+                if (event.pointerType !== 'mouse') return;
+                const bounds = event.currentTarget.getBoundingClientRect();
+                event.currentTarget.style.setProperty('--pointer-x', `${event.clientX - bounds.left}px`);
+                event.currentTarget.style.setProperty('--pointer-y', `${event.clientY - bounds.top}px`);
+              }}>
+              <span className="hl-studio-card-visual" aria-hidden="true">
+                <span className="hl-studio-card-orbit" />
+                <span className="hl-studio-card-art"><AlgorithmArt category={studio.categories[0]} artKey={studio.id === 'ai-virtual-labs' ? 'neural-network' : undefined} /></span>
+                <span className="hl-studio-card-icon"><Icon size={24} /></span>
+                <span className="hl-studio-card-number">{String(studios.indexOf(studio) + 1).padStart(2, '0')}</span>
+              </span>
+              <h3>{studio.title}</h3>
+              <p>{group?.blurb ?? "Explore interactive labs and hands-on experiments."}</p>
+              <span className="hl-studio-card-topics">{labs.slice(0, 2).map((lab) => <span key={lab.route}>{lab.label}</span>)}</span>
+              <span className="hl-studio-card-footer"><span><span className="hl-studio-live-dot" />{labs.length} labs to explore</span><span>Open Studio <ChevronRight size={15} /></span></span>
+            </Link>;
+          })}
+        </div>
+      </section>
+
       <section className="hl-spotlights" aria-label="Featured labs">
         {spotlights.map((spot) => (
           <article key={spot.id} className={`hl-spot tone-${spot.tone}`}>
@@ -751,12 +786,13 @@ export default function HomeLanding() {
         {visible.map(({ group, cards, total, expanded, forced }) => {
           if (filtering && cards.length === 0) return null;
           if (group.id === "ai-virtual-labs") {
-            return <div key={group.id} id={`hl-group-${group.id}`}><AiAlgorithmsSection globalRoutes={forced ? cards.map((item) => item.route) : undefined} /></div>;
+            return <div key={group.id} id={`hl-group-${group.id}`}><Link className="hl-studio-link" to={studioUrl(group.id)}>Open Virtual Labs Studio →</Link><AiAlgorithmsSection globalRoutes={forced ? cards.map((item) => item.route) : undefined} /></div>;
           }
           return (
             <section key={group.id} id={`hl-group-${group.id}`} className={`hl-group tone-${group.tone} ${["dimensionality", "time-series", "nlp", "reinforcement"].includes(group.id) ? "hl-reference-group" : ""}`}>
               <header className="hl-group-head">
                 <span className="hl-group-icon">{group.icon}</span>
+                <Link className="hl-studio-link" to={studioUrl(group.id)}>Open Studio →</Link>
                 <span className="hl-group-title">
                   <h3>{group.title}</h3>
                   <p>{group.blurb}</p>

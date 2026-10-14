@@ -1,0 +1,33 @@
+import { test,expect } from '@playwright/test';
+test('canvas panels start collapsed, close after actions and restore on desktop',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('http://localhost:3355/ml/clustering/k-means?tab=visualize');
+  const tools=page.getByRole('button',{name:'Show canvas tools',exact:true});
+  await expect(tools).toBeVisible();
+  await expect(page.locator('.plot-tools')).toBeHidden();
+  await expect(page.locator('.drag-tip')).toBeHidden();
+  await expect(page.locator('.legend')).toBeHidden();
+  await tools.click();
+  await expect(tools).toHaveAttribute('aria-expanded','true');
+  await page.getByRole('button',{name:'Add Point',exact:true}).click();
+  await expect(tools).toHaveAttribute('aria-expanded','false');
+  await expect(page.locator('.plot-tools button.active')).toContainText('Add Point');
+  await page.getByRole('button',{name:'Show canvas legend',exact:true}).click();
+  await expect(page.locator('.legend')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.legend')).toBeHidden();
+  await page.setViewportSize({width:1440,height:1000});
+  await expect(page.locator('.plot-tools')).toBeVisible();
+  await expect(page.locator('[data-mobile-canvas-panel]')).toHaveCount(0);
+  await expect(page.locator('.mobile-canvas-panel-dock')).toHaveCount(0);
+});
+test('shared behavior covers another canvas toolbar',async({page})=>{
+  await page.setViewportSize({width:390,height:844});
+  await page.goto('http://localhost:3355/ml/deep-learning/few-shot-learning?tab=visualize');
+  const tools=page.getByRole('button',{name:'Show canvas tools',exact:true});
+  await expect(tools).toBeVisible();
+  await tools.click();
+  await expect(page.locator('[data-mobile-panel-open]')).toHaveCount(1);
+  await page.getByRole('button',{name:'Close canvas tools',exact:true}).click();
+  await expect(page.locator('[data-mobile-panel-open]')).toHaveCount(0);
+});

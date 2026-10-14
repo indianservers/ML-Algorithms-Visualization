@@ -1,0 +1,35 @@
+import { test, expect } from '@playwright/test';
+
+test('SVM mobile point editing, nonlinear contours, testing and kernel comparison', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('http://localhost:3355/ml/supervised/svm-classification');
+  const sample = page.locator('.svmc-chart > button').last();
+  await page.locator('.svmc-chart').scrollIntoViewIfNeeded();
+  await sample.click();
+  await expect(page.locator('.svm-selection')).toContainText('Actual Class');
+  await sample.press('ArrowRight');
+  await expect(sample).toHaveClass(/selected/);
+  const beforeDrag = Number(await sample.getAttribute('data-x'));
+  const box = await sample.boundingBox();
+  if (!box) throw new Error('Sample is not visible');
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 18, box.y + box.height / 2, { steps: 4 });
+  await page.mouse.up();
+  expect(Number(await sample.getAttribute('data-x'))).toBeGreaterThan(beforeDrag);
+  await page.getByRole('button', { name: '2. Fit Moons with RBF', exact: true }).click();
+  await expect(page.locator('.svmc-plot h2')).toContainText('RBF');
+  expect(await page.locator('.svmc-chart path.boundary').getAttribute('d')).toBeTruthy();
+  await page.locator('[data-ml-lesson-tabs] > button').filter({ hasText: 'Train and Test' }).click();
+  await page.getByLabel('Query x1').fill('0.5');
+  await expect(page.locator('.svmc-result')).toContainText('Decision score');
+  await page.locator('.ml-tab-more').click();
+  await page.locator('[data-ml-lesson-tabs] > button').filter({ hasText: /^Compare$/ }).click();
+  await expect(page.getByRole('columnheader', { name: 'Training time' })).toBeVisible();
+  await page.locator('[data-ml-lesson-tabs] > button').filter({ hasText: /^Metrics$/ }).click();
+  await expect(page.getByRole('heading', { name: 'Confusion matrix' })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(2);
+  expect(errors).toEqual([]);
+});

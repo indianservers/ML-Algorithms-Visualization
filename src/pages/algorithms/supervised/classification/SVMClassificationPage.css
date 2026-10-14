@@ -1038,3 +1038,45 @@ html.dark #main-content .svmc-bar { border-color: #294567; background: #0b1d35; 
     height: auto;
   }
 }
+
+.svm-selection, .svm-experiments { padding: 14px; border: 1px solid #b9cde4; border-radius: 12px; margin-bottom: 12px; background: #f5f9ff; color: #18334f; }
+.dark .svm-selection, .dark .svm-experiments { background: #172941; color: #e5edfc; border-color: #405a7b; }
+.svm-selection p, .svm-experiments p, .svm-plot-help { font-size: 13px; line-height: 1.6; }
+.svm-experiments button { padding: 10px; min-height: 44px; margin: 5px; border: 1px solid #91b4db; border-radius: 8px; background: #e7f1ff; color: #16395d; }
+.svmc-chart > button { touch-action: none; cursor: grab; width: 9px; height: 9px; min-height: 0 !important; border: 1px solid white; border-radius: 50%; box-shadow: 0 0 8px #0072b240; }
+.svmc-chart > button::after { content: ''; position: absolute; inset: -9px; }
+.svmc-chart > button.zero { background: #0072b2; }
+.svmc-chart > button.one { background: #d55e00; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 8px #d55e0040; }
+.svmc-chart > button.selected { z-index: 6; outline: 3px solid #174769; outline-offset: 4px; }
+.svmc-chart > button.support { width: 9px; height: 9px; border: 1px solid white; box-shadow: 0 0 0 2px #7353a570; }
+.svmc-chart svg { pointer-events: none; }
+.svmc-chart path { fill: none; stroke-width: 2; }
+.svmc-chart path.boundary { stroke: #243855; }
+.svmc-chart path.margin { stroke: #7353a5; stroke-dasharray: 5 4; }
+.dark .svmc-chart path.boundary { stroke: #f4f7ff; }
+.svm-axis-tick { position: absolute; transform: translateX(-50%); font-size: 10px; }
+.svmc-chart > b { font-size: 10px; }.svmc-chart > em { bottom: -35px; font-size: 10px; }
+.svmc-generic table { width: 100%; border-collapse: collapse; margin: 14px 0; }
+.svmc-generic :is(td, th) { padding: 10px; border: 1px solid #b9cde4; }
+.svmc-generic td button { padding: 8px; min-height: 44px; }
+@media (max-width: 900px) {
+  .svmc-plot { height: auto !important; padding: 12px; }
+  .svmc-chart { height: 330px !important; margin-bottom: 42px; }
+  .svmc-plot h2 { font-size: 16px; }
+  .svmc-legend { display: flex; flex-wrap: wrap; gap: 8px; height: auto; font-size: 11px; }
+  .svmc-query { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .svmc-query input { width: 100%; font-size: 16px; }
+  .svmc-bottom { height: auto; display: grid; grid-template-columns: minmax(0, 1fr); }
+}
+.svmc-chart { overflow: visible; }
+.svmc-chart > b { writing-mode: vertical-rl; transform: rotate(180deg); top: 25%; left: -30px; }
+.svmc-chart > em { white-space: nowrap; font-style: normal; transform: translateX(-50%); }
+.svmc-scale { background: linear-gradient(90deg, #0072b2, #f5f7fa, #d55e00); }
+.svmc-legend span:first-child i { background: #243855; }
+.svmc-legend span:nth-child(2) i { background: #7353a5; }
+.svmc-plot-help { color: inherit; }
+.svmc-page .svmc-legend span:first-child i { background: #243855 !important; }
+.svmc-page .svmc-legend span:nth-child(2) i { background: #7353a5 !important; }
+.svmc-page .svmc-legend span:nth-child(3) i { background: transparent !important; border: 2px solid #7353a5; border-radius: 50%; }
+.svmc-page .svmc-bottom article footer b:first-child { color: #0072b2 !important; }.svmc-page .svmc-bottom article footer b:last-child { color: #d55e00 !important; }
+.svmc-page .svmc-scale { background: linear-gradient(90deg, #0072b2, #f5f7fa, #d55e00) !important; }

@@ -237,14 +237,14 @@ export function forwardRnn(
     }
   }
 
-  const denom = Math.max(1, inputs.length);
+  const denom = Math.max(1, targets ? targets.filter(v => Number.isFinite(v) && (task !== "text" || v >= 0)).length : inputs.length);
   const last = states[states.length - 1] ?? vector(hiddenSize);
   const hiddenStates = states.slice(1);
-  const decay = hiddenStates.map((state, index) => {
-    const lag = hiddenStates.length - 1 - index;
+  const decay = hiddenStates.map((state) => {
+
     const dot = state.reduce((sum, value, unit) => sum + value * (last[unit] ?? 0), 0);
     const denomDot = Math.hypot(...state) * Math.hypot(...last) || 1;
-    return Math.min(1, Math.abs(dot / denomDot) * Math.pow(0.86, Math.max(0, lag)));
+    return Math.max(-1, Math.min(1, dot / denomDot));
   });
 
   let gradient = vector(hiddenSize, 1 / Math.sqrt(hiddenSize));

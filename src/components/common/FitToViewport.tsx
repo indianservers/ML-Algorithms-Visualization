@@ -20,6 +20,11 @@ export function FitToViewport({ children }: { children: ReactNode }) {
       inner.style.zoom = "1";
       host.style.overflowX = "hidden";
       host.style.overflowY = "auto";
+      if (inner.querySelector('[data-training-feedback="inline"]')) {
+        setHasConfig(false);
+        setActions(current => current.length ? [] : current);
+        return;
+      }
       const configs = inner.querySelectorAll('aside[class*="controls"], section[class*="-controls"], [data-guide="algo-params"], [class*="-control-panel"]');
       configs.forEach(el => el.classList.add('mobile-algorithm-config'));
       setHasConfig(configs.length > 0);

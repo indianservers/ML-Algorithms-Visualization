@@ -1,3 +1,4 @@
+import { studios, studioUrl } from './studios';
 import type { AlgorithmNavItem } from './implementationStatus';
 
 const categoryTitles: Record<string, string> = {
@@ -9,7 +10,8 @@ const categoryTitles: Record<string, string> = {
 };
 
 export function categoryCatalogUrl(category: string): string {
-  return `/?category=${encodeURIComponent(category)}`;
+  const studio = studios.find(s => s.categories.includes(category));
+  return studio ? studioUrl(studio.id) : `/?category=${encodeURIComponent(category)}`;
 }
 
 export function algorithmBreadcrumbs(item: AlgorithmNavItem, search: string) {

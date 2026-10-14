@@ -31,17 +31,19 @@ export function ChartToolbar({ onCopy, onDownload, onReset, onFullscreen, explan
     { label: 'Open fullscreen chart', icon: <Maximize2 size={14} />, onClick: handleFullscreen },
   ];
   return (
-    <div className="relative flex items-center gap-1">
-      <button type="button" aria-label="Explain this chart" title="Explain this chart" onClick={() => setOpen(value => !value)} className="rounded p-1.5 text-gray-500 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-gray-300 dark:hover:bg-gray-700">
+    <div className="chart-toolbar relative flex items-center gap-1" data-canvas-panel="tools">
+      <button type="button" data-panel-keep-open aria-label="Explain this chart" title="Explain this chart" onClick={() => setOpen(value => !value)} className="rounded p-1.5 text-gray-500 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-gray-300 dark:hover:bg-gray-700">
         <HelpCircle size={14} />
+        <span className="chart-toolbar-mobile-label">Explain chart</span>
       </button>
       {buttons.map(button => button.onClick && (
         <button key={button.label} type="button" aria-label={button.label} title={button.label} onClick={button.onClick} className="rounded p-1.5 text-gray-500 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-gray-300 dark:hover:bg-gray-700">
           {button.icon}
+          <span className="chart-toolbar-mobile-label">{button.label}</span>
         </button>
       ))}
       {open && (
-        <div className="absolute right-0 top-9 z-20 w-72 rounded-lg border border-gray-200 bg-white p-3 text-xs leading-5 text-gray-600 shadow-xl dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+        <div className="chart-toolbar-explanation absolute right-0 top-9 z-20 w-72 rounded-lg border border-gray-200 bg-white p-3 text-xs leading-5 text-gray-600 shadow-xl dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
           {chartExplanation}
         </div>
       )}
