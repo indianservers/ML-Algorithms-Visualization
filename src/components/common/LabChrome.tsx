@@ -178,7 +178,7 @@ export function LabChrome({
   React.useEffect(() => {
     const onClick = (event: MouseEvent) => {
       const { button, label } = buttonCopy(event.target);
-      if (!button) return;
+      if (!button || button.closest("#account-dialog, #onboarding-dialog, #account-trigger")) return;
       if (
         !button.closest(".lab-topbar, .lab-chrome-overlay") &&
         button.closest('[role="tablist"], [class*="-tabs"], .nb-tabs, .svmc-bar, .mlr-tabs, .rfc-tabs')

@@ -1,3 +1,4 @@
+import { AccountControl } from '../components/common/AccountControl';
 import React, { Suspense } from "react";
 import { Outlet, useLocation, Link } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -403,6 +404,7 @@ export const RootLayout: React.FC = () => {
     const emitCommand = (name: string) =>
       window.dispatchEvent(new CustomEvent(`ml:${name}`));
     const onKey = (event: KeyboardEvent) => {
+      if (document.querySelector("#account-dialog[open], #onboarding-dialog[open]")) return;
       const target = event.target as HTMLElement | null;
       const editing =
         target?.tagName === "INPUT" ||
@@ -540,6 +542,7 @@ export const RootLayout: React.FC = () => {
           </Link>
         </span>
         <span className="spacer" />
+        <AccountControl />
         <button
           type="button"
           onClick={() => setRouteSearchOpen(true)}

@@ -1,0 +1,53 @@
+/* Site adapter, kept separate from the current reference files. */
+#account-parking { position:fixed; right:12px; top:8px; z-index:60; }
+#account-parking:empty { display:none; }
+.aimer-account-slot { display:flex; align-items:center; flex-shrink:0; order:5; min-width:0; }
+#account-trigger { display:flex; align-items:center; justify-content:center; gap:7px; min-height:44px; max-width:190px; padding:6px 10px; background:#eef4ff; border:1px solid #bed4ff; border-radius:24px; color:#174aaf; font:600 12px/1.3 system-ui,sans-serif; cursor:pointer; }
+#account-trigger .account-avatar { display:grid; place-items:center; position:relative; overflow:hidden; width:26px; height:26px; flex-shrink:0; border-radius:50%; background:white; }
+#account-trigger .account-avatar svg { width:18px;height:18px; }
+#account-trigger img { position:absolute;inset:0;width:100%;height:100%;object-fit:cover; }
+#account-label { max-width:120px; overflow:hidden; text-overflow:ellipsis; }
+#account-dialog,#onboarding-dialog { font:400 14px/1.5 system-ui,sans-serif; color-scheme:light; margin:auto; }
+#account-dialog *,#onboarding-dialog * { box-sizing:border-box; }
+#account-dialog button,#onboarding-dialog button { min-height:44px; }
+#account-dialog .signin-story { display:none; }
+#account-dialog { max-width:420px; }
+#account-dialog[open] { display:block; }
+#account-dialog .signin-content { padding:48px 24px 22px; }
+#account-dialog .account-brand { width:44px; height:44px; margin:0 auto 12px; box-shadow:none; }
+#account-dialog .account-brand svg { width:28px;height:28px; }
+#account-dialog h2 { font-size:27px; margin:8px 0 10px; font-weight:700; }
+#account-dialog #account-description { margin-bottom:16px; font-size:13px; }
+#account-dialog #shared-account { margin-top:14px;padding:10px; }
+#account-dialog .account-note { margin-top:12px; }
+#account-dialog .account-privacy { margin-top:4px; }
+#account-dialog #central-login { display:inline-block; color:#215cce; text-decoration:underline; padding:8px; font-size:12px; }
+#account-dialog #auth-methods { background:transparent; border:0; color:#215cce; margin-bottom:8px; }
+#account-dialog.has-form .account-brand,#account-dialog.has-form #account-description,#account-dialog.has-form #shared-account,#account-dialog.has-form .account-note,#account-dialog.has-form #google-login,#account-dialog.has-form #email-toggle,#account-dialog.has-form #phone-toggle { display:none!important; }
+#account-dialog #signup-fields:not([hidden]) { display:block; }
+#account-dialog #signup-mobile,#account-dialog label[for="signup-mobile"] { display:none!important; }
+#account-dialog input,#account-dialog select,#onboarding-dialog input { font-size:16px; min-height:44px; }
+#account-dialog [hidden],#onboarding-dialog [hidden] { display:none!important; }
+#account-dialog :focus-visible,#onboarding-dialog :focus-visible,#account-trigger:focus-visible { outline:3px solid #2563eb;outline-offset:2px; }
+#account-dialog [aria-invalid=true] { border-color:#b42318; }
+#account-dialog.is-signed-in .account-note,#account-dialog.is-signed-in .account-privacy,#account-dialog.is-signed-in #central-login,#account-dialog.is-signed-in #account-description { display:none; }
+#account-dialog .account-links { margin:12px 0; }
+#account-dialog .account-links a,#account-dialog .account-links button { display:grid;place-items:center;min-height:44px;border:1px solid #dae5f8;border-radius:12px;color:#215cce;background:#f5f8ff;padding:8px;font-size:13px; }
+#onboarding-dialog { max-width:620px;width:calc(100% - 24px);max-height:calc(100dvh - 24px); }
+#onboarding-dialog .onboarding-layout { display:block;min-height:0; }
+#onboarding-dialog .onboarding-story { display:none; }
+#onboarding-dialog .onboarding-content { padding:44px 20px 20px; }
+#onboarding-dialog .interest-options { margin:16px 0; }
+#onboarding-dialog .onboarding-footnote { margin-top:12px; }
+html.aimer-modal-open #root { overflow:hidden; }
+html.aimer-modal-open #root main { overflow:hidden!important; }
+@media(max-width:600px) {
+ .home-landing .aimer-account-slot { order:2; }
+ #account-trigger { max-width:145px;font-size:11px;gap:5px;padding:6px 8px; }
+ #account-trigger .account-avatar { width:22px;height:22px; }
+ .lab-topbar .aimer-account-slot { margin-left:auto; }
+ #account-dialog .signin-content { padding:48px 16px 18px; }
+ #account-dialog .phone-input-row { grid-template-columns:1fr;gap:0; }
+ #onboarding-dialog .interest-options { grid-template-columns:1fr 1fr; }
+}
+@media(prefers-reduced-motion:reduce) { #account-dialog *,#onboarding-dialog * { animation:none!important;transition:none!important; } }

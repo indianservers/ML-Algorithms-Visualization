@@ -1,3 +1,4 @@
+import { AccountControl } from '../components/common/AccountControl';
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -621,13 +622,7 @@ export default function HomeLanding() {
           </button>
         </div>
 
-        <Link to="/ml/lab/saved-experiments" className="hl-account">
-          <span className="hl-avatar">ML</span>
-          <span className="hl-account-text">
-            <strong>My Workspace</strong>
-            <em>Learner</em>
-          </span>
-        </Link>
+        <AccountControl />
       </header>
 
       <aside className="hl-side" aria-label="Catalog shortcuts">

@@ -1,0 +1,156 @@
+
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .header-account{flex-shrink:0;order:0;margin-left:8px}
+#account-trigger{display:flex;align-items:center;gap:9px;min-height:44px;padding:7px 13px 7px 8px;border:1px solid #bed4ff;border-radius:100px;background:linear-gradient(135deg,#f0f7ff,#e8edff);color:#174aaf;font-family:inherit;cursor:pointer;white-space:nowrap;transition:box-shadow .2s,background .2s}
+#account-trigger:hover{background:#e4edff;box-shadow:0 3px 14px #2563eb1c}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .account-avatar{width:29px;height:29px;display:grid;place-items:center;background:#fff;border-radius:50%;color:#2563eb;font-size:13px;font-weight:700}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .account-avatar svg{width:18px;height:18px}:is(#account-dialog, #onboarding-dialog, #account-trigger) .account-arrow{width:14px;height:14px}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) #account-label{max-width:125px;overflow:hidden;text-overflow:ellipsis;font-size:12px;font-weight:600}
+#account-trigger.is-signed-in .account-avatar{background:#2563eb;color:#fff}
+#account-trigger.is-signed-in .account-arrow{transform:rotate(90deg)}
+#account-dialog{box-sizing:border-box;width:calc(100% - 32px);max-width:420px;padding:38px 30px 26px;margin:auto;border:1px solid #e2eaff;border-radius:26px;background:radial-gradient(ellipse at 50% 0,#eef4ff 0,white 65%);color:#102a50;text-align:center;box-shadow:0 24px 90px #102a5033;max-height:calc(100dvh - 32px);overflow:auto}
+#account-dialog::backdrop{background:#102a5066;backdrop-filter:blur(5px)}
+#account-dialog[open]{animation:account-enter .2s ease-out}
+#account-dialog button{font-family:inherit;cursor:pointer}#account-dialog [hidden]{display:none!important}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .account-close{position:absolute;right:14px;top:14px;display:grid;place-items:center;width:34px;height:34px;border:0;border-radius:50%;background:#eaf0fa;color:#536b91}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .account-close svg{width:18px;height:18px}:is(#account-dialog, #onboarding-dialog, #account-trigger) .account-close:hover{background:#dce6f6}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .account-brand{display:grid;place-items:center;width:64px;height:64px;margin:0 auto 20px;border-radius:20px;background:linear-gradient(135deg,#2563eb,#448dff);box-shadow:0 8px 20px #2563eb2b;color:#fff}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .account-brand svg{width:34px;height:34px}:is(#account-dialog, #onboarding-dialog, #account-trigger) .account-eyebrow{font-size:10px;font-weight:700;letter-spacing:2px;color:#5979ad}
+#account-dialog h2{margin:12px 0;font-size:28px;line-height:1.2;letter-spacing:-.8px;color:#102a50}
+#account-dialog #account-description{font-size:14px;line-height:1.7;color:#617394;margin:0 0 25px}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .google-login,:is(#account-dialog, #onboarding-dialog, #account-trigger) .google-logout{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;min-height:54px;padding:12px 18px;border:1px solid #d5dfee;border-radius:13px;background:#fff;color:#173665;font-size:14px;font-weight:600;box-shadow:0 2px 5px #18365505;transition:background .2s,box-shadow .2s}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .google-login:hover{background:#f7faff;box-shadow:0 4px 14px #2563eb12;border-color:#9ebcf5}:is(#account-dialog, #onboarding-dialog, #account-trigger) .google-login svg{width:21px;height:21px;flex-shrink:0}:is(#account-dialog, #onboarding-dialog, #account-trigger) .google-login svg:last-child{margin-left:auto;width:18px}:is(#account-dialog, #onboarding-dialog, #account-trigger) .google-login span{flex:1;text-align:left}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .google-login:disabled,:is(#account-dialog, #onboarding-dialog, #account-trigger) .google-logout:disabled{opacity:.6;cursor:wait}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .google-logout{background:#f4f7fc;box-shadow:none;min-height:46px}:is(#account-dialog, #onboarding-dialog, #account-trigger) .google-logout:hover{background:#e8eef8}:is(#account-dialog, #onboarding-dialog, #account-trigger) .google-logout svg{width:18px;height:18px}
+#account-dialog #auth-status{font-size:12px;line-height:1.5;color:#a03c32;overflow-wrap:anywhere;margin:12px 0 0}#account-dialog #auth-status:empty{display:none}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .account-note{display:flex;align-items:center;justify-content:center;gap:6px;padding-top:22px;margin-top:24px;border-top:1px solid #eaf0f7;color:#70819c;font-size:10px;line-height:1.5}:is(#account-dialog, #onboarding-dialog, #account-trigger) .account-note svg{width:13px;height:13px;flex-shrink:0}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) #account-profile{display:flex;flex-direction:column;align-items:center;gap:6px;margin:0 0 22px}:is(#account-dialog, #onboarding-dialog, #account-trigger) .profile-initial{display:grid;place-items:center;width:52px;height:52px;border-radius:50%;background:#e5eeff;color:#2563eb;font-size:22px;font-weight:700;margin-bottom:6px}:is(#account-dialog, #onboarding-dialog, #account-trigger) #profile-name{font-size:17px}:is(#account-dialog, #onboarding-dialog, #account-trigger) #profile-email{font-size:12px;color:#617394;overflow-wrap:anywhere;max-width:100%}
+#account-trigger:focus-visible,#account-dialog button:focus-visible{outline:3px solid #8db3ff;outline-offset:3px}
+@keyframes account-enter{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(min-width:1101px) and (max-width:1450px){:is(#account-dialog, #onboarding-dialog, #account-trigger) header .search{min-width:120px;max-width:240px}:is(#account-dialog, #onboarding-dialog, #account-trigger) header>nav a,:is(#account-dialog, #onboarding-dialog, #account-trigger) header>nav button{padding-left:6px;padding-right:6px;font-size:11px}:is(#account-dialog, #onboarding-dialog, #account-trigger) .header-account{margin-left:0}#account-trigger{gap:6px;padding-right:9px}:is(#account-dialog, #onboarding-dialog, #account-trigger) #account-label{max-width:105px;font-size:11px}}
+@media(max-width:1100px){:is(#account-dialog, #onboarding-dialog, #account-trigger) .header-account{order:0;margin-left:auto}:is(#account-dialog, #onboarding-dialog, #account-trigger) header #menu{margin-left:6px;order:1}:is(#account-dialog, #onboarding-dialog, #account-trigger) header .search{order:3}:is(#account-dialog, #onboarding-dialog, #account-trigger) header>nav{order:4}}
+@media(max-width:420px){#account-trigger{gap:6px;padding:5px 9px 5px 6px;min-height:40px}:is(#account-dialog, #onboarding-dialog, #account-trigger) .account-avatar{width:25px;height:25px}:is(#account-dialog, #onboarding-dialog, #account-trigger) .account-arrow{display:none}:is(#account-dialog, #onboarding-dialog, #account-trigger) #account-label{max-width:102px;font-size:11px}#account-dialog h2{font-size:25px}#account-dialog{padding:34px 22px 24px}:is(#account-dialog, #onboarding-dialog, #account-trigger) .brand{gap:5px}}
+@media(prefers-reduced-motion:reduce){#account-dialog[open]{animation:none}#account-trigger,:is(#account-dialog, #onboarding-dialog, #account-trigger) .google-login{transition:none}}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .account-avatar,:is(#account-dialog, #onboarding-dialog, #account-trigger) .profile-initial{position:relative;overflow:hidden}:is(#account-dialog, #onboarding-dialog, #account-trigger) .account-avatar img,:is(#account-dialog, #onboarding-dialog, #account-trigger) .profile-initial img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .account-links{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0}:is(#account-dialog, #onboarding-dialog, #account-trigger) .account-links a{padding:12px;border:1px solid #dae5f8;border-radius:12px;color:#215cce;background:#f5f8ff;font-size:13px;font-weight:600}:is(#account-dialog, #onboarding-dialog, #account-trigger) .account-links a:hover{background:#e8f0ff}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) #shared-account{font-size:11px;color:#617394;line-height:1.6;margin:12px 0}:is(#account-dialog, #onboarding-dialog, #account-trigger) .account-privacy{font-size:10px;color:#70819c;line-height:1.7;margin:18px 0 0}:is(#account-dialog, #onboarding-dialog, #account-trigger) .account-privacy a{color:#406cae;text-decoration:underline}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) #auth-retry,:is(#account-dialog, #onboarding-dialog, #account-trigger) #onboarding-skip{background:none;border:0;color:#215cce;font-size:12px;padding:12px;min-height:40px}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .google-login.is-loading>svg{display:none}:is(#account-dialog, #onboarding-dialog, #account-trigger) .google-login.is-loading:before{content:'';width:18px;height:18px;border:2px solid #d3e0f8;border-top-color:#2563eb;border-radius:50%;animation:account-spin .8s linear infinite}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .sync-controls{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:14px;font-size:12px}:is(#account-dialog, #onboarding-dialog, #account-trigger) .sync-controls button,:is(#account-dialog, #onboarding-dialog, #account-trigger) .sync-controls a{border:1px solid #d5e2f8;background:#f4f8ff;color:#215cce;border-radius:8px;padding:8px 11px;font:inherit;cursor:pointer}:is(#account-dialog, #onboarding-dialog, #account-trigger) .sync-controls span{font-size:15px;font-weight:600;color:#16345e}:is(#account-dialog, #onboarding-dialog, #account-trigger) .sync-controls [hidden]{display:none!important}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .local-note{max-width:320px;font-size:11px;text-align:right}:is(#account-dialog, #onboarding-dialog, #account-trigger) .interest-options{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:22px 0}:is(#account-dialog, #onboarding-dialog, #account-trigger) .interest-options label{border:1px solid #d4e1f5;border-radius:100px;padding:9px 13px;font-size:12px;cursor:pointer}:is(#account-dialog, #onboarding-dialog, #account-trigger) .interest-options label:has(:checked){background:#e8f0ff;color:#215cce;border-color:#8db2f9}:is(#account-dialog, #onboarding-dialog, #account-trigger) .interest-options input{accent-color:#2563eb;margin-right:6px}#onboarding-dialog>p{font-size:13px;color:#617394}
+@keyframes account-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){:is(#account-dialog, #onboarding-dialog, #account-trigger) .google-login.is-loading:before{animation:none}}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .email-toggle{width:100%;min-height:44px;margin-top:12px;border:1px solid #d6e1f3;border-radius:12px;background:#f7faff;color:#215cce;font-size:13px;font-weight:600}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .email-auth{text-align:left}:is(#account-dialog, #onboarding-dialog, #account-trigger) .auth-divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:#8190a6;font-size:11px}:is(#account-dialog, #onboarding-dialog, #account-trigger) .auth-divider:before,:is(#account-dialog, #onboarding-dialog, #account-trigger) .auth-divider:after{content:'';height:1px;background:#e4ebf5;flex:1}:is(#account-dialog, #onboarding-dialog, #account-trigger) .email-tabs{display:flex;gap:6px;background:#edf3fc;padding:4px;border-radius:10px;margin-bottom:16px}:is(#account-dialog, #onboarding-dialog, #account-trigger) .email-tabs button{flex:1;padding:9px;border:0;background:none;color:#617394;border-radius:7px;font-size:12px}:is(#account-dialog, #onboarding-dialog, #account-trigger) .email-tabs [aria-pressed=true]{background:white;color:#215cce;box-shadow:0 2px 5px #102a5008}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) #email-form label,:is(#account-dialog, #onboarding-dialog, #account-trigger) .onboarding-phone{display:block;font-size:12px;font-weight:600;color:#274464;margin:12px 0 6px}:is(#account-dialog, #onboarding-dialog, #account-trigger) #email-form label span,:is(#account-dialog, #onboarding-dialog, #account-trigger) .onboarding-phone span{font-size:10px;color:#8391a7;font-weight:400}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) #email-form input,:is(#account-dialog, #onboarding-dialog, #account-trigger) .onboarding-phone input{box-sizing:border-box;display:block;width:100%;padding:11px 12px;font:14px inherit;border:1px solid #cedcf0;border-radius:9px;background:white;color:#16345e;min-height:43px}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) #email-form small,:is(#account-dialog, #onboarding-dialog, #account-trigger) .onboarding-phone small{display:block;font-size:10px;line-height:1.5;color:#70819c;margin-top:6px}:is(#account-dialog, #onboarding-dialog, #account-trigger) .onboarding-phone{text-align:left;margin:18px 0}:is(#account-dialog, #onboarding-dialog, #account-trigger) .onboarding-phone input{margin-top:8px}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .password-field{position:relative}:is(#account-dialog, #onboarding-dialog, #account-trigger) .password-field input{padding-right:60px!important}:is(#account-dialog, #onboarding-dialog, #account-trigger) .password-field button{position:absolute;right:3px;top:3px;min-height:37px;border:0;background:none;color:#215cce;font-size:11px;padding:8px}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) #email-submit,:is(#account-dialog, #onboarding-dialog, #account-trigger) #check-verification{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:16px;min-height:45px;padding:10px;border:0;border-radius:10px;background:#2563eb;color:white;font-size:13px;font-weight:600}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) #email-submit.is-loading:before{content:'';width:14px;height:14px;border:2px solid #ffffff55;border-top-color:#fff;border-radius:50%;animation:account-spin .8s linear infinite}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) #forgot-password,:is(#account-dialog, #onboarding-dialog, #account-trigger) #resend-verification,:is(#account-dialog, #onboarding-dialog, #account-trigger) #cancel-verification{border:0;background:none;color:#215cce;min-height:40px;font-size:11px;padding:10px}:is(#account-dialog, #onboarding-dialog, #account-trigger) #forgot-password{display:block;margin:auto}:is(#account-dialog, #onboarding-dialog, #account-trigger) #email-verification{margin:20px 0;font-size:13px;color:#617394;line-height:1.6}:is(#account-dialog, #onboarding-dialog, #account-trigger) #email-verification h3{color:#16345e;font-size:18px;margin-bottom:8px}#account-dialog input:focus-visible{outline:3px solid #bad0fa;outline-offset:1px}
+#account-dialog button:disabled{opacity:.6;cursor:wait}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) #email-form input,:is(#account-dialog, #onboarding-dialog, #account-trigger) .onboarding-phone input{font-family:inherit;font-size:14px}
+@media(prefers-reduced-motion:reduce){:is(#account-dialog, #onboarding-dialog, #account-trigger) #email-submit.is-loading:before{animation:none}}
+/* Mobile first sign-in: focused actions on phones, an illustrated story on desktop. */
+#account-dialog{width:calc(100% - 24px);max-width:460px;padding:0;border-radius:24px;background:#fff;max-height:calc(100dvh - 24px);text-align:center;overscroll-behavior:contain}
+#account-dialog .account-close{position:absolute;z-index:3;top:12px;right:12px;width:40px;height:40px}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .signin-story{display:none}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .signin-content{padding:44px 22px 22px;min-width:0}
+#account-dialog .account-brand{width:72px;height:72px;margin:0 auto 18px;border-radius:50%;background:radial-gradient(circle,#e7edff,#f6f9ff);color:#4264eb;box-shadow:0 0 0 10px #f8faff}
+#account-dialog .account-brand svg{width:42px;height:42px}
+#account-dialog .account-eyebrow{display:none}
+#account-dialog h2{font-size:30px;line-height:1.13;letter-spacing:-1px;margin:16px 0 12px}
+#account-dialog #account-description{font-size:14px;line-height:1.55;margin:0 auto 24px;max-width:340px}
+#account-dialog .google-login,#account-dialog .email-toggle{min-height:54px;border-radius:15px;padding:13px 16px;font-size:14px}
+#account-dialog .email-toggle{display:flex;align-items:center;gap:14px;background:#f5f8ff;margin-top:12px;text-align:left;color:#2563eb}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .email-toggle>span:nth-child(2){flex:1}:is(#account-dialog, #onboarding-dialog, #account-trigger) .email-toggle>span:first-child{font-size:25px}:is(#account-dialog, #onboarding-dialog, #account-trigger) .email-toggle>span:last-child{font-size:22px}
+#account-dialog #shared-account{display:flex;align-items:center;gap:12px;text-align:left;background:#f4f7fd;padding:14px;border-radius:15px;margin:24px 0 0;color:#29446c;font-size:12px;line-height:1.5}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .shared-account-icon{display:grid;place-items:center;flex-shrink:0;width:38px;height:38px;border-radius:12px;background:#e7edff;color:#3464ed;font-size:25px}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) #shared-account strong{display:block;font-weight:600}:is(#account-dialog, #onboarding-dialog, #account-trigger) #shared-account small{display:block;font-size:11px;color:#7083a2;margin-top:3px}
+#account-dialog .account-note{border:0;margin-top:20px;padding-top:0;font-size:11px}
+#account-dialog .account-note svg{width:18px;height:18px}
+#account-dialog .account-privacy{font-size:10px;margin-top:12px;line-height:1.8}
+#account-dialog .account-privacy a{display:inline-block;min-height:32px;padding-top:7px;color:#2563eb}
+#account-dialog #email-form input{font-size:16px;min-height:48px}
+#account-dialog #email-submit{min-height:48px}
+@media(min-width:800px){
+  #account-dialog{width:calc(100% - 64px);max-width:940px;border-radius:30px}
+  #account-dialog[open]{display:grid;grid-template-columns:.86fr 1.14fr}
+  #account-dialog .account-close{top:18px;right:18px;width:42px;height:42px}
+  :is(#account-dialog, #onboarding-dialog, #account-trigger) .signin-story{display:flex;flex-direction:column;position:relative;overflow:hidden;text-align:left;padding:30px 34px 0;background:radial-gradient(ellipse at 10% 0,#d9f2ff,transparent 55%),linear-gradient(145deg,#ecf5ff,#f2efff 60%,#c8e6ff);border-radius:29px 0 0 29px}
+  :is(#account-dialog, #onboarding-dialog, #account-trigger) .signin-logo{display:flex;align-items:center;gap:10px;color:#142f53}:is(#account-dialog, #onboarding-dialog, #account-trigger) .signin-logo strong{display:block;font-size:25px;letter-spacing:1px;line-height:1}:is(#account-dialog, #onboarding-dialog, #account-trigger) .signin-logo span{font-size:14px;letter-spacing:3px}
+  :is(#account-dialog, #onboarding-dialog, #account-trigger) .signin-tagline{font-size:11px!important;color:#617d9e!important;margin:10px 0 28px!important;white-space:nowrap}
+  :is(#account-dialog, #onboarding-dialog, #account-trigger) .signin-story h3{font-size:43px;line-height:1.06;letter-spacing:-1.7px;margin:0;color:#102a50}:is(#account-dialog, #onboarding-dialog, #account-trigger) .signin-story h3>span{color:#3367ff}
+  :is(#account-dialog, #onboarding-dialog, #account-trigger) .signin-summary{font-size:14px!important;line-height:1.5!important;color:#597395!important;margin:18px 0!important;max-width:270px}
+  :is(#account-dialog, #onboarding-dialog, #account-trigger) .signin-benefits{display:grid;gap:9px;list-style:none;margin:0;padding:0}:is(#account-dialog, #onboarding-dialog, #account-trigger) .signin-benefits li{display:flex;align-items:center;gap:13px}:is(#account-dialog, #onboarding-dialog, #account-trigger) .signin-benefits li>span{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:#e5d8ff;color:#955cf3;font-size:25px}:is(#account-dialog, #onboarding-dialog, #account-trigger) .signin-benefits li:nth-child(2)>span{background:#ccfaeb;color:#08b88d}:is(#account-dialog, #onboarding-dialog, #account-trigger) .signin-benefits li:nth-child(3)>span{background:#fff0c4;color:#e5a000}:is(#account-dialog, #onboarding-dialog, #account-trigger) .signin-benefits li:nth-child(4)>span{background:#ffdfdf;color:#f16e78}:is(#account-dialog, #onboarding-dialog, #account-trigger) .signin-benefits b{display:block;font-size:14px}:is(#account-dialog, #onboarding-dialog, #account-trigger) .signin-benefits small{display:block;color:#6880a1;font-size:11px;margin-top:2px}
+  :is(#account-dialog, #onboarding-dialog, #account-trigger) .signin-handwriting{font-family:cursive;font-style:italic;font-size:18px!important;color:#4267ce!important;margin:18px 0 0!important;transform:rotate(-5deg)}
+  :is(#account-dialog, #onboarding-dialog, #account-trigger) .signin-mascot{display:block;object-fit:contain;width:210px;height:210px;align-self:center;margin-top:auto}
+  :is(#account-dialog, #onboarding-dialog, #account-trigger) .signin-content{padding:58px 36px 28px;align-self:center}
+  #account-dialog .account-brand{width:92px;height:92px;margin-bottom:26px}
+  #account-dialog .account-brand svg{width:55px;height:55px}
+  #account-dialog h2{font-size:36px}
+  #account-dialog #account-description{font-size:15px;margin-bottom:28px}
+  #account-dialog .google-login,#account-dialog .email-toggle{min-height:60px;font-size:16px}
+  #account-dialog .account-note{margin-top:30px}
+}
+@media(max-width:359px){:is(#account-dialog, #onboarding-dialog, #account-trigger) .signin-content{padding:42px 16px 18px}#account-dialog h2{font-size:27px}#account-dialog #shared-account{padding:11px;font-size:11px}}
+@media(max-height:650px){#account-dialog .signin-content{padding-top:40px}#account-dialog .account-brand{width:52px;height:52px;margin-bottom:12px}#account-dialog h2{font-size:27px}#account-dialog #account-description{margin-bottom:16px}:is(#account-dialog, #onboarding-dialog, #account-trigger) .signin-story .signin-mascot{width:150px;height:150px}}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .phone-auth{text-align:left;margin-top:18px}:is(#account-dialog, #onboarding-dialog, #account-trigger) .phone-auth label{display:block;font-size:13px;font-weight:600;margin:12px 0 8px;color:#274464}:is(#account-dialog, #onboarding-dialog, #account-trigger) .phone-auth input{box-sizing:border-box;width:100%;min-height:50px;padding:12px;border:1px solid #cedcf0;border-radius:10px;background:#fff;color:#16345e;font-family:inherit;font-size:16px}:is(#account-dialog, #onboarding-dialog, #account-trigger) .phone-auth .phone-consent{font-size:11px;line-height:1.6;color:#70819c;margin:12px 0}:is(#account-dialog, #onboarding-dialog, #account-trigger) .phone-auth #phone-code-hint{font-size:13px;color:#617394}:is(#account-dialog, #onboarding-dialog, #account-trigger) .phone-auth button[type=submit]{width:100%;min-height:48px;background:#2563eb;color:white;border:0;border-radius:12px;margin-top:14px;font-size:14px;font-weight:600}:is(#account-dialog, #onboarding-dialog, #account-trigger) .phone-auth #phone-resend,:is(#account-dialog, #onboarding-dialog, #account-trigger) .phone-auth #phone-change{min-height:44px;padding:10px;background:transparent;border:0;color:#2563eb;font-size:12px}:is(#account-dialog, #onboarding-dialog, #account-trigger) #phone-recaptcha{max-width:100%;overflow-x:auto;margin-top:12px}:is(#account-dialog, #onboarding-dialog, #account-trigger) #phone-code{letter-spacing:6px;font-size:22px;text-align:center}
+/* Keep the default popup compact; expanded forms can scroll on small screens. */
+#account-dialog{max-width:400px;border-radius:20px;max-height:calc(100dvh - 24px)}
+#account-dialog .signin-content{padding:46px 20px 18px}
+#account-dialog .account-brand,#account-dialog .account-note{display:none}
+#account-dialog h2{font-size:26px;margin:0 20px 10px;line-height:1.15}
+#account-dialog #account-description{font-size:13px;line-height:1.45;margin-bottom:18px}
+#account-dialog .google-login,#account-dialog .email-toggle{min-height:48px;margin-top:10px;font-size:14px;border-radius:12px;padding:10px 14px}
+#account-dialog #shared-account{margin-top:16px;padding:10px;font-size:11px}
+#account-dialog #shared-account small{display:none}
+#account-dialog .account-privacy{margin-top:12px;font-size:10px;line-height:1.5}
+#account-dialog .account-privacy br{display:none}
+#account-dialog #account-profile{margin:14px 0;gap:4px}
+#account-dialog .profile-initial{width:44px;height:44px;margin:0 0 4px;font-size:18px}
+#account-dialog .account-links{gap:8px;margin:14px 0}
+#account-dialog .account-links a,#account-dialog #personalize-learning{min-height:44px;padding:10px;font-size:12px}
+#account-dialog .google-logout{min-height:44px;padding:10px;font-size:13px}
+#account-dialog.is-signed-in #account-description,#account-dialog.is-signed-in .account-privacy{display:none}
+#account-dialog:has(#email-auth:not([hidden])) #shared-account,#account-dialog:has(#phone-auth:not([hidden])) #shared-account{display:none}
+@media(min-width:800px){
+ #account-dialog{max-width:800px}
+ #account-dialog[open]{grid-template-columns:.85fr 1.15fr;align-items:stretch}
+ #account-dialog .signin-story{padding:26px 26px 150px;border-radius:19px 0 0 19px;min-height:0}
+ #account-dialog .signin-logo img{width:36px;height:36px}
+ #account-dialog .signin-logo strong{font-size:22px}
+ #account-dialog .signin-logo span{font-size:11px}
+ #account-dialog .signin-tagline{font-family:inherit;font-style:normal;transform:none;font-size:9px!important;margin:8px 0 20px!important}
+ #account-dialog .signin-story h3{font-size:32px;line-height:1.05;letter-spacing:-1px}
+ #account-dialog .signin-summary{font-family:inherit;font-style:normal;transform:none;font-size:12px!important;margin:12px 0!important}
+ #account-dialog .signin-benefits{grid-template-columns:1fr 1fr;gap:12px 8px}
+ #account-dialog .signin-benefits li{gap:7px}
+ #account-dialog .signin-benefits li>span{width:30px;height:30px;font-size:19px;flex-shrink:0;border-radius:9px}
+ #account-dialog .signin-benefits b{font-size:12px}
+ #account-dialog .signin-benefits small{font-size:9px;letter-spacing:0;line-height:1.3}
+ #account-dialog .signin-handwriting{display:none}
+ #account-dialog .signin-mascot{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:140px;height:140px;margin:0}
+ #account-dialog .signin-content{padding:44px 26px 20px;align-self:center}
+ #account-dialog .account-brand{display:grid;width:52px;height:52px;margin:0 auto 18px;box-shadow:none}
+ #account-dialog .account-brand svg{width:32px;height:32px}
+ #account-dialog h2{font-size:28px}
+ #account-dialog #account-description{font-size:13px;margin-bottom:20px}
+ #account-dialog.is-signed-in{max-width:420px}
+ #account-dialog.is-signed-in[open]{display:block}
+ #account-dialog.is-signed-in .signin-story,#account-dialog.is-signed-in .account-brand{display:none}
+ #account-dialog:has(#email-auth:not([hidden])),#account-dialog:has(#phone-auth:not([hidden])){max-width:480px}
+ #account-dialog:has(#email-auth:not([hidden]))[open],#account-dialog:has(#phone-auth:not([hidden]))[open]{display:block}
+ #account-dialog:has(#email-auth:not([hidden])) .signin-story,#account-dialog:has(#phone-auth:not([hidden])) .signin-story,#account-dialog:has(#email-auth:not([hidden])) .account-brand,#account-dialog:has(#phone-auth:not([hidden])) .account-brand{display:none}
+ #account-dialog:has(#email-auth:not([hidden])) #account-description,#account-dialog:has(#phone-auth:not([hidden])) #account-description{display:none}
+ #account-dialog .auth-divider{margin:12px 0}
+ #account-dialog .email-tabs{margin-bottom:10px}
+ #account-dialog #signup-fields:not([hidden]){display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+ #account-dialog #signup-fields label[for=signup-name]{grid-column:1;grid-row:1}
+ #account-dialog #signup-name{grid-column:1;grid-row:2}
+ #account-dialog #signup-fields label[for=signup-mobile]{grid-column:2;grid-row:1}
+ #account-dialog #signup-mobile{grid-column:2;grid-row:2}
+ #account-dialog #signup-fields small{grid-column:1/-1}
+}
+@media(min-width:800px) and (max-height:650px){#account-dialog .signin-story{padding-bottom:20px}#account-dialog .signin-mascot{display:none}#account-dialog .signin-content{padding:40px 22px 16px}#account-dialog .account-brand{display:none}}
+:is(#account-dialog, #onboarding-dialog, #account-trigger) .phone-input-row{display:grid;grid-template-columns:minmax(135px,.85fr) minmax(0,1.15fr);gap:10px;align-items:start}:is(#account-dialog, #onboarding-dialog, #account-trigger) .phone-input-row>div{min-width:0}:is(#account-dialog, #onboarding-dialog, #account-trigger) .phone-country-select{position:relative}:is(#account-dialog, #onboarding-dialog, #account-trigger) .phone-country-select img{position:absolute;left:11px;top:17px;width:24px;height:16px;object-fit:cover;border-radius:2px;pointer-events:none;box-shadow:0 0 0 1px #102a5010}:is(#account-dialog, #onboarding-dialog, #account-trigger) .phone-auth .phone-country-select select{box-sizing:border-box;width:100%;min-height:50px;padding:11px 22px 11px 42px;border:1px solid #cedcf0;border-radius:10px;background:#fff;color:#16345e;font-family:inherit;font-size:14px;text-overflow:ellipsis;cursor:pointer}:is(#account-dialog, #onboarding-dialog, #account-trigger) .phone-field-error{display:block;font-size:11px;line-height:1.4;color:#b42318;margin-top:5px}:is(#account-dialog, #onboarding-dialog, #account-trigger) .phone-field-error:empty{display:none}:is(#account-dialog, #onboarding-dialog, #account-trigger) .phone-auth [aria-invalid=true]{border-color:#d34747}:is(#account-dialog, #onboarding-dialog, #account-trigger) .phone-auth select:focus-visible{outline:3px solid #bad0fa;outline-offset:1px}@media(max-width:359px){:is(#account-dialog, #onboarding-dialog, #account-trigger) .phone-input-row{grid-template-columns:minmax(115px,.9fr) minmax(0,1.1fr);gap:8px}:is(#account-dialog, #onboarding-dialog, #account-trigger) .phone-auth .phone-country-select select{font-size:13px}}

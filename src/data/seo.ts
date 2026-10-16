@@ -3,7 +3,7 @@ import { navigationData } from './navigation';
 
 export const siteConfig = {
   name: 'Mega ML Algorithms Suite',
-  domain: 'https://www.AimerSociety.com',
+  domain: 'https://ml.aimersociety.com',
   ogImage: '/og-image.png',
   description:
     'Interactive browser-based machine learning visualizations, algorithm workbenches, datasets, metrics, and learning labs.',

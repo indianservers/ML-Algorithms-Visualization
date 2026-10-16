@@ -2,7 +2,8 @@
 <html lang="en">
   <head>
     <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-TQME9BLRR1"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-TQME9BLRR1">
+</script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
@@ -21,17 +22,17 @@
     <meta property="og:description" content="Interactive browser-based machine learning visualizations, algorithm workbenches, datasets, metrics, and learning labs." />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Mega ML Algorithms Suite" />
-    <meta property="og:url" content="https://www.AimerSociety.com/" />
-    <meta property="og:image" content="https://www.AimerSociety.com/og-image.png" />
-    <meta property="og:image:secure_url" content="https://www.AimerSociety.com/og-image.png" />
+    <meta property="og:url" content="https://ml.aimersociety.com/" />
+    <meta property="og:image" content="https://ml.aimersociety.com/og-image.png" />
+    <meta property="og:image:secure_url" content="https://ml.aimersociety.com/og-image.png" />
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Mega ML Algorithms Suite preview card" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="https://www.AimerSociety.com/og-image.png" />
+    <meta name="twitter:image" content="https://ml.aimersociety.com/og-image.png" />
     <meta name="twitter:image:alt" content="Mega ML Algorithms Suite preview card" />
-    <link rel="canonical" href="https://www.AimerSociety.com/" />
+    <link rel="canonical" href="https://ml.aimersociety.com/" />
     <title>Mega ML Algorithms Suite</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -45,9 +46,332 @@
         } catch (error) {}
       })();
     </script>
-  </head>
+  <link rel="stylesheet" href="/account/auth.css?v=20261016" />
+<link rel="stylesheet" href="/account/onboarding.css?v=20261016" />
+<link rel="stylesheet" href="/account/site.css?v=20261016" />
+</head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+    <div id="account-parking">
+<button disabled id="account-trigger" class="account-trigger" type="button" aria-haspopup="dialog" aria-controls="account-dialog">
+<span class="account-avatar" aria-hidden="true">A</span>
+<span id="account-label">Continue to login</span>
+</button>
+</div>
+<div id="root">
+</div>
+    <script type="module" src="/src/main.tsx">
+</script>
+  <dialog id="account-dialog" class="account-dialog" aria-labelledby="account-title">
+<button id="account-close" class="account-close" type="button" aria-label="Close account dialog">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+<path d="m6 6 12 12M18 6 6 18"/>
+</svg>
+</button>
+<aside class="signin-story" aria-label="Discover AIMER Society">
+<div class="signin-logo">
+<img src="/account/assets/brand.svg" width="46" height="46" alt="">
+<div>
+<strong>AIMER</strong>
+<span>SOCIETY</span>
+</div>
+</div>
+<p class="signin-tagline">Learn · Visualize · Explore · Innovate</p>
+<h3>Knowledge<br>comes alive<br>
+<span>here!</span>
+</h3>
+<p class="signin-summary">Interactive tools, visualizations and simulations for a brighter tomorrow.</p>
+<ul class="signin-benefits">
+<li>
+<span>▤</span>
+<div>
+<b>Learn</b>
+<small>Concepts visually</small>
+</div>
+</li>
+<li>
+<span>⚗</span>
+<div>
+<b>Explore</b>
+<small>Hands-on simulations</small>
+</div>
+</li>
+<li>
+<span>☀</span>
+<div>
+<b>Practice</b>
+<small>Build real skills</small>
+</div>
+</li>
+<li>
+<span>♧</span>
+<div>
+<b>Grow</b>
+<small>Be future ready</small>
+</div>
+</li>
+</ul>
+<p class="signin-handwriting">Curiosity drives progress ↗</p>
+<img class="signin-mascot" src="/account/assets/onboarding-mascot.png" alt="A friendly robot learning with a book" width="1280" height="1280">
+</aside>
+<div class="signin-content">
+<button id="auth-methods" type="button" hidden>← Other sign-in methods</button>
+<div class="account-brand" aria-hidden="true">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+<path d="m12 3 9 5-9 5-9-5 9-5Z"/>
+<path d="M6 10v6c4 3 8 3 12 0v-6M21 8v8"/>
+</svg>
+</div>
+<span class="account-eyebrow">YOUR AIMER ACCOUNT</span>
+<h2 id="account-title">Welcome to<br>AIMER Society</h2>
+<p id="account-description">Sign in to access our learning tools,<br>visualizations and resources.</p>
+<div id="account-profile" hidden>
+<span id="profile-initial" class="profile-initial" aria-hidden="true">
+</span>
+<strong id="profile-name">
+</strong>
+<span id="profile-email">
+</span>
+</div>
+<button disabled id="google-login" class="google-login" type="button">
+<svg viewBox="0 0 24 24" aria-hidden="true">
+<path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.39-.18-2.05H12v3.88h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.24c1.9-1.75 2.98-4.33 2.98-7.36Z"/>
+<path fill="#34A853" d="M12 22c2.7 0 4.96-.9 6.62-2.41l-3.24-2.51c-.9.6-2.04.96-3.38.96-2.6 0-4.8-1.76-5.59-4.12H3.07v2.59A10 10 0 0 0 12 22Z"/>
+<path fill="#FBBC05" d="M6.41 13.92a6 6 0 0 1 0-3.84V7.49H3.07a10 10 0 0 0 0 9.02l3.34-2.59Z"/>
+<path fill="#EA4335" d="M12 5.96c1.47 0 2.79.51 3.83 1.51l2.88-2.88A9.6 9.6 0 0 0 12 2a10 10 0 0 0-8.93 5.49l3.34 2.59C7.2 7.72 9.4 5.96 12 5.96Z"/>
+</svg>
+<span>Continue with Google</span>
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+<path d="M5 12h14m-5-5 5 5-5 5"/>
+</svg>
+</button>
+<section id="email-auth" class="email-auth" hidden>
+<div class="auth-divider">
+<span>or use your email</span>
+</div>
+<div class="email-tabs" role="group" aria-label="Email account options">
+<button id="email-signin-tab" type="button" aria-pressed="true">Sign in</button>
+<button id="email-signup-tab" type="button" aria-pressed="false">Create account</button>
+</div>
+<form id="email-form">
+<div id="signup-fields" hidden>
+<label for="signup-name">Your name</label>
+<input id="signup-name" autocomplete="name" maxlength="80">
+<label hidden for="signup-mobile">Mobile number <span>Optional</span>
+</label>
+<input hidden id="signup-mobile" type="tel" autocomplete="tel" inputmode="tel" maxlength="30" placeholder="+91 98765 43210">
+</div>
+<label for="signin-email">Email address</label>
+<input id="signin-email" type="email" autocomplete="email" required maxlength="254">
+<label for="signin-password">Password</label>
+<div class="password-field">
+<input id="signin-password" type="password" autocomplete="current-password" required maxlength="128">
+<button id="toggle-password" type="button" aria-label="Show password">Show</button>
+</div>
+<small id="password-help" hidden>Use a strong password that meets the current account password policy.</small>
+<button id="email-submit" type="submit">Sign in with email →</button>
+<button id="forgot-password" type="button">Forgot password?</button>
+</form>
+</section>
+<button disabled id="email-toggle" class="email-toggle" type="button" aria-expanded="false" aria-controls="email-auth">
+<span aria-hidden="true">✉</span>
+<span>Continue with email</span>
+<span aria-hidden="true">→</span>
+</button>
+<button disabled id="phone-toggle" class="email-toggle" type="button" aria-expanded="false" aria-controls="phone-auth">
+<span aria-hidden="true">☏</span>
+<span>Continue with phone</span>
+<span aria-hidden="true">→</span>
+</button>
+<section id="phone-auth" class="phone-auth" hidden aria-label="Sign in with phone">
+<form id="phone-number-form">
+<div class="phone-input-row">
+<div class="phone-country-field">
+<label for="phone-country">Country code</label>
+<div class="phone-country-select">
+<img id="phone-country-flag" src="/account/assets/flags/IN.svg" width="24" height="16" alt="">
+<select id="phone-country" autocomplete="country" required aria-describedby="phone-country-error">
+</select>
+</div>
+<small id="phone-country-error" class="phone-field-error" aria-live="polite">
+</small>
+</div>
+<div class="phone-national-field">
+<label for="login-phone">Mobile number</label>
+<input id="login-phone" type="tel" autocomplete="tel-national" inputmode="tel" placeholder="98765 43210" maxlength="25" required aria-describedby="phone-number-error">
+<small id="phone-number-error" class="phone-field-error" aria-live="polite">
+</small>
+</div>
+</div>
+<p class="phone-consent">By sending a code, you agree to receive a verification SMS. Standard rates may apply. SMS sign-in is currently available for India only. Google stores and processes your number to prevent spam and abuse. Use Google or email for stronger account protection.</p>
+<div id="phone-recaptcha">
+</div>
+<button id="phone-send" type="submit">Send verification code →</button>
+</form>
+<form id="phone-code-form" hidden>
+<label for="phone-code">6-digit verification code</label>
+<p id="phone-code-hint">
+</p>
+<input id="phone-code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required>
+<button id="phone-verify" type="submit">Verify &amp; sign in →</button>
+<button id="phone-resend" type="button">Resend code</button>
+<button id="phone-change" type="button">Change number</button>
+</form>
+</section>
+<section id="email-verification" hidden>
+<h3>Check your inbox</h3>
+<p>We sent a verification link to your email. Open it, then return here to finish signing in.</p>
+<button id="check-verification" type="button">I’ve verified my email →</button>
+<button id="resend-verification" type="button">Resend verification email</button>
+<button id="cancel-verification" type="button">Use a different sign-in method</button>
+</section>
+<div id="account-links" class="account-links" hidden>
+<a href="https://tools.aimersociety.com/profile">◉ Profile</a>
+<a href="/ml/lab/saved-experiments" id="account-learning">▣ My Learning</a>
+<button id="personalize-learning" type="button">✦ Personalize learning</button>
+<a href="https://tools.aimersociety.com/" target="_blank" rel="noopener">Tools ↗</a>
+<a href="https://www.aimersociety.com/">AIMER Home</a>
+</div>
+<p id="shared-account">
+<span class="shared-account-icon" aria-hidden="true">♧</span>
+<span>
+<strong>One account for all AIMER learning websites</strong>
+<small>Keep your bookmarks and learning tools together.</small>
+</span>
+</p>
+<button id="auth-retry" type="button" hidden>Try again</button>
+<button id="google-logout" class="google-logout" type="button" hidden>
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+<path d="M9 4H4v16h5m0-8h12m-4-4 4 4-4 4"/>
+</svg>Sign out</button>
+<a id="central-login" href="https://tools.aimersociety.com/?login=1">Continue on AIMER Tools ↗</a>
+<p id="auth-status" role="status" aria-live="polite">
+</p>
+<div class="account-note">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+<rect x="5" y="10" width="14" height="11" rx="3"/>
+<path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+</svg>
+<span>Secure sign-in, powered by Firebase.</span>
+</div>
+<p class="account-privacy">We save your name, email, optional mobile number and profile photo.<br>
+<a href="https://tools.aimersociety.com/privacy.html">Privacy Policy</a> · <a href="https://tools.aimersociety.com/terms.html">Terms</a>
+</p>
+</div>
+</dialog>
+<dialog id="onboarding-dialog" class="account-dialog" aria-labelledby="onboarding-title" data-step="1">
+<div class="onboarding-layout">
+<aside class="onboarding-story">
+<div class="onboarding-logo">
+<img src="/account/assets/brand.svg" alt="" width="54" height="54">
+<div>
+<strong>AIMER</strong>
+<span>SOCIETY</span>
+</div>
+</div>
+<p class="onboarding-tagline">Learn · Visualize · Explore · Innovate</p>
+<h3>Let’s tailor<br>your <span class="onboarding-gradient">learning<br>journey!</span>
+</h3>
+<p>Tell us what interests you.<br>Keep your favorite tools, visualizations and resources close.</p>
+<div class="onboarding-handwriting">Curiosity<br>drives progress ↗</div>
+<img class="onboarding-mascot" src="/account/assets/onboarding-mascot.png" alt="A friendly robot reading a book beside a plant and a stack of learning books" width="1280" height="1280">
+</aside>
+<section class="onboarding-content">
+<button id="onboarding-close" class="onboarding-close" type="button" aria-label="Close personalization">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+<path d="m6 6 12 12M18 6 6 18"/>
+</svg>
+</button>
+<div class="onboarding-step">
+<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+<path d="m12 2 2.5 6.5L21 11l-6.5 2.5L12 20l-2.5-6.5L3 11l6.5-2.5L12 2ZM21 1l.8 2.2L24 4l-2.2.8L21 7l-.8-2.2L18 4l2.2-.8L21 1Z"/>
+</svg>
+<span id="onboarding-step-label">STEP 1 OF 2</span>
+</div>
+<h2 id="onboarding-title">What sparks<br>your <span class="onboarding-gradient">curiosity?</span>
+</h2>
+<p id="onboarding-intro" class="onboarding-intro">Choose a few interests. You can change them anytime in your profile.</p>
+<div id="onboarding-interests">
+<div class="interest-options" role="group" aria-label="Choose your interests">
+<label class="interest-card interest-ai">
+<input type="checkbox" value="AI">
+<span class="interest-art" aria-hidden="true">
+</span>
+<strong>AI</strong>
+<small>Artificial Intelligence</small>
+</label>
+<label class="interest-card interest-science">
+<input type="checkbox" value="Science">
+<span class="interest-art" aria-hidden="true">
+</span>
+<strong>Science</strong>
+<small>Physics, Chemistry,<br>Biology</small>
+</label>
+<label class="interest-card interest-engineering">
+<input type="checkbox" value="Engineering">
+<span class="interest-art" aria-hidden="true">
+</span>
+<strong>Engineering</strong>
+<small>Mechanical, ECE, Civil<br>and more</small>
+</label>
+<label class="interest-card interest-computing">
+<input type="checkbox" value="Computing">
+<span class="interest-art" aria-hidden="true">
+</span>
+<strong>Computing</strong>
+<small>Programming, Data,<br>Computer Science</small>
+</label>
+<label class="interest-card interest-maths">
+<input type="checkbox" value="Maths">
+<span class="interest-art" aria-hidden="true">
+</span>
+<strong>Maths</strong>
+<small>Algebra, Calculus,<br>Statistics</small>
+</label>
+<label class="interest-card interest-all">
+<input type="checkbox" value="all">
+<span class="interest-art" aria-hidden="true">
+</span>
+<strong>Explore All</strong>
+<small>I’m open to everything!</small>
+</label>
+</div>
+</div>
+<div id="onboarding-contact" hidden>
+<button id="onboarding-back" class="onboarding-back" type="button">← Back to interests</button>
+<div class="onboarding-contact-art" aria-hidden="true">✆</div>
+<label class="onboarding-phone" for="onboarding-mobile">Mobile number <span>Optional</span>
+<input id="onboarding-mobile" type="tel" autocomplete="tel" inputmode="tel" maxlength="30" placeholder="+91 98765 43210">
+<small>Include your country code. You can edit or remove it from your profile.</small>
+</label>
+<p class="onboarding-contact-note">Your number is saved privately as contact information. It isn’t verified by SMS and isn’t used for phone sign-in.</p>
+</div>
+<button id="onboarding-next" class="onboarding-primary" type="button">Continue <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+<path d="M4 12h16m-6-6 6 6-6 6"/>
+</svg>
+</button>
+<button id="onboarding-save" class="onboarding-primary" type="button" hidden>Start Exploring <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
+<path d="M4 12h16m-6-6 6 6-6 6"/>
+</svg>
+</button>
+<button id="onboarding-skip" type="button">Skip for now</button>
+<p id="onboarding-status" role="status" aria-live="polite">
+</p>
+<div class="onboarding-footnote">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+<path d="m12 2 8 4v6c0 5-8 10-8 10S4 17 4 12V6l8-4Z"/>
+<path d="m8 12 3 3 5-6"/>
+</svg>
+<span>Your interests are saved to your profile.<br>You can change them anytime.</span>
+<span class="onboarding-signature">A brighter you,<br>a smarter tomorrow.</span>
+</div>
+</section>
+</div>
+</dialog>
+<script src="/account/vendor/libphonenumber-max.js?v=20261016">
+</script>
+<script src="/account/onboarding-ui.js?v=20261016">
+</script>
+<script type="module" src="/account/account-ui.js?v=20261016">
+</script>
+</body>
 </html>

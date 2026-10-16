@@ -36,3 +36,7 @@ The home page and `/implementation-matrix` show every route as:
 - No database server.
 - No cloud ML computation.
 - LocalStorage and IndexedDB only.
+
+## Shared AIMER account
+
+Production: https://ml.aimersociety.com. Account setup, central CORS requirements, phone policy, and verification steps are documented in [docs/shared-account.md](docs/shared-account.md).

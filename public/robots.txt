@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.aimersociety.com/MachineLearningAlgorithms/sitemap.xml
+Sitemap: https://ml.aimersociety.com/sitemap.xml

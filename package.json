@@ -15,7 +15,8 @@
     "smoke:routes": "node scripts/smoke-routes.mjs",
     "test:core": "vitest run tests/core-algorithms.test.ts",
     "test": "vitest run --exclude \"tests/**/*.spec.ts\"",
-    "test:responsive": "playwright test tests/responsive.spec.ts --reporter=line"
+    "test:responsive": "playwright test tests/responsive.spec.ts --reporter=line",
+    "test:account": "playwright test --config=playwright.account.config.mjs --reporter=line"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^1.0.1",
