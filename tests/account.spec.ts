@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
+import process from 'node:process';
 
-const base = 'http://127.0.0.1:5199';
+const base = process.env.ACCOUNT_BASE_URL || 'http://127.0.0.1:5199';
 const central = 'https://tools.aimersociety.com';
 const phoneUser = { uid: 'phone-test', name: null, email: null, picture: null, signInMethod: 'phone' };
 const firebaseMock = `

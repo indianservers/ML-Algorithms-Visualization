@@ -28,3 +28,5 @@ Browser tests mock Firebase and central endpoints: 320/360/390px phones, 1280x72
 After the central deployment, verify credentialed session GET, session POST/DELETE preflights, and profile PATCH preflight from ML. Expected response headers include the exact ML origin, Access-Control-Allow-Credentials: true; profile allows Content-Type and X-Aimer-Account. Then test an existing trusted-subdomain session and shared logout using a consenting real user, plus Google/email provider flows and an approved Firebase test phone. Real SMS delivery remains unverified and requires explicit authorization.
 
 Targeted lint passes for the changed React integration and browser tests. LabChrome has a pre-existing `react-hooks/set-state-in-effect` error at its route-change close effect; its other lint checks pass with only that rule disabled for the verification command. No lint rule configuration was changed.
+
+The classic bootstrap script imports the shared account modules at runtime. This preserves them through Vite production HTML processing. Set ACCOUNT_BASE_URL to a Vite preview origin to run the same browser suite against built production assets.
