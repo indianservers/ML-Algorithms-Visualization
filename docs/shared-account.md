@@ -11,9 +11,13 @@ Google, email/password, verification/resend/check, password reset and SMS code c
 
 ## Required central production configuration
 
-As of the verification run, Tools returns HTTP 403 to the exact ML Origin, including GET and preflight OPTIONS. A real Chrome fetch from the live ML site fails CORS. This is a central allowlist issue, not a relative-URL request or a successful anonymous session.
+On 2026-10-16 the live ML popup failed before login: credentialed GET to `https://tools.aimersociety.com/api/session` and profile OPTIONS returned 403 without CORS headers, while the Tools-origin session request returned 200 with `{ user: null }`. Production `AUTH_ALLOWED_ORIGINS` omitted ML. In the existing Vercel project, `https://ml.aimersociety.com` was appended while retaining Tools, Biology and Electronics Lab, then Tools was redeployed. No origin checks, cookie security or provider policy were relaxed.
 
-On the central Tools Vercel project, append `https://ml.aimersociety.com` to the existing `AUTH_ALLOWED_ORIGINS` production value, retaining every approved entry, then redeploy Tools. Do not replace the list, use a wildcard, or add arbitrary previews. Vercel configuration credentials are not available in this task; no central deployment configuration was changed.
+After deployment, a real isolated Chromium page at `https://ml.aimersociety.com/` passed central GET/POST/DELETE and profile GET/PATCH transport checks with `credentials: 'include'` and `cache: 'no-store'`. Browser preflights returned 204; responses had exact ML ACAO, credentials true, Vary Origin and no-store. Empty-token POST returned readable 400; anonymous profile GET/PATCH returned readable 401. The script does not sign in or change profiles. Run `node scripts/verify-account-transport.mjs` to repeat; safe response-header evidence is in `artifacts/shared-account-transport.json`.
+
+The existing signed-in Chrome session was automatically recognized by live ML after reload; a separate anonymous in-app browser recovered through Try again and cleared the stale error. No new interactive provider sign-in, real OTP/email delivery, authenticated profile write, or logout of the existing user's session was performed. Shared logout and provider workflows are covered with mocks, not claimed as authenticated production end-to-end tests.
+
+All ML session/profile calls now use one endpoint helper that rejects unexpected destinations. Direct login confirms the created session with GET before rendering success and clears temporary Firebase sign-in after confirmation. Overlapping refreshes are suppressed; transient failures preserve the displayed account and retry clears stale errors.
 
 Firebase public project configuration confirms `ml.aimersociety.com` is authorized. The current Tools explicit return-host list already contains it. A read-only Firebase Admin configuration check confirms Phone enabled and SMS allowlist IN only. The ML UI therefore allows SMS sending only for India while retaining the shared country validation and alternatives. SMS regions were not changed.
 
@@ -25,7 +29,7 @@ Run `npm run build`, `npm run test:core`, `npm run test:account` (start Vite on 
 
 Browser tests mock Firebase and central endpoints: 320/360/390px phones, 1280x720 and 1536x864 default-dialog fit, existing phone-only session, shared logout, Google route/query/hash retention, email signup/verification/reset UI, phone validation/OTP retry/cooldown, optional profile writes, short viewport and enlarged text. Screenshots are generated in test-results. No real OTP, email, production test account or user-data mutation is used.
 
-After the central deployment, verify credentialed session GET, session POST/DELETE preflights, and profile PATCH preflight from ML. Expected response headers include the exact ML origin, Access-Control-Allow-Credentials: true; profile allows Content-Type and X-Aimer-Account. Then test an existing trusted-subdomain session and shared logout using a consenting real user, plus Google/email provider flows and an approved Firebase test phone. Real SMS delivery remains unverified and requires explicit authorization.
+Remaining real-user checks: direct Google/email/approved test-phone sign-in, authenticated onboarding/profile edits, and shared logout across both tabs. Real SMS delivery still requires explicit authorization. The isolated production transport check logs no cookies, tokens or private profile data.
 
 Targeted lint passes for the changed React integration and browser tests. LabChrome has a pre-existing `react-hooks/set-state-in-effect` error at its route-change close effect; its other lint checks pass with only that rule disabled for the verification command. No lint rule configuration was changed.
 

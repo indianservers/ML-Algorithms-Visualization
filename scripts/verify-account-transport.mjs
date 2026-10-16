@@ -5,6 +5,13 @@ const browser = await chromium.launch({ headless: true });
 try {
   const page = await browser.newPage();
   const evidence = [];
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Network.enable');
+  cdp.on('Network.responseReceived', event => {
+    if (event.type !== 'Preflight') return;
+    const { url, status, headers } = event.response;
+    evidence.push({ url, method: 'OPTIONS', status, headers: Object.fromEntries(Object.entries(headers).map(([k,v]) => [k.toLowerCase(),v]).filter(([k]) => /^(access-control-|cache-control$|vary$)/.test(k))) });
+  });
   page.on('response', async response => {
     if (!/^https:\/\/tools\.aimersociety\.com\/api\/(session|profile)$/.test(response.url())) return;
     const headers = await response.allHeaders();
@@ -29,5 +36,8 @@ try {
     assert.equal(response.headers['access-control-allow-credentials'],'true');
     assert.match(response.headers.vary,/Origin/);
   }
+  await page.locator('#account-trigger[data-session-state=guest]').waitFor();
+  await page.locator('#account-trigger').click();
+  await page.screenshot({ path: 'artifacts/shared-account-production-guest.png' });
   console.log(JSON.stringify({ initiatingPage:'https://ml.aimersociety.com/', origin:'https://ml.aimersociety.com', credentials:'include', cache:'no-store', results, evidence },null,2));
 } finally { await browser.close(); }
