@@ -1,4 +1,4 @@
-import { safeReturnTo } from './account-client.mjs';
+import { safeReturnTo } from './account-client.mjs?v=20261016-auth2';
 const dialog = document.querySelector('#account-dialog');
 const trigger = document.querySelector('#account-trigger');
 const methods = document.querySelector('#auth-methods');
@@ -44,7 +44,7 @@ methods.addEventListener('click', () => {
 });
 document.querySelector('#onboarding-dialog').addEventListener('close', () => trigger.focus({ preventScroll: true }));
 trigger.disabled = false;
-import('./auth.js').then(() => {
+import('./auth.js?v=20261016-auth2').then(() => {
   for (const id of ['google-login','email-toggle','phone-toggle']) document.getElementById(id).disabled = false;
 }).catch(() => {
   document.querySelector('#auth-status').textContent = 'Direct sign-in could not load. Continue securely on AIMER Tools.';

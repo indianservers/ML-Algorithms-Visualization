@@ -34,3 +34,5 @@ Remaining real-user checks: direct Google/email/approved test-phone sign-in, aut
 Targeted lint passes for the changed React integration and browser tests. LabChrome has a pre-existing `react-hooks/set-state-in-effect` error at its route-change close effect; its other lint checks pass with only that rule disabled for the verification command. No lint rule configuration was changed.
 
 The classic bootstrap script imports the shared account modules at runtime. This preserves them through Vite production HTML processing. Set ACCOUNT_BASE_URL to a Vite preview origin to run the same browser suite against built production assets.
+
+Cloudflare was observed overriding auth JavaScript freshness to four hours despite the Vercel revalidation rule. The HTML bootstrap and its account-ui/auth/account-client import chain now use the `20261016-auth2` release query so existing browser caches request the repaired modules.

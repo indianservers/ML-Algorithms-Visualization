@@ -1,6 +1,6 @@
 import { setupPhoneInput } from './phone-input.mjs';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js';
-import { accountRequest, getProfile, updateProfile, safeReturnTo, photo } from './account-client.mjs';
+import { accountRequest, getProfile, updateProfile, safeReturnTo, photo } from './account-client.mjs?v=20261016-auth2';
 import { getAuth, GoogleAuthProvider, signInWithPopup, setPersistence, inMemoryPersistence, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, updateProfile as updateFirebaseProfile, reload, validatePassword, RecaptchaVerifier, signInWithPhoneNumber } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js';
 
 const app = initializeApp({

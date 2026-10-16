@@ -1,5 +1,5 @@
 // Keep the shared native modules outside Vite's HTML module bundling.
-import('/account/account-ui.js?v=20261016').catch(() => {
+import('/account/account-ui.js?v=20261016-auth2').catch(() => {
   const trigger = document.querySelector('#account-trigger');
   trigger.disabled = false;
   trigger.addEventListener('click', () => {
