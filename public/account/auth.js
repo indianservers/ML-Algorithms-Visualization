@@ -1,7 +1,6 @@
 import { setupPhoneInput } from './phone-input.mjs';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js';
-import { readSessionResponse } from './session-response.mjs';
-import { getProfile, updateProfile, safeReturnTo, photo } from './account-client.mjs';
+import { accountRequest, getProfile, updateProfile, safeReturnTo, photo } from './account-client.mjs';
 import { getAuth, GoogleAuthProvider, signInWithPopup, setPersistence, inMemoryPersistence, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, updateProfile as updateFirebaseProfile, reload, validatePassword, RecaptchaVerifier, signInWithPhoneNumber } from 'https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js';
 
 const app = initializeApp({
@@ -21,7 +20,7 @@ let currentUser;
 let sessionRevision = 0, refreshGeneration = 0;
 let learningReturn = location.href;
 window.addEventListener('aimer-login-start', () => { learningReturn = location.href; });
-let busy = false;
+let busy = false, refreshing = false;
 let emailMode = 'signin', pendingVerification = null, pendingMobile = '';
 let lastAttempt = 'session';
 const persistence = setPersistence(auth, inMemoryPersistence);
@@ -61,13 +60,13 @@ function render(user) {
 }
 async function session(method = 'GET', idToken) {
   if (method !== 'GET') sessionRevision++;
-  let response;
-  try { response = await fetch('https://tools.aimersociety.com/api/session', {
-    method, credentials: 'include', cache: 'no-store',
+  const data = await accountRequest('/api/session', {
+    method,
     ...(method === 'POST' ? { headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken }) } : {})
   });
-  } catch { throw new Error('Cannot reach the shared AIMER account service. Check your connection or continue on AIMER Tools.'); }
-  return readSessionResponse(response);
+  if (!data || !Object.hasOwn(data, 'user') || (data.user !== null && (typeof data.user?.uid !== 'string' || !data.user.uid)))
+    throw new Error('Login service returned an unexpected response. Please try again shortly.');
+  return data.user;
 }
 function emailBusy(value) {
   document.querySelector('#email-auth').setAttribute('aria-busy', String(value));
@@ -79,7 +78,11 @@ function mobileValue(value) {
   return normalized;
 }
 async function completeLogin(user) {
-  render(await session('POST', await user.getIdToken(true)));
+  const created = await session('POST', await user.getIdToken(true));
+  const confirmed = await session();
+  if (!created || !confirmed || created.uid !== confirmed.uid)
+    throw new Error('Your shared session could not be confirmed. Please try again.');
+  render(confirmed);
   await signOut(auth);
   pendingMobile = '';
   status.textContent = 'Signed in to AIMER Society.';
@@ -136,11 +139,12 @@ button.addEventListener('click', async () => {
   } catch (error) {
     authError(error);
   } finally {
-    await signOut(auth).catch(() => {}); button.disabled = false; busy = false; emailBusy(false);
+    button.disabled = false; busy = false; emailBusy(false);
     button.classList.remove('is-loading'); button.querySelector('span').textContent = 'Continue with Google';
   }
 });
 logout.addEventListener('click', async () => {
+  if (busy) return;
   busy = true;
   logout.disabled = true;
   try { await session('DELETE'); await signOut(auth).catch(() => {}); render(null); status.textContent = 'Signed out.'; }
@@ -148,7 +152,8 @@ logout.addEventListener('click', async () => {
   finally { logout.disabled = false; busy = false; }
 });
 async function refresh() {
-  if (busy || pendingVerification || phoneConfirmation || !document.querySelector('#phone-auth').hidden) return;
+  if (refreshing || busy || pendingVerification || phoneConfirmation || !document.querySelector('#phone-auth').hidden) return;
+  refreshing = true;
   const revision = sessionRevision, generation = ++refreshGeneration;
   try {
     const user = await session();
@@ -160,8 +165,9 @@ async function refresh() {
     if (error.status === 401) { render(null); status.textContent = 'Your session expired. Sign in again to continue.'; }
     else { status.textContent = error.message; document.querySelector('#account-trigger').dataset.sessionState = 'unavailable'; }
     document.querySelector('#auth-retry').hidden = false;
-  }
+  } finally { refreshing = false; }
 }
+
 document.querySelector('#auth-retry').addEventListener('click', () => {
   if (busy) return;
   if (pendingVerification) document.querySelector('#check-verification').click();
@@ -239,7 +245,6 @@ async function emailAction(task, message) {
   try { await persistence; await task(); }
   catch (error) { authError(error); }
   finally {
-    if (!pendingVerification) await signOut(auth).catch(() => {});
     busy = false; emailBusy(false); button.disabled = false;
     document.querySelector('#email-submit').classList.remove('is-loading');
   }
@@ -356,7 +361,6 @@ async function phoneAction(task) {
   try { await persistence; await task(); }
   catch (error) { authError(error); }
   finally {
-    await signOut(auth).catch(() => {});
     busy = false; emailBusy(false); button.disabled = false;
     for (const el of phoneSection.querySelectorAll('button,input,select')) el.disabled = false;
     phoneSection.setAttribute('aria-busy', 'false'); phoneCooldown();

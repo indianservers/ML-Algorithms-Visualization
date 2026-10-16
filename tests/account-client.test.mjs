@@ -15,6 +15,9 @@ describe('shared account boundaries', () => {
     await accountRequest('/api/profile', { method: 'PATCH', credentials: 'omit', headers: { 'X-Aimer-Account': 'uid' } });
     expect(fetch).toHaveBeenCalledWith('https://tools.aimersociety.com/api/profile', expect.objectContaining({ credentials: 'include', cache: 'no-store', method: 'PATCH' }));
   });
+  it('rejects unexpected endpoint destinations', async () => {
+    await expect(accountRequest('https://evil.example/api/session')).rejects.toThrow('Unknown account endpoint');
+  });
   it('only accepts explicit HTTPS trusted destinations and rejects login loops', () => {
     vi.stubGlobal('location', { origin: 'https://ml.aimersociety.com' });
     expect(safeReturnTo('https://ml.aimersociety.com/ml/lab?view=recent#saved')).toContain('?view=recent#saved');

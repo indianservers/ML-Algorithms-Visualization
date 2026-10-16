@@ -210,3 +210,34 @@ test('expired shared session clears the account and explains recovery', async ({
   await expect(page.locator('#auth-status')).toContainText('session expired');
   await expect(page.locator('#google-login')).toBeVisible();
 });
+
+
+test('transient refresh keeps the displayed account and retry clears the error', async ({ page }) => {
+  await setup(page, true);
+  let failed = true, requests = 0;
+  await page.route(`${central}/api/session`, async route => {
+    requests++;
+    if (failed) return route.fulfill({ status: 503, json: { error: 'Temporarily unavailable' }, headers: { 'Access-Control-Allow-Origin': base, 'Access-Control-Allow-Credentials': 'true' } });
+    return route.fulfill({ json: { user: phoneUser }, headers: { 'Access-Control-Allow-Origin': base, 'Access-Control-Allow-Credentials': 'true' } });
+  });
+  await page.evaluate(() => { window.dispatchEvent(new Event('focus')); window.dispatchEvent(new Event('pageshow')); });
+  await expect(page.locator('#account-trigger')).toHaveAttribute('data-session-state', 'unavailable');
+  expect(requests).toBe(1);
+  await page.locator('#account-trigger').click();
+  await expect(page.locator('#profile-name')).toHaveText('My account');
+  failed = false;
+  await page.locator('#auth-retry').click();
+  await expect(page.locator('#account-trigger')).toHaveAttribute('data-session-state', 'signed-in');
+  await expect(page.locator('#auth-status')).toBeEmpty();
+  await expect(page.locator('#auth-retry')).toBeHidden();
+});
+
+test('token exchange cannot report success without a readable shared cookie', async ({ page }) => {
+  await setup(page);
+  await page.route(`${central}/api/session`, route => route.fulfill({ json: { user: route.request().method() === 'POST' ? phoneUser : null }, headers: { 'Access-Control-Allow-Origin': base, 'Access-Control-Allow-Credentials': 'true' } }));
+  await page.locator('#account-trigger').click();
+  await page.locator('#google-login').click();
+  await expect(page.locator('#auth-status')).toContainText('shared session could not be confirmed');
+  await expect(page.locator('#account-dialog')).toBeVisible();
+  await expect(page.locator('#account-trigger')).toHaveAttribute('data-session-state', 'guest');
+});

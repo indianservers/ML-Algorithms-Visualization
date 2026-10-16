@@ -1,10 +1,11 @@
 export async function accountRequest(path, options = {}) {
+  if (!['/api/session', '/api/profile'].includes(path)) throw new Error('Unknown account endpoint.');
   let response;
   try { response = await fetch(new URL(path, 'https://tools.aimersociety.com').href, { ...options, credentials: 'include', cache: 'no-store' }); }
-  catch { throw new Error('Connection interrupted. Check your internet and try again.'); }
+  catch { throw new Error('Cannot reach the shared AIMER account service. Check your connection or continue on AIMER Tools.'); }
   let data;
   try { data = await response.json(); } catch { throw new Error('The account service is temporarily unavailable. Please try again.'); }
-  if (!response.ok) { const error = new Error(data.error || 'Please try again.'); error.status = response.status; throw error; }
+  if (!response.ok) { const error = new Error(typeof data?.error === 'string' ? data.error : response.status === 403 ? 'This website is not approved for shared sign-in. Continue on AIMER Tools.' : 'The account service could not complete this request. Please try again.'); error.status = response.status; throw error; }
   return data;
 }
 export const getProfile = () => accountRequest('/api/profile').then(r => r.profile);
