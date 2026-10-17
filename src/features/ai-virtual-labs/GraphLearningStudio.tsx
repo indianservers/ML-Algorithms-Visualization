@@ -10,10 +10,12 @@ type Step = { current: string; frontier: string[]; visited: string[]; parents: R
 type Run = { algorithm: Algorithm; graph: Graph; steps: Step[]; savedAt: number };
 
 const GRAPH_LABS = new Set([
-  'uniform-cost-search','iterative-deepening-depth-first-search','a-star-search','simplified-memory-bounded-a-star-search',
-  'hill-climbing-search','local-beam-search','ai-depth-first-search','greedy-best-first-search','breadth-first-search',
-  'bidirectional-search','beam-search','minimax-search','monte-carlo-tree-search','alpha-beta-pruning',
-  'bayesian-network-construction','bayesian-network-inference','markov-decision-process-explorer','hidden-markov-model-forward-viterbi',
+  'uniform-cost-search',
+  'a-star-search',
+  'ai-depth-first-search',
+  'greedy-best-first-search',
+  'breadth-first-search',
+  'beam-search',
 ]);
 
 export function isGraphLearningLab(slug: string) { return GRAPH_LABS.has(slug); }
@@ -40,7 +42,14 @@ export const graphLearningPresets: Record<string, Graph> = {
 };
 const presets = graphLearningPresets;
 
-const algorithms: Algorithm[] = ['BFS','DFS','UCS','A*','Greedy','Beam'];
+const algorithmNotes: Record<Algorithm, { rule: string; structure: string; complexity: string }> = {
+  BFS: { rule: 'Expand the oldest discovered node first.', structure: 'FIFO queue', complexity: 'O(V + E)' },
+  DFS: { rule: 'Expand the most recently discovered node first.', structure: 'LIFO stack', complexity: 'O(V + E)' },
+  UCS: { rule: 'Expand the frontier node with the smallest accumulated path cost g(n).', structure: 'Cost priority queue', complexity: 'O((V + E) log V)' },
+  'A*': { rule: 'Expand the frontier node with the smallest g(n) + h(n).', structure: 'f-cost priority queue', complexity: 'O((V + E) log V)' },
+  Greedy: { rule: 'Expand the frontier node with the smallest heuristic h(n).', structure: 'Heuristic priority queue', complexity: 'O((V + E) log V)' },
+  Beam: { rule: 'Keep only the best k candidates after each expansion level.', structure: 'Width-limited frontier', complexity: 'O(b · k · d)' },
+};
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
 const adjacency = (graph: Graph, node: string) => graph.edges.flatMap((edge) => edge.from === node ? [{id:edge.to,w:edge.weight}] : !graph.directed && edge.to === node ? [{id:edge.from,w:edge.weight}] : []).sort((a,b)=>a.id.localeCompare(b.id));
 const pathTo = (parents: Record<string,string>, current: string) => { const path=[current]; while(parents[path[0]]) path.unshift(parents[path[0]]); return path; };
@@ -81,7 +90,10 @@ function randomGraph(seed:number):Graph{
 }
 
 export function GraphLearningStudio({ slug }: { slug: string }) {
-  const [graph,setGraph]=useState<Graph>(()=>clone(presets['City routes'])); const [algorithm,setAlgorithm]=useState<Algorithm>(slug.includes('depth')?'DFS':slug.includes('breadth')?'BFS':slug.includes('greedy')?'Greedy':slug.includes('beam')?'Beam':slug.includes('a-star')?'A*':'UCS');
+  const pageAlgorithm: Algorithm = slug === 'ai-depth-first-search' ? 'DFS' : slug === 'breadth-first-search' ? 'BFS' : slug === 'greedy-best-first-search' ? 'Greedy' : slug === 'beam-search' ? 'Beam' : slug === 'a-star-search' ? 'A*' : 'UCS';
+  const algorithm = pageAlgorithm;
+  const pageNote = algorithmNotes[algorithm];
+  const [graph,setGraph]=useState<Graph>(()=>clone(presets['City routes']));
   const [index,setIndex]=useState(0); const [playing,setPlaying]=useState(false); const [speed,setSpeed]=useState(700); const [mode,setMode]=useState<'Guided'|'Practice'|'Challenge'|'Sandbox'>('Guided');
   const [prediction,setPrediction]=useState(''); const [feedback,setFeedback]=useState(''); const [selected,setSelected]=useState(''); const [edgeStart,setEdgeStart]=useState(''); const [tool,setTool]=useState<'move'|'node'|'edge'|'delete'>('move');
   const [score,setScore]=useState(0); const [streak,setStreak]=useState(0); const [seed,setSeed]=useState(17); const [runs,setRuns]=useState<Run[]>(()=>{try{return (JSON.parse(localStorage.getItem('graph-learning-runs')||'[]') as Run[]).filter(run=>run.graph&&typeof run.graph==='object')}catch{return[]}}); const drag=useRef<string|null>(null);
@@ -94,13 +106,12 @@ export function GraphLearningStudio({ slug }: { slug: string }) {
   const checkPrediction=()=>{const ok=prediction===next;setFeedback(ok?`Correct — ${next} is selected next.`:`Not quite. Recheck the ${algorithm==='DFS'?'stack':algorithm==='BFS'?'queue':'priority score'} before continuing.`);setScore(v=>v+(ok?100:0));setStreak(v=>ok?v+1:0)};
   const save=()=>{const nextRuns=[{algorithm,graph:clone(graph),steps,savedAt:Date.now()},...runs].slice(0,12);setRuns(nextRuns);localStorage.setItem('graph-learning-runs',JSON.stringify(nextRuns));};
   const download=()=>{const blob=new Blob([JSON.stringify({graph,algorithm,steps,score},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`graph-${algorithm.toLowerCase().replace('*','star')}.json`;a.click();URL.revokeObjectURL(url)};
-  const race=algorithms.map(name=>{const result=trace(graph,name);const last=result[result.length-1];return{name,visited:last.visited.length,cost:last.path.length?last.distances[graph.goal]:null,found:Boolean(last.path.length)}});
 
   return <section className="gls" aria-labelledby="gls-title">
-    <header className="gls-head"><div><span><Sparkles size={16}/> Interactive companion</span><h2 id="gls-title">Graph Learning Studio</h2><p>Edit the graph, predict real execution steps, race strategies, and save discoveries.</p></div><div className="gls-score"><b>{score}</b><span>XP · {streak} streak</span></div></header>
+    <header className="gls-head"><div><span><Sparkles size={16}/> Page-specific graph explorer</span><h2 id="gls-title">{pageAlgorithm} Graph Explorer</h2><p>Edit the graph and predict each {pageAlgorithm} execution step without leaving this lesson.</p></div><div className="gls-score"><b>{score}</b><span>XP · {streak} streak</span></div></header>
     <nav className="gls-modes" aria-label="Learning mode">{(['Guided','Practice','Challenge','Sandbox'] as const).map(item=><button className={mode===item?'active':''} onClick={()=>setMode(item)} key={item}>{item}</button>)}</nav>
     <div className="gls-toolbar">
-      <label>Algorithm<select value={algorithm} onChange={e=>setAlgorithm(e.target.value as Algorithm)}>{algorithms.map(a=><option key={a}>{a}</option>)}</select></label>
+      <label>Algorithm<select value={algorithm} aria-label="Page algorithm" disabled><option>{pageAlgorithm}</option></select></label>
       <label>Scenario<select value={Object.keys(presets).includes(graph.name)?graph.name:''} onChange={e=>e.target.value&&setGraph(clone(presets[e.target.value]))}><option value="">Custom / puzzle</option>{Object.keys(presets).map(name=><option key={name}>{name}</option>)}</select></label>
       <div className="gls-tools" aria-label="Graph editor">{(['move','node','edge','delete'] as const).map(item=><button className={tool===item?'active':''} onClick={()=>{setTool(item);setEdgeStart('')}} key={item}>{item==='node'?<Plus/>:item==='delete'?<Trash2/>:item}</button>)}</div>
       <button onClick={()=>setGraph(g=>({...g,directed:!g.directed}))}>{graph.directed?'Directed':'Undirected'}</button>
@@ -125,9 +136,9 @@ export function GraphLearningStudio({ slug }: { slug: string }) {
     </div>
     <div className="gls-labs">
       <section><h3>Cost & heuristic laboratory</h3><p>Select a node or edge, then change its value and watch the trace recompute.</p>{graph.nodes.some(n=>n.id===selected)?<label>Heuristic<input type="number" value={graph.nodes.find(n=>n.id===selected)?.h??0} onChange={e=>setGraph(g=>({...g,nodes:g.nodes.map(n=>n.id===selected?{...n,h:Number(e.target.value)}:n)}))}/></label>:graph.edges.some(e=>e.id===selected)?<label>Edge weight<input type="number" value={graph.edges.find(e=>e.id===selected)?.weight??1} onChange={e=>setGraph(g=>({...g,edges:g.edges.map(x=>x.id===selected?{...x,weight:Number(e.target.value)}:x)}))}/></label>:<p className="muted">Select a node or edge in the graph.</p>}<button onClick={()=>setGraph(g=>({...g,edges:g.edges.map((e,i)=>i===0?{...e,weight:-2}:e)}))}>Inject negative-weight mistake</button></section>
-      <section><h3>Algorithm race</h3><div className="gls-race">{race.map(row=><div key={row.name}><b>{row.name}</b><span>{row.found?`${row.visited} visited · cost ${row.cost}`:'no path'}</span><i style={{width:`${Math.min(100,row.visited/graph.nodes.length*100)}%`}}/></div>)}</div></section>
+      <section><h3>{algorithm} selection rule</h3><p>{pageNote.rule}</p><dl><div><dt>Data structure</dt><dd>{pageNote.structure}</dd></div><div><dt>Complexity</dt><dd>{pageNote.complexity}</dd></div></dl></section>
       <section><h3>Challenge cards</h3><button onClick={()=>{setMode('Challenge');setFeedback('Challenge: make DFS inspect more nodes than BFS, then run the race.')}}><Flag/> Make DFS lose</button><button onClick={()=>{setMode('Challenge');setFeedback('Challenge: edit a heuristic so Greedy returns a costlier route than UCS.')}}><Flag/> Mislead Greedy</button><button onClick={()=>{setMode('Challenge');setFeedback('Challenge: create two disconnected components using the delete tool.')}}><Flag/> Break reachability</button>{feedback&&<p>{feedback}</p>}</section>
-        <section><h3>Experiment notebook</h3><div className="gls-notebook-actions"><button onClick={save}><Save/> Save run</button><button onClick={download}><Download/> Export JSON</button></div>{runs.length?<ul>{runs.slice(0,4).map(run=><li key={run.savedAt}><button onClick={()=>{setGraph(clone(run.graph));setAlgorithm(run.algorithm);setIndex(run.steps.length-1)}}>{run.algorithm} · {run.graph.name}<span>{new Date(run.savedAt).toLocaleTimeString()}</span></button></li>)}</ul>:<p className="muted">No saved runs on this device.</p>}</section>
+        <section><h3>Experiment notebook</h3><div className="gls-notebook-actions"><button onClick={save}><Save/> Save run</button><button onClick={download}><Download/> Export JSON</button></div>{runs.some(run=>run.algorithm===pageAlgorithm)?<ul>{runs.filter(run=>run.algorithm===pageAlgorithm).slice(0,4).map(run=><li key={run.savedAt}><button onClick={()=>{setGraph(clone(run.graph));setIndex(run.steps.length-1)}}>{run.algorithm} · {run.graph.name}<span>{new Date(run.savedAt).toLocaleTimeString()}</span></button></li>)}</ul>:<p className="muted">No {pageAlgorithm} runs saved on this device.</p>}</section>
     </div>
     <footer className="gls-feature-strip">15 learning tools active: editor · playback · inspector · predictions · races · challenges · presets · narration · heuristics · mistake lab · path reconstruction · complexity · learning modes · puzzles · notebook</footer>
   </section>;

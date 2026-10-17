@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildGraphTrace, graphLearningPresets } from '../src/features/ai-virtual-labs/GraphLearningStudio';
+import { buildGraphTrace, graphLearningPresets, isGraphLearningLab } from '../src/features/ai-virtual-labs/GraphLearningStudio';
 
 describe('Graph Learning Studio trace engine', () => {
   it('runs BFS in queue order and reconstructs a valid goal path', () => {
@@ -28,5 +28,10 @@ describe('Graph Learning Studio trace engine', () => {
 
     expect(result.path).toEqual([]);
     expect(result.visited).toEqual(['H']);
+  });
+
+  it('appears only on pages implemented by its graph-search engine', () => {
+    expect(['uniform-cost-search', 'a-star-search', 'ai-depth-first-search', 'greedy-best-first-search', 'breadth-first-search', 'beam-search'].every(isGraphLearningLab)).toBe(true);
+    expect(['minimax-search', 'bayesian-network-construction', 'bayesian-network-inference', 'monte-carlo-tree-search', 'alpha-beta-pruning', 'markov-decision-process-explorer', 'hidden-markov-model-forward-viterbi'].some(isGraphLearningLab)).toBe(false);
   });
 });

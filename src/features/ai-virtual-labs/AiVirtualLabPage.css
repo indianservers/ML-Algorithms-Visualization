@@ -41,8 +41,83 @@
   background: transparent;
 }
 .ai-virtual-lab-frame.is-ready { opacity: 1; }
+.ai-virtual-lab-page > .ai-learn {
+  position: relative;
+  border-color: #b9c9f3;
+  box-shadow: 0 14px 34px #29488b20;
+}
+.ai-virtual-lab-page > .ai-learn::before {
+  content: 'MAIN LEARNING PANE';
+  position: absolute;
+  z-index: 2;
+  top: -9px;
+  right: 18px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #5b49e8;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .09em;
+}
+.ai-lab-workspace {
+  max-width: 1800px;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid #cbd9f0;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 12px 30px #24457d16;
+}
+.ai-lab-workspace-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #dbe4f4;
+  background: linear-gradient(120deg, #f8faff, #edf3ff);
+}
+.ai-lab-workspace-head > div:first-child { min-width: 0; }
+.ai-lab-workspace-head > div:first-child > span { color: #5c4fd5; font-size: 9px; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+.ai-lab-workspace-head h2 { margin: 2px 0; color: #17284e; font-size: 17px; }
+.ai-lab-workspace-head p { margin: 0; color: #60708c; font-size: 11px; }
+.ai-lab-workspace-tabs { display: flex; flex: none; gap: 5px; padding: 4px; border: 1px solid #d3def1; border-radius: 11px; background: #e7edf9; }
+.ai-lab-workspace-tabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #526482;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.ai-lab-workspace-tabs button svg, .ai-lab-workspace-specific svg { width: 15px; height: 15px; }
+.ai-lab-workspace-tabs button[aria-selected='true'] { background: #fff; color: #4431c3; box-shadow: 0 3px 9px #28457924; }
+.ai-lab-workspace-tabs button:focus-visible { outline: 2px solid #6856e8; outline-offset: 2px; }
+.ai-lab-workspace-specific { display: inline-flex; align-items: center; gap: 7px; flex: none; padding: 7px 10px; border: 1px solid #d3def2; border-radius: 999px; background: #f6f8ff; color: #536789; font-size: 11px; font-weight: 750; }
+.ai-lab-workspace [role='tabpanel'] { min-width: 0; }
+.ai-lab-workspace [role='tabpanel'][hidden] { display: none; }
+.ai-lab-workspace .ai-virtual-lab-frame { max-width: none; margin: 0; }
+.ai-lab-workspace .ai-virtual-lab-loading { margin: 20px auto; padding: 0 16px; }
+.ai-lab-workspace .gls { max-width: none; margin: 0; border: 0; border-radius: 0; box-shadow: none; }
 html.dark .ai-virtual-lab-page { background: #101a2e; color: #e5edff; }
 html.dark .ai-virtual-lab-title span { color: #b6c6e3; }
+html.dark .ai-virtual-lab-page > .ai-learn { border-color: #52658c; }
+html.dark .ai-lab-workspace { border-color: #344669; background: #111b30; }
+html.dark .ai-lab-workspace-head { border-color: #354767; background: linear-gradient(120deg, #17243e, #1b2944); }
+html.dark .ai-lab-workspace-head h2 { color: #f0f4ff; }
+html.dark .ai-lab-workspace-head p { color: #aebbd4; }
+html.dark .ai-lab-workspace-tabs { border-color: #405374; background: #101c31; }
+html.dark .ai-lab-workspace-tabs button { color: #c2cce2; }
+html.dark .ai-lab-workspace-tabs button[aria-selected='true'] { background: #324166; color: #fff; }
+html.dark .ai-lab-workspace-specific { border-color: #405374; background: #182641; color: #c5d0e6; }
 .ai-upcoming-page{min-height:100%;background:linear-gradient(155deg,#f2f5ff,#fafbff)}
 .ai-upcoming-hero,.ai-upcoming-details{max-width:1180px;margin:0 auto}
 .ai-upcoming-hero{display:grid;grid-template-columns:minmax(0,1fr) 260px;align-items:center;gap:28px;padding:32px clamp(22px,3vw,48px);border:1px solid #d6dcf6;border-radius:20px;background:linear-gradient(120deg,#fff,#f2f0ff);box-shadow:0 12px 35px #33449a12}
@@ -67,4 +142,11 @@ html.dark .ai-upcoming-page{background:linear-gradient(155deg,#101a2e,#11192d)}h
   .ai-virtual-lab-title h1 { font-size: 21px; }
   .ai-virtual-lab-title > div > span { display: none; }
   .ai-virtual-lab-mark { width: 36px; height: 36px; flex: none; }
+  .ai-lab-workspace-head { align-items: stretch; flex-direction: column; }
+  .ai-lab-workspace-tabs { width: 100%; }
+  .ai-lab-workspace-tabs button { flex: 1; justify-content: center; }
+}
+@media (max-width: 460px) {
+  .ai-lab-workspace-tabs button { padding: 7px 8px; font-size: 11px; }
+  .ai-virtual-lab-page > .ai-learn::before { right: 10px; }
 }
