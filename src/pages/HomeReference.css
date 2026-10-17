@@ -147,6 +147,17 @@
 .ref-art-flow { animation: ref-flow 2.8s ease-in-out infinite; }
 .ref-art-bar { transform-box: fill-box; transform-origin: left; animation: ref-grow 1.3s ease both; }
 .ref-art-orbit { animation: ref-orbit 7s linear infinite; }
+.ref-art-tree { transform-box: fill-box; transform-origin: top center; animation: ref-tree-grow 3.8s ease-in-out infinite; }
+.ref-art-layer { transform-box: fill-box; transform-origin: center; animation: ref-layer-pass 2.9s ease-in-out infinite; }
+.ref-art-gate { transform-box: fill-box; transform-origin: center; animation: ref-gate 2.7s ease-in-out infinite; }
+.ref-art-signal { animation: ref-signal 2.2s ease-in-out infinite; }
+.ref-art-cell { animation: ref-cell 3.2s ease-in-out infinite; }
+.ref-art-contour { transform-box: fill-box; transform-origin: center; animation: ref-contour 3.5s ease-in-out infinite; }
+.ref-art-centroid { animation: ref-centroid 2.8s ease-in-out infinite; }
+.ref-art-plane { animation: ref-plane 3.8s ease-in-out infinite; }
+.ref-art-margin { animation: ref-margin 3s ease-in-out infinite; }
+.ref-art-backward { animation: ref-backward 1.8s linear infinite; }
+.ref-art-step { opacity: .25; animation: ref-step 2.2s ease-in-out infinite; }
 .ref-art-cluster { transition: transform .7s ease; }
 .hl-reference-card:hover .ref-art-cluster-a, .hl-reference-card:focus-visible .ref-art-cluster-a { transform: translate(-5px, 2px); }
 .hl-reference-card:hover .ref-art-cluster-b, .hl-reference-card:focus-visible .ref-art-cluster-b { transform: translate(4px, -4px); }
@@ -157,10 +168,17 @@
 @keyframes ref-flow { 50% { opacity: .65; filter: brightness(1.4); } }
 @keyframes ref-grow { from { transform: scaleX(.15); } to { transform: scaleX(1); } }
 @keyframes ref-orbit { to { stroke-dashoffset: -42; } }
-.home-landing .hl-reference-card:not(:hover):not(:focus-visible) .ref-art-pulse,
-.home-landing .hl-reference-card:not(:hover):not(:focus-visible) .ref-art-float,
-.home-landing .hl-reference-card:not(:hover):not(:focus-visible) .ref-art-flow,
-.home-landing .hl-reference-card:not(:hover):not(:focus-visible) .ref-art-orbit { animation-play-state: paused; }
+@keyframes ref-tree-grow { 0%, 18% { opacity: .38; } 42%, 78% { opacity: 1; filter: drop-shadow(0 0 5px #6da9ff); } 100% { opacity: .38; } }
+@keyframes ref-layer-pass { 0%, 100% { opacity: .48; transform: translateX(-2px); } 45%, 65% { opacity: 1; transform: translateX(2px); filter: brightness(1.35); } }
+@keyframes ref-gate { 0%, 100% { opacity: .58; } 45% { opacity: 1; filter: drop-shadow(0 0 5px #33e9bd); } }
+@keyframes ref-signal { 0%, 100% { opacity: .16; } 48% { opacity: .86; stroke-width: 1.8; } }
+@keyframes ref-cell { 0%, 100% { filter: brightness(.72); } 45% { filter: brightness(1.55) drop-shadow(0 0 3px #8667ff); } }
+@keyframes ref-contour { 0%, 100% { opacity: .35; } 50% { opacity: 1; filter: drop-shadow(0 0 4px #8f68ff); } }
+@keyframes ref-centroid { 0%, 100% { opacity: .55; } 50% { opacity: 1; filter: drop-shadow(0 0 5px #fff); } }
+@keyframes ref-plane { 0%, 100% { opacity: .28; } 50% { opacity: .72; } }
+@keyframes ref-margin { 0%, 100% { opacity: .55; } 50% { opacity: 1; filter: drop-shadow(0 0 4px #ff65c1); } }
+@keyframes ref-backward { to { stroke-dashoffset: 24; } }
+@keyframes ref-step { 0%, 20% { opacity: .2; } 45%, 72% { opacity: 1; filter: drop-shadow(0 0 5px #ffb647); } 100% { opacity: .2; } }
 
 .home-landing .hl-hero { margin-top: 16px; }
 .home-landing .hl-spotlights { padding-top: 12px; }

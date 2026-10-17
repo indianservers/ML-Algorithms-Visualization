@@ -32,8 +32,90 @@ function network(name: 'RNN' | 'LSTM' | 'GRU') {
   </>;
 }
 
+function axes() {
+  return <path d="M18 9 V82 H210" fill="none" stroke="#92acd788" strokeWidth="1" />;
+}
+
+function scatter(seed: number, rising = true, curve = false) {
+  const pts = Array.from({ length: 29 }, (_, i) => {
+    const x = 26 + i * 6.1;
+    const base = rising ? 72 - i * 1.75 : 30 + i * 1.35;
+    return { x, y: base + Math.sin(i * 2.13 + seed) * 10 };
+  });
+  return <>{axes()}{nodes(pts, blue, 2.1)}<path className="ref-art-draw" d={curve ? "M23 72 C65 67 69 18 117 43 S170 70 205 14" : rising ? "M23 76 L205 18" : "M23 23 L205 73"} fill="none" stroke={purple} strokeWidth="3" /></>;
+}
+
+function tree(ensemble = false) {
+  const one = (offset: number, color: string, scale = 1) => <g className="ref-art-tree" transform={`translate(${offset} 0) scale(${scale})`}>
+    <path d="M55 15 L31 42 M55 15 L79 42 M31 42 L18 70 M31 42 L43 70 M79 42 L67 70 M79 42 L92 70" stroke={color} strokeWidth="2" />
+    {[[55,15],[31,42],[79,42],[18,70],[43,70],[67,70],[92,70]].map(([x,y],i)=><circle key={i} className="ref-art-node" cx={x} cy={y} r={i ? 4.5 : 6} fill={i > 2 ? (i % 2 ? pink : green) : color} />)}
+  </g>;
+  return <>{ensemble ? <>{one(0, blue, .78)}{one(72, purple, .78)}{one(142, green, .78)}</> : one(57, purple, 1)}</>;
+}
+
+function denseNet(kind: 'dense' | 'cnn' | 'attention' | 'gates' = 'dense') {
+  if (kind === 'cnn') return <>
+    {[18,42,68,96,130,167].map((x,i)=><g key={x} className="ref-art-layer" style={{animationDelay:`${i * 140}ms`}}><rect x={x} y={18+i%2*7} width={i<3?28:22} height={58-i%2*14} fill={i%2?'#6d38dd88':'#1f78ff88'} stroke={i%2?purple:blue} transform="skewY(-8)" /><path d={`M${x+5} ${34+i%2*7} H${x+20} M${x+5} ${49+i%2*7} H${x+20}`} stroke="#8feaff88" /></g>)}
+    <path className="ref-art-flow" d="M12 49 H211" stroke={green} strokeWidth="2" strokeDasharray="6 6" />
+  </>;
+  if (kind === 'attention') return <>
+    {[16,45,74,103].map((y,i)=><g key={y}><rect x="12" y={y-7} width="24" height="14" rx="4" fill={[blue,purple,pink,amber][i]} /><path className="ref-art-flow" style={{animationDelay:`${i*.25}s`}} d={`M36 ${y} C82 ${y}, 108 ${88-y}, 150 ${88-y}`} stroke={[blue,purple,pink,amber][i]} strokeWidth="2" fill="none" /></g>)}
+    <rect x="150" y="19" width="42" height="58" rx="7" fill="#5132aa88" stroke={purple} /><path d="M192 48 H213" stroke={green} strokeWidth="3" />
+  </>;
+  if (kind === 'gates') return <>
+    <rect x="15" y="20" width="190" height="58" rx="9" fill="#112d6199" stroke={purple} />
+    {[[48,'σ',pink],[94,'tanh',green],[145,'σ',amber],[183,'×',blue]].map(([x,label,color],i)=><g className="ref-art-gate" style={{animationDelay:`${i*.25}s`}} key={`${label}-${i}`}><rect x={Number(x)-17} y="37" width="34" height="25" rx="6" fill="#173b76" stroke={String(color)} /><text x={Number(x)} y="54" textAnchor="middle" fill="white" fontSize="10">{label}</text></g>)}
+    <path className="ref-art-flow" d="M4 49 H214" stroke={green} strokeWidth="2" strokeDasharray="6 5" />
+  </>;
+  const columns = [[24,[20,40,60,80]],[81,[16,32,48,64,80]],[139,[19,39,59,79]],[198,[31,65]]] as const;
+  return <>{columns.slice(0,-1).flatMap(([x,ys],c)=>ys.flatMap((y,i)=>columns[c+1][1].map((ny,j)=><line key={`${c}-${i}-${j}`} className="ref-art-signal" style={{animationDelay:`${(i+j)*.08}s`}} x1={x} y1={y} x2={columns[c+1][0]} y2={ny} stroke={c%2?purple:blue} opacity=".42" />)))}{columns.flatMap(([x,ys],c)=>ys.map((y,i)=><circle key={`${x}-${y}`} className="ref-art-node" cx={x} cy={y} r="5" fill={c===columns.length-1?amber:c%2?purple:blue} style={{animationDelay:`${(c+i)*.11}s`}} />))}</>;
+}
+
+function heatmap(kind: 'users' | 'items' | 'confusion' = 'users') {
+  return <>{Array.from({length:5},(_,r)=>Array.from({length:6},(_,c)=>{const hot=kind==='confusion'?r===c:(kind==='users'?(r*3+c*2)%7:(r+c*3)%8); return <rect className="ref-art-cell" style={{animationDelay:`${(r+c)*.08}s`}} key={`${r}-${c}`} x={42+c*27} y={8+r*17} width="24" height="14" rx="2" fill={hot===true||Number(hot)>4?pink:Number(hot)>2?purple:blue} opacity={.35+((r+c)%4)*.15} />;}))}</>;
+}
+
 function drawing(slug: string): ReactNode {
   switch (slug) {
+    case 'simple-linear-regression': return scatter(1);
+    case 'multiple-linear-regression': return <>{scatter(2)}<path className="ref-art-plane" d="M30 67 L137 28 L204 43 L96 83 Z" fill="#3b82f633" stroke={pink} /></>;
+    case 'polynomial-regression': return scatter(3, true, true);
+    case 'ridge-regression': return <>{axes()}{[9,16,24,33].map((r,i)=><ellipse className="ref-art-contour" style={{animationDelay:`${i*.15}s`}} key={r} cx="119" cy="48" rx={r*2.2} ry={r} fill="none" stroke={i%2?blue:purple} />)}<circle className="ref-art-pulse" cx="119" cy="48" r="5" fill={pink}/></>;
+    case 'lasso-regression': return <>{axes()}{[11,20,30,40].map((r,i)=><rect className="ref-art-contour" style={{animationDelay:`${i*.15}s`}} key={r} x={119-r} y={48-r*.62} width={r*2} height={r*1.24} fill="none" stroke={i%2?blue:purple} transform="rotate(45 119 48)"/>)}<circle className="ref-art-pulse" cx="119" cy="48" r="5" fill={pink}/></>;
+    case 'elastic-net-regression': return <>{axes()}<path className="ref-art-contour" d="M55 48 L88 18 H150 L184 48 L150 78 H88 Z" fill="#a659ff22" stroke={purple}/><path className="ref-art-contour" d="M76 48 L99 28 H140 L162 48 L140 68 H99 Z" fill="#36a8ff22" stroke={blue}/><circle className="ref-art-pulse" cx="119" cy="48" r="6" fill={pink}/></>;
+    case 'decision-tree-regression': case 'decision-tree-classification': return tree();
+    case 'random-forest-regression': case 'random-forest-classification': return tree(true);
+    case 'gradient-boosting-regression': case 'gradient-boosting-classification': case 'adaboost-classification': case 'xgboost-concept': return <>{tree(true)}<path className="ref-art-flow" d="M16 88 H205" stroke={amber} strokeWidth="2" strokeDasharray="8 5"/><text x="110" y="94" textAnchor="middle" fill="#dcecff" fontSize="8">WEAK LEARNERS → STRONG MODEL</text></>;
+    case 'support-vector-regression': case 'svm-classification': return <>{scatter(8)}<path d="M22 65 L198 13 M31 78 L207 26" stroke="#dcecff" strokeDasharray="5 4"/><path className="ref-art-margin" d="M27 72 L203 20" stroke={pink} strokeWidth="3"/></>;
+    case 'logistic-regression': return <>{axes()}{dots(63,63,37,20,20,pink,1)}{dots(168,28,37,20,20,blue,3)}<path className="ref-art-draw" d="M21 76 C75 76 83 75 110 47 S145 19 207 18" fill="none" stroke="#f3f7ff" strokeWidth="3"/></>;
+    case 'multinomial-logistic-regression': return <>{axes()}<path d="M20 80 L104 42 L64 8 Z" fill="#286dff66"/><path d="M64 8 L104 42 L204 8 Z" fill="#ff4b7a66"/><path d="M20 80 L104 42 L205 82 Z" fill="#23dc9a66"/>{dots(59,48,32,18,13,blue,1)}{dots(141,24,31,13,13,pink,2)}{dots(151,66,33,13,13,green,3)}</>;
+    case 'knn-classification': return <>{dots(58,48,38,29,24,blue,1)}{dots(161,49,38,29,24,pink,4)}<circle className="ref-art-pulse" cx="108" cy="49" r="22" fill="none" stroke={amber}/><circle cx="108" cy="49" r="5" fill={amber}/><text x="108" y="17" fill="white" textAnchor="middle" fontSize="9">k = 5</text></>;
+    case 'naive-bayes': return <>{axes()}{[blue,pink,green].map((c,i)=><path key={c} className="ref-art-draw" style={{animationDelay:`${i*.18}s`}} d={`M${25+i*47} 80 C${42+i*47} 80 ${42+i*47} 16 ${61+i*47} 16 S${79+i*47} 80 ${96+i*47} 80`} fill={`${c}22`} stroke={c} strokeWidth="2"/>)}</>;
+    case 'perceptron': case 'mlp': case 'nn-playground': case 'network-builder': return denseNet();
+    case 'cnn': case 'convolution-visualizer': return denseNet('cnn');
+    case 'rnn': return network('RNN');
+    case 'lstm': case 'gru': return denseNet('gates');
+    case 'transformer-attention': case 'multi-head-attention': return denseNet('attention');
+    case 'backpropagation-visualizer': return <>{denseNet()}<path className="ref-art-backward" d="M205 88 H17" stroke={pink} strokeWidth="3" strokeDasharray="7 5"/><text x="111" y="95" fill={pink} textAnchor="middle" fontSize="8">GRADIENTS</text></>;
+    case 'few-shot-learning': return <>{dots(115,49,58,32,37,blue,2)}<circle className="ref-art-pulse" cx="187" cy="22" r="12" fill={amber}/><path className="ref-art-flow" d="M174 28 L146 40" stroke={amber} strokeWidth="2" strokeDasharray="4 4"/></>;
+    case 'transfer-learning': return <>{denseNet('cnn')}<rect x="151" y="8" width="58" height="18" rx="6" fill="#156c50" stroke={green}/><text x="180" y="20" textAnchor="middle" fill="white" fontSize="8">FINE-TUNE</text></>;
+    case 'k-means': return <><g className="ref-art-cluster ref-art-cluster-a">{dots(51,31,29,23,25,blue,1)}</g><g className="ref-art-cluster ref-art-cluster-b">{dots(109,68,27,20,23,pink,3)}</g><g className="ref-art-cluster ref-art-cluster-c">{dots(177,35,26,22,23,amber,5)}</g>{[[51,31,blue],[109,68,pink],[177,35,amber]].map(([x,y,c])=><path className="ref-art-centroid" key={String(x)} d={`M${Number(x)-6} ${Number(y)} H${Number(x)+6} M${x} ${Number(y)-6} V${Number(y)+6}`} stroke={String(c)} strokeWidth="3"/>)}</>;
+    case 'k-medoids': return <>{dots(57,35,31,25,25,blue,1)}{dots(161,55,34,25,29,pink,3)}{[[57,35,blue],[161,55,pink]].map(([x,y,c])=><polygon className="ref-art-pulse" key={String(x)} points={`${Number(x)},${Number(y)-8} ${Number(x)+8},${Number(y)-2} ${Number(x)+5},${Number(y)+8} ${Number(x)-5},${Number(y)+8} ${Number(x)-8},${Number(y)-2}`} fill="#0d2047" stroke={String(c)} strokeWidth="2"/>)}</>;
+    case 'hierarchical-clustering': return <><path className="ref-art-draw" d="M24 82 V69 H50 V82 M37 69 V55 H77 M64 82 V55 M96 82 V43 H132 V82 M114 43 V27 H170 M154 82 V57 H190 V82 M172 57 V27 M104 27 V10 H172" stroke="#bad2ff" strokeWidth="2" fill="none"/>{[24,50,64,96,132,154,190].map((x,i)=><circle key={x} cx={x} cy="83" r="4" fill={[amber,pink,blue,green,purple][i%5]}/>)}</>;
+    case 'dbscan': return <>{dots(55,30,28,22,28,blue,1)}{dots(151,55,34,27,31,green,3)}{[[104,16],[201,29],[112,82],[18,76]].map(([x,y],i)=><circle className="ref-art-pulse" key={i} cx={x} cy={y} r="4" fill="none" stroke={pink}/>)}</>;
+    case 'mean-shift': return <>{[35,24,14].map((r,i)=><circle className="ref-art-contour" key={r} cx="65" cy="54" r={r} fill={`${blue}${i===0?'12':'22'}`} stroke={blue}/>) }{[40,28,16].map((r,i)=><ellipse className="ref-art-contour" key={r} cx="160" cy="45" rx={r} ry={r*.72} fill={`${amber}${i===0?'12':'22'}`} stroke={amber}/>)}<path className="ref-art-flow" d="M22 80 L62 58 M109 79 L157 49" stroke="white" strokeWidth="2" strokeDasharray="5 4"/></>;
+    case 'gaussian-mixture-model': return <>{axes()}{[blue,pink,amber].map((c,i)=><path key={c} className="ref-art-draw" style={{animationDelay:`${i*.15}s`}} d={`M${15+i*48} 78 C${35+i*48} 78 ${42+i*48} 16 ${64+i*48} 16 S${93+i*48} 78 ${111+i*48} 78`} fill={`${c}24`} stroke={c} strokeWidth="2"/>)}</>;
+    case 'spectral-clustering': return <>{[0,1,2].map((ring)=><path key={ring} className="ref-art-orbit" d={`M${21+ring*10} ${65-ring*7} C${59+ring*7} ${14+ring*4}, ${111+ring*9} ${89-ring*7}, ${204-ring*7} ${24+ring*11}`} fill="none" stroke={[blue,pink,green][ring]} strokeWidth="8" strokeLinecap="round" strokeDasharray="2 6"/>)}</>;
+    case 'optics': return <>{axes()}{Array.from({length:38},(_,i)=><rect className="ref-art-bar" style={{animationDelay:`${i*.025}s`}} key={i} x={22+i*4.7} y={82-(8+Math.abs(Math.sin(i*.29))*44)} width="3" height={8+Math.abs(Math.sin(i*.29))*44} fill={i<13?pink:i<26?purple:blue}/>)}</>;
+    case 'user-based-cf': return heatmap('users');
+    case 'item-based-cf': return heatmap('items');
+    case 'matrix-factorization': return <>{heatmap('users')}<text x="15" y="54" fill="white" fontSize="19">R</text><text x="111" y="54" fill="white" fontSize="18">≈</text><path className="ref-art-flow" d="M137 9 V87 M164 9 V87 M191 9 V87" stroke={amber} strokeWidth="12" opacity=".55"/></>;
+    case 'content-based': return <><rect x="13" y="15" width="65" height="66" rx="6" fill="#18396e" stroke={blue}/>{['Sci-Fi','Space','Action'].map((t,i)=><g key={t}><rect x="89" y={15+i*24} width="50" height="18" rx="9" fill={i%2?blue:purple}/><text x="114" y={27+i*24} textAnchor="middle" fill="white" fontSize="8">{t}</text></g>)}<path className="ref-art-flow" d="M143 47 H170" stroke={pink} strokeWidth="2" strokeDasharray="5 4"/>{[18,43,68].map((y,i)=><rect key={y} x="176" y={y} width="36" height="17" rx="4" fill={i? '#156c50':'#4d2b87'} stroke={i?green:purple}/>)}</>;
+    case 'feature-importance': return <>{['Age','Income','Credit','Loan','Length'].map((t,i)=><g key={t}><text x="8" y={17+i*17} fill="#dcecff" fontSize="8">{t}</text><rect className="ref-art-bar" style={{animationDelay:`${i*.12}s`}} x="52" y={8+i*17} width={140-i*23} height="11" rx="3" fill={[blue,purple,pink,amber,green][i]}/></g>)}</>;
+    case 'partial-dependence-plot': return <>{axes()}<path className="ref-art-draw" d="M20 70 C52 81 77 64 96 51 S127 35 146 39 S176 27 207 31" fill="none" stroke={blue} strokeWidth="3"/><path d="M20 62 C52 73 77 56 96 43 S127 27 146 31 S176 19 207 23 L207 40 C176 36 162 48 146 47 S122 51 96 60 S52 90 20 79Z" fill="#36a8ff25"/></>;
+    case 'shap-concept': return <>{[14,31,48,65,82].map((y,i)=><g key={y}><path className="ref-art-bar" style={{animationDelay:`${i*.1}s`}} d={`M110 ${y} H${110+(i%2?-1:1)*(25+i*9)}`} stroke={i%2?blue:pink} strokeWidth="10"/><text x="7" y={y+3} fill="#dcecff" fontSize="8">{['Age','Income','Credit','Loan','Length'][i]}</text></g>)}<path d="M110 5 V91" stroke="#fff8"/></>;
+    case 'lime-concept': return <><rect x="12" y="12" width="78" height="72" rx="7" fill="#15366b" stroke={blue}/><path className="ref-art-flow" d="M95 48 H129" stroke={blue} strokeWidth="2" strokeDasharray="5 4"/><rect x="135" y="12" width="73" height="72" rx="7" fill="#15366b" stroke={purple}/>{[27,45,63].map((y,i)=><rect className="ref-art-bar" key={y} x="146" y={y} width={45-i*8} height="8" rx="3" fill={i===1?blue:pink}/>)}</>;
+    case 'gradient-descent': case 'sgd': case 'momentum': case 'adam': return <>{axes()}<path d="M25 16 C67 17 73 78 113 78 S161 17 205 15" fill="none" stroke={purple} strokeWidth="2"/>{[36,59,78,94,108].map((x,i)=><circle className="ref-art-step" style={{animationDelay:`${i*.22}s`}} key={x} cx={x} cy={17+i*13} r="5" fill={i===4?green:amber}/>)}</>;
     case 'pca': return <>
       <path d="M22 78 L192 24 M36 82 L45 18" stroke={blue} strokeWidth="2" className="ref-art-draw" />
       <path d="M33 74 L170 28 L204 47 L66 89Z" fill="#4d7bff26" stroke="#7d84ff" strokeWidth="1" />

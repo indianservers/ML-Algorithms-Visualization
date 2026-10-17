@@ -387,22 +387,25 @@ const panelId = (category: string) => `hl-mini-panel-${category.toLowerCase().re
 
 function AlgorithmCard({ item, enterIndex = -1 }: { item: Card; enterIndex?: number }) {
   const thumb = visionLabThumb(item.route);
-  const isReference = ["Dimensionality Reduction", "Time Series", "NLP", "Reinforcement Learning", "Evaluation", "Preprocessing"].includes(item.category);
+  // Vision cards deliberately keep their existing photographic thumbnails.
+  // Every other card uses our authored SVG scene so no reference screenshot is
+  // cropped or embedded into the UI.
+  const usesAnimatedSvg = !thumb;
   return (
     <Link
       to={item.route}
-      className={["hl-ai-card", "hl-home-card", isReference ? "hl-reference-card" : "", enterIndex >= 0 ? "hl-card-enter" : "", thumb ? "has-thumb" : ""].filter(Boolean).join(" ")}
+      className={["hl-ai-card", "hl-home-card", usesAnimatedSvg ? "hl-reference-card" : "", enterIndex >= 0 ? "hl-card-enter" : "", thumb ? "has-thumb" : ""].filter(Boolean).join(" ")}
       style={enterIndex >= 0 ? { animationDelay: `${Math.min(enterIndex, 11) * 22}ms` } : undefined}
       aria-label={`Open ${item.label} lab`}
     >
       <span className="hl-ai-copy hl-home-card-copy">
         <strong>{item.label}</strong>
-        {isReference && <em className="hl-home-card-category">{item.category}</em>}
+        {usesAnimatedSvg && <em className="hl-home-card-category">{item.category.replace(" - ", " · ")}</em>}
       </span>
       <span className="hl-home-card-art" aria-hidden="true">
         {thumb ? (
           <img src={thumb} alt="" loading="lazy" />
-        ) : isReference ? (
+        ) : usesAnimatedSvg ? (
           <ReferenceLabArt route={item.route} />
         ) : (
           <AlgorithmArt route={item.route} category={item.category} artKey={item.artKey} compact />
