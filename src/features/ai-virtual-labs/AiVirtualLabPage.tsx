@@ -5,6 +5,7 @@ import { VisualizationSkeleton } from '../../components/common/EmptyState';
 import { aiVirtualLabRoute, getAiVirtualLab } from './catalog';
 import { AiAlgorithmIllustration } from './AiAlgorithmIllustration';
 import { LearningCompanion } from './LearningCompanion';
+import { GraphLearningStudio, isGraphLearningLab } from './GraphLearningStudio';
 import { readLearningStore, recordAction, writeLearningStore, type QSnapshot } from './learningModel';
 import './AiVirtualLabPage.css';
 
@@ -82,6 +83,7 @@ export default function AiVirtualLabPage() {
           <div><p>AI Algorithms Virtual Labs</p><h1>{lab.title}</h1><span>{lab.summary}</span></div>
         </div>
       </div>
+      {isGraphLearningLab(lab.slug) && <GraphLearningStudio key={lab.slug} slug={lab.slug} />}
       {!ready && <div className="ai-virtual-lab-loading" aria-label="Loading virtual lab"><VisualizationSkeleton /></div>}
       <iframe
         key={frameUrl}
