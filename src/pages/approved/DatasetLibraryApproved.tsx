@@ -181,6 +181,7 @@ function PreviewTable({
   return (
     <div
       className="table"
+      data-i18n-protect
       style={{
         ["--preview-cols" as string]: `repeat(${Math.max(columns.length, 1)}, minmax(72px, 1fr))`,
       }}

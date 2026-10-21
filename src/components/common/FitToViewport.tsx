@@ -1,3 +1,4 @@
+import { sourceText } from "../../i18n/config";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
 /**
@@ -29,7 +30,7 @@ export function FitToViewport({ children }: { children: ReactNode }) {
       configs.forEach(el => el.classList.add('mobile-algorithm-config'));
       setHasConfig(configs.length > 0);
       const next = [...inner.querySelectorAll<HTMLButtonElement>('button')].filter(button =>
-        /^(run|train|step|reset|pause|play)(\s|$)/i.test(button.textContent?.trim() ?? '') && !button.closest('.lab-tab-lesson')
+        /^(run|train|step|reset|pause|play)(\s|$)/i.test(sourceText(button).trim()) && !button.closest('.lab-tab-lesson')
       ).slice(0, 4);
       setActions(current => current.length === next.length && current.every((button, index) => button === next[index]) ? current : next);
     };

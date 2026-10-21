@@ -1,3 +1,4 @@
+import { sourceText } from "../../i18n/config";
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { CheckCircle2, ChevronDown, ChevronUp, CircleDot, LoaderCircle, X } from "lucide-react";
@@ -20,7 +21,7 @@ function isTrainingAction(button: HTMLButtonElement) {
   if (button.closest('[data-training-feedback="inline"]')) return false;
   if (button.disabled || button.closest('nav, [role="tablist"], [role="tab"], [data-ml-lesson-tabs], [class*="-tabs"]')) return false;
   if (button.closest(".training-activity")) return false;
-  const label = `${button.getAttribute("aria-label") ?? ""} ${button.textContent ?? ""}`.replace(/\s+/g, " ").trim().toLowerCase();
+  const label = `${button.getAttribute("aria-label") ?? ""} ${sourceText(button)}`.replace(/\s+/g, " ").trim().toLowerCase();
   return (/\b(train|retrain|fit|optimi[sz]e)\b/.test(label) && !/train\s*[\/]\s*test|training log|training speed/.test(label))
     || /\b(start training|run training|run model|run optimizer|run algorithm)\b/.test(label)
     || /^train$/.test(label)
@@ -109,7 +110,7 @@ export function TrainingActivityPanel() {
       monitor.current = window.setInterval(() => {
         if (explicit.current) return;
         const elapsed = performance.now() - started.current;
-        const label = button.textContent?.toLowerCase() ?? "";
+        const label = sourceText(button).toLowerCase();
         const busy = button.isConnected && (button.disabled || /training…|training\.\.\.|fitting…|fitting\.\.\.|optimizing…|optimizing\.\.\./.test(label));
         if (busy) sawBusy = true;
         if (!fittingLogged && elapsed >= 90) {

@@ -16,7 +16,19 @@ function copyMediapipeWasmFiles() {
   if (!fs.existsSync(WASM_SRC)) return
   fs.mkdirSync(WASM_DEST, { recursive: true })
   for (const name of fs.readdirSync(WASM_SRC)) {
-    fs.copyFileSync(path.join(WASM_SRC, name), path.join(WASM_DEST, name))
+    const source = path.join(WASM_SRC, name)
+    const destination = path.join(WASM_DEST, name)
+    const matches = () => fs.existsSync(destination)
+      && fs.statSync(source).size === fs.statSync(destination).size
+      && fs.readFileSync(source).equals(fs.readFileSync(destination))
+    // Avoid rewriting identical generated assets (including files a Windows
+    // server or scanner currently has open). Never ignore incomplete copies.
+    if (matches()) continue
+    try {
+      fs.copyFileSync(source, destination)
+    } catch (error) {
+      if (!matches()) throw error
+    }
   }
 }
 
@@ -67,5 +79,9 @@ function mediapipeWasm(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [mediapipeWasm(), react()],
+  plugins: [mediapipeWasm(), react({ jsxImportSource: '@ml-i18n' })],
+  resolve: { alias: { '@ml-i18n': path.resolve('src/i18n') } },
+  server: {
+    watch: { ignored: ['**/.timeseries-tests.local/**', '**/.optics-tests.local/**', '**/.localization-tests.local/**'] },
+  },
 })

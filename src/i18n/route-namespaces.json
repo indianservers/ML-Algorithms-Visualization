@@ -1,0 +1,2395 @@
+[
+  {
+    "path": "/",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation",
+      "datasets",
+      "module-ai-virtual-labs",
+      "lessons"
+    ]
+  },
+  {
+    "path": "/studios/:category",
+    "namespaces": [
+      "catalogue",
+      "navigation",
+      "common",
+      "module-ai-virtual-labs"
+    ]
+  },
+  {
+    "path": "/documentation",
+    "namespaces": [
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets"
+    ]
+  },
+  {
+    "path": "/dataset-library",
+    "namespaces": [
+      "datasets",
+      "common",
+      "navigation",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/sitemap",
+    "namespaces": [
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets"
+    ]
+  },
+  {
+    "path": "/implementation-matrix",
+    "namespaces": [
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/:group/:slug/lessons/:pageNumber",
+    "namespaces": [
+      "lessons",
+      "common",
+      "navigation",
+      "catalogue",
+      "visualizations",
+      "datasets",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/supervised/simple-linear-regression",
+    "namespaces": [
+      "module-supervised",
+      "common",
+      "navigation",
+      "catalogue",
+      "lessons",
+      "datasets"
+    ]
+  },
+  {
+    "path": "/ml/supervised/multiple-linear-regression",
+    "namespaces": [
+      "module-supervised",
+      "datasets",
+      "common",
+      "training",
+      "navigation",
+      "catalogue",
+      "lessons"
+    ]
+  },
+  {
+    "path": "/ml/supervised/polynomial-regression",
+    "namespaces": [
+      "module-supervised",
+      "common",
+      "navigation",
+      "catalogue",
+      "lessons",
+      "datasets"
+    ]
+  },
+  {
+    "path": "/ml/supervised/ridge-regression",
+    "namespaces": [
+      "module-supervised",
+      "common",
+      "navigation",
+      "catalogue",
+      "lessons",
+      "datasets"
+    ]
+  },
+  {
+    "path": "/ml/supervised/lasso-regression",
+    "namespaces": [
+      "module-supervised",
+      "common",
+      "navigation",
+      "catalogue",
+      "lessons",
+      "datasets"
+    ]
+  },
+  {
+    "path": "/ml/supervised/elastic-net-regression",
+    "namespaces": [
+      "module-supervised",
+      "datasets",
+      "common"
+    ]
+  },
+  {
+    "path": "/ml/supervised/decision-tree-regression",
+    "namespaces": [
+      "module-supervised",
+      "common",
+      "lessons",
+      "navigation",
+      "catalogue",
+      "datasets"
+    ]
+  },
+  {
+    "path": "/ml/supervised/random-forest-regression",
+    "namespaces": [
+      "module-supervised",
+      "datasets",
+      "common"
+    ]
+  },
+  {
+    "path": "/ml/supervised/gradient-boosting-regression",
+    "namespaces": [
+      "module-supervised",
+      "common",
+      "navigation",
+      "catalogue",
+      "lessons",
+      "datasets"
+    ]
+  },
+  {
+    "path": "/ml/supervised/support-vector-regression",
+    "namespaces": [
+      "module-supervised",
+      "common",
+      "navigation",
+      "catalogue",
+      "lessons",
+      "datasets"
+    ]
+  },
+  {
+    "path": "/ml/supervised/logistic-regression",
+    "namespaces": [
+      "module-supervised",
+      "common",
+      "lessons",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/supervised/multinomial-logistic-regression",
+    "namespaces": [
+      "module-supervised",
+      "common",
+      "navigation",
+      "catalogue",
+      "lessons",
+      "datasets"
+    ]
+  },
+  {
+    "path": "/ml/supervised/knn-classification",
+    "namespaces": [
+      "module-supervised",
+      "common",
+      "navigation",
+      "catalogue",
+      "lessons",
+      "datasets"
+    ]
+  },
+  {
+    "path": "/ml/supervised/naive-bayes",
+    "namespaces": [
+      "module-supervised",
+      "common",
+      "lessons",
+      "navigation",
+      "catalogue",
+      "datasets"
+    ]
+  },
+  {
+    "path": "/ml/supervised/decision-tree-classification",
+    "namespaces": [
+      "module-supervised",
+      "common",
+      "lessons",
+      "navigation",
+      "catalogue",
+      "datasets"
+    ]
+  },
+  {
+    "path": "/ml/supervised/random-forest-classification",
+    "namespaces": [
+      "module-supervised",
+      "common",
+      "navigation",
+      "catalogue",
+      "lessons",
+      "datasets"
+    ]
+  },
+  {
+    "path": "/ml/supervised/svm-classification",
+    "namespaces": [
+      "module-supervised",
+      "lessons",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets"
+    ]
+  },
+  {
+    "path": "/ml/supervised/gradient-boosting-classification",
+    "namespaces": [
+      "module-supervised",
+      "lessons",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets"
+    ]
+  },
+  {
+    "path": "/ml/supervised/adaboost-classification",
+    "namespaces": [
+      "module-supervised",
+      "lessons",
+      "datasets",
+      "common",
+      "navigation",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/supervised/xgboost-concept",
+    "namespaces": [
+      "module-supervised",
+      "common",
+      "datasets",
+      "navigation",
+      "catalogue",
+      "lessons"
+    ]
+  },
+  {
+    "path": "/ml/clustering/k-means",
+    "namespaces": [
+      "module-clustering",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/clustering/k-medoids",
+    "namespaces": [
+      "module-clustering",
+      "navigation",
+      "common",
+      "datasets",
+      "catalogue",
+      "lessons"
+    ]
+  },
+  {
+    "path": "/ml/clustering/hierarchical-clustering",
+    "namespaces": [
+      "module-clustering",
+      "navigation",
+      "common",
+      "datasets",
+      "training",
+      "catalogue",
+      "lessons"
+    ]
+  },
+  {
+    "path": "/ml/clustering/dbscan",
+    "namespaces": [
+      "module-clustering",
+      "navigation",
+      "common",
+      "datasets",
+      "catalogue",
+      "lessons"
+    ]
+  },
+  {
+    "path": "/ml/clustering/mean-shift",
+    "namespaces": [
+      "module-clustering",
+      "navigation",
+      "common",
+      "datasets",
+      "catalogue",
+      "lessons"
+    ]
+  },
+  {
+    "path": "/ml/clustering/gaussian-mixture-model",
+    "namespaces": [
+      "module-clustering",
+      "navigation",
+      "common",
+      "datasets",
+      "catalogue",
+      "lessons"
+    ]
+  },
+  {
+    "path": "/ml/clustering/spectral-clustering",
+    "namespaces": [
+      "module-clustering",
+      "navigation",
+      "common",
+      "datasets",
+      "catalogue",
+      "lessons"
+    ]
+  },
+  {
+    "path": "/ml/clustering/optics",
+    "namespaces": [
+      "module-clustering",
+      "navigation",
+      "common",
+      "datasets",
+      "catalogue",
+      "lessons"
+    ]
+  },
+  {
+    "path": "/ml/dimensionality-reduction/pca",
+    "namespaces": [
+      "module-dimensionality",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/dimensionality-reduction/kernel-pca",
+    "namespaces": [
+      "module-dimensionality",
+      "common",
+      "datasets",
+      "navigation",
+      "catalogue",
+      "lessons"
+    ]
+  },
+  {
+    "path": "/ml/dimensionality-reduction/tsne",
+    "namespaces": [
+      "module-dimensionality",
+      "common",
+      "datasets",
+      "navigation",
+      "catalogue",
+      "lessons"
+    ]
+  },
+  {
+    "path": "/ml/dimensionality-reduction/umap-concept",
+    "namespaces": [
+      "module-dimensionality",
+      "common",
+      "datasets",
+      "navigation",
+      "catalogue",
+      "lessons"
+    ]
+  },
+  {
+    "path": "/ml/dimensionality-reduction/lda",
+    "namespaces": [
+      "module-dimensionality",
+      "common",
+      "datasets",
+      "navigation",
+      "catalogue",
+      "lessons"
+    ]
+  },
+  {
+    "path": "/ml/dimensionality-reduction/autoencoder",
+    "namespaces": [
+      "module-dimensionality",
+      "common",
+      "datasets",
+      "navigation",
+      "catalogue",
+      "lessons"
+    ]
+  },
+  {
+    "path": "/ml/deep-learning/perceptron",
+    "namespaces": [
+      "lessons",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets"
+    ]
+  },
+  {
+    "path": "/ml/deep-learning/mlp",
+    "namespaces": [
+      "lessons",
+      "common",
+      "navigation",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/deep-learning/nn-playground",
+    "namespaces": [
+      "lessons",
+      "common",
+      "navigation",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/deep-learning/cnn",
+    "namespaces": [
+      "lessons",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/deep-learning/convolution-visualizer",
+    "namespaces": [
+      "lessons",
+      "common",
+      "navigation",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/deep-learning/rnn",
+    "namespaces": [
+      "lessons",
+      "common",
+      "datasets",
+      "navigation",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/deep-learning/lstm",
+    "namespaces": [
+      "lessons",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/deep-learning/gru",
+    "namespaces": [
+      "lessons",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/deep-learning/transformer-attention",
+    "namespaces": [
+      "lessons",
+      "common",
+      "navigation",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/deep-learning/multi-head-attention",
+    "namespaces": [
+      "lessons",
+      "common",
+      "navigation",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/deep-learning/backpropagation-visualizer",
+    "namespaces": [
+      "lessons",
+      "common",
+      "navigation",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/deep-learning/few-shot-learning",
+    "namespaces": [
+      "lessons",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/deep-learning/network-builder",
+    "namespaces": [
+      "lessons",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/deep-learning/transfer-learning",
+    "namespaces": [
+      "lessons",
+      "common",
+      "navigation",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/evaluation/train-test-split",
+    "namespaces": [
+      "module-evaluation",
+      "datasets",
+      "common",
+      "navigation",
+      "catalogue",
+      "lessons"
+    ]
+  },
+  {
+    "path": "/ml/evaluation/cross-validation",
+    "namespaces": [
+      "module-evaluation",
+      "navigation",
+      "common",
+      "catalogue",
+      "lessons"
+    ]
+  },
+  {
+    "path": "/ml/evaluation/confusion-matrix",
+    "namespaces": [
+      "module-evaluation",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/evaluation/roc-auc",
+    "namespaces": [
+      "module-evaluation",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/evaluation/precision-recall-curve",
+    "namespaces": [
+      "module-evaluation",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/evaluation/regression-metrics",
+    "namespaces": [
+      "module-evaluation",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/evaluation/bias-variance-tradeoff",
+    "namespaces": [
+      "module-evaluation",
+      "module-shared",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/preprocessing/missing-values",
+    "namespaces": [
+      "datasets",
+      "common",
+      "navigation",
+      "catalogue",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/preprocessing/scaling-normalization",
+    "namespaces": [
+      "datasets",
+      "common",
+      "navigation",
+      "catalogue",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/preprocessing/categorical-encoding",
+    "namespaces": [
+      "datasets",
+      "common",
+      "navigation",
+      "catalogue",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/preprocessing/outlier-detection",
+    "namespaces": [
+      "datasets",
+      "common",
+      "navigation",
+      "catalogue",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/preprocessing/feature-selection",
+    "namespaces": [
+      "datasets",
+      "module-shared",
+      "common",
+      "navigation",
+      "catalogue",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/preprocessing/polynomial-features",
+    "namespaces": [
+      "datasets",
+      "module-shared",
+      "common",
+      "navigation",
+      "catalogue",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/time-series/moving-average",
+    "namespaces": [
+      "module-timeSeries",
+      "module-time-series-studio",
+      "datasets",
+      "common",
+      "visualizations",
+      "lessons",
+      "navigation",
+      "catalogue",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/time-series/exponential-smoothing",
+    "namespaces": [
+      "module-timeSeries",
+      "module-time-series-studio",
+      "datasets",
+      "common",
+      "visualizations",
+      "lessons",
+      "navigation",
+      "catalogue",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/time-series/holt-winters",
+    "namespaces": [
+      "module-timeSeries",
+      "module-time-series-studio",
+      "datasets",
+      "common",
+      "visualizations",
+      "lessons",
+      "module-shared",
+      "navigation",
+      "catalogue",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/time-series/arima-concept",
+    "namespaces": [
+      "module-timeSeries",
+      "module-time-series-studio",
+      "datasets",
+      "common",
+      "visualizations",
+      "lessons",
+      "navigation",
+      "catalogue",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/time-series/anomaly-detection",
+    "namespaces": [
+      "module-timeSeries",
+      "module-time-series-studio",
+      "datasets",
+      "common",
+      "visualizations",
+      "lessons",
+      "module-shared",
+      "navigation",
+      "catalogue",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/time-series/rnn-forecasting",
+    "namespaces": [
+      "module-timeSeries",
+      "module-time-series-studio",
+      "datasets",
+      "common",
+      "visualizations",
+      "lessons",
+      "navigation",
+      "catalogue",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/time-series/lstm-forecasting",
+    "namespaces": [
+      "module-timeSeries",
+      "module-time-series-studio",
+      "datasets",
+      "common",
+      "visualizations",
+      "lessons",
+      "navigation",
+      "catalogue",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/time-series/gru-forecasting",
+    "namespaces": [
+      "module-timeSeries",
+      "module-time-series-studio",
+      "datasets",
+      "common",
+      "visualizations",
+      "lessons",
+      "navigation",
+      "catalogue",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/nlp/bag-of-words",
+    "namespaces": [
+      "module-nlp",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/nlp/tf-idf",
+    "namespaces": [
+      "module-nlp",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/nlp/text-classification",
+    "namespaces": [
+      "module-nlp",
+      "module-shared",
+      "common",
+      "navigation",
+      "catalogue",
+      "lessons",
+      "datasets"
+    ]
+  },
+  {
+    "path": "/ml/nlp/word-embedding-concept",
+    "namespaces": [
+      "module-nlp",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/nlp/sentiment-analysis",
+    "namespaces": [
+      "module-nlp",
+      "module-shared",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/nlp/naive-bayes-spam",
+    "namespaces": [
+      "module-nlp",
+      "module-shared",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/nlp/audio-classification",
+    "namespaces": [
+      "module-nlp",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "module-computer-vision"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/object-detection",
+    "namespaces": [
+      "module-computer-vision",
+      "common",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/image-classification",
+    "namespaces": [
+      "module-computer-vision",
+      "common",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/hand-landmarks",
+    "namespaces": [
+      "module-computer-vision",
+      "common",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/hand-gesture-recognition",
+    "namespaces": [
+      "module-computer-vision",
+      "common",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/custom-gesture-trainer",
+    "namespaces": [
+      "module-computer-vision",
+      "common",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/face-detection",
+    "namespaces": [
+      "module-computer-vision",
+      "common",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/face-mesh",
+    "namespaces": [
+      "module-computer-vision",
+      "common",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/face-expressions",
+    "namespaces": [
+      "module-computer-vision",
+      "common",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/pose-estimation",
+    "namespaces": [
+      "module-computer-vision",
+      "common",
+      "navigation",
+      "catalogue",
+      "lessons",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/pose-angle-analyzer",
+    "namespaces": [
+      "module-computer-vision",
+      "common",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/exercise-rep-counter",
+    "namespaces": [
+      "module-computer-vision",
+      "common",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/holistic-body-tracker",
+    "namespaces": [
+      "module-computer-vision",
+      "common",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/image-segmentation",
+    "namespaces": [
+      "module-computer-vision",
+      "common",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/person-background-segmentation",
+    "namespaces": [
+      "module-computer-vision",
+      "common",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/interactive-segmentation",
+    "namespaces": [
+      "module-computer-vision",
+      "common",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/image-embeddings",
+    "namespaces": [
+      "module-computer-vision",
+      "common",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/object-tracking",
+    "namespaces": [
+      "module-computer-vision",
+      "common",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/multi-object-analytics",
+    "namespaces": [
+      "module-computer-vision",
+      "common",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/camera-effects",
+    "namespaces": [
+      "module-computer-vision",
+      "common",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/pipeline-builder",
+    "namespaces": [
+      "module-computer-vision",
+      "common",
+      "catalogue"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/audio-classification",
+    "namespaces": [
+      "module-nlp",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/pose-detection",
+    "namespaces": [
+      "module-computerVision",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/person-segmentation",
+    "namespaces": [
+      "module-computerVision",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/cnn-filter-explorer",
+    "namespaces": [
+      "module-computerVision",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/kmeans-image-segmentation",
+    "namespaces": [
+      "module-computerVision",
+      "module-shared",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/edge-detection",
+    "namespaces": [
+      "module-computerVision",
+      "module-shared",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/object-detection-demo",
+    "namespaces": [
+      "module-computerVision",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/computer-vision/grad-cam",
+    "namespaces": [
+      "module-computerVision",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ai-algorithms/:slug",
+    "namespaces": [
+      "module-ai-virtual-labs",
+      "common",
+      "catalogue",
+      "lessons",
+      "visualizations"
+    ]
+  },
+  {
+    "path": "/ml/recommendation/user-based-cf",
+    "namespaces": [
+      "module-recommendation",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/recommendation/item-based-cf",
+    "namespaces": [
+      "module-recommendation",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/recommendation/matrix-factorization",
+    "namespaces": [
+      "module-recommendation",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/recommendation/content-based",
+    "namespaces": [
+      "module-recommendation",
+      "module-shared",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/reinforcement-learning/multi-armed-bandit",
+    "namespaces": [
+      "lessons",
+      "module-shared",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/reinforcement-learning/q-learning-grid-world",
+    "namespaces": [
+      "lessons",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/reinforcement-learning/markov-decision-process",
+    "namespaces": [
+      "lessons",
+      "module-shared",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/explainability/feature-importance",
+    "namespaces": [
+      "module-explainability",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/explainability/partial-dependence-plot",
+    "namespaces": [
+      "module-explainability",
+      "module-shared",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/explainability/shap-concept",
+    "namespaces": [
+      "module-explainability",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/explainability/lime-concept",
+    "namespaces": [
+      "module-explainability",
+      "module-shared",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/optimization/gradient-descent",
+    "namespaces": [
+      "module-optimization",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/optimization/sgd",
+    "namespaces": [
+      "module-optimization",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/optimization/momentum",
+    "namespaces": [
+      "module-optimization",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/optimization/adam",
+    "namespaces": [
+      "module-optimization",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/ensemble/bagging",
+    "namespaces": [
+      "module-ensemble",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/ensemble/boosting",
+    "namespaces": [
+      "module-ensemble",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/ensemble/stacking",
+    "namespaces": [
+      "module-ensemble",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/probabilistic/bayesian-linear-regression",
+    "namespaces": [
+      "module-probabilistic",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/probabilistic/gaussian-process-regression",
+    "namespaces": [
+      "module-probabilistic",
+      "module-shared",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/probabilistic/hidden-markov-model",
+    "namespaces": [
+      "module-probabilistic",
+      "module-shared",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/deployment/browser-model-loader",
+    "namespaces": [
+      "module-deployment",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/deployment/onnx-runtime-demo",
+    "namespaces": [
+      "module-deployment",
+      "module-shared",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/deployment/tensorflowjs-training",
+    "namespaces": [
+      "module-deployment",
+      "module-shared",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/deployment/model-export",
+    "namespaces": [
+      "module-deployment",
+      "module-shared",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/deployment/export-hub",
+    "namespaces": [
+      "module-deployment",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/deployment/model-card",
+    "namespaces": [
+      "module-deployment",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/lab/algorithm-comparison",
+    "namespaces": [
+      "module-lab",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/lab/hyperparameter-tuning",
+    "namespaces": [
+      "module-lab",
+      "module-shared",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/lab/automl-concept",
+    "namespaces": [
+      "module-lab",
+      "module-shared",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/lab/saved-experiments",
+    "namespaces": [
+      "module-lab",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/lab/dataset-manager",
+    "namespaces": [
+      "datasets",
+      "common",
+      "navigation",
+      "catalogue",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/lab/report-builder",
+    "namespaces": [
+      "module-lab",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/lab/architecture-flow",
+    "namespaces": [
+      "module-lab",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/lab/train-your-model",
+    "namespaces": [
+      "module-lab",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/lab/image-annotation",
+    "namespaces": [
+      "module-lab",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/lab/data-augmentation",
+    "namespaces": [
+      "module-lab",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/lab/model-comparison",
+    "namespaces": [
+      "module-lab",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/lab/batch-inference",
+    "namespaces": [
+      "module-lab",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/lab/active-learning",
+    "namespaces": [
+      "lessons",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/lab/performance-dashboard",
+    "namespaces": [
+      "module-lab",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/lab/experiment-workspace",
+    "namespaces": [
+      "module-lab",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/lab/model-zoo",
+    "namespaces": [
+      "module-lab",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/lab/automl-assistant",
+    "namespaces": [
+      "module-lab",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/lab/training-visualizations",
+    "namespaces": [
+      "module-lab",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/lab/inference-playground",
+    "namespaces": [
+      "module-lab",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/lab/model-comparison-dashboard",
+    "namespaces": [
+      "module-lab",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/lab/explainability-center",
+    "namespaces": [
+      "module-lab",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/lab/dataset-intelligence",
+    "namespaces": [
+      "datasets",
+      "common",
+      "navigation",
+      "catalogue",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/lab/tuning-engine",
+    "namespaces": [
+      "module-lab",
+      "common",
+      "navigation",
+      "catalogue",
+      "datasets",
+      "lessons",
+      "visualizations",
+      "training"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio",
+    "namespaces": [
+      "catalogue",
+      "navigation",
+      "common"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/topic/:id",
+    "namespaces": [
+      "catalogue",
+      "navigation",
+      "common"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/topic/optimization",
+    "namespaces": [
+      "catalogue",
+      "navigation",
+      "common"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/topic/activations",
+    "namespaces": [
+      "catalogue",
+      "navigation",
+      "common"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/topic/losses",
+    "namespaces": [
+      "catalogue",
+      "navigation",
+      "common"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/topic/regularization",
+    "namespaces": [
+      "catalogue",
+      "navigation",
+      "common"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/topic/neural",
+    "namespaces": [
+      "catalogue",
+      "navigation",
+      "common"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/topic/data-math",
+    "namespaces": [
+      "catalogue",
+      "navigation",
+      "common"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/:slug",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/gradient-descent",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/sgd-mini-batch",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/learning-rate",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/momentum",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/adam",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/learning-rate-schedules",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/gradient-clipping",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/local-minima",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/relu",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/leaky-relu",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/sigmoid",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/tanh",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/softmax",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/gelu-swish",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/softplus-elu",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/mse-mae-huber",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/binary-cross-entropy",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/categorical-cross-entropy",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/hinge-loss",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/kl-divergence",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/contrastive-triplet",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/l1-l2",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/dropout",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/batch-layer-norm",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/early-stopping",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/weight-decay",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/data-augmentation",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/neuron",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/forward-pass",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/backpropagation",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/chain-rule",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/vanishing-exploding",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/weight-initialization",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/epochs-batches",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/overfitting",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/bias-variance",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/dot-product",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/norms",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/one-hot",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/feature-scaling",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/train-val-test",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/cross-validation",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/residual-connection",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/attention",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/embedding",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/temperature",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/learning-curve",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/baseline",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/data-leakage",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/cosine-similarity",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/padding",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/ml/terms-studio/token",
+    "namespaces": [
+      "catalogue",
+      "common",
+      "navigation"
+    ]
+  },
+  {
+    "path": "/*",
+    "namespaces": [
+      "common"
+    ]
+  }
+]

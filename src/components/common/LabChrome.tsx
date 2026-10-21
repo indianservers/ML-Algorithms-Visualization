@@ -1,3 +1,4 @@
+import { sourceText } from "../../i18n/config";
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -30,7 +31,7 @@ function buttonCopy(target: EventTarget | null) {
   if (!(target instanceof Element)) return { button: null, label: "" };
   const button = target.closest<HTMLElement>("button, [role='button']");
   if (!button) return { button: null, label: "" };
-  const label = `${button.getAttribute("aria-label") ?? ""} ${button.textContent ?? ""}`
+  const label = `${button.getAttribute("aria-label") ?? ""} ${sourceText(button)}`
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
@@ -183,7 +184,7 @@ export function LabChrome({
         !button.closest(".lab-topbar, .lab-chrome-overlay") &&
         button.closest('[role="tablist"], [class*="-tabs"], .nb-tabs, .svmc-bar, .mlr-tabs, .rfc-tabs')
       ) {
-        const name = (button.textContent ?? "").trim();
+        const name = (sourceText(button)).trim();
         if (name) markSectionVisited(location.pathname, name);
       }
       if (button.closest(".lab-topbar, .lab-chrome-overlay, .hl-theme, .hl-nav-search")) {

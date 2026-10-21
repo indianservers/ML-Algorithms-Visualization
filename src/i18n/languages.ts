@@ -1,0 +1,55 @@
+export const DEFAULT_LOCALE = "en-IN";
+export const LOCALE_STORAGE_KEY = "mlSuite.locale";
+export const languages = [
+  ["en-IN", "English (India)", "Default", "ltr"],
+  ["hi", "हिन्दी", "India", "ltr"],
+  ["te", "తెలుగు", "India", "ltr"],
+  ["ta", "தமிழ்", "India", "ltr"],
+  ["kn", "ಕನ್ನಡ", "India", "ltr"],
+  ["ml", "മലയാളം", "India", "ltr"],
+  ["mr", "मराठी", "India", "ltr"],
+  ["bn", "বাংলা", "India", "ltr"],
+  ["gu", "ગુજરાતી", "India", "ltr"],
+  ["pa", "ਪੰਜਾਬੀ", "India", "ltr"],
+  ["or", "ଓଡ଼ିଆ", "India", "ltr"],
+  ["as", "অসমীয়া", "India", "ltr"],
+  ["ur", "اردو", "India", "rtl"],
+  ["ru", "Русский", "Russia", "ltr"],
+  ["fr", "Français", "Europe", "ltr"],
+  ["de", "Deutsch", "Europe", "ltr"],
+  ["es", "Español", "Europe", "ltr"],
+  ["pt", "Português", "Europe", "ltr"],
+  ["it", "Italiano", "Europe", "ltr"],
+  ["nl", "Nederlands", "Europe", "ltr"],
+  ["pl", "Polski", "Europe", "ltr"],
+  ["uk", "Українська", "Europe", "ltr"],
+  ["ro", "Română", "Europe", "ltr"],
+  ["el", "Ελληνικά", "Europe", "ltr"],
+  ["cs", "Čeština", "Europe", "ltr"],
+  ["sv", "Svenska", "Europe", "ltr"],
+  ["fi", "Suomi", "Europe", "ltr"],
+  ["hu", "Magyar", "Europe", "ltr"],
+  ["sw", "Kiswahili", "Africa", "ltr"],
+  ["am", "አማርኛ", "Africa", "ltr"],
+  ["ha", "Hausa", "Africa", "ltr"],
+  ["yo", "Yorùbá", "Africa", "ltr"],
+  ["ig", "Igbo", "Africa", "ltr"],
+  ["zu", "isiZulu", "Africa", "ltr"],
+  ["xh", "isiXhosa", "Africa", "ltr"],
+  ["af", "Afrikaans", "Africa", "ltr"],
+  ["so", "Soomaali", "Africa", "ltr"],
+  ["ar", "العربية", "Additional", "rtl"],
+  ["tr", "Türkçe", "Additional", "ltr"],
+  ["id", "Bahasa Indonesia", "Additional", "ltr"],
+  ["vi", "Tiếng Việt", "Additional", "ltr"],
+].map(([code, nativeName, region, dir]) => ({
+  code,
+  nativeName,
+  region,
+  dir: dir as "ltr" | "rtl",
+}));
+export function validLocale(value: string | null | undefined) {
+  return languages.some((language) => language.code === value)
+    ? value!
+    : DEFAULT_LOCALE;
+}

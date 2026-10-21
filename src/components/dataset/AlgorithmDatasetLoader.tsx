@@ -367,7 +367,7 @@ export function AlgorithmDatasetLoader({ route, category }: { route: string; cat
             <table className="w-full text-xs">
               <thead>
                 <tr className="bg-gray-50 dark:bg-gray-900">
-                  {workingDataset.columns.map(column => <th key={column} className="whitespace-nowrap p-2 text-left font-semibold">{column}</th>)}
+                  {workingDataset.columns.map(column => <th key={column} data-i18n-protect className="whitespace-nowrap p-2 text-left font-semibold">{column}</th>)}
                 </tr>
               </thead>
               <tbody>

@@ -42,7 +42,7 @@ export const DataPreview: React.FC<DataPreviewProps> = ({ columns, data, maxRows
           <thead>
             <tr className="bg-gray-50 dark:bg-gray-700/50">
               {columns.map(col => (
-                <th key={col} className="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap border-b border-gray-200 dark:border-gray-700">
+                <th key={col} data-i18n-protect className="px-3 py-2 text-left font-medium text-gray-600 dark:text-gray-400 whitespace-nowrap border-b border-gray-200 dark:border-gray-700">
                   {col}
                 </th>
               ))}

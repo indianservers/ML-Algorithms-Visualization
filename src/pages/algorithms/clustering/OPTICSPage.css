@@ -267,11 +267,11 @@
 .op-reach {
   overflow: hidden;
 }
-.reach-chart {
+.op-page .reach-chart {
   position: absolute;
   inset: 35px 12px 46px 16px;
 }
-.reach-chart svg {
+.op-page .reach-chart svg {
   width: 100%;
   height: 100%;
   border-left: 1px solid #8391a4;
@@ -281,21 +281,21 @@
     linear-gradient(90deg, #1a2a3e 1px, transparent 1px);
   background-size: 20% 20%;
 }
-.reach-chart svg line {
+.op-page .reach-chart svg line {
   stroke-width: 2;
 }
-.reach-chart svg .threshold {
+.op-page .reach-chart svg .threshold {
   stroke: #a8b1be;
   stroke-width: 1;
   stroke-dasharray: 7;
 }
-.reach-chart > b {
+.op-page .reach-chart > b {
   position: absolute;
   bottom: -30px;
   left: 45%;
   color: #9aa7b8;
 }
-.axis-y {
+.op-page .axis-y {
   position: absolute;
   left: -32px;
   top: 48%;
@@ -328,11 +328,11 @@
 .op-summary > div {
   border-right: 1px solid #1b2d44;
 }
-.cluster-cards {
+.op-page .cluster-cards {
   display: flex;
   gap: 9px;
 }
-.cluster-cards article {
+.op-page .cluster-cards article {
   width: 83px;
   height: 120px;
   padding: 12px;
@@ -343,11 +343,11 @@
   flex-direction: column;
   gap: 5px;
 }
-.cluster-cards strong {
+.op-page .cluster-cards strong {
   font-weight: normal;
 }
-.cluster-cards span,
-.cluster-cards small {
+.op-page .cluster-cards span,
+.op-page .cluster-cards small {
   color: #c2cad6;
 }
 .op-summary > aside {
@@ -581,7 +581,7 @@
     display: block;
     padding-bottom: 12px;
   }
-  .cluster-cards {
+  .op-page .cluster-cards {
     overflow: auto;
   }
   .op-summary > aside {
@@ -598,4 +598,204 @@
   .op-toast {
     bottom: 15px;
   }
+}
+/* Embed the original workbench in the suite without its duplicate navigation rail. */
+#main-content#main-content .op-page {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 320px !important;
+  grid-template-rows: auto auto auto !important;
+  align-content: start;
+  gap: 16px !important;
+  padding: 20px !important;
+  min-height: 100% !important;
+}
+#main-content#main-content .op-page > .op-head {
+  grid-column: 1/-1 !important;
+  grid-row: 1 !important;
+  position: static !important;
+  inset: auto !important;
+  width: auto !important;
+  height: auto !important;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+#main-content#main-content .op-head h1 {
+  margin: 0;
+  font-size: 28px;
+}
+#main-content#main-content .op-head p {
+  flex: 1;
+  min-width: 220px;
+}
+#main-content#main-content .op-head > div {
+  position: static;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+#main-content#main-content .op-page > main {
+  grid-column: 1 !important;
+  grid-row: 2 !important;
+  position: static !important;
+  inset: auto !important;
+  width: auto !important;
+  height: auto !important;
+  min-width: 0;
+  padding: 0;
+  overflow: visible !important;
+}
+#main-content#main-content .op-page > main > nav {
+  display: flex;
+  flex-wrap: wrap;
+  height: auto;
+  gap: 5px;
+  margin-bottom: 14px;
+}
+#main-content#main-content .op-page > .op-controls {
+  grid-column: 2 !important;
+  grid-row: 2 !important;
+  position: static !important;
+  inset: auto !important;
+  width: 100% !important;
+  height: auto !important;
+  max-height: none;
+  margin: 0;
+  min-width: 0;
+  max-width: none;
+}
+#main-content#main-content .op-page .op-visuals {
+  height: auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  grid-template-rows: auto auto;
+  align-items: start;
+}
+#main-content#main-content .op-visuals > .lab-pipeline {
+  grid-column: 1/-1;
+}
+#main-content#main-content .op-visuals > article {
+  min-width: 0;
+  height: auto;
+  padding: 0 12px 12px;
+}
+#main-content#main-content .op-grid {
+  position: relative;
+  inset: auto;
+  height: 330px;
+  margin: 25px 12px 8px 30px;
+}
+#main-content#main-content .op-spatial .op-tools {
+  position: static;
+  display: block;
+  font-size: 11px;
+  margin: 0 12px;
+  padding: 4px 0;
+  background: transparent;
+}
+#main-content#main-content .op-spatial :is(.op-x, .op-y) {
+  position: static;
+  display: block;
+  text-align: center;
+  transform: none;
+  font-size: 11px;
+}
+#main-content#main-content .op-spatial p {
+  margin: 9px 4px;
+  font-size: 11px;
+  line-height: 1.6;
+}
+#main-content#main-content .op-reach .reach-chart {
+  position: relative;
+  inset: auto;
+  height: 365px;
+  margin: 0 5px 40px 28px;
+}
+#main-content#main-content .op-reach footer {
+  position: static;
+  height: auto;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 8px;
+  margin: 0 0 4px;
+  font-size: 10px;
+}
+#main-content#main-content .op-page > .op-status {
+  grid-column: 1/-1;
+  grid-row: auto;
+  position: static;
+  inset: auto;
+  height: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+#main-content#main-content .op-controls input[type="range"] {
+  width: 100%;
+  margin: 8px 0;
+}
+#main-content#main-content .op-controls select {
+  max-width: 100%;
+  width: 170px;
+}
+#main-content#main-content .op-data {
+  height: auto;
+  min-height: 50px;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+#main-content#main-content .op-page .op-toast {
+  position: fixed;
+  bottom: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  padding: 12px 20px;
+  max-width: 90vw;
+}
+@media (max-width: 1100px) {
+  #main-content#main-content .op-page {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  #main-content#main-content .op-page > .op-controls {
+    grid-column: 1 !important;
+    grid-row: 3 !important;
+  }
+  #main-content#main-content .op-page > .op-status {
+    grid-row: 4;
+  }
+}
+@media (max-width: 650px) {
+  #main-content#main-content .op-page {
+    padding: 12px !important;
+  }
+  #main-content#main-content .op-page .op-visuals {
+    display: flex;
+    flex-direction: column;
+  }
+  #main-content#main-content .op-visuals > article {
+    width: 100%;
+  }
+  #main-content#main-content .op-head {
+    gap: 8px;
+  }
+  #main-content#main-content .op-head p {
+    min-width: 0;
+    flex-basis: 100%;
+  }
+  #main-content#main-content .op-reach .reach-chart {
+    height: 280px;
+  }
+  #main-content#main-content .op-grid {
+    height: 280px;
+  }
+}
+#main-content#main-content .op-page:has(.lab-tab-lesson) {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+.op-grid > i:focus-visible {
+  outline: 2px solid #63eaff;
+  outline-offset: 3px;
 }

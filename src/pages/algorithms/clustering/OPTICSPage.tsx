@@ -2,7 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useLabNavigate } from "../../../lib/labNavigation";
 import { Download, Save, Share2, Star, Upload } from "lucide-react";
-import { optics, type OpticsMetric, type OpticsResult } from "../../../lib/algorithms/clustering/optics";
+import {
+  optics,
+  type OpticsMetric,
+  type OpticsResult,
+} from "../../../lib/algorithms/clustering/optics";
 import {
   datasetETwoMoons,
   datasetFConcentricCircles,
@@ -16,6 +20,7 @@ import {
   useLabTabs,
 } from "../../../components/common/LabTabs";
 import { LabPipeline } from "../../../components/common/LabPipeline";
+import "./OPTICSPage.css";
 
 type Point = { x: number; y: number };
 type Dataset = "aggregation" | "moons" | "rings" | "blobs" | "imported";
@@ -102,7 +107,6 @@ export default function OPTICSPage() {
     epsilon,
     metric,
     extract,
-    points.length,
     points,
   ]);
   const result = fitted.result;
@@ -162,7 +166,9 @@ export default function OPTICSPage() {
   }, [playing, result.ordering.length]);
   const orderLen = Math.max(1, result.ordering.length);
   const orderIndex = Math.min(Math.max(0, cursor), orderLen - 1);
-  const currentPoint = result.ordering[orderIndex] ?? selected;
+  const currentPoint =
+    result.ordering[orderIndex] ??
+    Math.min(points.length - 1, Math.max(0, selected));
   const exportLabels = () => {
     const blob = new Blob(
       [
@@ -191,8 +197,16 @@ export default function OPTICSPage() {
         result.labels.filter((label, i) => label === cluster && result.core[i])
           .length,
     );
-  const px = (x: number) => ((x + 8) / 16) * 100,
-    py = (y: number) => ((8 - y) / 16) * 100,
+  const extent = (values: number[]) => {
+    const min = Math.min(...values),
+      max = Math.max(...values),
+      pad = Math.max((max - min) * 0.08, 0.1);
+    return [min - pad, max + pad];
+  };
+  const [xMin, xMax] = extent(points.map((p) => p.x)),
+    [yMin, yMax] = extent(points.map((p) => p.y));
+  const px = (x: number) => ((x - xMin) / (xMax - xMin)) * 100,
+    py = (y: number) => ((yMax - y) / (yMax - yMin)) * 100,
     finiteReach = result.reachability.filter(Number.isFinite),
     cap = Math.max(epsilon * 1.5, ...finiteReach, 1);
   const reachY = (value: number) => {
@@ -204,7 +218,7 @@ export default function OPTICSPage() {
       : 92 - (bounded / cap) * 80;
   };
   return (
-    <div className="op-page">
+    <div className="op-page" data-training-feedback="inline">
       <aside className="op-side">
         <Link to="/">
           ◉{" "}
@@ -274,6 +288,7 @@ export default function OPTICSPage() {
         <section className={`op-data${panel("Dataset")}`}>
           <b>Dataset</b>
           <select
+            aria-label="OPTICS dataset"
             value={dataset}
             onChange={(e) => choose(e.target.value as Dataset)}
           >
@@ -305,7 +320,12 @@ export default function OPTICSPage() {
         </section>
         <section className={`op-visuals${panel("Visualize", "Build / Train")}`}>
           <LabPipeline
-            stages={["Neighborhood", "Core distance", "Reachability order", "Valleys → clusters"]}
+            stages={[
+              "Neighborhood",
+              "Core distance",
+              "Reachability order",
+              "Valleys → clusters",
+            ]}
             active={Math.min(3, Math.floor((orderIndex / orderLen) * 4))}
             onSelect={(index) => {
               setPlaying(false);
@@ -314,7 +334,9 @@ export default function OPTICSPage() {
             playing={playing}
             onPlay={() => setPlaying(true)}
             onPause={() => setPlaying(false)}
-            onStep={() => setCursor((current) => Math.min(orderLen - 1, current + 1))}
+            onStep={() =>
+              setCursor((current) => Math.min(orderLen - 1, current + 1))
+            }
             onReset={() => {
               setPlaying(false);
               setCursor(0);
@@ -323,7 +345,7 @@ export default function OPTICSPage() {
           />
           <article className="op-spatial">
             <h2>Spatial View ⓘ</h2>
-            <div className="op-tools">▣ ⌕ ⊕ ✋ ⌂ ⛶</div>
+            <span className="op-tools">Click a point to inspect</span>
             <div className="op-grid">
               {showPath &&
                 result.ordering.slice(1, 180).map((index, order) => {
@@ -345,6 +367,15 @@ export default function OPTICSPage() {
                 return (
                   <i
                     key={i}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Inspect point ${i + 1}`}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        event.currentTarget.click();
+                      }
+                    }}
                     className={`${result.core[i] && showCore ? "core" : ""}${i === currentPoint ? " current" : ""}`}
                     onClick={() => {
                       setSelected(i);
@@ -368,8 +399,7 @@ export default function OPTICSPage() {
             <b className="op-y">Feature 2</b>
             <p>
               {fitted.error ? `${fitted.error} ` : ""}
-              Point {currentPoint}: order {orderIndex}, core
-              distance{" "}
+              Point {currentPoint}: order {orderIndex}, core distance{" "}
               {Number.isFinite(result.coreDistances[currentPoint])
                 ? result.coreDistances[currentPoint].toFixed(3)
                 : "∞"}
@@ -377,15 +407,21 @@ export default function OPTICSPage() {
               {Number.isFinite(result.reachability[orderIndex])
                 ? result.reachability[orderIndex].toFixed(3)
                 : "∞"}
-              , cluster {result.labels[currentPoint] ?? "n/a"}, neighbors in max-ε{" "}
-              {X.filter(
-                (row, j) =>
-                  j !== currentPoint &&
-                  Math.hypot(
-                    row[0] - X[currentPoint][0],
-                    row[1] - X[currentPoint][1],
-                  ) <= (autoDistance ? 2.45 : maxDistance),
-              ).length}
+              , cluster {result.labels[currentPoint] ?? "n/a"}, neighbors in
+              max-ε{" "}
+              {
+                X.filter(
+                  (row, j) =>
+                    j !== currentPoint &&
+                    (metric === "manhattan"
+                      ? Math.abs(row[0] - X[currentPoint][0]) +
+                        Math.abs(row[1] - X[currentPoint][1])
+                      : Math.hypot(
+                          row[0] - X[currentPoint][0],
+                          row[1] - X[currentPoint][1],
+                        )) <= (autoDistance ? 2.45 : maxDistance),
+                ).length
+              }
             </p>
             <p>
               Undefined reachability is plotted at the finite cap, never as 0.
@@ -486,7 +522,9 @@ export default function OPTICSPage() {
             </p>
           </aside>
         </section>
-        <p className={`op-tip${panel("Visualize", "Build / Train", "Dataset", "Metrics")}`}>
+        <p
+          className={`op-tip${panel("Visualize", "Build / Train", "Dataset", "Metrics")}`}
+        >
           OPTICS discovers the intrinsic cluster structure. Use ε (epsilon) on
           the reachability plot to extract clusters.
         </p>
@@ -527,7 +565,7 @@ export default function OPTICSPage() {
               value={autoDistance ? "auto" : "custom"}
               onChange={() => undefined}
             >
-              <option value="auto">Auto (by data)</option>
+              <option value="auto">Default radius (2.45)</option>
               <option value="custom">Custom</option>
             </select>
             <input
@@ -613,7 +651,10 @@ export default function OPTICSPage() {
         </article>
         <article>
           <h3>⌄ Styling</h3>
-          <p>Color palette is the lab vivid set (pastel is not a second renderer).</p>
+          <p>
+            Color palette is the lab vivid set (pastel is not a second
+            renderer).
+          </p>
           <label>
             Show Core Points{" "}
             <input

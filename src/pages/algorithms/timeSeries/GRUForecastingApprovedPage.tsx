@@ -371,7 +371,7 @@ export default function GRUForecastingApprovedPage() {
               />
             ) : null}
           </svg>
-          <footer>May 12 May 14 May 16 May 18 May 20 May 21</footer>
+          <footer>{["May 12", "May 14", "May 16", "May 18", "May 20", "May 21"].map((date) => <span key={date}>{date}</span>)}</footer>
         </section>
         <section className={`gf-gates card${labHide(tab, "Visualize", "Train")}`}>
           <h3>Gate Activity Over Time ⓘ</h3>

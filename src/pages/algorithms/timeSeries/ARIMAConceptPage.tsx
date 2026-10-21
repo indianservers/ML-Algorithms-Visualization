@@ -1,3 +1,4 @@
+import TimeSeriesWorkbench from "../../../features/time-series-studio/TimeSeriesWorkbench";
 import { useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import {
@@ -17,7 +18,6 @@ import { Activity, RefreshCw } from "lucide-react";
 import { PageHeader } from "../../../components/common/PageHeader";
 import { Card, InfoBox } from "../../../components/common/Card";
 import { MetricsPanel } from "../../../components/ml/MetricsPanel";
-import ARIMAConceptApprovedPage from "./ARIMAConceptApprovedPage";
 
 type SeriesPoint = { t: number; y: number };
 
@@ -361,6 +361,6 @@ export default function ARIMAConceptPage() {
   return new URLSearchParams(search).has("advanced") ? (
     <ARIMAConceptOriginalPage />
   ) : (
-    <ARIMAConceptApprovedPage />
+    <TimeSeriesWorkbench kind="arima-concept" />
   );
 }

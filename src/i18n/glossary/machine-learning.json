@@ -1,0 +1,218 @@
+{
+  "Supervised Learning": {
+    "source": "Supervised Learning",
+    "policy": "translate-display-only",
+    "review": "native-speaker-review-required",
+    "drafts": {
+      "hi": "पर्यवेक्षित अधिगम",
+      "te": "పర్యవేక్షిత అభ్యాసం",
+      "ru": "Обучение с учителем",
+      "fr": "Apprentissage supervisé"
+    }
+  },
+  "Unsupervised Learning": {
+    "source": "Unsupervised Learning",
+    "policy": "translate-display-only",
+    "review": "native-speaker-review-required",
+    "drafts": {
+      "hi": "अपर्यवेक्षित अधिगम",
+      "te": "పర్యవేక్షణ లేని అభ్యాసం",
+      "ru": "Обучение без учителя",
+      "fr": "Apprentissage non supervisé"
+    }
+  },
+  "Reinforcement Learning": {
+    "source": "Reinforcement Learning",
+    "policy": "translate-display-only",
+    "review": "native-speaker-review-required",
+    "drafts": {
+      "hi": "पुनर्बलन अधिगम",
+      "te": "ఉపబల అభ్యాసం",
+      "ru": "Обучение с подкреплением",
+      "fr": "Apprentissage par renforcement"
+    }
+  },
+  "Gradient Descent": {
+    "source": "Gradient Descent",
+    "policy": "translate-display-only",
+    "review": "native-speaker-review-required",
+    "drafts": {
+      "hi": "ग्रेडिएंट डिसेंट",
+      "te": "గ్రేడియెంట్ డిసెంట్",
+      "ru": "Градиентный спуск",
+      "fr": "Descente de gradient"
+    }
+  },
+  "Backpropagation": {
+    "source": "Backpropagation",
+    "policy": "translate-display-only",
+    "review": "native-speaker-review-required",
+    "drafts": {
+      "hi": "बैकप्रोपेगेशन",
+      "te": "బ్యాక్‌ప్రాపగేషన్",
+      "ru": "Обратное распространение ошибки",
+      "fr": "Rétropropagation"
+    }
+  },
+  "Neural Network": {
+    "source": "Neural Network",
+    "policy": "translate-display-only",
+    "review": "native-speaker-review-required",
+    "drafts": {
+      "hi": "न्यूरल नेटवर्क",
+      "te": "న్యూరల్ నెట్‌వర్క్",
+      "ru": "Нейронная сеть",
+      "fr": "Réseau neuronal"
+    }
+  },
+  "Feature Engineering": {
+    "source": "Feature Engineering",
+    "policy": "translate-display-only",
+    "review": "native-speaker-review-required",
+    "drafts": {
+      "hi": "विशेषता अभियांत्रिकी",
+      "te": "లక్షణ రూపకల్పన",
+      "ru": "Конструирование признаков",
+      "fr": "Ingénierie des caractéristiques"
+    }
+  },
+  "Classification": {
+    "source": "Classification",
+    "policy": "translate-display-only",
+    "review": "native-speaker-review-required",
+    "drafts": {
+      "hi": "वर्गीकरण",
+      "te": "వర్గీకరణ",
+      "ru": "Классификация",
+      "fr": "Classification"
+    }
+  },
+  "Regression": {
+    "source": "Regression",
+    "policy": "translate-display-only",
+    "review": "native-speaker-review-required",
+    "drafts": {
+      "hi": "प्रतिगमन",
+      "te": "రిగ్రెషన్",
+      "ru": "Регрессия",
+      "fr": "Régression"
+    }
+  },
+  "Overfitting": {
+    "source": "Overfitting",
+    "policy": "translate-display-only",
+    "review": "native-speaker-review-required",
+    "drafts": {
+      "hi": "ओवरफिटिंग",
+      "te": "ఓవర్‌ఫిట్టింగ్",
+      "ru": "Переобучение",
+      "fr": "Surapprentissage"
+    }
+  },
+  "Underfitting": {
+    "source": "Underfitting",
+    "policy": "translate-display-only",
+    "review": "native-speaker-review-required",
+    "drafts": {
+      "hi": "अंडरफिटिंग",
+      "te": "అండర్‌ఫిట్టింగ్",
+      "ru": "Недообучение",
+      "fr": "Sous-apprentissage"
+    }
+  },
+  "Regularization": {
+    "source": "Regularization",
+    "policy": "translate-display-only",
+    "review": "native-speaker-review-required",
+    "drafts": {
+      "hi": "नियमितीकरण",
+      "te": "రెగ్యులరైజేషన్",
+      "ru": "Регуляризация",
+      "fr": "Régularisation"
+    }
+  },
+  "Hyperparameters": {
+    "source": "Hyperparameters",
+    "policy": "translate-display-only",
+    "review": "native-speaker-review-required",
+    "drafts": {
+      "hi": "हाइपरपैरामीटर",
+      "te": "హైపర్‌పారామీటర్లు",
+      "ru": "Гиперпараметры",
+      "fr": "Hyperparamètres"
+    }
+  },
+  "Inference": {
+    "source": "Inference",
+    "policy": "translate-display-only",
+    "review": "native-speaker-review-required",
+    "drafts": {
+      "hi": "अनुमान",
+      "te": "ఇన్‌ఫరెన్స్",
+      "ru": "Инференс",
+      "fr": "Inférence"
+    }
+  },
+  "Model Deployment": {
+    "source": "Model Deployment",
+    "policy": "translate-display-only",
+    "review": "native-speaker-review-required",
+    "drafts": {
+      "hi": "मॉडल परिनियोजन",
+      "te": "మోడల్ డిప్లాయ్‌మెంట్",
+      "ru": "Развёртывание модели",
+      "fr": "Déploiement du modèle"
+    }
+  },
+  "Loss Function": {
+    "source": "Loss Function",
+    "policy": "translate-display-only",
+    "review": "native-speaker-review-required",
+    "drafts": {
+      "hi": "लॉस फ़ंक्शन",
+      "te": "లాస్ ఫంక్షన్",
+      "ru": "Функция потерь",
+      "fr": "Fonction de perte"
+    }
+  },
+  "TensorFlow.js": {
+    "source": "TensorFlow.js",
+    "policy": "retain-library-or-acronym",
+    "review": "native-speaker-review-required",
+    "drafts": {}
+  },
+  "ONNX": {
+    "source": "ONNX",
+    "policy": "retain-library-or-acronym",
+    "review": "native-speaker-review-required",
+    "drafts": {}
+  },
+  "GPU": {
+    "source": "GPU",
+    "policy": "retain-library-or-acronym",
+    "review": "native-speaker-review-required",
+    "drafts": {}
+  },
+  "Epoch": {
+    "source": "Epoch",
+    "policy": "translate-display-only",
+    "review": "native-speaker-review-required",
+    "drafts": {
+      "hi": "एपॉक",
+      "te": "ఎపాక్",
+      "ru": "Эпоха",
+      "fr": "Époque"
+    }
+  },
+  "Batch": {
+    "source": "Batch",
+    "policy": "translate-display-only",
+    "review": "native-speaker-review-required",
+    "drafts": {
+      "hi": "बैच",
+      "te": "బ్యాచ్",
+      "ru": "Пакет",
+      "fr": "Lot"
+    }
+  }
+}

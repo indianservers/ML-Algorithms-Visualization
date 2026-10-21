@@ -452,7 +452,7 @@ export default function TimeSeriesAnomalyDetectionApprovedPage() {
             </article>
           )}
           <div className="ad-axis">
-            08:00 09:00 10:00 11:00 12:00 13:00 14:00
+            {["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00"].map((time) => <span key={time}>{time}</span>)}
           </div>
           <footer>
             ━ Actual <span>-- Expected</span> <i>■ Adaptive Threshold</i>{" "}

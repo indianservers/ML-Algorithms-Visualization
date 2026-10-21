@@ -1,3 +1,4 @@
+import { sourceText } from "../../i18n/config";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { BookOpen, ChevronLeft, ChevronRight, Compass, X } from "lucide-react";
@@ -29,7 +30,7 @@ function findTarget(step: GuideStep): HTMLElement | null {
   const nodes = document.querySelectorAll('button, [role="tab"], a');
   for (const node of nodes) {
     if (!(node instanceof HTMLElement)) continue;
-    const label = normalize(node.textContent ?? "");
+    const label = normalize(sourceText(node));
     if (wanted.some((item) => label === item || label.startsWith(`${item} `))) return node;
   }
   return null;

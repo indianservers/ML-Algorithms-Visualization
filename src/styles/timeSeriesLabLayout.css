@@ -1,0 +1,159 @@
+/* The repeated host ID deliberately outranks legacy shared layout overrides.
+   These labs are embedded in RootLayout, which removes their original rail. */
+#main-content#main-content :is(.hw-page, .gf-page, .ad-page) {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 320px !important;
+  grid-template-rows: auto auto auto auto auto !important;
+  align-content: start;
+  gap: 16px !important;
+  padding: 20px !important;
+}
+#main-content#main-content :is(.hw-page, .gf-page, .ad-page) > * {
+  min-width: 0;
+}
+#main-content#main-content :is(.hw-head, .gf-head, .ad-top, .ad-lesson, .hw-progress, .gf-toolbar, .hw-bottom, .hw-foot, .gf-status, .ad-status) {
+  grid-column: 1 / -1 !important;
+  grid-row: auto !important;
+  margin: 0;
+  width: auto;
+  height: auto;
+  min-height: 0;
+}
+#main-content#main-content :is(.hw-main, .gf-main, .ad-main) {
+  grid-column: 1 !important;
+  grid-row: auto !important;
+  margin: 0;
+  padding: 16px;
+  min-width: 0;
+  height: auto;
+  overflow: visible;
+  left: auto !important;
+}
+#main-content#main-content :is(.hw-controls, .gf-config, .ad-controls) {
+  grid-column: 2 !important;
+  grid-row: auto !important;
+  margin: 0;
+  height: auto;
+  min-width: 0;
+  overflow: visible;
+}
+#main-content#main-content :is(.hw-head, .gf-head) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  left: auto !important;
+}
+#main-content#main-content .hw-head > :is(h1, p),
+#main-content#main-content .gf-head > div {
+  flex-basis: 100%;
+}
+#main-content#main-content .hw-head > :is(label, button),
+#main-content#main-content :is(.hw-head, .gf-head) nav {
+  position: static;
+  inset: auto;
+  height: auto;
+  width: auto;
+}
+#main-content#main-content :is(.hw-head, .gf-head, .ad-lesson) nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  overflow: visible;
+  flex-basis: 100%;
+}
+#main-content#main-content :is(.hw-head, .gf-head, .ad-lesson) nav button {
+  flex: 0 0 auto;
+  width: auto;
+}
+#main-content#main-content .hw-progress {
+  grid-template-columns: minmax(220px, 1fr) minmax(0, 3fr);
+  padding: 0;
+}
+#main-content#main-content .hw-progress > div {
+  flex-wrap: wrap;
+  gap: 18px;
+}
+#main-content#main-content .hw-main .legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 12px 0;
+}
+#main-content#main-content .hw-main .legend > span { float: none; }
+#main-content#main-content .gf-main {
+  grid-template-columns: minmax(0, 2fr) minmax(220px, 1fr);
+  grid-template-rows: auto;
+  align-content: start;
+}
+#main-content#main-content .gf-main > section { min-width: 0; }
+#main-content#main-content .gf-chart { grid-column: 1; }
+#main-content#main-content .gf-gates { grid-column: 2; }
+#main-content#main-content .gf-chart header { flex-wrap: wrap; }
+#main-content#main-content .gf-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+#main-content#main-content .ad-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 0;
+}
+#main-content#main-content .ad-top > section { flex-wrap: wrap; }
+#main-content#main-content .ad-lesson {
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 345px);
+  grid-template-rows: auto auto;
+  gap: 16px;
+  padding: 0 0 16px;
+}
+#main-content#main-content .ad-main {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: auto;
+  align-content: start;
+}
+#main-content#main-content .ad-toolbar {
+  position: static;
+  width: auto;
+  height: auto;
+  display: flex;
+  flex-wrap: wrap;
+}
+#main-content#main-content .ad-chart { padding-top: 0; }
+#main-content#main-content .ad-controls { grid-template-rows: auto auto; }
+@media (max-width: 1200px) {
+  #main-content#main-content :is(.hw-page, .gf-page, .ad-page) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  #main-content#main-content :is(.hw-controls, .gf-config, .ad-controls) {
+    grid-column: 1 !important;
+  }
+}
+@media (max-width: 700px) {
+  #main-content#main-content :is(.hw-page, .gf-page, .ad-page) { padding: 12px !important; }
+  #main-content#main-content :is(.hw-progress, .ad-lesson, .gf-main, .ad-main) {
+    display: flex !important;
+    flex-direction: column;
+    height: auto;
+  }
+  #main-content#main-content :is(.gf-main, .ad-main) > section { height: auto; width: 100%; }
+  #main-content#main-content .gf-chart svg { height: 260px; }
+  #main-content#main-content .ad-insight { display: flex; flex-direction: column; }
+  #main-content#main-content .ad-chart { min-height: 330px; }
+  #main-content#main-content .ad-controls { display: flex; flex-direction: column; }
+}
+
+/* Override the legacy rail offsets on the actual grid items. */
+#main-content#main-content :is(.hw-page, .gf-page, .ad-page) > :is(header, main) {
+  left: auto !important;
+}
+
+#main-content#main-content :is(.hw-page, .gf-page, .ad-page):has(.lab-tab-lesson) {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+#main-content#main-content .ad-axis { position:static; display:flex; justify-content:space-between; padding:0 20px 8px 32px; font-size:11px; }
+#main-content#main-content .gf-chart > footer { display:flex; justify-content:space-between; gap:4px; font-size:11px; }
+#main-content#main-content .ad-chart > footer { height:auto; flex-wrap:wrap; padding-bottom:8px; }

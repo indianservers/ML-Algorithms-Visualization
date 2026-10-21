@@ -1,0 +1,2033 @@
+{
+  "locale": "hi",
+  "viewport": 1440,
+  "routePatterns": 225,
+  "results": [
+    {
+      "route": "/",
+      "title": "Explore Machine Learning",
+      "errors": [],
+      "milliseconds": 4635,
+      "status": "rendered"
+    },
+    {
+      "route": "/studios/supervised",
+      "title": "पर्यवेक्षित अधिगम Studio",
+      "errors": [],
+      "milliseconds": 785,
+      "status": "rendered"
+    },
+    {
+      "route": "/studios/unsupervised",
+      "title": "अपर्यवेक्षित अधिगम Studio",
+      "errors": [],
+      "milliseconds": 588,
+      "status": "rendered"
+    },
+    {
+      "route": "/studios/reinforcement",
+      "title": "पुनर्बलन अधिगम Studio",
+      "errors": [],
+      "milliseconds": 666,
+      "status": "rendered"
+    },
+    {
+      "route": "/studios/computer-vision",
+      "title": "कंप्यूटर दृष्टि Studio",
+      "errors": [],
+      "milliseconds": 799,
+      "status": "rendered"
+    },
+    {
+      "route": "/studios/deep-learning",
+      "title": "गहन अधिगम Studio",
+      "errors": [],
+      "milliseconds": 618,
+      "status": "rendered"
+    },
+    {
+      "route": "/studios/ai-virtual-labs",
+      "title": "AI Virtual Labs Studio",
+      "errors": [],
+      "milliseconds": 2979,
+      "status": "rendered"
+    },
+    {
+      "route": "/studios/dimensionality",
+      "title": "Dimensionality Reduction Studio",
+      "errors": [],
+      "milliseconds": 627,
+      "status": "rendered"
+    },
+    {
+      "route": "/studios/time-series",
+      "title": "समय शृंखला Studio",
+      "errors": [],
+      "milliseconds": 713,
+      "status": "rendered"
+    },
+    {
+      "route": "/studios/nlp",
+      "title": "NLP & Text Studio",
+      "errors": [],
+      "milliseconds": 575,
+      "status": "rendered"
+    },
+    {
+      "route": "/studios/evaluation",
+      "title": "Evaluation Studio",
+      "errors": [],
+      "milliseconds": 735,
+      "status": "rendered"
+    },
+    {
+      "route": "/studios/preprocessing",
+      "title": "Preprocessing Studio",
+      "errors": [],
+      "milliseconds": 578,
+      "status": "rendered"
+    },
+    {
+      "route": "/studios/recommendation",
+      "title": "Recommendation Studio",
+      "errors": [],
+      "milliseconds": 673,
+      "status": "rendered"
+    },
+    {
+      "route": "/studios/explainability",
+      "title": "Explainability Studio",
+      "errors": [],
+      "milliseconds": 612,
+      "status": "rendered"
+    },
+    {
+      "route": "/studios/optimization",
+      "title": "Optimization Studio",
+      "errors": [],
+      "milliseconds": 706,
+      "status": "rendered"
+    },
+    {
+      "route": "/studios/ensemble",
+      "title": "Ensemble Methods Studio",
+      "errors": [],
+      "milliseconds": 655,
+      "status": "rendered"
+    },
+    {
+      "route": "/studios/probabilistic",
+      "title": "Probabilistic Models Studio",
+      "errors": [],
+      "milliseconds": 689,
+      "status": "rendered"
+    },
+    {
+      "route": "/studios/deployment",
+      "title": "Deployment Studio",
+      "errors": [],
+      "milliseconds": 860,
+      "status": "rendered"
+    },
+    {
+      "route": "/studios/algorithm-lab",
+      "title": "Algorithm Lab Studio",
+      "errors": [],
+      "milliseconds": 935,
+      "status": "rendered"
+    },
+    {
+      "route": "/studios/terms-studio",
+      "title": "Terms Studio Studio",
+      "errors": [],
+      "milliseconds": 1893,
+      "status": "rendered"
+    },
+    {
+      "route": "/documentation",
+      "title": "Documentation",
+      "errors": [],
+      "milliseconds": 785,
+      "status": "rendered"
+    },
+    {
+      "route": "/dataset-library",
+      "title": "Dataset Library",
+      "errors": [],
+      "milliseconds": 1175,
+      "status": "rendered"
+    },
+    {
+      "route": "/sitemap",
+      "title": "Sitemap",
+      "errors": [],
+      "milliseconds": 972,
+      "status": "rendered"
+    },
+    {
+      "route": "/implementation-matrix",
+      "title": "Implementation Matrix",
+      "errors": [],
+      "milliseconds": 1167,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/supervised/simple-linear-regression/lessons/3",
+      "title": "Simple Linear Regression Lesson 3",
+      "errors": [],
+      "milliseconds": 915,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/supervised/simple-linear-regression",
+      "title": "Simple Linear Regression",
+      "errors": [],
+      "milliseconds": 835,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/supervised/multiple-linear-regression",
+      "title": "Multiple Linear Regression",
+      "errors": [],
+      "milliseconds": 2722,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/supervised/polynomial-regression",
+      "title": "Polynomial Regression",
+      "errors": [],
+      "milliseconds": 1218,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/supervised/ridge-regression",
+      "title": "Ridge Regression",
+      "errors": [],
+      "milliseconds": 1789,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/supervised/lasso-regression",
+      "title": "Lasso Regression",
+      "errors": [],
+      "milliseconds": 6654,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/supervised/elastic-net-regression",
+      "title": "Elastic Net Regression",
+      "errors": [],
+      "milliseconds": 3938,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/supervised/decision-tree-regression",
+      "title": "Decision Tree Regression \nHow it works",
+      "errors": [],
+      "milliseconds": 1587,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/supervised/random-forest-regression",
+      "title": "Random Forest Regression",
+      "errors": [],
+      "milliseconds": 4361,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/supervised/gradient-boosting-regression",
+      "title": "Gradient Boosting Regression",
+      "errors": [],
+      "milliseconds": 1098,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/supervised/support-vector-regression",
+      "title": "Support Vector Regression SVR",
+      "errors": [],
+      "milliseconds": 1839,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/supervised/logistic-regression",
+      "title": "Logistic Regression",
+      "errors": [],
+      "milliseconds": 2685,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/supervised/multinomial-logistic-regression",
+      "title": "Multinomial Logistic Regression",
+      "errors": [],
+      "milliseconds": 2890,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/supervised/knn-classification",
+      "title": "KNN Classification",
+      "errors": [],
+      "milliseconds": 3114,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/supervised/naive-bayes",
+      "title": "Naive Bayes",
+      "errors": [],
+      "milliseconds": 899,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/supervised/decision-tree-classification",
+      "title": "Decision Tree Classification",
+      "errors": [],
+      "milliseconds": 1005,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/supervised/random-forest-classification",
+      "title": "Random Forest Classification Ready",
+      "errors": [],
+      "milliseconds": 2755,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/supervised/svm-classification",
+      "title": "SVM Classification",
+      "errors": [],
+      "milliseconds": 2657,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/supervised/gradient-boosting-classification",
+      "title": "Gradient Boosting Classification",
+      "errors": [],
+      "milliseconds": 854,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/supervised/adaboost-classification",
+      "title": "AdaBoost Classification पर्यवेक्षित अधिगम",
+      "errors": [],
+      "milliseconds": 1117,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/supervised/xgboost-concept",
+      "title": "XGBoost Concept ☆",
+      "errors": [],
+      "milliseconds": 700,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/clustering/k-means",
+      "title": "K-Means Clustering",
+      "errors": [],
+      "milliseconds": 1491,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/clustering/k-medoids",
+      "title": "The idea, in plain words",
+      "errors": [],
+      "milliseconds": 886,
+      "status": "rendered",
+      "initialAttempt": {
+        "route": "/ml/clustering/k-medoids",
+        "errors": [
+          "locator.waitFor: Timeout 45000ms exceeded."
+        ],
+        "milliseconds": 45505,
+        "status": "failed",
+        "initialAttempt": {
+          "route": "/ml/clustering/k-medoids",
+          "errors": [
+            "locator.waitFor: Timeout 20000ms exceeded."
+          ],
+          "milliseconds": 20177,
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "route": "/ml/clustering/hierarchical-clustering",
+      "title": "Hierarchical Clustering Unsupervised",
+      "errors": [],
+      "milliseconds": 6255,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/clustering/dbscan",
+      "title": "DBSCAN Density-Based Clustering",
+      "errors": [],
+      "milliseconds": 1672,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/clustering/mean-shift",
+      "title": "Mean Shift Unsupervised",
+      "errors": [],
+      "milliseconds": 2584,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/clustering/gaussian-mixture-model",
+      "title": "Gaussian Mixture Model GMM",
+      "errors": [],
+      "milliseconds": 875,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/clustering/spectral-clustering",
+      "title": "The idea, in plain words",
+      "errors": [],
+      "milliseconds": 1567,
+      "status": "rendered",
+      "initialAttempt": {
+        "route": "/ml/clustering/spectral-clustering",
+        "errors": [
+          "locator.waitFor: Timeout 45000ms exceeded."
+        ],
+        "milliseconds": 45825,
+        "status": "failed",
+        "initialAttempt": {
+          "route": "/ml/clustering/spectral-clustering",
+          "errors": [
+            "locator.waitFor: Timeout 20000ms exceeded."
+          ],
+          "milliseconds": 20221,
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "route": "/ml/clustering/optics",
+      "title": "OPTICS",
+      "errors": [],
+      "milliseconds": 768,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/dimensionality-reduction/pca",
+      "title": "Principal Component Analysis",
+      "errors": [],
+      "milliseconds": 1365,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/dimensionality-reduction/kernel-pca",
+      "title": "Kernel PCA",
+      "errors": [],
+      "milliseconds": 7332,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/dimensionality-reduction/tsne",
+      "title": "t-SNE",
+      "errors": [],
+      "milliseconds": 1522,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/dimensionality-reduction/umap-concept",
+      "title": "UMAP ♧ Unsupervised",
+      "errors": [],
+      "milliseconds": 1174,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/dimensionality-reduction/lda",
+      "title": "Linear Discriminant Analysis",
+      "errors": [],
+      "milliseconds": 888,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/dimensionality-reduction/autoencoder",
+      "title": "Autoencoder □",
+      "errors": [],
+      "milliseconds": 868,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/deep-learning/perceptron",
+      "title": "Perceptron शुरुआती",
+      "errors": [],
+      "milliseconds": 2007,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/deep-learning/mlp",
+      "title": "Multilayer Perceptron ⓘ",
+      "errors": [],
+      "milliseconds": 2716,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/deep-learning/nn-playground",
+      "title": "न्यूरल नेटवर्क प्रयोगशाला",
+      "errors": [],
+      "milliseconds": 1139,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/deep-learning/cnn",
+      "title": "Convolutional Neural Network",
+      "errors": [],
+      "milliseconds": 854,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/deep-learning/convolution-visualizer",
+      "title": "Convolution Visualizer",
+      "errors": [],
+      "milliseconds": 683,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/deep-learning/rnn",
+      "title": "Recurrent Neural Network",
+      "errors": [],
+      "milliseconds": 1067,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/deep-learning/lstm",
+      "title": "LSTM Long Short-Term Memory networks for sequence modeling.",
+      "errors": [],
+      "milliseconds": 912,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/deep-learning/gru",
+      "title": "GRU Gated Recurrent UnitLesson",
+      "errors": [],
+      "milliseconds": 871,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/deep-learning/transformer-attention",
+      "title": "Transformer Attention ✦",
+      "errors": [],
+      "milliseconds": 776,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/deep-learning/multi-head-attention",
+      "title": "Multi-Head Attention",
+      "errors": [],
+      "milliseconds": 7088,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/deep-learning/backpropagation-visualizer",
+      "title": "Backpropagation Visualizer Interactive",
+      "errors": [],
+      "milliseconds": 674,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/deep-learning/few-shot-learning",
+      "title": "◉ Learn › Few-Shot Learning",
+      "errors": [],
+      "milliseconds": 1395,
+      "status": "rendered",
+      "initialAttempt": {
+        "route": "/ml/deep-learning/few-shot-learning",
+        "errors": [
+          "locator.waitFor: Timeout 45000ms exceeded."
+        ],
+        "milliseconds": 45628,
+        "status": "failed",
+        "initialAttempt": {
+          "route": "/ml/deep-learning/few-shot-learning",
+          "errors": [
+            "locator.waitFor: Timeout 20000ms exceeded."
+          ],
+          "milliseconds": 20211,
+          "status": "failed"
+        }
+      }
+    },
+    {
+      "route": "/ml/deep-learning/network-builder",
+      "title": "Network Builder ⓘ",
+      "errors": [],
+      "milliseconds": 1097,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/deep-learning/transfer-learning",
+      "title": "Transfer Learning",
+      "errors": [],
+      "milliseconds": 922,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/evaluation/train-test-split",
+      "title": "Train-Test Split",
+      "errors": [],
+      "milliseconds": 851,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/evaluation/cross-validation",
+      "title": "Cross Validation",
+      "errors": [],
+      "milliseconds": 605,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/evaluation/confusion-matrix",
+      "title": "Confusion Matrix Interactive",
+      "errors": [],
+      "milliseconds": 959,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/evaluation/roc-auc",
+      "title": "ROC & AUC Interactive Lesson",
+      "errors": [],
+      "milliseconds": 824,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/evaluation/precision-recall-curve",
+      "title": "Precision-Recall Curve ⓘ",
+      "errors": [],
+      "milliseconds": 2883,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/evaluation/regression-metrics",
+      "title": "Regression Metrics\nUnderstand performance using error metrics and visual diagnostics. Explore how outliers affect your model.",
+      "errors": [],
+      "milliseconds": 3182,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/evaluation/bias-variance-tradeoff",
+      "title": "Bias-Variance Tradeoff\nExplore how model complexity impacts underfitting and overfitting.",
+      "errors": [],
+      "milliseconds": 1104,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/preprocessing/missing-values",
+      "title": "Missing Values Lesson",
+      "errors": [],
+      "milliseconds": 835,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/preprocessing/scaling-normalization",
+      "title": "Scaling & Normalization",
+      "errors": [],
+      "milliseconds": 1209,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/preprocessing/categorical-encoding",
+      "title": "Categorical Encoding",
+      "errors": [],
+      "milliseconds": 3188,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/preprocessing/outlier-detection",
+      "title": "♙ Outlier Detection",
+      "errors": [],
+      "milliseconds": 3342,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/preprocessing/feature-selection",
+      "title": "Feature Selection",
+      "errors": [],
+      "milliseconds": 1794,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/preprocessing/polynomial-features",
+      "title": "Polynomial Features",
+      "errors": [],
+      "milliseconds": 1205,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/time-series/moving-average",
+      "title": "Moving Average",
+      "errors": [],
+      "milliseconds": 1492,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/time-series/exponential-smoothing",
+      "title": "Exponential Smoothing",
+      "errors": [],
+      "milliseconds": 1130,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/time-series/holt-winters",
+      "title": "Holt–Winters",
+      "errors": [],
+      "milliseconds": 1229,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/time-series/arima-concept",
+      "title": "ARIMA",
+      "errors": [],
+      "milliseconds": 1257,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/time-series/anomaly-detection",
+      "title": "Time-Series Anomaly Detection",
+      "errors": [],
+      "milliseconds": 1012,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/time-series/rnn-forecasting",
+      "title": "RNN Forecasting",
+      "errors": [],
+      "milliseconds": 976,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/time-series/lstm-forecasting",
+      "title": "LSTM Forecasting",
+      "errors": [],
+      "milliseconds": 1096,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/time-series/gru-forecasting",
+      "title": "GRU Forecasting",
+      "errors": [],
+      "milliseconds": 994,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/nlp/bag-of-words",
+      "title": "Bag of Words",
+      "errors": [],
+      "milliseconds": 726,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/nlp/tf-idf",
+      "title": "TF-IDF Vectorizer",
+      "errors": [],
+      "milliseconds": 846,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/nlp/text-classification",
+      "title": "Text Classification",
+      "errors": [],
+      "milliseconds": 692,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/nlp/word-embedding-concept",
+      "title": "Word Embedding",
+      "errors": [],
+      "milliseconds": 690,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/nlp/sentiment-analysis",
+      "title": "Sentiment Analysis",
+      "errors": [],
+      "milliseconds": 847,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/nlp/naive-bayes-spam",
+      "title": "Naive Bayes Spam Classifier",
+      "errors": [],
+      "milliseconds": 850,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/nlp/audio-classification",
+      "title": "Audio Classification",
+      "errors": [],
+      "milliseconds": 880,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision",
+      "title": "Studio Home",
+      "errors": [],
+      "milliseconds": 767,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/object-detection",
+      "title": "Object Detection",
+      "errors": [],
+      "milliseconds": 1787,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/image-classification",
+      "title": "Image Classification",
+      "errors": [],
+      "milliseconds": 1074,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/hand-landmarks",
+      "title": "Hand Landmark Tracking",
+      "errors": [],
+      "milliseconds": 711,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/hand-gesture-recognition",
+      "title": "Hand Gesture Recognition",
+      "errors": [],
+      "milliseconds": 678,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/custom-gesture-trainer",
+      "title": "Custom Gesture Trainer",
+      "errors": [],
+      "milliseconds": 850,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/face-detection",
+      "title": "Face Detection",
+      "errors": [],
+      "milliseconds": 830,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/face-mesh",
+      "title": "Face Mesh",
+      "errors": [],
+      "milliseconds": 669,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/face-expressions",
+      "title": "Face Expressions",
+      "errors": [],
+      "milliseconds": 782,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/pose-estimation",
+      "title": "Pose Estimation",
+      "errors": [],
+      "milliseconds": 816,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/pose-angle-analyzer",
+      "title": "Pose Angle Analyzer",
+      "errors": [],
+      "milliseconds": 809,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/exercise-rep-counter",
+      "title": "Exercise / Rep Counter",
+      "errors": [],
+      "milliseconds": 673,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/holistic-body-tracker",
+      "title": "Holistic Body Tracker",
+      "errors": [],
+      "milliseconds": 748,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/image-segmentation",
+      "title": "Image Segmentation",
+      "errors": [],
+      "milliseconds": 817,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/person-background-segmentation",
+      "title": "Person / Background Segmentation",
+      "errors": [],
+      "milliseconds": 793,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/interactive-segmentation",
+      "title": "Interactive Segmentation",
+      "errors": [],
+      "milliseconds": 679,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/image-embeddings",
+      "title": "Image Embeddings & Similarity",
+      "errors": [],
+      "milliseconds": 743,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/object-tracking",
+      "title": "Object Tracking Playground",
+      "errors": [],
+      "milliseconds": 765,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/multi-object-analytics",
+      "title": "Multi-Object Analytics",
+      "errors": [],
+      "milliseconds": 839,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/camera-effects",
+      "title": "Camera Effects / AR Playground",
+      "errors": [],
+      "milliseconds": 752,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/pipeline-builder",
+      "title": "Vision Pipeline Builder",
+      "errors": [],
+      "milliseconds": 847,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/audio-classification",
+      "title": "Audio Classification",
+      "errors": [],
+      "milliseconds": 965,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/pose-detection",
+      "title": "Pose Detection and Classification",
+      "errors": [],
+      "milliseconds": 823,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/person-segmentation",
+      "title": "Person Segmentation",
+      "errors": [],
+      "milliseconds": 875,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/cnn-filter-explorer",
+      "title": "CNN Filter Explorer",
+      "errors": [],
+      "milliseconds": 884,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/kmeans-image-segmentation",
+      "title": "KMeans Image Segmentation",
+      "errors": [],
+      "milliseconds": 9844,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/edge-detection",
+      "title": "Edge Detection",
+      "errors": [],
+      "milliseconds": 759,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/object-detection-demo",
+      "title": "Object Detection Demo",
+      "errors": [],
+      "milliseconds": 934,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/computer-vision/grad-cam",
+      "title": "Grad-CAM",
+      "errors": [],
+      "milliseconds": 2317,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/uniform-cost-search",
+      "title": "Uniform Cost Search",
+      "errors": [],
+      "milliseconds": 768,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/iterative-deepening-depth-first-search",
+      "title": "Iterative Deepening Depth First Search",
+      "errors": [],
+      "milliseconds": 757,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/a-star-search",
+      "title": "A* Search",
+      "errors": [],
+      "milliseconds": 645,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/simplified-memory-bounded-a-star-search",
+      "title": "Simplified Memory-Bounded A* Search",
+      "errors": [],
+      "milliseconds": 629,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/hill-climbing-search",
+      "title": "Hill Climbing Search",
+      "errors": [],
+      "milliseconds": 842,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/local-beam-search",
+      "title": "Local Beam Search",
+      "errors": [],
+      "milliseconds": 662,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/policy-iteration",
+      "title": "Policy Iteration",
+      "errors": [],
+      "milliseconds": 624,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/value-iteration",
+      "title": "Value Iteration",
+      "errors": [],
+      "milliseconds": 670,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/q-learning",
+      "title": "Q Learning",
+      "errors": [],
+      "milliseconds": 672,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/ai-depth-first-search",
+      "title": "AI Depth First Search",
+      "errors": [],
+      "milliseconds": 801,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/greedy-best-first-search",
+      "title": "Greedy Best First Search",
+      "errors": [],
+      "milliseconds": 581,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/minimax-search",
+      "title": "Minimax Search",
+      "errors": [],
+      "milliseconds": 614,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/bayesian-network-construction",
+      "title": "Construction of Bayesian Network",
+      "errors": [],
+      "milliseconds": 651,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/bayesian-network-inference",
+      "title": "Inference from Bayesian Network",
+      "errors": [],
+      "milliseconds": 758,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/breadth-first-search",
+      "title": "Breadth First Search",
+      "errors": [],
+      "milliseconds": 582,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/bidirectional-search",
+      "title": "Bidirectional Search",
+      "errors": [],
+      "milliseconds": 665,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/beam-search",
+      "title": "Beam Search",
+      "errors": [],
+      "milliseconds": 620,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/simulated-annealing",
+      "title": "Simulated Annealing",
+      "errors": [],
+      "milliseconds": 699,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/genetic-algorithm",
+      "title": "Genetic Algorithm",
+      "errors": [],
+      "milliseconds": 692,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/monte-carlo-tree-search",
+      "title": "Monte Carlo Tree Search",
+      "errors": [],
+      "milliseconds": 676,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/alpha-beta-pruning",
+      "title": "Alpha-Beta Pruning",
+      "errors": [],
+      "milliseconds": 598,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/markov-decision-process-explorer",
+      "title": "Markov Decision Process Explorer",
+      "errors": [],
+      "milliseconds": 742,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/sarsa-learning",
+      "title": "SARSA Learning",
+      "errors": [],
+      "milliseconds": 587,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/hidden-markov-model-forward-viterbi",
+      "title": "Hidden Markov Model – Forward & Viterbi Algorithms",
+      "errors": [],
+      "milliseconds": 827,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/depth-limited-search",
+      "title": "Depth-Limited Search",
+      "errors": [],
+      "milliseconds": 733,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/iterative-deepening-a-star",
+      "title": "Iterative Deepening A*",
+      "errors": [],
+      "milliseconds": 646,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/recursive-best-first-search",
+      "title": "Recursive Best-First Search",
+      "errors": [],
+      "milliseconds": 838,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/ao-star-search",
+      "title": "AO* Search",
+      "errors": [],
+      "milliseconds": 2172,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/csp-backtracking",
+      "title": "Constraint Satisfaction Backtracking",
+      "errors": [],
+      "milliseconds": 794,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/forward-checking",
+      "title": "Forward Checking",
+      "errors": [],
+      "milliseconds": 853,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/ac-3-arc-consistency",
+      "title": "AC-3 Arc Consistency",
+      "errors": [],
+      "milliseconds": 732,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/min-conflicts",
+      "title": "Min-Conflicts",
+      "errors": [],
+      "milliseconds": 627,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/expectimax-search",
+      "title": "Expectimax Search",
+      "errors": [],
+      "milliseconds": 670,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/variable-elimination",
+      "title": "Variable Elimination",
+      "errors": [],
+      "milliseconds": 582,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/belief-propagation",
+      "title": "Belief Propagation",
+      "errors": [],
+      "milliseconds": 691,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/particle-filtering",
+      "title": "Particle Filtering",
+      "errors": [],
+      "milliseconds": 664,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/pomdp-belief-state-planning",
+      "title": "POMDP Belief-State Planning",
+      "errors": [],
+      "milliseconds": 638,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/monte-carlo-control",
+      "title": "Monte Carlo Control",
+      "errors": [],
+      "milliseconds": 656,
+      "status": "rendered"
+    },
+    {
+      "route": "/ai-algorithms/deep-q-network",
+      "title": "Deep Q-Network",
+      "errors": [],
+      "milliseconds": 677,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/recommendation/user-based-cf",
+      "title": "User Based Collaborative Filtering",
+      "errors": [],
+      "milliseconds": 713,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/recommendation/item-based-cf",
+      "title": "Item Based Collaborative Filtering",
+      "errors": [],
+      "milliseconds": 854,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/recommendation/matrix-factorization",
+      "title": "Matrix Factorization",
+      "errors": [],
+      "milliseconds": 1107,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/recommendation/content-based",
+      "title": "Content Based Recommendation",
+      "errors": [],
+      "milliseconds": 6051,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/reinforcement-learning/multi-armed-bandit",
+      "title": "Multi-Armed Bandit",
+      "errors": [],
+      "milliseconds": 899,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/reinforcement-learning/q-learning-grid-world",
+      "title": "Q-Learning Grid World",
+      "errors": [],
+      "milliseconds": 853,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/reinforcement-learning/markov-decision-process",
+      "title": "Markov Decision Process",
+      "errors": [],
+      "milliseconds": 3377,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/explainability/feature-importance",
+      "title": "Feature Importance",
+      "errors": [],
+      "milliseconds": 951,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/explainability/partial-dependence-plot",
+      "title": "Partial Dependence Plot",
+      "errors": [],
+      "milliseconds": 13901,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/explainability/shap-concept",
+      "title": "SHAP",
+      "errors": [],
+      "milliseconds": 753,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/explainability/lime-concept",
+      "title": "LIME",
+      "errors": [],
+      "milliseconds": 20064,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/optimization/gradient-descent",
+      "title": "Optimizer Suite",
+      "errors": [],
+      "milliseconds": 1108,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/optimization/sgd",
+      "title": "Optimizer Suite",
+      "errors": [],
+      "milliseconds": 11796,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/optimization/momentum",
+      "title": "Optimizer Suite",
+      "errors": [],
+      "milliseconds": 2831,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/optimization/adam",
+      "title": "Optimizer Suite",
+      "errors": [],
+      "milliseconds": 1574,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/ensemble/bagging",
+      "title": "Bagging",
+      "errors": [],
+      "milliseconds": 6827,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/ensemble/boosting",
+      "title": "Boosting",
+      "errors": [],
+      "milliseconds": 4498,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/ensemble/stacking",
+      "title": "Stacking",
+      "errors": [],
+      "milliseconds": 1162,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/probabilistic/bayesian-linear-regression",
+      "title": "Bayesian Linear Regression",
+      "errors": [],
+      "milliseconds": 4577,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/probabilistic/gaussian-process-regression",
+      "title": "Gaussian Process Regression",
+      "errors": [],
+      "milliseconds": 14631,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/probabilistic/hidden-markov-model",
+      "title": "Hidden Markov Model",
+      "errors": [],
+      "milliseconds": 8217,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/deployment/browser-model-loader",
+      "title": "Browser Model Loader",
+      "errors": [],
+      "milliseconds": 8655,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/deployment/onnx-runtime-demo",
+      "title": "ONNX Runtime Web Demo",
+      "errors": [],
+      "milliseconds": 12078,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/deployment/tensorflowjs-training",
+      "title": "Tensor Flow JSTraining",
+      "errors": [],
+      "milliseconds": 12597,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/deployment/model-export",
+      "title": "Model Export",
+      "errors": [],
+      "milliseconds": 7223,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/deployment/export-hub",
+      "title": "Export Hub",
+      "errors": [],
+      "milliseconds": 629,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/deployment/model-card",
+      "title": "Model Card Generator",
+      "errors": [],
+      "milliseconds": 2357,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/lab/algorithm-comparison",
+      "title": "Algorithm Comparison Lab",
+      "errors": [],
+      "milliseconds": 11844,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/lab/hyperparameter-tuning",
+      "title": "Hyperparameter Tuning Lab",
+      "errors": [],
+      "milliseconds": 12941,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/lab/automl-concept",
+      "title": "AutoML Lab",
+      "errors": [],
+      "milliseconds": 11872,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/lab/saved-experiments",
+      "title": "Saved Experiments",
+      "errors": [],
+      "milliseconds": 17001,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/lab/dataset-manager",
+      "title": "Dataset Manager",
+      "errors": [],
+      "milliseconds": 3739,
+      "status": "rendered",
+      "initialAttempt": {
+        "route": "/ml/lab/dataset-manager",
+        "errors": [
+          "locator.waitFor: Timeout 20000ms exceeded."
+        ],
+        "milliseconds": 1280625,
+        "status": "failed"
+      }
+    },
+    {
+      "route": "/ml/lab/report-builder",
+      "title": "Report Builder",
+      "errors": [],
+      "milliseconds": 1934,
+      "status": "rendered",
+      "initialAttempt": {
+        "route": "/ml/lab/report-builder",
+        "errors": [
+          "page.goto: net::ERR_NETWORK_IO_SUSPENDED at http://127.0.0.1:9869/ml/lab/report-builder"
+        ],
+        "milliseconds": 165,
+        "status": "failed"
+      }
+    },
+    {
+      "route": "/ml/lab/architecture-flow",
+      "title": "Architecture Flow Lab",
+      "errors": [],
+      "milliseconds": 746,
+      "status": "rendered",
+      "initialAttempt": {
+        "route": "/ml/lab/architecture-flow",
+        "title": "Architecture Flow Lab",
+        "errors": [
+          "Failed to read the 'localStorage' property from 'Window': Access is denied for this document."
+        ],
+        "milliseconds": 1185,
+        "status": "pageerror"
+      }
+    },
+    {
+      "route": "/ml/lab/train-your-model",
+      "title": "Train Your Model",
+      "errors": [],
+      "milliseconds": 3354,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/lab/image-annotation",
+      "title": "Image Annotation Tool",
+      "errors": [],
+      "milliseconds": 2768,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/lab/data-augmentation",
+      "title": "Data Augmentation",
+      "errors": [],
+      "milliseconds": 734,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/lab/model-comparison",
+      "title": "Model Comparison",
+      "errors": [],
+      "milliseconds": 599,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/lab/batch-inference",
+      "title": "Batch Inference",
+      "errors": [],
+      "milliseconds": 727,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/lab/active-learning",
+      "title": "Active Learning Queue",
+      "errors": [],
+      "milliseconds": 698,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/lab/performance-dashboard",
+      "title": "Live Performance Dashboard",
+      "errors": [],
+      "milliseconds": 623,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/lab/experiment-workspace",
+      "title": "Unified Experiment Workspace",
+      "errors": [],
+      "milliseconds": 1410,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/lab/model-zoo",
+      "title": "Model Zoo",
+      "errors": [],
+      "milliseconds": 776,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/lab/automl-assistant",
+      "title": "AutoML Assistant",
+      "errors": [],
+      "milliseconds": 716,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/lab/training-visualizations",
+      "title": "Interactive Training Visualizations",
+      "errors": [],
+      "milliseconds": 958,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/lab/inference-playground",
+      "title": "Inference Playground",
+      "errors": [],
+      "milliseconds": 521,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/lab/model-comparison-dashboard",
+      "title": "Model Comparison Dashboard",
+      "errors": [],
+      "milliseconds": 765,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/lab/explainability-center",
+      "title": "Explainability Center",
+      "errors": [],
+      "milliseconds": 711,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/lab/dataset-intelligence",
+      "title": "Dataset Intelligence Layer",
+      "errors": [],
+      "milliseconds": 595,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/lab/tuning-engine",
+      "title": "Hyperparameter Tuning Engine",
+      "errors": [],
+      "milliseconds": 755,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio",
+      "title": "शब्दावली Studio",
+      "errors": [],
+      "milliseconds": 570,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/topic/optimization",
+      "title": "Optimization",
+      "errors": [],
+      "milliseconds": 484,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/topic/activations",
+      "title": "Activation functions",
+      "errors": [],
+      "milliseconds": 552,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/topic/losses",
+      "title": "Loss functions",
+      "errors": [],
+      "milliseconds": 448,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/topic/regularization",
+      "title": "नियमितीकरण",
+      "errors": [],
+      "milliseconds": 445,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/topic/neural",
+      "title": "Neural-net mechanics",
+      "errors": [],
+      "milliseconds": 597,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/topic/data-math",
+      "title": "Data math",
+      "errors": [],
+      "milliseconds": 513,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/gradient-descent",
+      "title": "ग्रेडिएंट डिसेंट",
+      "errors": [],
+      "milliseconds": 606,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/sgd-mini-batch",
+      "title": "SGD & Mini-batches",
+      "errors": [],
+      "milliseconds": 514,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/learning-rate",
+      "title": "सीखने की दर",
+      "errors": [],
+      "milliseconds": 514,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/momentum",
+      "title": "Momentum",
+      "errors": [],
+      "milliseconds": 535,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/adam",
+      "title": "Adam, RMSProp & AdaGrad",
+      "errors": [],
+      "milliseconds": 606,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/learning-rate-schedules",
+      "title": "Learning-rate Schedules",
+      "errors": [],
+      "milliseconds": 670,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/gradient-clipping",
+      "title": "Gradient Clipping",
+      "errors": [],
+      "milliseconds": 472,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/local-minima",
+      "title": "Local Minima & Saddle Points",
+      "errors": [],
+      "milliseconds": 447,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/relu",
+      "title": "ReLU",
+      "errors": [],
+      "milliseconds": 504,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/leaky-relu",
+      "title": "Leaky ReLU & PReLU",
+      "errors": [],
+      "milliseconds": 487,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/sigmoid",
+      "title": "Sigmoid",
+      "errors": [],
+      "milliseconds": 511,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/tanh",
+      "title": "Tanh",
+      "errors": [],
+      "milliseconds": 498,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/softmax",
+      "title": "Softmax",
+      "errors": [],
+      "milliseconds": 494,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/gelu-swish",
+      "title": "GELU, Swish & SiLU",
+      "errors": [],
+      "milliseconds": 520,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/softplus-elu",
+      "title": "Softplus & ELU",
+      "errors": [],
+      "milliseconds": 463,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/mse-mae-huber",
+      "title": "MSE, MAE & Huber",
+      "errors": [],
+      "milliseconds": 467,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/binary-cross-entropy",
+      "title": "Binary Cross-Entropy",
+      "errors": [],
+      "milliseconds": 410,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/categorical-cross-entropy",
+      "title": "Categorical Cross-Entropy",
+      "errors": [],
+      "milliseconds": 483,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/hinge-loss",
+      "title": "Hinge Loss",
+      "errors": [],
+      "milliseconds": 472,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/kl-divergence",
+      "title": "KL Divergence",
+      "errors": [],
+      "milliseconds": 426,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/contrastive-triplet",
+      "title": "Contrastive & Triplet Loss",
+      "errors": [],
+      "milliseconds": 385,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/l1-l2",
+      "title": "L1 & L2 Regularization",
+      "errors": [],
+      "milliseconds": 494,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/dropout",
+      "title": "Dropout",
+      "errors": [],
+      "milliseconds": 477,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/batch-layer-norm",
+      "title": "Batch & Layer Normalization",
+      "errors": [],
+      "milliseconds": 469,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/early-stopping",
+      "title": "Early Stopping",
+      "errors": [],
+      "milliseconds": 467,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/weight-decay",
+      "title": "Weight Decay",
+      "errors": [],
+      "milliseconds": 450,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/data-augmentation",
+      "title": "Data Augmentation",
+      "errors": [],
+      "milliseconds": 461,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/neuron",
+      "title": "Neuron & Perceptron",
+      "errors": [],
+      "milliseconds": 388,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/forward-pass",
+      "title": "Forward Pass",
+      "errors": [],
+      "milliseconds": 470,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/backpropagation",
+      "title": "बैकप्रोपेगेशन",
+      "errors": [],
+      "milliseconds": 418,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/chain-rule",
+      "title": "Chain Rule",
+      "errors": [],
+      "milliseconds": 508,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/vanishing-exploding",
+      "title": "Vanishing & Exploding Gradients",
+      "errors": [],
+      "milliseconds": 412,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/weight-initialization",
+      "title": "Weight Initialization",
+      "errors": [],
+      "milliseconds": 514,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/epochs-batches",
+      "title": "Epochs, Batches & Iterations",
+      "errors": [],
+      "milliseconds": 462,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/overfitting",
+      "title": "Overfitting vs Underfitting",
+      "errors": [],
+      "milliseconds": 504,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/bias-variance",
+      "title": "Bias-Variance Tradeoff",
+      "errors": [],
+      "milliseconds": 472,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/dot-product",
+      "title": "Dot Product & Matrix Multiply",
+      "errors": [],
+      "milliseconds": 462,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/norms",
+      "title": "L1 & L2 Norms",
+      "errors": [],
+      "milliseconds": 459,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/one-hot",
+      "title": "One-Hot Encoding",
+      "errors": [],
+      "milliseconds": 466,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/feature-scaling",
+      "title": "Feature Scaling",
+      "errors": [],
+      "milliseconds": 466,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/train-val-test",
+      "title": "Train / Val / Test Split",
+      "errors": [],
+      "milliseconds": 443,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/cross-validation",
+      "title": "Cross-Validation",
+      "errors": [],
+      "milliseconds": 428,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/residual-connection",
+      "title": "Residual Connection",
+      "errors": [],
+      "milliseconds": 517,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/attention",
+      "title": "Attention",
+      "errors": [],
+      "milliseconds": 485,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/embedding",
+      "title": "Embedding",
+      "errors": [],
+      "milliseconds": 492,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/temperature",
+      "title": "Temperature",
+      "errors": [],
+      "milliseconds": 445,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/learning-curve",
+      "title": "Learning Curve",
+      "errors": [],
+      "milliseconds": 553,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/baseline",
+      "title": "Baseline",
+      "errors": [],
+      "milliseconds": 479,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/data-leakage",
+      "title": "Data Leakage",
+      "errors": [],
+      "milliseconds": 450,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/cosine-similarity",
+      "title": "Cosine Similarity",
+      "errors": [],
+      "milliseconds": 447,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/padding",
+      "title": "Padding",
+      "errors": [],
+      "milliseconds": 426,
+      "status": "rendered"
+    },
+    {
+      "route": "/ml/terms-studio/token",
+      "title": "Token",
+      "errors": [],
+      "milliseconds": 413,
+      "status": "rendered"
+    },
+    {
+      "route": "/localization-missing-route",
+      "title": "Page Not Found",
+      "errors": [],
+      "milliseconds": 489,
+      "status": "rendered"
+    }
+  ]
+}

@@ -14,6 +14,8 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",
+    "jsxImportSource": "@ml-i18n",
+    "paths": { "@ml-i18n/*": ["./src/i18n/*"] },
     "strict": false,
     "strictFunctionTypes": false,
 

@@ -111,7 +111,7 @@ export function EditableDataGrid({ rows, onChange, columns: providedColumns, onC
             <tr>
               <th className="sticky top-0 bg-gray-50 p-1 dark:bg-gray-800" />
               {columns.map(column => (
-                <th key={column} className="sticky top-0 min-w-28 bg-gray-50 p-1 dark:bg-gray-800">
+                <th key={column} data-i18n-protect className="sticky top-0 min-w-28 bg-gray-50 p-1 dark:bg-gray-800">
                   <input aria-label={`Rename ${column}`} className="w-full rounded border border-gray-200 bg-white px-1 py-0.5 font-semibold dark:border-gray-700 dark:bg-gray-900" defaultValue={column} onBlur={event => renameColumn(column, event.target.value)} />
                   <button onClick={() => deleteColumn(column)} className="mt-1 rounded px-1 py-0.5 text-[10px] font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">Delete</button>
                 </th>

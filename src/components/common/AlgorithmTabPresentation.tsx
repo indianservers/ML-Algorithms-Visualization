@@ -1,3 +1,4 @@
+import { sourceText } from "../../i18n/config";
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import "./AlgorithmTabPresentation.css";
@@ -28,7 +29,7 @@ function decorateTabs() {
   const host = document.getElementById("main-content");
   if (!host) return;
   host.querySelectorAll('span, small, b, strong, h3, section').forEach(element => {
-    if (!/^(learning|lesson) progress$/i.test(element.textContent?.trim() ?? '')) return;
+    if (!/^(learning|lesson) progress$/i.test(sourceText(element).trim())) return;
     const panel = element.closest('[class*="lesson-progress"], [class*="learning-progress"]');
     (panel ?? element).setAttribute('data-learning-progress', '');
     const parent = element.parentElement;
@@ -42,14 +43,15 @@ function decorateTabs() {
     groups.set(button.parentElement, buttons);
   });
   groups.forEach((buttons, container) => {
-    if (buttons.length < 4 || !buttons.some((button) => tabKind(button.textContent ?? "") === "learn")) return;
-    const recognized = buttons.filter((button) => tabKind(button.textContent ?? ""));
+    if (container.hasAttribute("data-native-lesson-tabs")) return;
+    if (buttons.length < 4 || !buttons.some((button) => tabKind(sourceText(button)) === "learn")) return;
+    const recognized = buttons.filter((button) => tabKind(sourceText(button)));
     if (recognized.length < 4) return;
 
     (container as HTMLElement).dataset.mlLessonTabs = "";
     (container as HTMLElement).style.setProperty("--ml-tab-count", String(buttons.length));
     buttons.forEach((button) => {
-      const kind = tabKind(button.textContent ?? "");
+      const kind = tabKind(sourceText(button));
       if (!kind) return;
       button.dataset.mlTab = kind;
       // Decision Tree, PCA, and a few other labs already render SVG icons.

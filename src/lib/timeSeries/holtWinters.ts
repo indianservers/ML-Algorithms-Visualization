@@ -8,26 +8,47 @@ export function holtWinters(
   gamma: number,
   steps: number,
   mode: SeasonalityMode = "additive",
+  initial?: { level?: number; trend?: number; neutralSeason?: boolean },
 ) {
   if (values.length < 2 || !values.every(Number.isFinite))
     throw new Error("Holt-Winters requires at least two finite observations");
-  if (![alpha, beta, gamma].every((value) => Number.isFinite(value) && value >= 0 && value <= 1))
-    throw new Error("Holt-Winters smoothing parameters must be between 0 and 1");
+  if (
+    ![alpha, beta, gamma].every(
+      (value) => Number.isFinite(value) && value >= 0 && value <= 1,
+    )
+  )
+    throw new Error(
+      "Holt-Winters smoothing parameters must be between 0 and 1",
+    );
   if (!Number.isFinite(steps) || steps < 1)
     throw new Error("Forecast steps must be positive");
   if (mode === "multiplicative" && values.some((value) => value <= 0))
-    throw new Error("Multiplicative Holt-Winters requires positive observations");
+    throw new Error(
+      "Multiplicative Holt-Winters requires positive observations",
+    );
   const m = Math.max(2, Math.min(values.length, Math.round(seasonLength))),
     first = values.slice(0, m);
-  let level = first.reduce((a, b) => a + b, 0) / m;
+  let level = initial?.level ?? first.reduce((a, b) => a + b, 0) / m;
+  if (!Number.isFinite(level) || (mode === "multiplicative" && level <= 0))
+    throw new Error(
+      "Initial level must be finite and positive for multiplicative seasonality.",
+    );
   let trend =
     values.length > m
       ? values
           .slice(0, m)
           .reduce((sum, value, i) => sum + (values[i + m] - value) / m, 0) / m
       : 0;
+  trend = initial?.trend ?? trend;
+  if (!Number.isFinite(trend)) throw new Error("Initial trend must be finite.");
   const seasonal = first.map((value) =>
-    mode === "additive" ? value - level : value / (level || 1),
+    initial?.neutralSeason
+      ? mode === "additive"
+        ? 0
+        : 1
+      : mode === "additive"
+        ? value - level
+        : value / (level || 1),
   );
   const levels: number[] = [],
     trends: number[] = [],
@@ -67,10 +88,14 @@ export function holtWinters(
       usable.reduce((s, v) => s + v * v, 0) / Math.max(1, usable.length),
     );
   const percentageErrors = usable
-    .map((value, i) => values[i + m] === 0 ? undefined : Math.abs(value / values[i + m]))
+    .map((value, i) =>
+      values[i + m] === 0 ? undefined : Math.abs(value / values[i + m]),
+    )
     .filter((value): value is number => value !== undefined);
   const mape = percentageErrors.length
-    ? (percentageErrors.reduce((sum, value) => sum + value, 0) / percentageErrors.length) * 100
+    ? (percentageErrors.reduce((sum, value) => sum + value, 0) /
+        percentageErrors.length) *
+      100
     : 0;
   const smape =
     (usable.reduce(

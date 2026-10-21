@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { sourceText } from "../../../../i18n/config";
 import { Link } from "react-router-dom";
 import { ForestInspector, FOREST_COLORS, FOREST_SYMBOLS } from "./ForestInspector";
 import { LabLessonPanel, useUrlTab } from "../../../../components/common/LabTabs";
@@ -350,7 +351,7 @@ export default function RandomForestClassificationPage() {
         <h2>
           <Trees /> FOREST PREDICTION VISUALIZER
         </h2>
-        <div className="rfc-trees" onClick={event => { const card = (event.target as HTMLElement).closest(".rfc-tree"); if (card) { const label = card.querySelector("header b")?.textContent; setInspectedTree(Number(label?.replace("Tree ", "") ?? 1) - 1); } }}>
+        <div className="rfc-trees" onClick={event => { const card = (event.target as HTMLElement).closest(".rfc-tree"); if (card) { const heading = card.querySelector("header b"); const label = heading ? sourceText(heading) : undefined; setInspectedTree(Number(label?.replace("Tree ", "") ?? 1) - 1); } }}>
           {[0, 1, 2, 3].map((index) => (
             <MiniTree
               key={index}

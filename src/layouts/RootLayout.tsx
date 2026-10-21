@@ -1,4 +1,5 @@
 import { AccountControl } from '../components/common/AccountControl';
+import { LanguageSelector } from '../i18n/LanguageSelector';
 import React, { Suspense } from "react";
 import { Outlet, useLocation, Link } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
@@ -47,6 +48,7 @@ import { useGuideMode } from "../stores/uiStore";
 import "../styles/labTheme.css";
 import "../styles/nestedLabLayout.css";
 import "../styles/mobileFirst.css";
+import "../styles/timeSeriesLabLayout.css";
 import "../styles/algorithmBreadcrumbs.css";
 
 const ACTIVE_DATASETS_KEY = "mlSuite.activeAlgorithmDatasets";
@@ -543,6 +545,7 @@ export const RootLayout: React.FC = () => {
         </span>
         <span className="spacer" />
         <AccountControl />
+        <LanguageSelector />
         <button
           type="button"
           onClick={() => setRouteSearchOpen(true)}

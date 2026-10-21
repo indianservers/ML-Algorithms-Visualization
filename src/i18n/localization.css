@@ -1,0 +1,23 @@
+.ml-locale{position:relative;flex-shrink:0;color:inherit;font-family:inherit;z-index:110}
+.ml-locale-trigger{display:inline-flex!important;align-items:center;gap:.4rem;max-inline-size:12rem;padding:.45rem .6rem!important;border:1px solid color-mix(in srgb,currentColor 22%,transparent)!important;border-radius:9px;background:transparent;color:inherit;font:inherit;cursor:pointer}
+.ml-locale-trigger span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ml-locale-menu{position:absolute;inset-inline-end:0;inset-block-start:calc(100% + 8px);inline-size:min(340px,calc(100vw - 24px));padding:12px;background:var(--bg-panel,var(--bg-card,#fff));color:var(--text-primary,#102443);border:1px solid var(--border-color,#a4b9d6);border-radius:12px;box-shadow:0 16px 50px #00133344}
+.dark .ml-locale-menu,[data-theme=dark] .ml-locale-menu{background:#0b1930;color:#e2eeff}
+.ml-locale-menu input{box-sizing:border-box;inline-size:100%;padding:10px;border-radius:7px;border:1px solid #8299ba;background:transparent;color:inherit;font:inherit}
+.ml-locale-options{max-block-size:min(65vh,460px);overflow:auto;overscroll-behavior:contain;margin-block-start:8px}
+.ml-locale-options h3{font-size:12px;font-weight:600;opacity:.7;margin:12px 8px 5px}
+.ml-locale-options button{display:flex!important;align-items:center;gap:10px;inline-size:100%;padding:9px!important;text-align:start;border:0!important;background:transparent;color:inherit;border-radius:7px;font:inherit;cursor:pointer}
+.ml-locale-options button[aria-pressed=true],.ml-locale-options button:hover{background:#347cff22}
+.ml-locale-options button small{margin-inline-start:auto;opacity:.6}
+.ml-locale button:focus-visible,.ml-locale input:focus-visible{outline:2px solid #4389ff;outline-offset:2px}
+html:lang(te){font-family:"Noto Sans Telugu","Nirmala UI",sans-serif}html:lang(hi),html:lang(mr){font-family:"Noto Sans Devanagari","Nirmala UI",sans-serif}
+html:lang(ar),html:lang(ur){font-family:"Noto Naskh Arabic","Segoe UI",Tahoma,sans-serif}html:lang(am){font-family:"Noto Sans Ethiopic","Nyala",sans-serif}
+html:lang(te) body{font-family:"Noto Sans Telugu","Nirmala UI",sans-serif}
+html:lang(hi) body,html:lang(mr) body{font-family:"Noto Sans Devanagari","Nirmala UI",sans-serif}
+html:lang(ta) body,html:lang(kn) body,html:lang(ml) body,html:lang(bn) body,html:lang(gu) body,html:lang(pa) body,html:lang(or) body,html:lang(as) body{font-family:"Nirmala UI",system-ui,sans-serif}
+html:lang(ar) body,html:lang(ur) body{font-family:"Noto Naskh Arabic","Segoe UI",Tahoma,sans-serif}
+html:lang(am) body{font-family:"Noto Sans Ethiopic","Nyala",sans-serif}
+html[dir=rtl] :is(pre,code,kbd,textarea,math,canvas,svg,[data-i18n-protect],.monaco-editor,.cm-editor,.tsw-chart){direction:ltr;unicode-bidi:isolate}
+html[dir=rtl] :is(table,input[type=number],input[type=range]){direction:ltr;unicode-bidi:isolate}
+html[lang]:not([lang=en-IN]) :is(button,label,h1,h2,h3,h4){overflow-wrap:anywhere}
+@media(max-width:600px){.ml-locale-trigger{max-inline-size:110px;font-size:12px!important}.ml-locale-menu{position:fixed;inset-inline-end:12px;inset-block-start:64px}.hl-nav .ml-locale{margin-inline-start:auto}}

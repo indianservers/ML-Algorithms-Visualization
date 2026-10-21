@@ -1,3 +1,4 @@
+import TimeSeriesWorkbench from "../../../features/time-series-studio/TimeSeriesWorkbench";
 import { useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Activity } from 'lucide-react';
@@ -5,7 +6,6 @@ import { Line, LineChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 import { PageHeader } from '../../../components/common/PageHeader';
 import { Card, InfoBox } from '../../../components/common/Card';
 import { timeSeriesSalesDataset } from '../../../data/sampleDatasets';
-import MovingAverageApprovedPage from './MovingAverageApprovedPage';
 
 function OriginalMovingAveragePage() {
   const [windowSize, setWindowSize] = useState(3);
@@ -44,5 +44,5 @@ export default function MovingAveragePage() {
   const location = useLocation();
   return new URLSearchParams(location.search).get('advanced') === '1'
     ? <OriginalMovingAveragePage />
-    : <MovingAverageApprovedPage />;
+    : <TimeSeriesWorkbench kind="moving-average" />;
 }
