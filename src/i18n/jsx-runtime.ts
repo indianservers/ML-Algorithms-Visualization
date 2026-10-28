@@ -14,6 +14,9 @@ import { useTranslation } from "react-i18next";
 import { i18n, translateText } from "./config";
 import { isInterfaceText } from "./keys";
 import { LocalizedChart } from "./LocalizedChart";
+import { LocalizedFrame } from "./LocalizedFrame";
+import { LocalizedRecharts } from "./LocalizedRecharts";
+import { ResponsiveContainer } from 'recharts';
 import { Link, NavLink } from "react-router-dom";
 export { Fragment };
 export type { JSX } from "react";
@@ -121,6 +124,8 @@ function needsLocalization(type: unknown, props: Props | null) {
   );
 }
 export function jsx(type: ElementType, props: Props | null, key?: string) {
+  if (type === ResponsiveContainer) return reactJsx(LocalizedRecharts, {component:type, original:props ?? {}}, key);
+  if (type === 'iframe') return props?.['data-i18n-frame-managed'] ? reactJsx(type, props, key) : reactJsx(LocalizedFrame, { original: props ?? {} }, key);
   if (type === Link || type === NavLink) return reactJsx(LocalizedNavigation, { component: type, original: props ?? {} }, key);
   if (
     typeof type !== "string" &&

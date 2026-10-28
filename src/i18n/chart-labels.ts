@@ -1,4 +1,14 @@
 import { i18n, translateText } from "./config";
+/** Translate text slots in existing tooltip markup, never tags or attributes. */
+export function translateChartDisplay(value: unknown): unknown {
+  if(typeof value !== 'string') return value;
+  if(!value.includes('<'))return translateText(value);
+  return value.split(/(<[^>]+>)/g).map(part=>{
+    if(part.startsWith('<'))return part;
+    const translated=translateText(part);
+    return translated === part ? part : translated.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+  }).join('');
+}
 /** Clone presentation branches only. Preserve data, series names/IDs, coordinates and formatter callbacks. */
 export function localizeChartOption<T>(option: T): T {
   if (!option || typeof option !== "object") return option;
@@ -49,6 +59,11 @@ export function localizeChartOption<T>(option: T): T {
               : name,
         ),
     }));
+  if(output.tooltip)output.tooltip=map(output.tooltip, record=>{
+    const formatter=record.formatter;
+    if(typeof formatter !== 'function')return record;
+    return {...record,formatter:(...args:unknown[])=>translateChartDisplay(formatter(...args))};
+  });
   return output as T;
 }
 

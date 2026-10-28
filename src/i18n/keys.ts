@@ -9,9 +9,9 @@ export function isInterfaceText(value: string) {
   const source = value.trim();
   return (
     source.length > 1 &&
-    source.length <= 180 &&
+    source.length <= 4000 &&
     /[A-Za-z]{2}/.test(source) &&
     !/^(https?:|www\.|\/|#[\w-]|[\w]+_[\w_]+$)/.test(source) &&
-    !/[=∑∂∇]|=>|\b(?:const|function|return|import)\s|\{\{|[<>]/.test(source)
+    !/[=∑∂∇]|=>|\b(?:const|function|return|import)\s|[<>]/.test(source.replace(/\{\{v\d+\}\}/g, ""))
   );
 }

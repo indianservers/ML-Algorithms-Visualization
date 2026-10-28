@@ -12,11 +12,56 @@ import {
 } from "../src/i18n/config";
 import { DEFAULT_LOCALE, languages, validLocale } from "../src/i18n/languages";
 import { keyFor } from "../src/i18n/keys";
-import { localizeChartOption, preserveChartView } from "../src/i18n/chart-labels";
+import { localizeChartOption, preserveChartView, translateChartDisplay } from "../src/i18n/chart-labels";
+import { localizeRechartsChildren } from '../src/i18n/recharts-labels';
 afterEach(async () => {
   await selectLocale(DEFAULT_LOCALE, false);
 });
 describe("Global localization invariants", () => {
+  it.each(languages.map(language=>language.code))('loads the configured %s dictionary with a translated navigation label', async locale => {
+    await prepareRoute('/');
+    await selectLocale(locale, false);
+    expect(translateText('Home')).not.toMatch(/^s_[0-9a-f]+$/);
+    if(locale !== 'en-IN')expect(translateText('Settings')).not.toBe('Settings');
+  });
+  it('translates dynamic messages while retaining substituted model values', async () => {
+    await prepareRoute('/');
+    const source='Completed {{v0}} epochs for {{v1}}';
+    i18n.addResourceBundle('hi', 'common', {[keyFor(source)]:'{{v1}} के लिए {{v0}} युग पूरे हुए'});
+    i18n.addResourceBundle('en-IN', 'common', {[keyFor(source)]:source});
+    await selectLocale('hi', false);
+    expect(translateText('Completed 24 epochs for GRU')).toBe('GRU के लिए 24 युग पूरे हुए');
+    await selectLocale('en-IN', false);
+    expect(translateText('Completed 24 epochs for GRU')).toBe('Completed 24 epochs for GRU');
+  });
+  it('matches long non-template prose without combinatorial backtracking', async () => {
+    await prepareRoute('/');
+    const source='{{v0}}a{{v1}}a{{v2}}a{{v3}}a{{v4}}a{{v5}}a{{v6}}end';
+    i18n.addResourceBundle('hi','common',{[keyFor(source)]:source});
+    i18n.addResourceBundle('en-IN','common',{[keyFor(source)]:source});
+    await selectLocale('hi',false);
+    const prose='a'.repeat(1500)+'stop';
+    const started=performance.now();
+    expect(translateText(prose)).toBe(prose);
+    expect(performance.now()-started).toBeLessThan(1000);
+  });
+  it('translates existing tooltip text slots and preserves markup attributes', async () => {
+    await prepareRoute('/');await selectLocale('hi', false);
+    expect(translateChartDisplay('<b title="Train">Train</b><span>24</span>')).toBe('<b title="Train">प्रशिक्षित करें</b><span>24</span>');
+    const data=[1,2];expect(translateChartDisplay(data)).toBe(data);
+  });
+  it('preserves Recharts identities and data keys while adapting display names', async () => {
+    await prepareRoute('/');await selectLocale('hi', false);
+    const data=[{Train:2}];
+    const item=createElement('g', {name:'Train', dataKey:'Train', data, id:'fixed-series'});
+    const [localized]=localizeRechartsChildren([item]) as React.ReactElement<Record<string,unknown>>[];
+    expect(localized.type).toBe(item.type);
+    expect(localized.key).toBe(item.key);
+    expect(localized.props.dataKey).toBe('Train');
+    expect(localized.props.id).toBe('fixed-series');
+    expect(localized.props.data).toBe(data);
+    expect(localized.props.name).toBe('प्रशिक्षित करें');
+  });
   it("includes all 41 requested codes and defaults to en-IN", () => {
     expect(languages).toHaveLength(41);
     expect(new Set(languages.map((language) => language.code)).size).toBe(41);

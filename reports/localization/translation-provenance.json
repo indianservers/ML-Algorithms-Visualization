@@ -1,0 +1,171 @@
+{
+  "provider": "saved preliminary Google Translate batches and authored overrides",
+  "cacheIncludes": "Google Translate preliminary batches and authored overrides",
+  "mode": "build-time machine translation with existing authored overrides",
+  "nativeSpeakerReviewed": false,
+  "sourceLanguage": "en",
+  "generatedAt": "2026-10-27T19:42:19.965Z",
+  "locales": {
+    "af": {
+      "present": 2855,
+      "total": 27892
+    },
+    "am": {
+      "present": 339,
+      "total": 27892
+    },
+    "ar": {
+      "present": 339,
+      "total": 27892
+    },
+    "as": {
+      "present": 2935,
+      "total": 27892
+    },
+    "bn": {
+      "present": 767,
+      "total": 27892
+    },
+    "cs": {
+      "present": 2937,
+      "total": 27892
+    },
+    "de": {
+      "present": 2937,
+      "total": 27892
+    },
+    "el": {
+      "present": 2937,
+      "total": 27892
+    },
+    "es": {
+      "present": 2937,
+      "total": 27892
+    },
+    "fi": {
+      "present": 2855,
+      "total": 27892
+    },
+    "fr": {
+      "present": 2862,
+      "total": 27892
+    },
+    "gu": {
+      "present": 767,
+      "total": 27892
+    },
+    "ha": {
+      "present": 339,
+      "total": 27892
+    },
+    "hi": {
+      "present": 645,
+      "total": 27892
+    },
+    "hu": {
+      "present": 2855,
+      "total": 27892
+    },
+    "id": {
+      "present": 339,
+      "total": 27892
+    },
+    "ig": {
+      "present": 339,
+      "total": 27892
+    },
+    "it": {
+      "present": 2937,
+      "total": 27892
+    },
+    "kn": {
+      "present": 339,
+      "total": 27892
+    },
+    "ml": {
+      "present": 339,
+      "total": 27892
+    },
+    "mr": {
+      "present": 767,
+      "total": 27892
+    },
+    "nl": {
+      "present": 2855,
+      "total": 27892
+    },
+    "or": {
+      "present": 339,
+      "total": 27892
+    },
+    "pa": {
+      "present": 767,
+      "total": 27892
+    },
+    "pl": {
+      "present": 2714,
+      "total": 27892
+    },
+    "pt": {
+      "present": 2937,
+      "total": 27892
+    },
+    "ro": {
+      "present": 2855,
+      "total": 27892
+    },
+    "ru": {
+      "present": 2858,
+      "total": 27892
+    },
+    "so": {
+      "present": 339,
+      "total": 27892
+    },
+    "sv": {
+      "present": 2855,
+      "total": 27892
+    },
+    "sw": {
+      "present": 2853,
+      "total": 27892
+    },
+    "ta": {
+      "present": 2787,
+      "total": 27892
+    },
+    "te": {
+      "present": 578,
+      "total": 27892
+    },
+    "tr": {
+      "present": 2780,
+      "total": 27892
+    },
+    "uk": {
+      "present": 2855,
+      "total": 27892
+    },
+    "ur": {
+      "present": 767,
+      "total": 27892
+    },
+    "vi": {
+      "present": 2855,
+      "total": 27892
+    },
+    "xh": {
+      "present": 2261,
+      "total": 27892
+    },
+    "yo": {
+      "present": 273,
+      "total": 27892
+    },
+    "zu": {
+      "present": 50,
+      "total": 27892
+    }
+  },
+  "configuredProvider": "google-cloud"
+}

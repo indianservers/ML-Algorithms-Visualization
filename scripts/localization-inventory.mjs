@@ -6,7 +6,7 @@ const walk = dir => fs.readdirSync(dir, {withFileTypes:true}).flatMap(e => e.isD
 const rel = file => path.relative(root,file).replaceAll('\\','/');
 const files = walk(src).filter(file => /\.tsx?$/.test(file) && !file.includes(`${path.sep}i18n${path.sep}`));
 const hash = source => { let h=2166136261; for(let i=0;i<source.length;i++) h=Math.imul(h^source.charCodeAt(i),16777619); return `s_${(h>>>0).toString(16).padStart(8,'0')}`; };
-const interfaceText = value => value.length>1 && value.length<=180 && /[A-Za-z]{2}/.test(value) && !/^(https?:|www\.|\/|#[\w-]|[\w]+_[\w_]+$)/.test(value) && !/[=∑∂∇]|=>|\b(?:const|function|return|import)\s|\{\{|[<>]/.test(value);
+const interfaceText = value => value.length>1 && value.length<=4000 && /[A-Za-z]{2}/.test(value) && !/^(https?:|www\.|\/|#[\w-]|[\w]+_[\w_]+$)/.test(value) && !/[=∑∂∇]|=>|\b(?:const|function|return|import)\s|[<>]/.test(value.replace(/\{\{v\d+\}\}/g,''));
 const decode = value => value.replace(/&(?:amp|lt|gt|quot|apos|nbsp);/g,s=>({'&amp;':'&','&lt;':'<','&gt;':'>','&quot;':'"','&apos;':"'",'&nbsp;':'\u00a0'}[s])).replace(/&#(x[\da-f]+|\d+);/gi,(_,s)=>String.fromCodePoint(s[0].toLowerCase()==='x'?parseInt(s.slice(1),16):Number(s)));
 const normal = value => decode(value.split(/\r?\n/).map((line,i,a)=>i===0?line.trimEnd():i===a.length-1?line.trimStart():line.trim()).filter(Boolean).join(' ')).trim();
 function namespace(file) {
@@ -40,6 +40,11 @@ for(const file of files) {
       const parentTag=node.parent?.openingElement?.tagName?.getText(ast)??'';
       add(ns,normal(node.getText(ast)),file,ast.getLineAndCharacterOfPosition(node.pos).line+1,/^(pre|code|kbd|math)$/.test(parentTag)?'protected-technical':'jsx-text');
     }
+    if(ts.isTemplateExpression(node)) {
+      const value=node.head.text+node.templateSpans.map((span,i)=>`{{v${i}}}${span.literal.text}`).join('');
+      if(!value.includes('<') && /[A-Za-z]{2}/.test(node.head.text+node.templateSpans.map(s=>s.literal.text).join('')))
+        add(ns,value,file,ast.getLineAndCharacterOfPosition(node.pos).line+1,'dynamic-template');
+    }
     if(ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
       const p=node.parent;
       let kind='';
@@ -47,6 +52,7 @@ for(const file of files) {
       else if(ts.isPropertyAssignment(p) && /^(title|label|description|summary|blurb|subtitle|heading|name|message|tooltip|caption|action)$/.test(p.name.getText(ast).replaceAll(/["']/g,''))) kind='presentation-data';
       else if(ts.isJsxExpression(p)) kind='jsx-expression';
       else if(ts.isCallExpression(p) && /^(setStatus|setError|setMessage|setToast|alert|confirm)$/.test(p.expression.getText(ast))) kind='message';
+      if(!kind && /[A-Za-z]{2}\s+[A-Za-z]{2}/.test(node.text) && !ts.isImportDeclaration(p) && !/^(?:className|style|d|path|src|href|to|id|type|value|key)$/.test(p.name?.getText(ast)??'')) kind='display-candidate';
       if(kind) add(ns,node.text.trim(),file,ast.getLineAndCharacterOfPosition(node.pos).line+1,kind);
     }
     ts.forEachChild(node,visit);
@@ -77,6 +83,32 @@ function routeVisit(node) {
   } ts.forEachChild(node,routeVisit);
 } routeVisit(routeAst);
 const common=JSON.parse(fs.readFileSync(path.join(root,'src/i18n/seed-translations.json'),'utf8'));
+// Standalone labs render HTML/SVG outside React. Inventory their actual scripts,
+// including text nodes inside HTML templates and accessible display attributes.
+const embeddedRoot=path.join(root,'public/ai-algorithms');
+for(const file of walk(embeddedRoot).filter(f=>/\.(?:js|html)$/.test(f)&& !/(?:\.min\.js|localization\.js)$/.test(f))){
+  const text=fs.readFileSync(file,'utf8'), record={file:rel(file),namespace:'embedded-labs',imports:[],strings:[],renderable:true};records.set(file,record);
+  const addText=(value,kind)=>{value=normal(value);if(interfaceText(value))add('embedded-labs',value,file,1,kind);};
+  const html=fragment=>{
+    for(const m of fragment.matchAll(/>([^<>]+)</g))addText(m[1],'embedded-text');
+    for(const m of fragment.matchAll(/(?:title|aria-label|placeholder|alt)=["']([^"']+)["']/g))addText(m[1],'embedded-attribute');
+  };
+  if(file.endsWith('.html'))html(text.replace(/<script[\s\S]*?<\/script>/gi,'').replace(/<style[\s\S]*?<\/style>/gi,''));
+  else{
+    const ast=ts.createSourceFile(file,text,ts.ScriptTarget.Latest,true,ts.ScriptKind.JS);
+    const visit=node=>{
+      if(ts.isStringLiteral(node)||ts.isNoSubstitutionTemplateLiteral(node)){
+        if(node.text.includes('<'))html(node.text);else if(!/^(?:class|className|style|d|path|src|href|id|type|value|key)$/.test(node.parent.name?.getText(ast)??''))addText(node.text,'embedded-literal');
+      }
+      if(ts.isTemplateExpression(node)){
+        const value=node.head.text+node.templateSpans.map((span,i)=>`{{v${i}}}${span.literal.text}`).join('');
+        if(value.includes('<'))html(value);else addText(value,'dynamic-template');
+      }
+      ts.forEachChild(node,visit);
+    };visit(ast);
+  }
+}
+for(const route of routes.filter(route=>route.path.startsWith('/ai-algorithms/'))){route.namespaces.push('embedded-labs');route.sourceKeys.push(...Object.keys(english['embedded-labs']??{}));route.sourceKeys=[...new Set(route.sourceKeys)];}
 for(const source of Object.keys(common['en-IN'])) (english.common??={})[hash(source)]=source;
 const localeRoot=path.join(root,'src/i18n/locales'); fs.mkdirSync(localeRoot,{recursive:true});
 for(const [ns,dictionary] of Object.entries(english)) {
@@ -87,10 +119,12 @@ for(const [locale,translations] of Object.entries(common)) {
   if(locale==='en-IN') continue;
   const dictionary={}; for(const [source,value] of Object.entries(translations)) dictionary[hash(source)]=value;
   fs.mkdirSync(path.join(localeRoot,locale),{recursive:true});
-  fs.writeFileSync(path.join(localeRoot,locale,'common.json'),JSON.stringify(dictionary,null,2)+'\n');
+  const destination=path.join(localeRoot,locale,'common.json');
+  const existing=fs.existsSync(destination)?JSON.parse(fs.readFileSync(destination,'utf8')):{};
+  fs.writeFileSync(destination,JSON.stringify({...existing,...dictionary},null,2)+'\n');
 }
 const inventory={generatedFrom:'TypeScript AST: all src/**/*.ts(x) and src/routes/router.tsx',routes,modules:[...records.values()]};
 fs.mkdirSync(path.join(root,'reports/localization'),{recursive:true});
-fs.writeFileSync(path.join(root,'reports/localization/inventory.json'),JSON.stringify(inventory,null,2)+'\n');
+fs.writeFileSync(path.join(root,'reports/localization/inventory.json'),JSON.stringify(inventory)+'\n');
 fs.writeFileSync(path.join(root,'src/i18n/route-namespaces.json'),JSON.stringify(routes.map(({path,namespaces})=>({path,namespaces})),null,2)+'\n');
 console.log(`Audited ${routes.length} registered route patterns, ${records.size} source modules, ${allKeys.size} distinct source strings; ${Object.keys(english).length} namespaces.`);

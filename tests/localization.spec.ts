@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
+import { languages } from '../src/i18n/languages';
 const baseline = JSON.parse(
   readFileSync(
     new URL("./fixtures/localization-english-baseline.json", import.meta.url),
@@ -12,6 +13,44 @@ async function language(page: Page, code: string) {
   await page.locator(`.ml-locale-options button[lang="${code}"]`).click();
   await expect(page.locator("html")).toHaveAttribute("lang", code);
 }
+test('All 41 locales switch, persist and restore English without runtime translation requests', async ({page}) => {
+  test.setTimeout(240000);
+  const errors:string[]=[], translationRequests:string[]=[];
+  page.on('pageerror', error=>errors.push(error.message));
+  page.on('request', request=>{if(/translate\.googleapis|translation\.googleapis|microsofttranslator/.test(request.url()))translationRequests.push(request.url());});
+  await page.goto('/');
+  for(const locale of languages){
+    await language(page, locale.code);
+    await expect(page.locator('html')).toHaveAttribute('dir', locale.dir);
+    expect(await page.evaluate(()=>localStorage.getItem('mlSuite.locale'))).toBe(locale.code);
+    await expect(page.locator('main')).not.toContainText(/s_[0-9a-f]{8}/);
+  }
+  await language(page, 'en-IN');
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('lang','en-IN');
+  expect(errors).toEqual([]);
+  expect(translationRequests).toEqual([]);
+});
+test('Standalone lab keeps its iframe and simulation controls across locale changes', async ({page})=>{
+  await page.goto('/ai-algorithms/uniform-cost-search');
+  const frame=page.frameLocator('iframe.ai-virtual-lab-frame');
+  await expect(frame.locator('#app')).toBeVisible();
+  const select=frame.locator('select').first();
+  const value=await select.inputValue();
+  const identity=await page.locator('iframe.ai-virtual-lab-frame').evaluate(element=>{
+    const iframe=element as HTMLIFrameElement;
+    iframe.dataset.testIdentity='preserved';
+    return iframe.src;
+  });
+  await language(page,'hi');
+  await expect(frame.locator('html')).toHaveAttribute('lang','hi');
+  await expect(select).toHaveValue(value);
+  await expect(page.locator('iframe.ai-virtual-lab-frame')).toHaveAttribute('data-test-identity','preserved');
+  expect(await page.locator('iframe.ai-virtual-lab-frame').getAttribute('src')).toBe(new URL(identity).pathname+new URL(identity).search);
+  await language(page,'en-IN');
+  await expect(frame.locator('html')).toHaveAttribute('lang','en-IN');
+  await expect(select).toHaveValue(value);
+});
 for (const [route, original] of Object.entries(baseline))
   test(`Original English regression: ${route}`, async ({ page }) => {
     const errors: string[] = [];

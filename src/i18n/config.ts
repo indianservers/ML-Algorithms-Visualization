@@ -101,6 +101,48 @@ export async function selectLocale(requested: string, persist = true) {
       /* Storage may be disabled. */
     }
 }
+let templateRevision = 0;
+const templateCache = new Map<string, { parts: string[]; keys: string[]; translated: string; specificity:number }[]>();
+i18n.store?.on("added", () => { templateRevision++; templateCache.clear(); });
+function translateTemplate(source: string, locale: string) {
+  const cacheKey = `${locale}:${activeNamespaces.join('|')}:${templateRevision}`;
+  let templates = templateCache.get(cacheKey);
+  if (!templates) {
+    templates = [];
+    for (const ns of activeNamespaces) {
+      const base = i18n.getResourceBundle(DEFAULT_LOCALE, ns) ?? {};
+      for (const [key, value] of Object.entries(base)) {
+        if (typeof value !== 'string' || !/\{\{v\d+\}\}/.test(value)) continue;
+        const translated = i18n.getResource(locale, ns, key);
+        if (typeof translated !== 'string') continue;
+        const keys: string[] = [];
+        const parts = value.split(/(\{\{v\d+\}\})/g);
+        for(let index=1;index<parts.length;index+=2)keys.push(parts[index]);
+        // Adjacent substitutions have no unambiguous boundary. Do not guess.
+        if(parts.some((part,index)=>index>0&&index<parts.length-1&&index%2===0&&!part))continue;
+        templates.push({parts, keys, translated, specificity:value.replace(/\{\{v\d+\}\}/g,'').length});
+      }
+    }
+    templates.sort((a,b)=>b.specificity-a.specificity);
+    templateCache.set(cacheKey, templates);
+  }
+  for (const template of templates) {
+    const {parts,keys}=template;
+    if(!source.startsWith(parts[0])||!source.endsWith(parts[parts.length-1]))continue;
+    // Literal boundaries make matching linear in message length, avoiding
+    // catastrophic regex backtracking on long educational paragraphs.
+    const values:string[]=[];
+    let cursor=parts[0].length, matched=true;
+    for(let index=0;index<keys.length;index++){
+      const literal=parts[index*2+2];
+      const end=index===keys.length-1?source.length-literal.length:source.indexOf(literal,cursor);
+      if(end<cursor){matched=false;break;}
+      values.push(source.slice(cursor,end));cursor=end+literal.length;
+    }
+    if(matched&&cursor===source.length)return template.translated.replace(/\{\{v\d+\}\}/g,key=>values[keys.indexOf(key)]??key);
+  }
+  return source;
+}
 export function translateText(value: string) {
   if (!isInterfaceText(value) || validLocale(i18n.language) === DEFAULT_LOCALE)
     return value;
@@ -110,11 +152,7 @@ export function translateText(value: string) {
   const namespace = activeNamespaces.find(
     (ns) => typeof i18n.getResource(locale, ns, key) === "string",
   );
-  const translated = i18n.t(key, {
-    ns: namespace ?? activeNamespaces,
-    defaultValue: source,
-    interpolation: { skipOnVariables: true },
-  });
+  const translated = namespace ? i18n.getResource(locale, namespace, key) as string : translateTemplate(source, locale);
   return (
     value.slice(0, value.indexOf(source)) +
     translated +

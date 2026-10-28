@@ -8,6 +8,8 @@
     "i18n:reference": "vite --config tests/localization.reference.config.ts --host 127.0.0.1 --port 9868 --strictPort",
     "i18n:capture-baseline": "node scripts/capture-localization-baseline.mjs",
     "audit:localization": "node scripts/localization-inventory.mjs && node scripts/audit-localization.mjs",
+    "audit:localization-complete": "node scripts/localization-inventory.mjs && node scripts/audit-localization.mjs --strict",
+    "i18n:translate": "node scripts/translate-locales.mjs",
     "test:localization": "vitest run --config vitest.localization.config.ts",
     "test:localization-ui": "playwright test --config playwright.localization.config.ts",
     "dev": "vite",
